@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     environment: str = "local"
     log_level: str = "INFO"
     aws_region: str = "us-east-1"
+    port: int = 8080
 
 
 @lru_cache

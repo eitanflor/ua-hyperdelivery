@@ -1,5 +1,0 @@
-agent:
-  name: hyperdelivery-agent
-  model_id: global.anthropic.claude-sonnet-5
-  system_prompt: >
-    You are the Hyperdelivery agent. Be concise and accurate.

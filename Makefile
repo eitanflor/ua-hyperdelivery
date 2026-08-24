@@ -1,7 +1,13 @@
-.PHONY: dev test lint
+.PHONY: dev-distill dev-blueprint dev-all test lint
 
-dev:
-	cd src && uv run python -m agent_runtime.main
+dev-distill:
+	cd src && uv run python -m agent_runtime.distill.main
+
+dev-blueprint:
+	cd src && HYPERDELIVERY_PORT=8081 uv run python -m agent_runtime.blueprint.main
+
+dev-all:
+	./scripts/dev_all.sh
 
 test:
 	uv run pytest

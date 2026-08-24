@@ -11,5 +11,10 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app/src
 
+# AgentCore Runtime deploys one container per agent - pick which at build time,
+# e.g. `docker build --build-arg AGENT=blueprint .`
+ARG AGENT=distill
+ENV AGENT=${AGENT}
+
 EXPOSE 8080
-CMD ["python", "-m", "agent_runtime.main"]
+CMD ["sh", "-c", "python -m agent_runtime.${AGENT}.main"]
