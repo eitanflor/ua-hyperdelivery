@@ -45,8 +45,9 @@ def create_app(
             return {"error": "agent did not produce structured output"}
         # DEBUG, not INFO - the result can contain full FSD/spec content (set
         # LOG_LEVEL=DEBUG in .env to see it).
-        logger.debug("result: %s", result.structured_output.model_dump())
+        dumped = result.structured_output.model_dump()
+        logger.debug("result: %s", dumped)
         logger.info("invocation succeeded")
-        return {"result": result.structured_output.model_dump()}
+        return {"result": dumped}
 
     return app
