@@ -19,7 +19,7 @@ for i in "${!agents[@]}"; do
 	agent="${agents[$i]}"
 	port=$((base_port + i))
 	echo "${agent} -> http://127.0.0.1:${port}"
-	HYPERDELIVERY_PORT="${port}" uv run python -m "agent_runtime.${agent}.main" &
+	PORT="${port}" uv run python -m "agent_runtime.${agent}.main" &
 	pids+=($!)
 done
 

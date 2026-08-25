@@ -8,7 +8,9 @@ _ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=_ENV_FILE, env_prefix="HYPERDELIVERY_")
+    # extra="ignore": .env is shared with the Makefile (e.g. AWS_PROFILE, PORT) for vars
+    # that aren't declared as fields below.
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 
     environment: str = "local"
     log_level: str = "INFO"
@@ -17,6 +19,8 @@ class Settings(BaseSettings):
     atlassian_base_url: str | None = None
     atlassian_email: str | None = None
     atlassian_api_token: str | None = None
+    s3_bucket: str | None = None
+    s3_region: str | None = None
 
 
 @lru_cache

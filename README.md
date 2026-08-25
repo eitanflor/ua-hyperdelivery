@@ -6,13 +6,18 @@ rationale this reuses (declarative config, observability pattern).
 
 ## Architecture
 
+See [docs/architecture.md](docs/architecture.md) for high-level and low-level diagrams,
+and [docs/decisions.md](docs/decisions.md) for the log of architecture/tradeoff
+decisions (why things are built the way they are, kept up to date via the
+`log-decision` skill).
+
 ```
 src/
 ├── agent_runtime/    # one composition root per agent (distill/, blueprint/, review/, showroom/) + shared factory.py
 ├── providers/agents/ # builds a strands.Agent from declarative config
 ├── core/domain/      # AgentConfig, StructuredSpec (G1), Blueprint (G2), ReviewReport (G3), DemoPackage (G4)
 ├── config/agents/    # one declarative {name}.yaml per agent
-├── infrastructure/   # observability (session-id-aware logging)
+├── infrastructure/   # observability (session-id-aware logging + tracing)
 └── tools/            # custom @tool functions - deterministic validators per agent, Confluence/Jira MCP clients
 
 tests/
@@ -72,8 +77,12 @@ guide for the ECR + `create_agent_runtime` steps.
 Four Strands agents (Distill, Blueprint, Review, Showroom) wired end-to-end through the
 AgentCore Runtime HTTP contract (`/invocations`, `/ping`, port 8080), each returning a
 validated pydantic model instead of free text. Distill has a read-only Confluence MCP tool
-and Blueprint has a Jira issue-lifecycle MCP tool (both via `tools/atlassian.py`, gated on
-`HYPERDELIVERY_ATLASSIAN_*` env vars); Review and Showroom have no external tools yet - they
-take their input (built app/code description, FSD/Blueprint) entirely from the prompt. No
-memory, Gateway, or Identity integration yet, and no control plane (Step Functions, gate
-manager) - add those only as a real use case demands them.
+and an S3 document-fetch tool (generic fetch+parse in `providers/storage/s3.py`, policy
+wrapper gated on `S3_BUCKET`/`S3_REGION` in `tools/documents.py`
+- the LLM only ever supplies an object key, never a bucket), and Blueprint has a Jira
+issue-lifecycle MCP tool (generic client builders in `mcp_clients/atlassian.py`, per-agent
+tool-filter policy in `tools/atlassian.py`, gated on `ATLASSIAN_*` env vars);
+Review and Showroom have no external tools yet - they take their input (built app/code
+description, FSD/Blueprint) entirely from the prompt. No memory, Gateway, or Identity
+integration yet, and no control plane (Step Functions, gate manager) - add those only as a
+real use case demands them.
