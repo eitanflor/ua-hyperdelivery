@@ -8,12 +8,18 @@ import boto3
 
 def parse_document(key: str, body: bytes) -> str:
     """Decode a fetched object's bytes into text based on its key's extension."""
-    if key.lower().endswith(".pdf"):
+    key_lc = key.lower()
+    if key_lc.endswith(".pdf"):
         from pypdf import PdfReader
 
         reader = PdfReader(io.BytesIO(body))
         return "\n".join(page.extract_text() or "" for page in reader.pages)
-    return body.decode("utf-8")
+    if key_lc.endswith((".txt", ".md")):
+        try:
+            return body.decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise ValueError(f"Unsupported encoding for {key}; expected UTF-8") from e
+    raise ValueError(f"Unsupported document type for {key}; expected .txt, .md, or .pdf")
 
 
 def get_document_text(bucket: str, key: str, region: str, s3_client=None) -> str:
