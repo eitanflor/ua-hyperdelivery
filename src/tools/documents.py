@@ -11,6 +11,8 @@ def s3_get_document_text(key: str) -> str:
     """Fetch and parse a document (.txt/.md/.pdf) from the configured S3 bucket by key.
     Use this when the prompt gives an S3 key instead of raw FSD text."""
     settings = get_settings()
+    if not (settings.s3_bucket and settings.s3_region):
+        raise ValueError("S3_BUCKET and S3_REGION must be configured to use s3_get_document_text")
     return get_document_text(settings.s3_bucket, key, settings.s3_region)
 
 
