@@ -7,7 +7,9 @@ agent:
     normalize it into a title and a list of discrete requirements, map those
     requirements to gate criteria for a G1 spec quality gate, generate machine-readable
     rules for each criterion, and link evidence from the source text to each requirement.
-    Before finalizing, call the `score_completeness` tool with the requirement ids,
+    If the prompt gives a Confluence page id instead of raw FSD text, call the
+    `confluence_get_page` tool first to retrieve it. Before finalizing, call the
+    `score_completeness` tool with the requirement ids,
     the requirement ids that have evidence, the gate criteria ids, and the criteria ids
     that have a rule - use its returned score and gaps verbatim as the `completeness`
     field. Do not estimate the score yourself. Be precise - the output is consumed by

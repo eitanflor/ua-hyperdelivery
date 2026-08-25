@@ -8,12 +8,12 @@ rationale this reuses (declarative config, observability pattern).
 
 ```
 src/
-├── agent_runtime/    # one composition root per agent (distill/, blueprint/) + shared factory.py
+├── agent_runtime/    # one composition root per agent (distill/, blueprint/, review/, showroom/) + shared factory.py
 ├── providers/agents/ # builds a strands.Agent from declarative config
-├── core/domain/      # AgentConfig, StructuredSpec (G1), Blueprint (G2)
+├── core/domain/      # AgentConfig, StructuredSpec (G1), Blueprint (G2), ReviewReport (G3), DemoPackage (G4)
 ├── config/agents/    # one declarative {name}.yaml per agent
 ├── infrastructure/   # observability (session-id-aware logging)
-└── tools/            # custom @tool functions - none onboarded yet, prefer strands-agents-tools
+└── tools/            # custom @tool functions - deterministic validators per agent, Confluence/Jira MCP clients
 
 tests/
 └── unit/
@@ -25,18 +25,23 @@ Strands owns the agent loop (tool-use, multi-agent patterns, context management)
 `config/models.yaml` pattern. AgentCore Runtime deploys one container per agent, so each
 agent gets its own entrypoint under `agent_runtime/` and its own `structured_output` model
 (`core/domain/spec.py`'s `StructuredSpec` for Distill, `core/domain/blueprint.py`'s
-`Blueprint` for Blueprint) instead of returning free text.
+`Blueprint` for Blueprint, `core/domain/review.py`'s `ReviewReport` for Review,
+`core/domain/showroom.py`'s `DemoPackage` for Showroom) instead of returning free text.
 
-Currently two agents: **Distill** (raw FSD -> gate-scored `StructuredSpec`, G1) and
-**Blueprint** (approved `StructuredSpec` -> `Blueprint` with units of work, G2).
+Four agents, one per gate: **Distill** (raw FSD -> gate-scored `StructuredSpec`, G1),
+**Blueprint** (approved `StructuredSpec` -> `Blueprint` with units of work, G2), **Review**
+(built deliverable + code vs. FSD/Blueprint -> `ReviewReport` gap report and coverage view,
+G3), and **Showroom** (FSD that cleared Review -> `DemoPackage` with seed data and a talk
+track, G4).
 
 ## Getting started
 
 ```bash
 uv sync
 cp .env.example .env
-make dev-distill    # or: make dev-blueprint
+make dev-distill    # or: make dev-blueprint / make dev-review / make dev-showroom
 ```
+
 
 Test locally (in another terminal):
 
@@ -64,8 +69,11 @@ guide for the ECR + `create_agent_runtime` steps.
 
 ## Status
 
-Two Strands agents (Distill, Blueprint) wired end-to-end through the AgentCore Runtime HTTP
-contract (`/invocations`, `/ping`, port 8080), each returning a validated pydantic model
-instead of free text. No tools, memory, Gateway, or Identity integration yet, and no Triage/
-Review/Showroom/Ship agents or control plane (Step Functions, gate manager) - add those only
-as a real use case demands them.
+Four Strands agents (Distill, Blueprint, Review, Showroom) wired end-to-end through the
+AgentCore Runtime HTTP contract (`/invocations`, `/ping`, port 8080), each returning a
+validated pydantic model instead of free text. Distill has a read-only Confluence MCP tool
+and Blueprint has a Jira issue-lifecycle MCP tool (both via `tools/atlassian.py`, gated on
+`HYPERDELIVERY_ATLASSIAN_*` env vars); Review and Showroom have no external tools yet - they
+take their input (built app/code description, FSD/Blueprint) entirely from the prompt. No
+memory, Gateway, or Identity integration yet, and no control plane (Step Functions, gate
+manager) - add those only as a real use case demands them.

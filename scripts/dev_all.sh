@@ -2,9 +2,11 @@
 # Starts every agent's dev server concurrently on sequential ports, killing them all on exit.
 # Add a new agent by adding its directory name to `agents` below.
 set -euo pipefail
-cd "$(dirname "$0")/../src"
+script_dir="$(dirname "$0")"
+"${script_dir}/ensure_aws_login.sh"
+cd "${script_dir}/../src"
 
-agents=(distill blueprint)
+agents=(distill blueprint review showroom)
 base_port="${BASE_PORT:-8080}"
 pids=()
 

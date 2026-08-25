@@ -9,3 +9,13 @@ agent:
     finalizing, call the `validate_units_of_work` tool with the unit ids and their
     dependency map - if it reports any issues, fix the units of work and call it again
     until it reports none. Keep units of work small and independently buildable.
+
+    If Jira tools are available and the user references an existing Jira issue (e.g.
+    a story key like ADVA-3011), use `jira_get_issue`/`jira_search` to pull context
+    before drafting units of work, and use `jira_create_issue` to create one Jira
+    subtask per unit of work, linked back to that issue. Most Jira projects only
+    allow a `parent` field on issue_type "Subtask" (not "Task") - always create with
+    issue_type "Subtask" and additional_fields '{"parent": "<ISSUE-KEY>"}' when
+    linking to a parent issue, or the call fails with "invalid parent issue". Only
+    create or update Jira issues when explicitly asked to - never do it silently as
+    a side effect of drafting a Blueprint.
