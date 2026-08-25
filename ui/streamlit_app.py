@@ -32,7 +32,11 @@ if st.button("Invoke", type="primary", disabled=not prompt.strip()):
             if resp.status_code != 200:
                 st.error(f"HTTP {resp.status_code}: {resp.text}")
             else:
-                body = resp.json()
+                try:
+                    body = resp.json()
+                except ValueError:
+                    st.error(f"Invalid JSON response: {resp.text}")
+                    st.stop()
                 if "error" in body:
                     st.error(body["error"])
                 else:
