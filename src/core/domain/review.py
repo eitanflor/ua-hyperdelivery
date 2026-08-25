@@ -1,9 +1,11 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
 class Finding(BaseModel):
     id: str
-    severity: str  # "blocker" | "major" | "minor"
+    severity: Literal["blocker", "major", "minor"]
     description: str
     requirement_id: str | None = None
     unit_id: str | None = None
