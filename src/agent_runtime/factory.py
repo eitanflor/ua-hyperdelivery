@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from config.loader import load_agent_config
 from config.settings import get_settings
 from infrastructure.observability.logging import configure_logging, session_id_var
+from infrastructure.observability.tracing import configure_tracing
 from providers.agents.strands_factory import build_agent
 
 OutputT = TypeVar("OutputT", bound=BaseModel)
@@ -19,6 +20,7 @@ def create_app(
     contract, validating its reply against `output_model` instead of returning free text."""
     settings = get_settings()
     configure_logging(settings.log_level)
+    configure_tracing()
 
     agent = build_agent(load_agent_config(agent_name), region_name=settings.aws_region, tools=tools)
     app = BedrockAgentCoreApp()
@@ -41,6 +43,9 @@ def create_app(
         if result.structured_output is None:
             logger.error("agent did not produce structured output")
             return {"error": "agent did not produce structured output"}
+        # DEBUG, not INFO - the result can contain full FSD/spec content (set
+        # LOG_LEVEL=DEBUG in .env to see it).
+        logger.debug("result: %s", result.structured_output.model_dump())
         logger.info("invocation succeeded")
         return {"result": result.structured_output.model_dump()}
 
