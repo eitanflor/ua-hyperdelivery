@@ -17,6 +17,170 @@ Template for new entries:
 
 ---
 
+## 2026-08-27 - Lambda glue for agent invocation and human-approval task tokens
+
+- **Status**: Accepted
+- **Context**: The state machine's Task states were `Pass` placeholders. Needed real
+  integrations for (1) invoking each of the four agents' AgentCore Runtime endpoints
+  (cross-region: state machine in ap-southeast-2, AgentCore Runtime in us-east-1) and (2)
+  pausing on human approval while persisting the callback task token onto the project's
+  DynamoDB item. Discovered along the way: CDK's `DynamoUpdateItem` does not support
+  `integration_pattern=WAIT_FOR_TASK_TOKEN` - it's silently ignored (verified against the
+  compiled aws-cdk-lib JS; DynamoDB Step Functions integrations are Request/Response only).
+- **Decision**: Added `src/orchestration/agent_invoker.py` (a Lambda, resolves the
+  AgentCore runtime ARN by name via `list_agent_runtimes` since it isn't known at CDK
+  synth/deploy time, then calls `invoke_agent_runtime`) as the `LambdaInvoke` Task for
+  Distill/Blueprint/Review/Showroom. Added `src/orchestration/persist_approval.py` (a
+  second Lambda) as a `LambdaInvoke` Task with `integration_pattern=WAIT_FOR_TASK_TOKEN`
+  for the two approval waits - it writes `task_token`/`station`/gsi1 pending-lookup
+  attributes and returns immediately, while the execution itself stays paused until the
+  console API calls `send_task_success`/`send_task_failure` (now wired into
+  `POST /projects/{id}/decisions`, replacing the earlier TODO stub; `POST /projects` now
+  also starts the execution). Both Lambdas get least-privilege IAM: `agent_invoker` is
+  scoped to `bedrock-agentcore:InvokeAgentRuntime` on `runtime/hyperdelivery_*` only;
+  `persist_approval` gets DynamoDB write on the project table only.
+- **Alternatives considered**: `DynamoUpdateItem` directly with `WAIT_FOR_TASK_TOKEN` -
+  not actually supported by the CDK construct/AWS service integration, would have deployed
+  successfully but never paused. A single combined Lambda for both agent invocation and
+  approval-persistence - rejected for clearer least-privilege IAM boundaries (one function
+  never needs the other's permissions).
+- **Consequences**: Both Lambdas still use an unbundled code asset (no real dependency
+  packaging - deferred like `ConsoleApiStack`'s Lambda, since deploy is blocked on IAM
+  regardless). Rejections currently fail the whole execution (`States.ALL` catch to a
+  `Fail` state) - no resubmit/retry loop; revisit if that's needed before Showroom's
+  iteration-loop work (Phase 3+) lands. Agent prompts are placeholders (`"Project {id}"`)
+  until Phase 3 memory/retrieval work supplies real artifact-grounded prompts.
+
+## 2026-08-27 - Decision-needed notifications come from persist_approval, not EventBridge
+
+- **Status**: Accepted
+- **Context**: Automated PR review of the above entry's changes flagged that the
+  `StateEnteredRule` EventBridge rule was named/intended to notify "who owes a decision"
+  per approval station, but its `event_pattern` only matched
+  `"Step Functions Execution Status Change"` - an execution-level event (RUNNING/
+  SUCCEEDED/FAILED/...), not a per-state-entry event. Investigated whether Step Functions
+  emits any native per-state EventBridge event (it does not - confirmed against AWS's own
+  docs; the reviewer's own suggested fix, `"Step Functions State Change"`, is not a real
+  detail-type either) so the rule as designed could never have driven the notification.
+- **Decision**: Publish the "decision needed" SNS notification directly from
+  `persist_approval.py` (the Lambda that runs at exactly the moment an approval wait
+  begins), granted `notifications_topic.grant_publish`. Renamed the EventBridge rule
+  construct `StateEnteredRule` -> `ExecutionStatusRule` to accurately describe its
+  remaining scope (execution-level status only, kept for future ops/observability use,
+  not per-station notifications).
+- **Alternatives considered**: Polling DynamoDB's pending-approval GSI on a schedule to
+  detect new waits - rejected as unnecessary latency/cost when the Lambda that creates the
+  pending state can just publish inline.
+- **Consequences**: Notification delivery is now coupled to `persist_approval`'s own
+  success - if it throws after the DynamoDB write but before the SNS publish, the wait is
+  still correctly persisted but no notification fires. Acceptable for now (the console can
+  still poll/list pending approvals); revisit with a dead-letter queue or at-least-once
+  retry if that gap matters in practice.
+
+## 2026-08-27 - PR-review fixes: decision-write ordering, terminal state, response guard
+
+- **Status**: Accepted
+- **Context**: The same automated PR review flagged three more issues in the Step
+  Functions glue: (1) `ProjectRepository.record_decision` wrote the DECISION audit item to
+  DynamoDB *before* checking whether the project existed, risking orphaned audit records
+  for unknown project IDs; (2) the domain model's station line (`core.domain.project`)
+  ends in a terminal `"done"` station, but the Step Functions definition ended at
+  `Showroom` with nothing ever writing `station="done"`; (3) `submit_decision` called
+  `_to_response(repo.get_project(project_id))` on a final re-fetch with no `None` guard,
+  risking an unhandled `AttributeError` if the project vanished between the two fetches.
+- **Decision**: (1) Reordered `record_decision` to fetch and validate the project first,
+  raising immediately if missing, before writing the Decision record. (2) Added a
+  `MarkDone` `DynamoUpdateItem` Task (plain Request/Response - not a wait, so no callback
+  pattern needed) after `Showroom` in the chain, setting `station="done"` and removing the
+  now-irrelevant `gsi1pk`/`gsi1sk` GSI attributes. (3) Added an explicit `None` check in
+  `submit_decision` that raises `HTTPException(500, ...)` instead of crashing.
+- **Alternatives considered**: None of these had a real alternative design - they're
+  correctness fixes, not tradeoffs.
+- **Consequences**: None beyond the fixes themselves. Two other review comments (hardcoded
+  AWS account ID in `scripts/iam/agentcore-trust-policy.json` and
+  `agentcore-execution-policy.json`) were deliberately left as-is: this is a genuine
+  single-account project and those are the actual files used for the real admin IAM grant
+  request, not a reusable public template - parameterizing them would add templating
+  complexity for no benefit here.
+
+## 2026-08-27 - One core service, two integration seams, for multi-interface support
+
+- **Status**: Accepted
+- **Context**: The console API will eventually need more than one client (web console UI,
+  a CLI, and possibly future integrations like a Slack/Teams bot), plus at least one
+  streaming/push use case (chatbot-style token streaming, approval notifications). Needed
+  a shape that adds new interfaces cheaply rather than growing bespoke backend logic per
+  client.
+- **Decision**: Keep exactly one place for business logic (`ProjectRepository`, and future
+  services like a `ChatService`) behind exactly two integration seams: (1) a
+  request/response seam (the HTTP API) for anything synchronous, and (2) a push/event
+  fan-out seam (the existing SNS/EventBridge notification topic, extended later with a
+  WebSocket API Gateway + connections table) for anything server-initiated. Added
+  `src/sdk/python/` (`HyperdeliveryClient`, mirroring `ua-ai-platform`'s `sdk/python`
+  convention) as the one client every interface (CLI, web UI, future integrations) should
+  depend on instead of hand-rolling HTTP calls.
+- **Alternatives considered**: Letting each interface (web UI, CLI) call the API directly
+  with its own request-building code - rejected because it duplicates auth/retry/schema
+  logic per client and drifts as the API evolves. A separate backend-for-frontend per
+  interface - rejected as unnecessary complexity until a real interface-specific need
+  (e.g. GraphQL for the web UI) actually appears.
+- **Consequences**: New interfaces should almost never require new backend surface - a
+  Slack bot, for instance, is just another SDK consumer plus an SNS/EventBridge
+  subscriber, not new business logic. The WebSocket connections table/broadcast Lambda
+  and a `ChatService` for streaming are still unbuilt - tracked as follow-up work, not
+  yet implemented.
+
+## 2026-08-27 - Console backend as a standalone FastAPI service, not another AgentCore Runtime
+
+- **Status**: Accepted
+- **Context**: Phase 2 needs a thin API for creating projects, reading their DynamoDB
+  state projection, and submitting approvals - none of which is agent inference, so it
+  doesn't belong behind the `/invocations` AgentCore Runtime contract the four agents use.
+- **Decision**: Added `src/api/` (FastAPI, mirroring `ua-ai-platform`'s `main.py`/
+  `routers/`/`schemas/` convention this repo forked from) as its own process, run via
+  `make dev-console` / `uv run uvicorn api.main:app`. State lives in a new
+  `ProjectRepository` (`src/infrastructure/repositories/`) wrapping the DynamoDB table
+  from the orchestration CDK stack, with domain rules (station order, transitions) in
+  `core/domain/project.py`. Table name/region are separate `Settings` fields
+  (`projects_table`, `orchestration_region`) from `aws_region`, matching the existing
+  intentional us-east-1 (Bedrock)/ap-southeast-2 (orchestration infra) split.
+- **Alternatives considered**: Adding these endpoints as a fifth `agent_runtime/` app -
+  rejected, since AgentCore Runtime's contract (`/invocations`, `/ping`) is
+  agent-inference-shaped and would force CRUD/query traffic through an interface that
+  doesn't fit it. Using `moto` to mock DynamoDB in tests - rejected in favor of this
+  repo's existing convention (see `test_s3_storage.py`) of a small hand-written stub
+  client, avoiding a new dev dependency for a handful of tests.
+- **Consequences**: The approval endpoint (`POST /projects/{id}/decisions`) is currently
+  a stub for the Step Functions callback - it advances the DynamoDB station but does not
+  yet call `SendTaskSuccess`/`SendTaskFailure`, since no state machine is deployed (see
+  `TODO(ADVA-3015)` in `api/routers/projects.py`). Must be wired up once the CDK stack
+  actually deploys. The manually-created `hyperdelivery-projects` table (see prior entry)
+  still needs CDK reconciliation before this and the CDK stack can coexist safely.
+
+## 2026-08-27 - Step Functions + DynamoDB for Phase 2 orchestration
+
+- **Status**: Accepted
+- **Context**: Phase 2 needs a per-project state machine that sequences the four agents,
+  survives a multi-day human approval wait, and keeps an audit trail (FSD/prompt/model
+  version, signer) per decision - none of which exists yet.
+- **Decision**: Use AWS Step Functions **Standard** workflows (not Express - supports
+  executions up to 1 year) as the state machine, with the `waitForTaskToken` callback
+  pattern for the human-hold/approval steps. DynamoDB holds the queryable project
+  projection (current station, artifact versions, pending task tokens) since Step
+  Functions execution history alone isn't efficient to query for "where is project X."
+  EventBridge rules on Step Functions state-entered events drive notifications (who owes
+  a decision) via SNS/SES. Each task state invokes the existing per-agent AgentCore
+  Runtime `/invocations` endpoint - no change to the agents themselves.
+- **Alternatives considered**: A custom Lambda/DynamoDB-only state machine - rejected
+  because it would reinvent callback-token bookkeeping, retries, and execution history
+  that Step Functions provides natively, for a workflow that genuinely needs multi-day
+  durable waits.
+- **Consequences**: Ties orchestration to a proprietary AWS service (harder to test
+  locally, per-transition cost) in exchange for not hand-rolling durable human-in-the-loop
+  waits and audit history. The project console (Phase 2 front end) becomes a thin client
+  over the DynamoDB projection + an approval endpoint that calls `SendTaskSuccess`/
+  `SendTaskFailure` - no orchestration logic in the frontend.
+
 ## 2026-08-26 - No AgentCore Memory/Gateway/Identity yet
 
 - **Status**: Accepted
