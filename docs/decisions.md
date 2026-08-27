@@ -17,6 +17,33 @@ Template for new entries:
 
 ---
 
+## 2026-08-27 - One core service, two integration seams, for multi-interface support
+
+- **Status**: Accepted
+- **Context**: The console API will eventually need more than one client (web console UI,
+  a CLI, and possibly future integrations like a Slack/Teams bot), plus at least one
+  streaming/push use case (chatbot-style token streaming, approval notifications). Needed
+  a shape that adds new interfaces cheaply rather than growing bespoke backend logic per
+  client.
+- **Decision**: Keep exactly one place for business logic (`ProjectRepository`, and future
+  services like a `ChatService`) behind exactly two integration seams: (1) a
+  request/response seam (the HTTP API) for anything synchronous, and (2) a push/event
+  fan-out seam (the existing SNS/EventBridge notification topic, extended later with a
+  WebSocket API Gateway + connections table) for anything server-initiated. Added
+  `src/sdk/python/` (`HyperdeliveryClient`, mirroring `ua-ai-platform`'s `sdk/python`
+  convention) as the one client every interface (CLI, web UI, future integrations) should
+  depend on instead of hand-rolling HTTP calls.
+- **Alternatives considered**: Letting each interface (web UI, CLI) call the API directly
+  with its own request-building code - rejected because it duplicates auth/retry/schema
+  logic per client and drifts as the API evolves. A separate backend-for-frontend per
+  interface - rejected as unnecessary complexity until a real interface-specific need
+  (e.g. GraphQL for the web UI) actually appears.
+- **Consequences**: New interfaces should almost never require new backend surface - a
+  Slack bot, for instance, is just another SDK consumer plus an SNS/EventBridge
+  subscriber, not new business logic. The WebSocket connections table/broadcast Lambda
+  and a `ChatService` for streaming are still unbuilt - tracked as follow-up work, not
+  yet implemented.
+
 ## 2026-08-27 - Console backend as a standalone FastAPI service, not another AgentCore Runtime
 
 - **Status**: Accepted
