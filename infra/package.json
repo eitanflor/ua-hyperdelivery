@@ -1,0 +1,12 @@
+{
+  "name": "hyperdelivery-infra",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AWS CDK CLI toolchain for the hyperdelivery-infra Python app",
+  "devDependencies": {
+    "aws-cdk": "^2.150.0"
+  },
+  "scripts": {
+    "cdk": "cdk"
+  }
+}
