@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""CDK entrypoint: synthesizes the Hyperdelivery orchestration and console API stacks."""
+
 import os
 
 import aws_cdk as cdk

@@ -1,9 +1,15 @@
+from collections.abc import Callable
+from typing import Any
+
 import httpx
+import pytest
 
 from sdk.python.client import HyperdeliveryClient
 
 
-def _client_with_handler(handler) -> HyperdeliveryClient:
+def _client_with_handler(
+    handler: Callable[[httpx.Request], httpx.Response],
+) -> HyperdeliveryClient:
     client = HyperdeliveryClient(base_url="http://console.test")
     client._client = httpx.Client(
         base_url="http://console.test", transport=httpx.MockTransport(handler)
@@ -11,8 +17,8 @@ def _client_with_handler(handler) -> HyperdeliveryClient:
     return client
 
 
-def test_create_project_posts_name_and_returns_json():
-    captured = {}
+def test_create_project_posts_name_and_returns_json() -> None:
+    captured: dict[str, Any] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         captured["method"] = request.method
@@ -29,7 +35,7 @@ def test_create_project_posts_name_and_returns_json():
     assert result == {"id": "p1", "name": "My Project", "station": "distill"}
 
 
-def test_get_project_returns_json():
+def test_get_project_returns_json() -> None:
     client = _client_with_handler(
         lambda request: httpx.Response(200, json={"id": "p1", "station": "distill"})
     )
@@ -37,8 +43,8 @@ def test_get_project_returns_json():
     assert client.get_project("p1") == {"id": "p1", "station": "distill"}
 
 
-def test_list_pending_hits_correct_path():
-    captured = {}
+def test_list_pending_hits_correct_path() -> None:
+    captured: dict[str, Any] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         captured["url"] = str(request.url)
@@ -52,8 +58,8 @@ def test_list_pending_hits_correct_path():
     assert result == [{"id": "p1"}]
 
 
-def test_submit_decision_posts_payload():
-    captured = {}
+def test_submit_decision_posts_payload() -> None:
+    captured: dict[str, Any] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         captured["body"] = request.read()
@@ -68,12 +74,10 @@ def test_submit_decision_posts_payload():
     assert result == {"id": "p1", "station": "blueprint"}
 
 
-def test_raises_for_error_response():
+def test_raises_for_error_response() -> None:
     client = _client_with_handler(lambda request: httpx.Response(404, json={"detail": "nope"}))
 
-    try:
+    with pytest.raises(httpx.HTTPStatusError) as excinfo:
         client.get_project("missing")
-    except httpx.HTTPStatusError as exc:
-        assert exc.response.status_code == 404
-    else:
-        raise AssertionError("expected HTTPStatusError")
+
+    assert excinfo.value.response.status_code == 404

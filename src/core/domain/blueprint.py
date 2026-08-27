@@ -1,7 +1,11 @@
+"""G2 artifact: the implementation plan Blueprint derives from an approved spec."""
+
 from pydantic import BaseModel
 
 
 class UnitOfWork(BaseModel):
+    """One task sized for a single coding-agent run, with its upstream dependencies."""
+
     id: str
     title: str
     description: str

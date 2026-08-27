@@ -1,7 +1,11 @@
+"""The declarative contract every agent's YAML file is validated against."""
+
 from pydantic import BaseModel
 
 
 class AgentConfig(BaseModel):
+    """One agent's definition, loaded from `config/agents/{name}.yaml`."""
+
     name: str
     model_id: str
     system_prompt: str

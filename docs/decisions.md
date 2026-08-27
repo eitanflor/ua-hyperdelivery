@@ -17,6 +17,114 @@ Template for new entries:
 
 ---
 
+## 2026-08-27 - One executable gate (`scripts/precheck.sh`) shared by developers and CI
+
+- **Status**: Accepted
+- **Context**: CI ran `ruff check` and `pytest` as separate workflow steps, and never ran
+  the `infra/` tests at all. Anything added to CI would have to be remembered separately by
+  every developer, and the two definitions of "green" would drift.
+- **Decision**: `scripts/precheck.sh` is the only definition of green: format, lint, types,
+  tests, infra, secrets, printing a PASS/FAIL table and exiting non-zero on any failure.
+  `make check` runs it and CI runs the same script with `--ci`. `--fix` applies the
+  mechanical fixes first.
+- **Alternatives considered**: Keeping discrete CI steps for a nicer GitHub UI - rejected
+  because per-step annotations are worth less than the guarantee that local and CI agree.
+  Making pre-commit the gate - rejected because type checking and the full test suite are
+  too slow for a commit hook; pre-commit stays for fast mechanical checks only.
+- **Consequences**: Adding a check means editing one file and it applies everywhere. CI
+  output is a single job, so a failure needs the log read rather than the summary. Revisit
+  if the suite gets slow enough to want parallel CI jobs.
+
+## 2026-08-27 - Aggressive ruff plus pyright strict, with relaxations named at source
+
+- **Status**: Accepted
+- **Context**: Setting the engineering bar for a repo that will be largely written by
+  coding agents. Lint was five rule families with no formatter enforcement and no type
+  checker, so "good code" was a matter of reviewer attention.
+- **Decision**: Ruff's full practical rule set including `D` (docstrings) and `ANN`
+  (annotations), `ruff format` enforced, and pyright in strict mode. Where a third-party
+  library's own typing is the blocker, the relaxation is a documented setting in
+  `pyproject.toml` naming the upstream cause, rather than scattered `# type: ignore`.
+  Three such causes are recorded: bedrock-agentcore types `.run`/`.entrypoint` loosely,
+  strands' `@tool` declares an unparameterized `dict`, and boto3-stubs emits an overload per
+  AWS service of which only the installed extras resolve. `infra/` additionally downgrades
+  `reportArgumentType` because aws-cdk-lib's jsii stubs are self-inconsistent - its concrete
+  `Function` does not satisfy its own `IFunction` protocol.
+- **Alternatives considered**: A moderate rule set without `D`/`ANN` - rejected because
+  docstrings are how an agent learns the codebase's intent, so they need to be enforced, not
+  encouraged. mypy instead of pyright - pyright matches what Pylance already runs in the
+  editor, so developers see the same errors as CI. `flake8-type-checking` (`TC`) - rejected
+  outright: pydantic, FastAPI and strands all resolve annotations at runtime, so hoisting
+  imports into `TYPE_CHECKING` blocks would break schema generation in ways tests would not
+  reliably catch. Typing-only imports are placed in such blocks by hand instead.
+- **Consequences**: New code has a high, machine-checked floor. The relaxations are visible
+  in one file and can be removed as upstreams improve, rather than being invisible debt.
+
+## 2026-08-27 - Documentation review is a build step, not a convention
+
+- **Status**: Accepted
+- **Context**: The README claimed the repo had "no control plane (Step Functions, gate
+  manager)" long after Step Functions, the console API and the SDK had all shipped, and
+  `.env.example` was missing four `Settings` fields. Asking people to remember had already
+  failed once.
+- **Decision**: Three layers. `tests/unit/test_docs_consistency.py` fails the build when
+  `.env.example` drifts from `Settings`, or when an agent lacks a config file or a runtime
+  entrypoint. The Definition of Done in `AGENTS.md` makes the review an explicit final step
+  with a checklist of surfaces. The `sync-docs` skill executes that checklist for an agent.
+- **Alternatives considered**: Generating `.env.example` from `Settings` - rejected because
+  the prose explaining *when* each variable is needed is the valuable part and cannot be
+  generated. A PR-template checkbox - rejected as unenforceable; a checkbox is ticked, a
+  test is not.
+- **Consequences**: The mechanical half of doc drift is now impossible to merge. The
+  judgment half (is the README Status section still true?) still depends on the reviewer,
+  but it is at least on a list. Extend the consistency test whenever a new mechanical
+  invariant appears.
+
+## 2026-08-27 - `AGENTS.md` as the single source of truth for AI tool instructions
+
+- **Status**: Accepted
+- **Context**: The team uses the GitHub Copilot coding agent, and may add other tools. Each
+  tool wants its own instruction file, which invites four copies of the same conventions
+  drifting apart.
+- **Decision**: `AGENTS.md` at the root holds all conventions. `.github/copilot-instructions.md`
+  is a thin pointer plus Copilot-specific workflow notes. `.github/instructions/*.instructions.md`
+  add only path-scoped rules via `applyTo` frontmatter, and link back rather than restating.
+- **Alternatives considered**: Copilot-instructions as the source of truth - rejected
+  because it is tool-specific and invisible to humans reading the repo. Symlinking
+  `CLAUDE.md`/`AGENTS.md` - deferred until a second tool is actually in use.
+- **Consequences**: One file to update. Adding a tool means adding a pointer file, not
+  duplicating conventions.
+
+## 2026-08-27 - Flat `src/` layout retained rather than an installable package
+
+- **Status**: Accepted
+- **Context**: `src/` holds flat top-level packages (`config`, `core`, `tools`, ...) that
+  only import via pytest's `pythonpath`, with `[tool.uv] package = false`. Package names
+  like `config` and `tools` could collide with PyPI distributions, `py.typed` cannot apply,
+  and `ui/` cannot import from `src/` because `streamlit run` does not extend `sys.path`.
+- **Decision**: Keep the flat layout for now. Document the convention and its consequences
+  in `AGENTS.md` rather than adding a `py.typed` marker that would do nothing while nothing
+  is distributed.
+- **Alternatives considered**: Refactoring to `src/hyperdelivery/` as a real distribution -
+  correct long-term, but it touches every import, the Dockerfile and the CDK handler paths,
+  and was judged too large to combine with the standards work.
+- **Consequences**: The Streamlit harness duplicates a small amount of agent config, and
+  Lambda dependency bundling (TODO ADVA-3015) stays awkward. Revisit when that bundling is
+  tackled - the two changes belong together.
+
+## 2026-08-27 - Coverage reported with a deliberately low floor
+
+- **Status**: Accepted
+- **Context**: Coverage was not measured at all. Setting a high bar immediately would either
+  block the PR that introduced it or invite tests written to satisfy the number.
+- **Decision**: Report coverage on every run and fail CI below 10%. Actual coverage is
+  around 90%; the floor exists to catch a collapse, not to describe the target.
+- **Alternatives considered**: 80% or 90% enforced immediately - rejected for now because
+  the boto3-heavy seams would push people toward mock-shaped tests. Reporting with no
+  threshold - rejected because nothing then stops coverage silently going to zero.
+- **Consequences**: The number is honest rather than gamed. Ratchet the floor upward
+  deliberately as the suite matures; it is one line in `pyproject.toml`.
+
 ## 2026-08-27 - Lambda glue for agent invocation and human-approval task tokens
 
 - **Status**: Accepted

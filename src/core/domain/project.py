@@ -1,22 +1,18 @@
+"""Where a project sits on the line, and the audit trail of how it got there."""
+
 from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel
 
-# Station order for the Distill -> Blueprint -> Review -> Showroom line. Mirrors the
-# state machine definition in infra/stacks/orchestration_stack.py.
-_LINE = [
-    "distill",
-    "blueprint_approval",
-    "blueprint",
-    "review_approval",
-    "review",
-    "showroom",
-    "done",
-]
-
 
 class Station(StrEnum):
+    """The Distill -> Blueprint -> Review -> Showroom line, in order.
+
+    Declaration order *is* the line order - `next_station` walks it. Mirrors the state
+    machine definition in infra/stacks/orchestration_stack.py; keep both in sync.
+    """
+
     DISTILL = "distill"
     BLUEPRINT_APPROVAL = "blueprint_approval"
     BLUEPRINT = "blueprint"
@@ -28,15 +24,21 @@ class Station(StrEnum):
 
 APPROVAL_STATIONS = {Station.BLUEPRINT_APPROVAL, Station.REVIEW_APPROVAL}
 
+_LINE = list(Station)
+
 
 def next_station(current: Station) -> Station:
-    idx = _LINE.index(current.value)
-    return Station(_LINE[idx + 1]) if idx + 1 < len(_LINE) else current
+    """Return the station after `current`, or `current` itself at the end of the line."""
+    idx = _LINE.index(current)
+    return _LINE[idx + 1] if idx + 1 < len(_LINE) else current
 
 
 class Project(BaseModel):
-    """Current-state projection of a project's position on the line. Persisted as the
-    'STATE' record in the single-table DynamoDB schema (see docs/decisions.md)."""
+    """Current-state projection of a project's position on the line.
+
+    Persisted as the 'STATE' record in the single-table DynamoDB schema (see
+    docs/decisions.md).
+    """
 
     id: str
     name: str
@@ -58,4 +60,5 @@ class Decision(BaseModel):
 
 
 def utcnow() -> datetime:
+    """Timezone-aware UTC now - the only clock this codebase reads."""
     return datetime.now(UTC)

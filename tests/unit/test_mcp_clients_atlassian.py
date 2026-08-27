@@ -1,7 +1,7 @@
 from mcp_clients import atlassian
 
 
-def test_confluence_env_strips_trailing_slash_and_adds_wiki_suffix():
+def test_confluence_env_strips_trailing_slash_and_adds_wiki_suffix() -> None:
     env = atlassian.confluence_env("https://ua.atlassian.net/", "e@ua.com", "tok")
 
     assert env == {
@@ -12,7 +12,7 @@ def test_confluence_env_strips_trailing_slash_and_adds_wiki_suffix():
     }
 
 
-def test_jira_env_strips_trailing_slash():
+def test_jira_env_strips_trailing_slash() -> None:
     env = atlassian.jira_env("https://ua.atlassian.net/", "e@ua.com", "tok")
 
     assert env == {
@@ -23,13 +23,13 @@ def test_jira_env_strips_trailing_slash():
     }
 
 
-def test_confluence_client_returns_mcp_client():
+def test_confluence_client_returns_mcp_client() -> None:
     client = atlassian.confluence_client("https://ua.atlassian.net", "e@ua.com", "tok", [])
 
     assert isinstance(client, atlassian.MCPClient)
 
 
-def test_jira_client_returns_mcp_client():
+def test_jira_client_returns_mcp_client() -> None:
     client = atlassian.jira_client("https://ua.atlassian.net", "e@ua.com", "tok", [])
 
     assert isinstance(client, atlassian.MCPClient)

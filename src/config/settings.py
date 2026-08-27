@@ -1,3 +1,5 @@
+"""Environment-backed settings, shared by the agents, the console API and the Lambdas."""
+
 from functools import lru_cache
 from pathlib import Path
 
@@ -8,6 +10,12 @@ _ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
+    """Every environment variable this codebase reads, with its default.
+
+    Keep in lockstep with `.env.example` - `tests/unit/test_docs_consistency.py` fails
+    the build if a field here isn't documented there.
+    """
+
     # extra="ignore": .env is shared with the Makefile (e.g. AWS_PROFILE, PORT) for vars
     # that aren't declared as fields below.
     model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
@@ -32,4 +40,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return the process-wide settings, read from the environment once.
+
+    Cached, so tests that manipulate the environment must call `get_settings.cache_clear()`
+    - `tests/conftest.py` does this automatically.
+    """
     return Settings()

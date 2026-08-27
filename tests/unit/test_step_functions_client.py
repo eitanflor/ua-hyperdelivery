@@ -1,17 +1,22 @@
+from typing import TYPE_CHECKING, Any, cast
+
 from infrastructure.messaging.step_functions import StateMachineClient
+
+if TYPE_CHECKING:
+    from mypy_boto3_stepfunctions.client import SFNClient
 
 
 class _FakeSfnClient:
-    def __init__(self):
-        self.calls: list[tuple[str, dict]] = []
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict[str, Any]]] = []
 
-    def start_execution(self, **kwargs):
+    def start_execution(self, **kwargs: Any) -> None:
         self.calls.append(("start_execution", kwargs))
 
-    def send_task_success(self, **kwargs):
+    def send_task_success(self, **kwargs: Any) -> None:
         self.calls.append(("send_task_success", kwargs))
 
-    def send_task_failure(self, **kwargs):
+    def send_task_failure(self, **kwargs: Any) -> None:
         self.calls.append(("send_task_failure", kwargs))
 
 
@@ -20,11 +25,11 @@ def _client() -> tuple[StateMachineClient, _FakeSfnClient]:
     return StateMachineClient(
         state_machine_arn="arn:aws:states:ap-southeast-2:123:stateMachine:hd",
         region="ap-southeast-2",
-        sfn_client=fake,
+        sfn_client=cast("SFNClient", fake),
     ), fake
 
 
-def test_start_execution_uses_project_id_as_execution_name():
+def test_start_execution_uses_project_id_as_execution_name() -> None:
     client, fake = _client()
 
     client.start_execution("p1")
@@ -36,7 +41,7 @@ def test_start_execution_uses_project_id_as_execution_name():
     assert kwargs["input"] == '{"project_id": "p1"}'
 
 
-def test_send_task_success_serializes_output():
+def test_send_task_success_serializes_output() -> None:
     client, fake = _client()
 
     client.send_task_success("token123", {"approved": True})
@@ -46,7 +51,7 @@ def test_send_task_success_serializes_output():
     assert kwargs == {"taskToken": "token123", "output": '{"approved": true}'}
 
 
-def test_send_task_failure_passes_error():
+def test_send_task_failure_passes_error() -> None:
     client, fake = _client()
 
     client.send_task_failure("token123", error="Rejected")

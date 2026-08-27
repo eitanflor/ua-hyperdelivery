@@ -1,3 +1,5 @@
+"""Shared composition root: turns declarative config into an AgentCore Runtime app."""
+
 import logging
 from typing import Any, TypeVar
 
@@ -16,8 +18,11 @@ OutputT = TypeVar("OutputT", bound=BaseModel)
 def create_app(
     agent_name: str, output_model: type[OutputT], tools: list[Any] | None = None
 ) -> BedrockAgentCoreApp:
-    """Wires a declaratively-configured Strands agent into the AgentCore Runtime HTTP
-    contract, validating its reply against `output_model` instead of returning free text."""
+    """Wire a declaratively-configured Strands agent into the AgentCore Runtime contract.
+
+    The agent's reply is validated against `output_model` instead of being returned as
+    free text, so every station hands the next one a checked artifact.
+    """
     settings = get_settings()
     configure_logging(settings.log_level)
     configure_tracing()
@@ -27,7 +32,7 @@ def create_app(
     logger = logging.getLogger(agent_name)
 
     @app.entrypoint
-    def agent_invocation(payload: dict, context) -> dict:
+    def agent_invocation(payload: dict[str, Any], context: object) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]  # registered by the decorator
         """AgentCore Runtime HTTP contract: JSON payload/context in, JSON-serializable dict out."""
         session_id_var.set(getattr(context, "session_id", "-"))
         prompt = payload.get("prompt", "")

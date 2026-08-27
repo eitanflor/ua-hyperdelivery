@@ -1,12 +1,14 @@
 import json
+from typing import Any
 
 import pytest
 
+from fakes import FakeBotoClients
 from orchestration.agent_invoker import AgentInvoker
 
 
 class _StreamingBody:
-    def __init__(self, data: bytes):
+    def __init__(self, data: bytes) -> None:
         self._data = data
 
     def read(self) -> bytes:
@@ -14,49 +16,46 @@ class _StreamingBody:
 
 
 class _FakeControlClient:
-    def __init__(self, runtimes: list[dict]):
+    def __init__(self, runtimes: list[dict[str, Any]]) -> None:
         self._runtimes = runtimes
 
-    def list_agent_runtimes(self):
+    def list_agent_runtimes(self) -> dict[str, Any]:
         return {"agentRuntimes": self._runtimes}
 
 
 class _FakeDataClient:
-    def __init__(self, response_body: dict):
+    def __init__(self, response_body: dict[str, Any]) -> None:
         self._response_body = response_body
-        self.last_call: dict | None = None
+        self.last_call: dict[str, Any] = {}
 
-    def invoke_agent_runtime(self, **kwargs):
+    def invoke_agent_runtime(self, **kwargs: Any) -> dict[str, Any]:
         self.last_call = kwargs
         return {"response": _StreamingBody(json.dumps(self._response_body).encode())}
 
 
-class _FakeClients:
-    def __init__(self, control, data):
-        self._control = control
-        self._data = data
-
-    def client(self, service_name: str, region_name: str):
-        return {"bedrock-agentcore-control": self._control, "bedrock-agentcore": self._data}[
-            service_name
-        ]
+def _invoker(control: _FakeControlClient, data: _FakeDataClient) -> AgentInvoker:
+    return AgentInvoker(
+        region="us-east-1",
+        runtime_prefix="hyperdelivery_",
+        clients=FakeBotoClients(
+            clients={"bedrock-agentcore-control": control, "bedrock-agentcore": data}
+        ),
+    )
 
 
 @pytest.fixture
-def runtimes() -> list[dict]:
+def runtimes() -> list[dict[str, Any]]:
     return [
         {"agentRuntimeName": "hyperdelivery_distill", "agentRuntimeArn": "arn:distill"},
         {"agentRuntimeName": "hyperdelivery_blueprint", "agentRuntimeArn": "arn:blueprint"},
     ]
 
 
-def test_invoke_resolves_runtime_by_name_and_returns_result(runtimes):
+def test_invoke_resolves_runtime_by_name_and_returns_result(
+    runtimes: list[dict[str, Any]],
+) -> None:
     data_client = _FakeDataClient({"result": {"fsd": "..."}})
-    invoker = AgentInvoker(
-        region="us-east-1",
-        runtime_prefix="hyperdelivery_",
-        clients=_FakeClients(_FakeControlClient(runtimes), data_client),
-    )
+    invoker = _invoker(_FakeControlClient(runtimes), data_client)
 
     result = invoker.invoke("distill", "p1", "do the thing")
 
@@ -65,24 +64,15 @@ def test_invoke_resolves_runtime_by_name_and_returns_result(runtimes):
     assert data_client.last_call["runtimeSessionId"] == "p1".ljust(33, "0")
 
 
-def test_invoke_raises_when_agent_returns_error(runtimes):
-    data_client = _FakeDataClient({"error": "boom"})
-    invoker = AgentInvoker(
-        region="us-east-1",
-        runtime_prefix="hyperdelivery_",
-        clients=_FakeClients(_FakeControlClient(runtimes), data_client),
-    )
+def test_invoke_raises_when_agent_returns_error(runtimes: list[dict[str, Any]]) -> None:
+    invoker = _invoker(_FakeControlClient(runtimes), _FakeDataClient({"error": "boom"}))
 
     with pytest.raises(RuntimeError, match="boom"):
         invoker.invoke("distill", "p1", "do the thing")
 
 
-def test_invoke_raises_when_runtime_not_found(runtimes):
-    invoker = AgentInvoker(
-        region="us-east-1",
-        runtime_prefix="hyperdelivery_",
-        clients=_FakeClients(_FakeControlClient(runtimes), _FakeDataClient({})),
-    )
+def test_invoke_raises_when_runtime_not_found(runtimes: list[dict[str, Any]]) -> None:
+    invoker = _invoker(_FakeControlClient(runtimes), _FakeDataClient({}))
 
     with pytest.raises(ValueError, match="hyperdelivery_review"):
         invoker.invoke("review", "p1", "do the thing")

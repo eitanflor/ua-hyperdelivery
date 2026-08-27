@@ -1,3 +1,9 @@
+"""Per-agent Atlassian tool policy: which MCP tools each station is allowed to call.
+
+The generic clients live in `mcp_clients/atlassian.py`; this module is the least-privilege
+gate on top of them (see docs/architecture.md).
+"""
+
 import re
 
 from strands.tools.mcp import MCPClient
@@ -9,7 +15,7 @@ from mcp_clients.atlassian import confluence_client, jira_client
 _READ_ONLY_CONFLUENCE_TOOLS = re.compile(r"^confluence_(get|search|list|check|download)")
 
 # Issue lifecycle only - no sprint/board/service-desk/version/link/watcher/worklog admin tools.
-_JIRA_ISSUE_TOOLS = [
+_JIRA_ISSUE_TOOLS: list[str | re.Pattern[str]] = [
     "jira_search",
     "jira_get_issue",
     "jira_get_transitions",
@@ -21,9 +27,12 @@ _JIRA_ISSUE_TOOLS = [
 
 
 def confluence_mcp_client() -> MCPClient | None:
-    """Confluence reached via the community `mcp-atlassian` MCP server (stdio, API-token
-    auth), so it's fronted the same way Jira/GitHub/Snowflake connectors will be. Returns
-    None when ATLASSIAN_BASE_URL/EMAIL/API_TOKEN are not configured."""
+    """Read-only Confluence client for Distill, or None when unconfigured.
+
+    Reached via the community `mcp-atlassian` MCP server (stdio, API-token auth), so it's
+    fronted the same way Jira/GitHub/Snowflake connectors will be. Returns None when
+    ATLASSIAN_BASE_URL/EMAIL/API_TOKEN are not configured.
+    """
     settings = get_settings()
     if not (
         settings.atlassian_base_url and settings.atlassian_email and settings.atlassian_api_token
@@ -39,10 +48,13 @@ def confluence_mcp_client() -> MCPClient | None:
 
 
 def jira_mcp_client() -> MCPClient | None:
-    """Jira issue lifecycle (find, create, comment, transition) for the coding agent to
-    update tickets after finishing work - a separate scoped instance from Confluence's
-    read-only client, per the least-privilege split (see /memories/repo/mcp-architecture.md).
-    Returns None when ATLASSIAN_BASE_URL/EMAIL/API_TOKEN are not configured."""
+    """Jira issue-lifecycle client for Blueprint, or None when unconfigured.
+
+    Covers find, create, comment and transition so the coding agent can update tickets
+    after finishing work. A separate scoped instance from Confluence's read-only client,
+    per the least-privilege split in docs/architecture.md. Returns None when
+    ATLASSIAN_BASE_URL/EMAIL/API_TOKEN are not configured.
+    """
     settings = get_settings()
     if not (
         settings.atlassian_base_url and settings.atlassian_email and settings.atlassian_api_token

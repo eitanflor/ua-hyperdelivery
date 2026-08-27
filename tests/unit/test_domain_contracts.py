@@ -7,9 +7,9 @@ from core.domain.showroom import DemoDataSeed, DemoPackage, TalkTrackSection
 from core.domain.spec import CompletenessScore, StructuredSpec
 
 
-def test_structured_spec_requires_completeness_score():
+def test_structured_spec_requires_completeness_score() -> None:
     with pytest.raises(ValidationError):
-        StructuredSpec(
+        StructuredSpec(  # pyright: ignore[reportCallIssue]  # omission is the assertion
             title="t",
             requirements=[],
             gate_criteria=[],
@@ -18,7 +18,7 @@ def test_structured_spec_requires_completeness_score():
         )
 
 
-def test_structured_spec_accepts_minimal_valid_payload():
+def test_structured_spec_accepts_minimal_valid_payload() -> None:
     spec = StructuredSpec(
         title="t",
         requirements=[],
@@ -31,7 +31,7 @@ def test_structured_spec_accepts_minimal_valid_payload():
     assert spec.completeness.score == 0.5
 
 
-def test_blueprint_accepts_units_of_work_with_dependencies():
+def test_blueprint_accepts_units_of_work_with_dependencies() -> None:
     blueprint = Blueprint(
         title="t",
         architecture_summary="s",
@@ -44,7 +44,7 @@ def test_blueprint_accepts_units_of_work_with_dependencies():
     assert blueprint.units_of_work[1].depends_on == ["u1"]
 
 
-def test_review_report_accepts_finding_without_requirement_id():
+def test_review_report_accepts_finding_without_requirement_id() -> None:
     report = ReviewReport(
         title="t",
         findings=[Finding(id="f1", severity="minor", description="d")],
@@ -54,7 +54,7 @@ def test_review_report_accepts_finding_without_requirement_id():
     assert report.findings[0].requirement_id is None
 
 
-def test_demo_package_accepts_talk_track_and_demo_data():
+def test_demo_package_accepts_talk_track_and_demo_data() -> None:
     package = DemoPackage(
         title="t",
         summary="s",

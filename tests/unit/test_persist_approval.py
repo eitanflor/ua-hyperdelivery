@@ -1,53 +1,22 @@
+from fakes import FakeBotoClients, FakeDynamoResource, FakeSnsClient, FakeTable
 from orchestration.persist_approval import ApprovalPersister
 
 
-class _FakeTable:
-    def __init__(self):
-        self.update_calls: list[dict] = []
-
-    def update_item(self, **kwargs):
-        self.update_calls.append(kwargs)
-
-
-class _FakeDynamoResource:
-    def __init__(self, table: _FakeTable):
-        self._table = table
-
-    def Table(self, name: str):
-        return self._table
-
-
-class _FakeSnsClient:
-    def __init__(self):
-        self.publish_calls: list[dict] = []
-
-    def publish(self, **kwargs):
-        self.publish_calls.append(kwargs)
-
-
-class _FakeClients:
-    def __init__(self, table: _FakeTable, sns: _FakeSnsClient):
-        self._table = table
-        self._sns = sns
-
-    def resource(self, service_name: str, region_name: str):
-        assert service_name == "dynamodb"
-        return _FakeDynamoResource(self._table)
-
-    def client(self, service_name: str, region_name: str):
-        assert service_name == "sns"
-        return self._sns
-
-
-def test_persist_updates_dynamodb_with_token_and_pending_gsi():
-    table = _FakeTable()
-    sns = _FakeSnsClient()
-    persister = ApprovalPersister(
+def _persister(table: FakeTable, sns: FakeSnsClient) -> ApprovalPersister:
+    return ApprovalPersister(
         region="ap-southeast-2",
         projects_table="projects",
         notifications_topic_arn="arn:aws:sns:ap-southeast-2:123456789012:topic",
-        clients=_FakeClients(table, sns),
+        clients=FakeBotoClients(
+            clients={"sns": sns}, resources={"dynamodb": FakeDynamoResource(table)}
+        ),
     )
+
+
+def test_persist_updates_dynamodb_with_token_and_pending_gsi() -> None:
+    table = FakeTable()
+    sns = FakeSnsClient()
+    persister = _persister(table, sns)
 
     result = persister.persist("proj-1", "blueprint_approval", "token-abc")
 
@@ -63,15 +32,10 @@ def test_persist_updates_dynamodb_with_token_and_pending_gsi():
     }
 
 
-def test_persist_publishes_a_decision_needed_notification():
-    table = _FakeTable()
-    sns = _FakeSnsClient()
-    persister = ApprovalPersister(
-        region="ap-southeast-2",
-        projects_table="projects",
-        notifications_topic_arn="arn:aws:sns:ap-southeast-2:123456789012:topic",
-        clients=_FakeClients(table, sns),
-    )
+def test_persist_publishes_a_decision_needed_notification() -> None:
+    table = FakeTable()
+    sns = FakeSnsClient()
+    persister = _persister(table, sns)
 
     persister.persist("proj-1", "review_approval", "token-xyz")
 

@@ -48,9 +48,62 @@ flowchart LR
     review -.->|"human clears gate"| showroom
 ```
 
-No shared orchestrator, agent registry, or Step Functions control plane exists yet -
-Strands owns each agent's own tool-use loop, and gate-to-gate progression is a human
-action. See [docs/decisions.md](./decisions.md) for why.
+Strands owns each agent's own tool-use loop; there is no shared agent registry.
+
+## The control plane (Phase 2 - scaffolded, not deployed)
+
+Alongside the agents, a control plane sequences the line and holds it at each human
+approval. It is written and tested but not yet deployed: that is blocked on IAM, and the
+Lambda code assets still have no dependency bundling (TODO ADVA-3015). Until
+`STATE_MACHINE_ARN` is set, the console API falls back to DynamoDB-only writes with no
+execution to start or resume.
+
+Note the deliberate region split: the state machine and its data live in `ap-southeast-2`,
+while Bedrock and AgentCore Runtime are in `us-east-1`. `orchestration/agent_invoker.py`
+bridges the two.
+
+```mermaid
+flowchart LR
+    human["Reviewer / developer"]
+    ui["Streamlit / future console"]
+
+    subgraph api["Console API (FastAPI + Mangum, behind HTTP API)"]
+        routes["api/routers/projects.py"]
+        repo["infrastructure/repositories/\nProjectRepository"]
+        sfnclient["infrastructure/messaging/\nStateMachineClient"]
+    end
+
+    subgraph orch["Step Functions (ap-southeast-2)"]
+        line["hyperdelivery-project-line\nDistill -> approval -> Blueprint\n-> approval -> Review -> Showroom -> done"]
+        invoker["orchestration/agent_invoker.py"]
+        persist["orchestration/persist_approval.py"]
+    end
+
+    ddb[("DynamoDB\nhyperdelivery-projects\nsingle table + pending GSI")]
+    sns[("SNS\ndecision notifications")]
+    agents["AgentCore Runtime agents\n(us-east-1)"]
+
+    human --> ui -->|"sdk/python"| routes
+    routes --> repo --> ddb
+    routes -->|"start / send_task_success / send_task_failure"| sfnclient --> line
+
+    line -->|"Task"| invoker --> agents
+    line -->|"WAIT_FOR_TASK_TOKEN"| persist
+    persist --> ddb
+    persist --> sns --> human
+```
+
+The approval hold is the important mechanism. A `WAIT_FOR_TASK_TOKEN` state calls
+`persist_approval`, which writes the task token and the pending-lookup GSI attributes onto
+the project's `STATE` item and publishes a notification, then returns - the execution stays
+paused for as long as the decision takes. The console API resumes it by calling
+`send_task_success` (approved) or `send_task_failure` (rejected) with that token.
+
+The single-table key layout is owned jointly by
+`src/infrastructure/repositories/keys.py` and `infra/stacks/orchestration_stack.py`. They
+must change together.
+
+See [docs/decisions.md](./decisions.md) for why each of these shapes was chosen.
 
 ## Low-level (per-agent composition)
 

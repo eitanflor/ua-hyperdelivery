@@ -5,25 +5,52 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege: this workflow only ever reads the repo.
+permissions:
+  contents: read
+
+# A new push to the same branch supersedes the run in flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint-and-test:
+  precheck:
+    name: format, lint, types, tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v7
         with:
-          version: "0.5.x"
-
-      - name: Set up Python
-        run: uv python install
+          enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: |
+          uv sync --frozen --all-groups
+          uv sync --frozen --all-groups --project infra
 
-      - name: Lint
-        run: uv run ruff check .
+      # Deliberately the same script developers run locally, so a green `make check`
+      # cannot disagree with a green CI run.
+      - name: Run the precheck gate
+        run: ./scripts/precheck.sh --ci
 
-      - name: Test
-        run: uv run pytest
+      # Renders as a table on the run's summary page - readable without downloading the
+      # XML, which exists for coverage tooling rather than for people.
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo '## Coverage'
+            echo
+            uv run coverage report --format=markdown
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+          if-no-files-found: warn

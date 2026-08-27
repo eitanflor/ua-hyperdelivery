@@ -1,7 +1,7 @@
 from tools.distill import score_completeness
 
 
-def test_score_completeness_scores_full_coverage_as_one():
+def test_score_completeness_scores_full_coverage_as_one() -> None:
     result = score_completeness(
         requirement_ids=["R1", "R2"],
         evidence_requirement_ids=["R1", "R2"],
@@ -12,7 +12,7 @@ def test_score_completeness_scores_full_coverage_as_one():
     assert result == {"score": 1.0, "gaps": []}
 
 
-def test_score_completeness_flags_missing_evidence_and_rules():
+def test_score_completeness_flags_missing_evidence_and_rules() -> None:
     result = score_completeness(
         requirement_ids=["R1", "R2"],
         evidence_requirement_ids=["R1"],
@@ -25,7 +25,7 @@ def test_score_completeness_flags_missing_evidence_and_rules():
     assert "gate criterion C1 has no machine-readable rule" in result["gaps"]
 
 
-def test_score_completeness_handles_empty_spec():
+def test_score_completeness_handles_empty_spec() -> None:
     result = score_completeness(
         requirement_ids=[], evidence_requirement_ids=[], criteria_ids=[], rule_criteria_ids=[]
     )

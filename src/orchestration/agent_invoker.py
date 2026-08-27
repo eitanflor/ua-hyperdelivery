@@ -9,9 +9,12 @@ known at CDK synth time.
 
 import json
 import logging
-from typing import Any
+import os
+from typing import Any, cast
 
 import boto3
+
+from infrastructure.aws import BotoClientFactory
 
 logger = logging.getLogger("agent_invoker")
 
@@ -19,11 +22,19 @@ _RUNTIME_SESSION_ID_MIN_LEN = 33  # AgentCore Runtime constraint
 
 
 class AgentInvoker:
-    def __init__(self, region: str, runtime_prefix: str, clients: Any = None):
+    """Invokes one AgentCore Runtime agent by name and unwraps its structured result."""
+
+    def __init__(
+        self, region: str, runtime_prefix: str, clients: BotoClientFactory | None = None
+    ) -> None:
+        """Pass `clients` to inject a fake boto3 module instead of reaching real AWS."""
         self._region = region
         self._runtime_prefix = runtime_prefix
-        self._control = (clients or boto3).client("bedrock-agentcore-control", region_name=region)
-        self._data = (clients or boto3).client("bedrock-agentcore", region_name=region)
+        # boto3's stubs are a big overload set rather than a plain signature, so it needs
+        # a cast to satisfy the protocol it does implement at runtime.
+        factory = clients if clients is not None else cast(BotoClientFactory, boto3)
+        self._control = factory.client("bedrock-agentcore-control", region_name=region)
+        self._data = factory.client("bedrock-agentcore", region_name=region)
 
     def _resolve_runtime_arn(self, agent: str) -> str:
         runtime_name = f"{self._runtime_prefix}{agent}"
@@ -31,9 +42,11 @@ class AgentInvoker:
         for runtime in resp.get("agentRuntimes", []):
             if runtime.get("agentRuntimeName") == runtime_name:
                 return runtime["agentRuntimeArn"]
-        raise ValueError(f"no AgentCore runtime found named {runtime_name!r}")
+        msg = f"no AgentCore runtime found named {runtime_name!r}"
+        raise ValueError(msg)
 
-    def invoke(self, agent: str, project_id: str, prompt: str) -> dict:
+    def invoke(self, agent: str, project_id: str, prompt: str) -> dict[str, Any]:
+        """Run `agent` against `prompt` and return its validated `result` payload."""
         runtime_arn = self._resolve_runtime_arn(agent)
         session_id = project_id.ljust(_RUNTIME_SESSION_ID_MIN_LEN, "0")
 
@@ -46,15 +59,17 @@ class AgentInvoker:
         body = response["response"].read()
         result = json.loads(body)
         if "error" in result:
-            raise RuntimeError(f"{agent} agent invocation failed: {result['error']}")
+            msg = f"{agent} agent invocation failed: {result['error']}"
+            raise RuntimeError(msg)
         return result["result"]
 
 
-def handler(event: dict, context: Any) -> dict:
-    """Step Functions LambdaInvoke entrypoint. `event` is the Task state's payload:
-    {"agent": "distill", "project_id": "...", "prompt": "..."}."""
-    import os
+def handler(event: dict[str, Any], _context: object) -> dict[str, Any]:
+    """Step Functions LambdaInvoke entrypoint.
 
+    `event` is the Task state's payload:
+    `{"agent": "distill", "project_id": "...", "prompt": "..."}`.
+    """
     invoker = AgentInvoker(
         region=os.environ["AGENTCORE_REGION"],
         runtime_prefix=os.environ["AGENT_RUNTIME_PREFIX"],

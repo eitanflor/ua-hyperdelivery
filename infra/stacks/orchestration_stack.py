@@ -9,6 +9,7 @@ persist the Step Functions task token onto the project's DynamoDB item via a
 """
 
 from pathlib import Path
+from typing import Any
 
 from aws_cdk import Duration, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as dynamodb
@@ -27,7 +28,10 @@ _RUNTIME_PREFIX = "hyperdelivery_"  # matches scripts/deploy_agent.sh's runtime_
 
 
 class OrchestrationStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    """The project line: state machine, projects table, Lambda tasks and notifications."""
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs: Any) -> None:  # noqa: ANN401
+        """Provision the orchestration plane for one environment."""
         super().__init__(scope, construct_id, **kwargs)
 
         # Single-table design: pk=project id, sk=record type ("STATE" or "DECISION#<iso-ts>"),
@@ -91,8 +95,10 @@ class OrchestrationStack(Stack):
             iam.PolicyStatement(
                 actions=["bedrock-agentcore:InvokeAgentRuntime"],
                 resources=[
-                    f"arn:aws:bedrock-agentcore:{_AGENTCORE_REGION}:{self.account}:"
-                    f"runtime/{_RUNTIME_PREFIX}*"
+                    (
+                        f"arn:aws:bedrock-agentcore:{_AGENTCORE_REGION}:{self.account}:"
+                        f"runtime/{_RUNTIME_PREFIX}*"
+                    )
                 ],
             )
         )
@@ -216,10 +222,13 @@ class OrchestrationStack(Stack):
         )
 
     def _approval_wait(self, id_: str, station: str) -> tasks.LambdaInvoke:
-        """Pauses the execution (WAIT_FOR_TASK_TOKEN) after persisting the task token + the
-        gsi1 pending-lookup attributes onto the project's STATE item, so `list_pending`
-        picks the project up immediately. Resumed by the console API via
-        send_task_success/send_task_failure - see api/routers/projects.py:submit_decision."""
+        """Pause the execution on a task token while a human decides.
+
+        Persists the task token and the gsi1 pending-lookup attributes onto the project's
+        STATE item first, so `list_pending` picks the project up immediately. Resumed by
+        the console API via send_task_success/send_task_failure - see
+        api/routers/projects.py:submit_decision.
+        """
         return tasks.LambdaInvoke(
             self,
             id_,
@@ -234,4 +243,3 @@ class OrchestrationStack(Stack):
             ),
             result_path="$.approval",
         )
-

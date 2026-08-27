@@ -10,7 +10,7 @@ def _template() -> Template:
     return Template.from_stack(stack)
 
 
-def test_lambda_function_uses_mangum_handler():
+def test_lambda_function_uses_mangum_handler() -> None:
     template = _template()
     template.has_resource_properties(
         "AWS::Lambda::Function",
@@ -21,7 +21,7 @@ def test_lambda_function_uses_mangum_handler():
     )
 
 
-def test_lambda_has_dynamodb_permissions_scoped_to_project_table():
+def test_lambda_has_dynamodb_permissions_scoped_to_project_table() -> None:
     template = _template()
     template.has_resource_properties(
         "AWS::IAM::Policy",
@@ -43,7 +43,7 @@ def test_lambda_has_dynamodb_permissions_scoped_to_project_table():
     )
 
 
-def test_http_api_created_with_lambda_default_integration():
+def test_http_api_created_with_lambda_default_integration() -> None:
     template = _template()
     template.resource_count_is("AWS::ApiGatewayV2::Api", 1)
     template.has_resource_properties(

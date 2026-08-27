@@ -1,7 +1,7 @@
 from tools.review import validate_review_report
 
 
-def test_validate_review_report_accepts_full_coverage_and_valid_severities():
+def test_validate_review_report_accepts_full_coverage_and_valid_severities() -> None:
     result = validate_review_report(
         requirement_ids=["r1", "r2"],
         finding_requirement_ids=["r1"],
@@ -12,7 +12,7 @@ def test_validate_review_report_accepts_full_coverage_and_valid_severities():
     assert result == {"valid": True, "issues": []}
 
 
-def test_validate_review_report_flags_unknown_requirement_and_bad_severity():
+def test_validate_review_report_flags_unknown_requirement_and_bad_severity() -> None:
     result = validate_review_report(
         requirement_ids=["r1"],
         finding_requirement_ids=["missing"],
@@ -25,7 +25,7 @@ def test_validate_review_report_flags_unknown_requirement_and_bad_severity():
     assert "finding has invalid severity 'catastrophic'" in result["issues"]
 
 
-def test_validate_review_report_flags_missing_and_extra_coverage():
+def test_validate_review_report_flags_missing_and_extra_coverage() -> None:
     result = validate_review_report(
         requirement_ids=["r1", "r2"],
         finding_requirement_ids=[],

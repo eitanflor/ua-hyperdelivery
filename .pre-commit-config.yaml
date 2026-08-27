@@ -1,0 +1,41 @@
+# Fast, mechanical checks only. The full gate is `make check` (scripts/precheck.sh);
+# these hooks exist so the obvious things never reach a review.
+#   install with: make hooks
+default_install_hook_types: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.5
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # Secret scanning is local-only by design: it runs here and in `make check`, not as a
+  # CI job. Catch it before it is committed, not after it is pushed.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # Spelling, configured by cspell.json. Its `flagWords` list also enforces US English:
+  # each entry fails with the American form as the suggested fix.
+  - repo: https://github.com/streetsidesoftware/cspell-cli
+    rev: v9.4.0
+    hooks:
+      - id: cspell
+        args: [--no-progress, --no-summary]

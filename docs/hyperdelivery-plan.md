@@ -5,7 +5,7 @@
 ## Purpose
 
 This is a starting plan for building the Hyperdelivery factory to a working MVP: a single
-project travelling the full line from stakeholder conversation to a demonstrable deliverable,
+project traveling the full line from stakeholder conversation to a demonstrable deliverable,
 with agents doing the work and humans approving at each handoff.
 
 The target is not the complete factory. It is the shortest path to proving the line works end

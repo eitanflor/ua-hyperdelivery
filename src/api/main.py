@@ -1,3 +1,5 @@
+"""Console API composition root: wires repositories and the state machine onto FastAPI."""
+
 from fastapi import FastAPI
 
 from api.routers import projects
@@ -8,6 +10,7 @@ from infrastructure.repositories.project_repository import ProjectRepository
 
 
 def create_app() -> FastAPI:
+    """Build the console API with its dependencies attached to `app.state`."""
     settings = get_settings()
     configure_logging(settings.log_level)
 
@@ -32,4 +35,5 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=get_settings().port)
+    # Binds all interfaces because this runs inside a container behind API Gateway.
+    uvicorn.run(app, host="0.0.0.0", port=get_settings().port)  # noqa: S104

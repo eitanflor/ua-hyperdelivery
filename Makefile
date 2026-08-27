@@ -1,4 +1,5 @@
-.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-console test lint check-aws ui deploy
+.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-console test lint \
+	format typecheck coverage check check-fix hooks check-aws ui deploy
 
 ifneq (,$(wildcard .env))
 include .env
@@ -37,3 +38,24 @@ test:
 
 lint:
 	uv run ruff check .
+
+format:
+	uv run ruff format .
+
+typecheck:
+	uv run pyright
+
+# Browsable, line-by-line coverage. coverage.xml is for tooling; this is for people.
+coverage:
+	uv run pytest -q --cov-report=html
+	@uv run python -c "import pathlib, webbrowser; p = pathlib.Path('htmlcov/index.html').resolve(); print(p); webbrowser.open(p.as_uri())"
+
+# The gate. Runs the same checks as CI, in the same order - see scripts/precheck.sh.
+check:
+	./scripts/precheck.sh
+
+check-fix:
+	./scripts/precheck.sh --fix
+
+hooks:
+	uv run pre-commit install

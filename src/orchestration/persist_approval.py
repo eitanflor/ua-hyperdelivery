@@ -13,35 +13,47 @@ Lambda runs at exactly the moment the wait begins, making it the right place ins
 """
 
 import os
-from typing import Any
+from typing import Any, cast
 
 import boto3
 
+from infrastructure.aws import BotoClientFactory
+from infrastructure.repositories.keys import (
+    STATE_SK,
+    pending_gsi1pk,
+    project_pk,
+)
+
 
 class ApprovalPersister:
+    """Records the task token and pending-approval marker, then fans out a notification."""
+
     def __init__(
         self,
         region: str,
         projects_table: str,
         notifications_topic_arn: str,
-        clients: Any = None,
-    ):
+        clients: BotoClientFactory | None = None,
+    ) -> None:
+        """Pass `clients` to inject a fake boto3 module instead of reaching real AWS."""
         self._region = region
         self._notifications_topic_arn = notifications_topic_arn
-        self._table = (clients or boto3).resource("dynamodb", region_name=region).Table(
-            projects_table
-        )
-        self._sns = (clients or boto3).client("sns", region_name=region)
+        # boto3's stubs are a big overload set rather than a plain signature, so it needs
+        # a cast to satisfy the protocol it does implement at runtime.
+        factory = clients if clients is not None else cast(BotoClientFactory, boto3)
+        self._table = factory.resource("dynamodb", region_name=region).Table(projects_table)
+        self._sns = factory.client("sns", region_name=region)
 
-    def persist(self, project_id: str, station: str, task_token: str) -> dict:
+    def persist(self, project_id: str, station: str, task_token: str) -> dict[str, Any]:
+        """Park the execution's task token against the project and announce the wait."""
         self._table.update_item(
-            Key={"pk": f"PROJECT#{project_id}", "sk": "STATE"},
+            Key={"pk": project_pk(project_id), "sk": STATE_SK},
             UpdateExpression="SET station = :station, task_token = :token, "
             "gsi1pk = :gsi1pk, gsi1sk = :gsi1sk",
             ExpressionAttributeValues={
                 ":station": station,
                 ":token": task_token,
-                ":gsi1pk": f"STATION#{station}#PENDING",
+                ":gsi1pk": pending_gsi1pk(station),
                 ":gsi1sk": project_id,
             },
         )
@@ -54,9 +66,12 @@ class ApprovalPersister:
         return {"persisted": True}
 
 
-def handler(event: dict, context: Any) -> dict:
-    """event: {"project_id": ..., "station": "blueprint_approval"|"review_approval",
-    "task_token": "$$.Task.Token"}."""
+def handler(event: dict[str, Any], _context: object) -> dict[str, Any]:
+    """Step Functions LambdaInvoke entrypoint for the approval wait states.
+
+    `event` is `{"project_id": ..., "station": "blueprint_approval"|"review_approval",
+    "task_token": "$$.Task.Token"}`.
+    """
     persister = ApprovalPersister(
         region=os.environ["AWS_REGION"],
         projects_table=os.environ["PROJECTS_TABLE"],

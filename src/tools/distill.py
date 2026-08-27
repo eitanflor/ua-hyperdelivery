@@ -1,3 +1,7 @@
+"""Distill's deterministic validator: scores a draft spec so the LLM doesn't guess."""
+
+from typing import Any
+
 from strands import tool
 
 
@@ -7,11 +11,14 @@ def score_completeness(
     evidence_requirement_ids: list[str],
     criteria_ids: list[str],
     rule_criteria_ids: list[str],
-) -> dict:
-    """Deterministically score a StructuredSpec draft: the fraction of requirements that
-    have linked evidence and gate criteria that have a machine-readable rule, with any
-    uncovered ids reported as gaps. Call this with the ids you drafted before finalizing
-    the `completeness` field - do not estimate the score yourself."""
+) -> dict[str, Any]:
+    """Deterministically score a StructuredSpec draft.
+
+    Returns the fraction of requirements that have linked evidence and gate criteria that
+    have a machine-readable rule, with any uncovered ids reported as gaps. Call this with
+    the ids you drafted before finalizing the `completeness` field - do not estimate the
+    score yourself.
+    """
     missing_evidence = sorted(set(requirement_ids) - set(evidence_requirement_ids))
     missing_rules = sorted(set(criteria_ids) - set(rule_criteria_ids))
     gaps = [f"requirement {r} has no linked evidence" for r in missing_evidence]

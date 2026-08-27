@@ -1,9 +1,13 @@
+"""G3 artifact: what Review found when it checked the build against spec and design."""
+
 from typing import Literal
 
 from pydantic import BaseModel
 
 
 class Finding(BaseModel):
+    """One gap, mistake or standards deviation, traced back to what it violates."""
+
     id: str
     severity: Literal["blocker", "major", "minor"]
     description: str
@@ -12,6 +16,8 @@ class Finding(BaseModel):
 
 
 class RequirementCoverage(BaseModel):
+    """Whether one requirement is actually met by the built deliverable."""
+
     requirement_id: str
     met: bool
 

@@ -1,3 +1,7 @@
+"""Review's deterministic validator: checks findings and coverage against the spec."""
+
+from typing import Any
+
 from strands import tool
 
 _VALID_SEVERITIES = {"blocker", "major", "minor"}
@@ -9,12 +13,14 @@ def validate_review_report(
     finding_requirement_ids: list[str],
     finding_severities: list[str],
     coverage_requirement_ids: list[str],
-) -> dict:
-    """Deterministically validate a ReviewReport draft: every finding that references a
-    requirement must reference a known id with a valid severity ("blocker", "major", or
-    "minor"), and the coverage view must have exactly one entry per known requirement -
-    no fewer, no extras. Call this with the ids/severities you drafted before finalizing
-    the report - do not eyeball it."""
+) -> dict[str, Any]:
+    """Deterministically validate a ReviewReport draft.
+
+    Every finding that references a requirement must reference a known id with a valid
+    severity ("blocker", "major", or "minor"), and the coverage view must have exactly one
+    entry per known requirement - no fewer, no extras. Call this with the ids/severities
+    you drafted before finalizing the report - do not eyeball it.
+    """
     known = set(requirement_ids)
     issues = [
         f"finding references unknown requirement {rid}"

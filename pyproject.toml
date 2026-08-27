@@ -26,23 +26,166 @@ dependencies = [
 dev = [
     "pytest>=8.2",
     "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
     "ruff>=0.5",
+    "pyright>=1.1.380",
+    "pre-commit>=3.8",
     "streamlit>=1.38",
     "requests>=2.32",
+    # starlette >=1.6 prefers httpx2 in its TestClient and deprecation-warns on httpx.
+    # The runtime httpx dependency above is unrelated - it backs sdk/python/client.py.
+    "httpx2>=2.0",
+    # Typed boto3 clients so the injectable AWS seams aren't `Any` under pyright strict.
+    "boto3-stubs[dynamodb,s3,sns,stepfunctions]>=1.34",
+    "types-pyyaml>=6.0",
+    "types-requests>=2.32",
 ]
 
 [tool.uv]
 package = false
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+# `tests` is on the path so shared doubles in tests/fakes.py are importable.
+pythonpath = ["src", "tests"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+xfail_strict = true
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=xml",
+    "--cov-fail-under=10",
+]
+filterwarnings = [
+    "error",
+    # bedrock-agentcore still declares pydantic v1 style class-based config, which warns on
+    # import. Scoped to that one message so every other DeprecationWarning stays fatal.
+    "ignore:Support for class-based:pydantic.warnings.PydanticDeprecatedSince20",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@(typing\\.)?overload",
+]
+
+[tool.pyright]
+include = ["src", "tests", "ui"]
+extraPaths = ["src"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+# Three upstream causes make the "is partially unknown" family unactionable here, so they
+# are downgraded rather than suppressed one `# pyright: ignore` at a time. Everything else
+# strict enables - including reportArgumentType/reportAssignmentType/reportReturnType and
+# missing annotations in our own code - stays on.
+#   1. bedrock-agentcore types `BedrockAgentCoreApp.run`/`.entrypoint` loosely.
+#   2. strands' `@tool` overload declares an unparameterized `dict` for `inputSchema`.
+#   3. boto3-stubs emits an overload per AWS service but only resolves the extras we
+#      install, so `boto3.client` itself is partially unknown even when the call is not.
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "warning"
+
+[[tool.pyright.executionEnvironments]]
+# White-box unit tests reach into private state on purpose, and pytest discovers fixtures
+# by collection rather than by reference. Everything else stays strict here too.
+root = "tests"
+reportPrivateUsage = "none"
+reportUnusedFunction = "none"
 
 [tool.ruff]
-src = ["src"]
+# `tests` is a first-party root too, so shared helpers (tests/fakes.py) sort with our code.
+src = ["src", "tests"]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["cdk.out"]
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = [
+    "A",     # flake8-builtins
+    "ANN",   # flake8-annotations
+    "ARG",   # flake8-unused-arguments
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "D",     # pydocstyle
+    "DTZ",   # flake8-datetimez
+    "E",     # pycodestyle errors
+    "EM",    # flake8-errmsg
+    "ERA",   # eradicate (commented-out code)
+    "F",     # pyflakes
+    "FURB",  # refurb
+    "G",     # flake8-logging-format
+    "I",     # isort
+    "ICN",   # flake8-import-conventions
+    "ISC",   # flake8-implicit-str-concat
+    "LOG",   # flake8-logging
+    "N",     # pep8-naming
+    "PERF",  # perflint
+    "PIE",   # flake8-pie
+    "PL",    # pylint
+    "PT",    # flake8-pytest-style
+    "PTH",   # flake8-use-pathlib
+    "Q",     # flake8-quotes
+    "RET",   # flake8-return
+    "RSE",   # flake8-raise
+    "RUF",   # ruff-specific
+    "S",     # flake8-bandit
+    "SIM",   # flake8-simplify
+    "SLF",   # flake8-self
+    "T20",   # flake8-print
+    "TID",   # flake8-tidy-imports
+    "TRY",   # tryceratops
+    "UP",    # pyupgrade
+    "W",     # pycodestyle warnings
+]
+ignore = [
+    "D203",   # incompatible with D211 (no blank line before class docstring)
+    "D213",   # incompatible with D212 (summary on the first line)
+    "ISC001", # conflicts with the formatter
+    "TRY003", # message-in-raise is the readable option for one-off ValueErrors
+]
+# flake8-type-checking (TC) is deliberately NOT enabled: pydantic, FastAPI and strands all
+# resolve annotations at runtime, so hoisting imports into TYPE_CHECKING blocks breaks
+# schema generation. Typing-only imports are placed in TYPE_CHECKING blocks by hand where
+# the surrounding function is never introspected.
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+# Test doubles mirror third-party call shapes (boto3's PascalCase kwargs, httpx handlers),
+# so PEP 8 naming and unused-argument rules would make them less faithful, not more.
+"tests/**/*.py" = [
+    "ANN401",  # fakes take deliberately loose payloads
+    "ARG",     # fakes accept a full signature and use part of it
+    "D1",      # test names are the documentation
+    "EM",      # inline messages are fine in throwaway doubles
+    "N802",    # `Table`, `Item`, `Key`, `IndexName` - boto3's surface, not ours
+    "N803",
+    "PLC0415", # local imports keep optional-dependency tests self-contained
+    "PLR2004", # literal assertions are the point of a test
+    "PLW0108", # explicit lambdas read better than partials in monkeypatch
+    "S101",    # assert
+    "S105",    # fake task tokens
+    "S106",
+    "S107",
+    "SLF001",  # tests may reach into private helpers
+]
+"ui/**/*.py" = ["D1"] # streamlit script, not an importable module

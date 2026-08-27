@@ -9,19 +9,25 @@ rationale this reuses (declarative config, observability pattern).
 See [docs/architecture.md](docs/architecture.md) for high-level and low-level diagrams,
 and [docs/decisions.md](docs/decisions.md) for the log of architecture/tradeoff
 decisions (why things are built the way they are, kept up to date via the
-`log-decision` skill).
+`log-decision` skill). Conventions and the Definition of Done live in
+[AGENTS.md](AGENTS.md); setup and the gate are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```
 src/
 ├── agent_runtime/    # one composition root per agent (distill/, blueprint/, review/, showroom/) + shared factory.py
-├── providers/agents/ # builds a strands.Agent from declarative config
-├── core/domain/      # AgentConfig, StructuredSpec (G1), Blueprint (G2), ReviewReport (G3), DemoPackage (G4)
-├── config/agents/    # one declarative {name}.yaml per agent
-├── infrastructure/   # observability (session-id-aware logging + tracing)
-└── tools/            # custom @tool functions - deterministic validators per agent, Confluence/Jira MCP clients
+├── core/             # domain models per gate, plus AgentName - depends on nothing else
+├── config/           # declarative {name}.yaml per agent + environment-backed Settings
+├── providers/        # adapters onto third-party SDKs (Strands agent builder, S3 fetch+parse)
+├── mcp_clients/      # generic MCP client builders (Confluence/Jira over stdio)
+├── tools/            # per-agent @tool functions - deterministic validators + the least-privilege policy layer
+├── infrastructure/   # AWS adapters: DynamoDB repository, Step Functions client, logging/tracing
+├── orchestration/    # Step Functions Lambda tasks (agent invoke, approval wait)
+├── api/              # console API (FastAPI + Mangum) - create projects, record gate decisions
+└── sdk/python/       # client for the console API
 
-tests/
-└── unit/
+infra/                # AWS CDK: state machine, projects table, notifications, console API
+ui/                   # Streamlit harness for poking an agent by hand
+tests/unit/
 ```
 
 Unlike `ua-ai-platform`, there is no hand-rolled orchestrator or agent registry here -
@@ -42,8 +48,9 @@ track, G4).
 ## Getting started
 
 ```bash
-uv sync
+uv sync --all-groups
 cp .env.example .env
+make hooks          # install pre-commit hooks, once
 make dev-distill    # or: make dev-blueprint / make dev-review / make dev-showroom
 ```
 
@@ -60,9 +67,13 @@ curl -X POST http://localhost:8080/invocations \
 ## Testing
 
 ```bash
-uv run pytest
-uv run ruff check .
+make check      # the gate: format, lint, types, tests, infra, secrets
+make check-fix  # same, but auto-fixes the mechanical failures first
 ```
+
+CI runs the same script ([scripts/precheck.sh](scripts/precheck.sh)), so green locally
+means green in CI. Individual gates: `make format`, `make lint`, `make typecheck`,
+`make test`.
 
 ## Deploying to AgentCore Runtime
 
@@ -83,15 +94,25 @@ guide. For the underlying manual steps (ECR, `create_agent_runtime`), see
 
 ## Status
 
-Four Strands agents (Distill, Blueprint, Review, Showroom) wired end-to-end through the
-AgentCore Runtime HTTP contract (`/invocations`, `/ping`, port 8080), each returning a
-validated pydantic model instead of free text. Distill has a read-only Confluence MCP tool
-and an S3 document-fetch tool (generic fetch+parse in `providers/storage/s3.py`, policy
-wrapper gated on `S3_BUCKET`/`S3_REGION` in `tools/documents.py`
-- the LLM only ever supplies an object key, never a bucket), and Blueprint has a Jira
-issue-lifecycle MCP tool (generic client builders in `mcp_clients/atlassian.py`, per-agent
-tool-filter policy in `tools/atlassian.py`, gated on `ATLASSIAN_*` env vars);
-Review and Showroom have no external tools yet - they take their input (built app/code
-description, FSD/Blueprint) entirely from the prompt. No memory, Gateway, or Identity
-integration yet, and no control plane (Step Functions, gate manager) - add those only as a
-real use case demands them.
+**Phase 1 - the agent suite (done).** Four Strands agents (Distill, Blueprint, Review,
+Showroom) wired end-to-end through the AgentCore Runtime HTTP contract (`/invocations`,
+`/ping`, port 8080), each returning a validated pydantic model instead of free text.
+Distill has a read-only Confluence MCP tool and an S3 document-fetch tool (generic
+fetch+parse in `providers/storage/s3.py`, policy wrapper gated on `S3_BUCKET`/`S3_REGION`
+in `tools/documents.py` - the LLM only ever supplies an object key, never a bucket), and
+Blueprint has a Jira issue-lifecycle MCP tool (generic client builders in
+`mcp_clients/atlassian.py`, per-agent tool-filter policy in `tools/atlassian.py`, gated on
+`ATLASSIAN_*` env vars). Review and Showroom have no external tools yet - they take their
+input entirely from the prompt.
+
+**Phase 2 - console and orchestration (scaffolded, not deployed).** A FastAPI console API
+(`src/api/`) creates projects and records gate decisions against a single-table DynamoDB
+projection (`infrastructure/repositories/`), a Step Functions state machine sequences the
+line with `WAIT_FOR_TASK_TOKEN` holds at each human approval (`infra/stacks/`,
+`orchestration/`), and `sdk/python/` is the client every interface should go through.
+Nothing here is deployed yet: it is blocked on IAM, and the Lambda code assets still have
+no dependency bundling (TODO ADVA-3015).
+
+**Not started.** AgentCore Memory, Gateway and Identity; the Bedrock Knowledge Base; the
+M365, GitHub and Snowflake integrations; and any front end beyond the Streamlit harness.
+Add those as real use cases demand them, not speculatively.

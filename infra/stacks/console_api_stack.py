@@ -12,6 +12,7 @@ regardless - swap in real bundling without changing the surrounding shape.
 """
 
 from pathlib import Path
+from typing import Any
 
 from aws_cdk import CfnOutput, Duration, Stack
 from aws_cdk import aws_apigatewayv2 as apigwv2
@@ -24,7 +25,10 @@ _SRC_DIR = Path(__file__).resolve().parents[2] / "src"
 
 
 class ConsoleApiStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    """The console API Lambda and the HTTP API in front of it."""
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs: Any) -> None:  # noqa: ANN401
+        """Provision the console API for one environment."""
         super().__init__(scope, construct_id, **kwargs)
 
         # Imported, not owned here - the table is managed by OrchestrationStack (or, today,

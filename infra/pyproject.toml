@@ -11,6 +11,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.2",
+    "ruff>=0.5",
+    "pyright>=1.1.380",
 ]
 
 [tool.uv]
@@ -19,10 +21,38 @@ package = false
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+xfail_strict = true
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+
+[tool.pyright]
+include = ["app.py", "stacks", "tests"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+# aws-cdk-lib's jsii-generated stubs are self-inconsistent: the concrete `Function`/`Topic`
+# classes don't satisfy their own `IFunction`/`ITopic` protocols, so every construct passed
+# to another construct trips this. Downgraded rather than papered over with five casts that
+# would misrepresent the code.
+reportArgumentType = "warning"
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["cdk.out"]
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+# Kept in lockstep with the root pyproject.toml - see AGENTS.md.
+select = [
+    "A", "ANN", "ARG", "B", "C4", "D", "DTZ", "E", "EM", "ERA", "F", "FURB", "G", "I",
+    "ICN", "ISC", "LOG", "N", "PERF", "PIE", "PL", "PT", "PTH", "Q", "RET", "RSE", "RUF",
+    "S", "SIM", "SLF", "T20", "TID", "TRY", "UP", "W",
+]
+ignore = ["D203", "D213", "ISC001", "TRY003"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN401", "D1", "PLR2004", "S101", "SLF001"]

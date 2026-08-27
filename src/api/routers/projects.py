@@ -1,3 +1,5 @@
+"""Project endpoints: create, inspect, and record gate decisions."""
+
 import uuid
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -20,6 +22,7 @@ def _to_response(project: Project) -> ProjectResponse:
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(payload: CreateProjectRequest, request: Request) -> ProjectResponse:
+    """Create a project and, once the state machine exists, start its execution."""
     repo = request.app.state.project_repository
     project = repo.create_project(project_id=str(uuid.uuid4()), name=payload.name)
     if (sfn := request.app.state.state_machine_client) is not None:
@@ -29,12 +32,14 @@ def create_project(payload: CreateProjectRequest, request: Request) -> ProjectRe
 
 @router.get("/pending/{station}", response_model=list[ProjectResponse])
 def list_pending(station: Station, request: Request) -> list[ProjectResponse]:
+    """List the projects that owe a decision at `station`."""
     repo = request.app.state.project_repository
     return [_to_response(p) for p in repo.list_pending(station)]
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(project_id: str, request: Request) -> ProjectResponse:
+    """Return one project's current position on the line."""
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:
@@ -43,9 +48,12 @@ def get_project(project_id: str, request: Request) -> ProjectResponse:
 
 
 @router.post("/{project_id}/decisions", response_model=ProjectResponse)
-def submit_decision(
-    project_id: str, payload: DecisionRequest, request: Request
-) -> ProjectResponse:
+def submit_decision(project_id: str, payload: DecisionRequest, request: Request) -> ProjectResponse:
+    """Approve or reject the gate the project is held at, then release the execution.
+
+    The decision is written before the task token is released so the audit trail can
+    never lag the state machine.
+    """
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:

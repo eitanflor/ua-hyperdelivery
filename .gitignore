@@ -6,3 +6,16 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 .DS_Store
+
+# type checking
+.pyright/
+
+# coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# cdk (infra/ has its own package.json + synth output)
+cdk.out/
+node_modules/
