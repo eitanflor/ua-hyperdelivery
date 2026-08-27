@@ -53,6 +53,10 @@ class ProjectRepository:
         signer: str,
         comment: str | None,
     ) -> Decision:
+        project = self.get_project(project_id)
+        if project is None:
+            raise ValueError(f"unknown project {project_id}")
+
         decision = Decision(
             project_id=project_id,
             station=station,
@@ -63,9 +67,6 @@ class ProjectRepository:
         )
         self._table.put_item(Item=self._decision_item(decision))
 
-        project = self.get_project(project_id)
-        if project is None:
-            raise ValueError(f"unknown project {project_id}")
         project.station = next_station(station) if approved else station
         project.updated_at = decision.decided_at
         project.task_token = None

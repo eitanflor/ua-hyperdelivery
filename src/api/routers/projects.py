@@ -68,4 +68,11 @@ def submit_decision(
             sfn.send_task_success(project.task_token, {"approved": True})
         else:
             sfn.send_task_failure(project.task_token, error="Rejected")
-    return _to_response(repo.get_project(project_id))
+
+    updated = repo.get_project(project_id)
+    if updated is None:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="project missing after recording decision",
+        )
+    return _to_response(updated)

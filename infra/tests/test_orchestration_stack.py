@@ -81,9 +81,36 @@ def test_approval_persist_lambda_has_correct_handler():
     )
 
 
-def test_approval_wait_states_use_lambda_wait_for_task_token():
+def test_approval_persist_can_publish_notifications():
     template = _template()
-    rendered = json.dumps(template.to_json())
+    template.has_resource_properties(
+        "AWS::IAM::Policy",
+        {
+            "PolicyDocument": Match.object_like(
+                {
+                    "Statement": Match.array_with(
+                        [Match.object_like({"Action": "sns:Publish"})]
+                    )
+                }
+            )
+        },
+    )
+
+
+def test_approval_wait_states_use_lambda_wait_for_task_token():
+    definition = _state_machine_definition(_template())
     # DynamoDB service integrations don't support callback patterns - the two human
     # approval waits must go through Lambda's waitForTaskToken instead.
-    assert rendered.count("lambda:invoke.waitForTaskToken") == 2
+    assert definition.count("lambda:invoke.waitForTaskToken") == 2
+
+
+def _state_machine_definition(template: Template) -> str:
+    sm = list(template.find_resources("AWS::StepFunctions::StateMachine").values())[0]
+    parts = sm["Properties"]["DefinitionString"]["Fn::Join"][1]
+    return "".join(p for p in parts if isinstance(p, str))
+
+
+def test_showroom_is_followed_by_a_terminal_dynamodb_update_to_done():
+    definition = _state_machine_definition(_template())
+    assert '"Showroom":{"Next":"MarkDone"' in definition
+    assert '":station":{"S":"done"}' in definition

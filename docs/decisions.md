@@ -51,6 +51,58 @@ Template for new entries:
   iteration-loop work (Phase 3+) lands. Agent prompts are placeholders (`"Project {id}"`)
   until Phase 3 memory/retrieval work supplies real artifact-grounded prompts.
 
+## 2026-08-27 - Decision-needed notifications come from persist_approval, not EventBridge
+
+- **Status**: Accepted
+- **Context**: Automated PR review of the above entry's changes flagged that the
+  `StateEnteredRule` EventBridge rule was named/intended to notify "who owes a decision"
+  per approval station, but its `event_pattern` only matched
+  `"Step Functions Execution Status Change"` - an execution-level event (RUNNING/
+  SUCCEEDED/FAILED/...), not a per-state-entry event. Investigated whether Step Functions
+  emits any native per-state EventBridge event (it does not - confirmed against AWS's own
+  docs; the reviewer's own suggested fix, `"Step Functions State Change"`, is not a real
+  detail-type either) so the rule as designed could never have driven the notification.
+- **Decision**: Publish the "decision needed" SNS notification directly from
+  `persist_approval.py` (the Lambda that runs at exactly the moment an approval wait
+  begins), granted `notifications_topic.grant_publish`. Renamed the EventBridge rule
+  construct `StateEnteredRule` -> `ExecutionStatusRule` to accurately describe its
+  remaining scope (execution-level status only, kept for future ops/observability use,
+  not per-station notifications).
+- **Alternatives considered**: Polling DynamoDB's pending-approval GSI on a schedule to
+  detect new waits - rejected as unnecessary latency/cost when the Lambda that creates the
+  pending state can just publish inline.
+- **Consequences**: Notification delivery is now coupled to `persist_approval`'s own
+  success - if it throws after the DynamoDB write but before the SNS publish, the wait is
+  still correctly persisted but no notification fires. Acceptable for now (the console can
+  still poll/list pending approvals); revisit with a dead-letter queue or at-least-once
+  retry if that gap matters in practice.
+
+## 2026-08-27 - PR-review fixes: decision-write ordering, terminal state, response guard
+
+- **Status**: Accepted
+- **Context**: The same automated PR review flagged three more issues in the Step
+  Functions glue: (1) `ProjectRepository.record_decision` wrote the DECISION audit item to
+  DynamoDB *before* checking whether the project existed, risking orphaned audit records
+  for unknown project IDs; (2) the domain model's station line (`core.domain.project`)
+  ends in a terminal `"done"` station, but the Step Functions definition ended at
+  `Showroom` with nothing ever writing `station="done"`; (3) `submit_decision` called
+  `_to_response(repo.get_project(project_id))` on a final re-fetch with no `None` guard,
+  risking an unhandled `AttributeError` if the project vanished between the two fetches.
+- **Decision**: (1) Reordered `record_decision` to fetch and validate the project first,
+  raising immediately if missing, before writing the Decision record. (2) Added a
+  `MarkDone` `DynamoUpdateItem` Task (plain Request/Response - not a wait, so no callback
+  pattern needed) after `Showroom` in the chain, setting `station="done"` and removing the
+  now-irrelevant `gsi1pk`/`gsi1sk` GSI attributes. (3) Added an explicit `None` check in
+  `submit_decision` that raises `HTTPException(500, ...)` instead of crashing.
+- **Alternatives considered**: None of these had a real alternative design - they're
+  correctness fixes, not tradeoffs.
+- **Consequences**: None beyond the fixes themselves. Two other review comments (hardcoded
+  AWS account ID in `scripts/iam/agentcore-trust-policy.json` and
+  `agentcore-execution-policy.json`) were deliberately left as-is: this is a genuine
+  single-account project and those are the actual files used for the real admin IAM grant
+  request, not a reusable public template - parameterizing them would add templating
+  complexity for no benefit here.
+
 ## 2026-08-27 - One core service, two integration seams, for multi-interface support
 
 - **Status**: Accepted

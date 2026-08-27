@@ -117,9 +117,13 @@ class OrchestrationStack(Stack):
             ),
             timeout=Duration.seconds(10),
             memory_size=128,
-            environment={"PROJECTS_TABLE": "hyperdelivery-projects"},
+            environment={
+                "PROJECTS_TABLE": "hyperdelivery-projects",
+                "NOTIFICATIONS_TOPIC_ARN": self.notifications_topic.topic_arn,
+            },
         )
         self.project_table.grant_write_data(self.approval_persist)
+        self.notifications_topic.grant_publish(self.approval_persist)
 
         self.state_machine = sfn.StateMachine(
             self,
@@ -129,9 +133,14 @@ class OrchestrationStack(Stack):
             definition_body=sfn.DefinitionBody.from_chainable(self._build_definition()),
         )
 
+        # "Who owes a decision" notifications are published directly by approval_persist
+        # (it runs at exactly the moment a wait begins) - Step Functions' own EventBridge
+        # integration only emits execution-level events (start/success/failure), never
+        # per-state entry, so it can't drive that. This rule covers the execution-level
+        # signal instead (e.g. alerting on a failed/aborted run).
         events.Rule(
             self,
-            "StateEnteredRule",
+            "ExecutionStatusRule",
             event_pattern=events.EventPattern(
                 source=["aws.states"],
                 detail_type=["Step Functions Execution Status Change"],
@@ -157,12 +166,33 @@ class OrchestrationStack(Stack):
         wait_blueprint_approval.add_catch(rejected, errors=["States.ALL"])
         wait_review_approval.add_catch(rejected, errors=["States.ALL"])
 
+        # Closes the loop with core.domain.project.Station.DONE - Showroom finishing is not
+        # itself a DynamoDB write, so nothing else would ever advance the station past
+        # SHOWROOM otherwise.
+        mark_done = tasks.DynamoUpdateItem(
+            self,
+            "MarkDone",
+            table=self.project_table,
+            key={
+                "pk": tasks.DynamoAttributeValue.from_string(
+                    sfn.JsonPath.format("PROJECT#{}", sfn.JsonPath.string_at("$.project_id"))
+                ),
+                "sk": tasks.DynamoAttributeValue.from_string("STATE"),
+            },
+            update_expression="SET station = :station REMOVE gsi1pk, gsi1sk",
+            expression_attribute_values={
+                ":station": tasks.DynamoAttributeValue.from_string("done"),
+            },
+            result_path="$.done",
+        )
+
         return (
             distill.next(wait_blueprint_approval)
             .next(blueprint)
             .next(wait_review_approval)
             .next(review)
             .next(showroom)
+            .next(mark_done)
         )
 
     def _agent_task(self, id_: str, agent: str) -> tasks.LambdaInvoke:
