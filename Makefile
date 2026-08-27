@@ -1,4 +1,4 @@
-.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all test lint check-aws ui deploy
+.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-console test lint check-aws ui deploy
 
 ifneq (,$(wildcard .env))
 include .env
@@ -22,6 +22,9 @@ dev-showroom: check-aws
 
 dev-all: check-aws
 	./scripts/dev_all.sh
+
+dev-console: check-aws
+	cd src && uv run uvicorn api.main:app --reload --port $${PORT:-8090}
 
 ui:
 	uv run streamlit run ui/streamlit_app.py

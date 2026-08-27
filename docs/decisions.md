@@ -17,6 +17,33 @@ Template for new entries:
 
 ---
 
+## 2026-08-27 - Console backend as a standalone FastAPI service, not another AgentCore Runtime
+
+- **Status**: Accepted
+- **Context**: Phase 2 needs a thin API for creating projects, reading their DynamoDB
+  state projection, and submitting approvals - none of which is agent inference, so it
+  doesn't belong behind the `/invocations` AgentCore Runtime contract the four agents use.
+- **Decision**: Added `src/api/` (FastAPI, mirroring `ua-ai-platform`'s `main.py`/
+  `routers/`/`schemas/` convention this repo forked from) as its own process, run via
+  `make dev-console` / `uv run uvicorn api.main:app`. State lives in a new
+  `ProjectRepository` (`src/infrastructure/repositories/`) wrapping the DynamoDB table
+  from the orchestration CDK stack, with domain rules (station order, transitions) in
+  `core/domain/project.py`. Table name/region are separate `Settings` fields
+  (`projects_table`, `orchestration_region`) from `aws_region`, matching the existing
+  intentional us-east-1 (Bedrock)/ap-southeast-2 (orchestration infra) split.
+- **Alternatives considered**: Adding these endpoints as a fifth `agent_runtime/` app -
+  rejected, since AgentCore Runtime's contract (`/invocations`, `/ping`) is
+  agent-inference-shaped and would force CRUD/query traffic through an interface that
+  doesn't fit it. Using `moto` to mock DynamoDB in tests - rejected in favor of this
+  repo's existing convention (see `test_s3_storage.py`) of a small hand-written stub
+  client, avoiding a new dev dependency for a handful of tests.
+- **Consequences**: The approval endpoint (`POST /projects/{id}/decisions`) is currently
+  a stub for the Step Functions callback - it advances the DynamoDB station but does not
+  yet call `SendTaskSuccess`/`SendTaskFailure`, since no state machine is deployed (see
+  `TODO(ADVA-3015)` in `api/routers/projects.py`). Must be wired up once the CDK stack
+  actually deploys. The manually-created `hyperdelivery-projects` table (see prior entry)
+  still needs CDK reconciliation before this and the CDK stack can coexist safely.
+
 ## 2026-08-27 - Step Functions + DynamoDB for Phase 2 orchestration
 
 - **Status**: Accepted
