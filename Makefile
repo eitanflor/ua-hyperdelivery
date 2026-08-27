@@ -1,4 +1,4 @@
-.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all test lint check-aws ui
+.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all test lint check-aws ui deploy
 
 ifneq (,$(wildcard .env))
 include .env
@@ -25,6 +25,9 @@ dev-all: check-aws
 
 ui:
 	uv run streamlit run ui/streamlit_app.py
+
+deploy: check-aws
+	./scripts/deploy_agent.sh $(AGENT)
 
 test:
 	uv run pytest

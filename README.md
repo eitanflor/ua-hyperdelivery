@@ -66,11 +66,20 @@ uv run ruff check .
 
 ## Deploying to AgentCore Runtime
 
-Build the ARM64 image (required by AgentCore Runtime) with `--build-arg AGENT=distill` or
-`--build-arg AGENT=blueprint` to select which agent it runs, push to ECR, then create an
-agent runtime pointing at the image. See AWS's
-[Get started without the AgentCore CLI](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html)
-guide for the ECR + `create_agent_runtime` steps.
+```bash
+export AGENTCORE_ROLE_ARN=arn:aws:iam::<account-id>:role/<agent-runtime-role>
+make deploy AGENT=distill    # or blueprint / review / showroom
+```
+
+`scripts/deploy_agent.sh` builds the ARM64 image (`--build-arg AGENT=<agent>`), pushes it to
+an `hyperdelivery-<agent>` ECR repo (creating it if needed), and calls
+`create-agent-runtime`/`update-agent-runtime` (whichever applies) with the ARM64 image and
+`AGENTCORE_ROLE_ARN`. The role must already exist with AgentCore Runtime's trust policy and
+permissions - see AWS's
+[IAM Permissions for AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html)
+guide. For the underlying manual steps (ECR, `create_agent_runtime`), see
+[Get started without the AgentCore CLI](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html).
+
 
 ## Status
 
