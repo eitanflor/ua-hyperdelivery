@@ -65,9 +65,11 @@ bridges the two.
 ```mermaid
 flowchart LR
     human["Reviewer / developer"]
-    ui["Streamlit / future console"]
+    entra[("Entra ID\n(Azure AD)")]
+    ui["ui/console\n(React + Vite, MSAL sign-in)"]
 
     subgraph api["Console API (FastAPI + Mangum, behind HTTP API)"]
+        auth["api/auth.py\nvalidates the bearer ID token\nagainst Entra's JWKS"]
         routes["api/routers/projects.py"]
         repo["infrastructure/repositories/\nProjectRepository"]
         sfnclient["infrastructure/messaging/\nStateMachineClient"]
@@ -83,7 +85,9 @@ flowchart LR
     sns[("SNS\ndecision notifications")]
     agents["AgentCore Runtime agents\n(us-east-1)"]
 
-    human --> ui -->|"sdk/python"| routes
+    human --> ui
+    ui <-->|"sign-in redirect"| entra
+    ui -->|"fetch, Authorization: Bearer <ID token>"| auth --> routes
     routes --> repo --> ddb
     routes -->|"start / send_task_success / send_task_failure"| sfnclient --> line
 
@@ -92,6 +96,14 @@ flowchart LR
     persist --> ddb
     persist --> sns --> human
 ```
+
+Every `/projects/*` route is gated by `Depends(get_current_user)` at the router level
+(`APIRouter(..., dependencies=[...])`), so a new route can't ship ungated by accident. The
+frontend and backend share one Entra ID app registration (SPA platform type, no client
+secret, PKCE) - the frontend sends its ID token, the backend validates its signature,
+audience and issuer against Entra's JWKS rather than trusting a client-claimed identity.
+`sdk/python/` predates this and does not yet attach a token - it is not a currently-used
+path for the console UI, which talks to the API directly over `fetch`.
 
 The approval hold is the important mechanism. A `WAIT_FOR_TASK_TOKEN` state calls
 `persist_approval`, which writes the task token and the pending-lookup GSI attributes onto

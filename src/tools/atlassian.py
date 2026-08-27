@@ -14,6 +14,10 @@ from mcp_clients.atlassian import confluence_client, jira_client
 # Distill only reads Confluence content - no create/update/delete/move/upload tools.
 _READ_ONLY_CONFLUENCE_TOOLS = re.compile(r"^confluence_(get|search|list|check|download)")
 
+# Distill only reads a ticket as an alternate FSD source - no lifecycle/write tools (that's
+# Blueprint's `_JIRA_ISSUE_TOOLS`, a separate least-privilege scope).
+_READ_ONLY_JIRA_TOOLS: list[str | re.Pattern[str]] = ["jira_search", "jira_get_issue"]
+
 # Issue lifecycle only - no sprint/board/service-desk/version/link/watcher/worklog admin tools.
 _JIRA_ISSUE_TOOLS: list[str | re.Pattern[str]] = [
     "jira_search",
@@ -66,4 +70,24 @@ def jira_mcp_client() -> MCPClient | None:
         settings.atlassian_email,
         settings.atlassian_api_token,
         _JIRA_ISSUE_TOOLS,
+    )
+
+
+def jira_read_mcp_client() -> MCPClient | None:
+    """Read-only Jira, for Distill to use a ticket as an alternate FSD source.
+
+    Search + get only - no transition/comment/create/update. Returns None when
+    ATLASSIAN_BASE_URL/EMAIL/API_TOKEN are not configured.
+    """
+    settings = get_settings()
+    if not (
+        settings.atlassian_base_url and settings.atlassian_email and settings.atlassian_api_token
+    ):
+        return None
+
+    return jira_client(
+        settings.atlassian_base_url,
+        settings.atlassian_email,
+        settings.atlassian_api_token,
+        _READ_ONLY_JIRA_TOOLS,
     )

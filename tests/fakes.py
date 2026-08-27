@@ -22,8 +22,10 @@ def loaded(project: Project | None) -> Project:
 class FakeTable:
     """In-memory stand-in for a boto3 DynamoDB Table resource.
 
-    Covers put_item/get_item/query (single GSI) plus update_item, which is recorded rather
-    than applied - the approval Lambda only ever asserts on the call it made.
+    Covers put_item/get_item/delete_item/query (single GSI, or a plain pk/begins_with
+    scan for the "everything under this project" queries) plus update_item, which is
+    recorded rather than applied - the approval Lambda only ever asserts on the call it
+    made.
     """
 
     def __init__(self) -> None:
@@ -37,14 +39,30 @@ class FakeTable:
         item = self.items.get((Key["pk"], Key["sk"]))
         return {"Item": item} if item else {}
 
+    def delete_item(self, Key: dict[str, Any]) -> None:
+        self.items.pop((Key["pk"], Key["sk"]), None)
+
     def query(
         self,
-        IndexName: str,
         KeyConditionExpression: str,
         ExpressionAttributeValues: dict[str, Any],
+        IndexName: str | None = None,
     ) -> dict[str, Any]:
-        target = ExpressionAttributeValues[":pk"]
-        return {"Items": [item for item in self.items.values() if item.get("gsi1pk") == target]}
+        if IndexName is not None:
+            target = ExpressionAttributeValues[":pk"]
+            matches = [item for item in self.items.values() if item.get("gsi1pk") == target]
+            return {"Items": matches}
+        pk = ExpressionAttributeValues[":pk"]
+        if "begins_with" in KeyConditionExpression:
+            prefix = ExpressionAttributeValues[":prefix"]
+            matches = [
+                item
+                for (item_pk, item_sk), item in self.items.items()
+                if item_pk == pk and item_sk.startswith(prefix)
+            ]
+        else:
+            matches = [item for (item_pk, _), item in self.items.items() if item_pk == pk]
+        return {"Items": matches}
 
     def update_item(self, **kwargs: Any) -> None:
         self.update_calls.append(kwargs)

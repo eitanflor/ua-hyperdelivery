@@ -77,6 +77,29 @@ def test_approval_persist_lambda_has_correct_handler() -> None:
     )
 
 
+def test_agent_invoker_can_persist_artifacts_to_the_project_table() -> None:
+    template = _template()
+    template.has_resource_properties(
+        "AWS::Lambda::Function",
+        {
+            "Handler": "orchestration.agent_invoker.handler",
+            "Environment": {"Variables": Match.object_like({"PROJECTS_TABLE": Match.any_value()})},
+        },
+    )
+    template.has_resource_properties(
+        "AWS::IAM::Policy",
+        {
+            "PolicyDocument": Match.object_like(
+                {
+                    "Statement": Match.array_with(
+                        [Match.object_like({"Action": Match.array_with(["dynamodb:PutItem"])})]
+                    )
+                }
+            )
+        },
+    )
+
+
 def test_approval_persist_can_publish_notifications() -> None:
     template = _template()
     template.has_resource_properties(

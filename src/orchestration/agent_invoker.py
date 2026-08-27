@@ -15,6 +15,7 @@ from typing import Any, cast
 import boto3
 
 from infrastructure.aws import BotoClientFactory
+from infrastructure.repositories.project_repository import ProjectRepository
 
 logger = logging.getLogger("agent_invoker")
 
@@ -75,4 +76,12 @@ def handler(event: dict[str, Any], _context: object) -> dict[str, Any]:
         runtime_prefix=os.environ["AGENT_RUNTIME_PREFIX"],
     )
     logger.info("invoking agent %s for project %s", event["agent"], event["project_id"])
-    return invoker.invoke(event["agent"], event["project_id"], event["prompt"])
+    result = invoker.invoke(event["agent"], event["project_id"], event["prompt"])
+
+    # Persist so the console API can serve it back (GET /projects/{id}/artifacts) -
+    # otherwise the result only ever lives transiently in the execution's own JSON path.
+    repo = ProjectRepository(
+        table_name=os.environ["PROJECTS_TABLE"], region=os.environ["AWS_REGION"]
+    )
+    repo.save_artifact(event["project_id"], event["agent"], result)
+    return result

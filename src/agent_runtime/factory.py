@@ -1,6 +1,7 @@
 """Shared composition root: turns declarative config into an AgentCore Runtime app."""
 
 import logging
+from collections.abc import AsyncGenerator
 from typing import Any, TypeVar
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
@@ -32,27 +33,50 @@ def create_app(
     logger = logging.getLogger(agent_name)
 
     @app.entrypoint
-    def agent_invocation(payload: dict[str, Any], context: object) -> dict[str, Any]:  # pyright: ignore[reportUnusedFunction]  # registered by the decorator
-        """AgentCore Runtime HTTP contract: JSON payload/context in, JSON-serializable dict out."""
+    async def agent_invocation(  # pyright: ignore[reportUnusedFunction]  # registered by the decorator
+        payload: dict[str, Any], context: object
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        """AgentCore Runtime HTTP contract, streaming variant.
+
+        JSON payload/context in, an SSE stream of `{"chunk": str}` events out (as the
+        model produces text) ending in exactly one `{"result": dict}` or
+        `{"error": str}` - see LocalAgentClient, which is the only current consumer,
+        for how these are read back out.
+        """
         session_id_var.set(getattr(context, "session_id", "-"))
         prompt = payload.get("prompt", "")
         if not isinstance(prompt, str) or not prompt.strip():
-            return {"error": "'prompt' must be a non-empty string"}
+            yield {"error": "'prompt' must be a non-empty string"}
+            return
         logger.info("invocation started")
+        result = None
+        tools_announced: set[str] = set()
         try:
-            # non-deprecated path: runs the full tool-use loop, then formats the result
-            result = agent(prompt, structured_output_model=output_model)
+            async for event in agent.stream_async(prompt, structured_output_model=output_model):
+                if isinstance(event.get("data"), str):
+                    yield {"chunk": event["data"]}
+                # Distill (and any agent forced into structured_output_model) mostly
+                # goes straight to tool calls with no free "data" text at all - without
+                # this, those agents would show nothing until the final result.
+                tool_name = event.get("current_tool_use", {}).get("name")
+                if tool_name and tool_name not in tools_announced:
+                    tools_announced.add(tool_name)
+                    yield {"chunk": f"Using {tool_name}...\n"}
+                if "result" in event:
+                    result = event["result"]
         except Exception:
             logger.exception("agent invocation failed")
-            return {"error": "agent invocation failed"}
-        if result.structured_output is None:
+            yield {"error": "agent invocation failed"}
+            return
+        if result is None or result.structured_output is None:
             logger.error("agent did not produce structured output")
-            return {"error": "agent did not produce structured output"}
+            yield {"error": "agent did not produce structured output"}
+            return
         # DEBUG, not INFO - the result can contain full FSD/spec content (set
         # LOG_LEVEL=DEBUG in .env to see it).
         dumped = result.structured_output.model_dump()
         logger.debug("result: %s", dumped)
         logger.info("invocation succeeded")
-        return {"result": dumped}
+        yield {"result": dumped}
 
     return app

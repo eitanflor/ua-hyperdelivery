@@ -1,9 +1,12 @@
 """Tests for the shared AgentCore Runtime composition root.
 
 All four agents route their HTTP contract through `create_app`, so its error handling is
-the single place a bad prompt or a failed model call is turned into a response.
+the single place a bad prompt or a failed model call is turned into a response. The
+entrypoint is a streaming async generator (see factory.py's docstring) - these tests
+drain it into a list of events rather than asserting on a single return value.
 """
 
+from collections.abc import AsyncGenerator, AsyncIterator
 from typing import Any
 
 import pytest
@@ -24,24 +27,30 @@ class _Result:
 
 
 class _StubAgent:
-    """Stands in for a strands Agent: records the prompt, returns a canned result."""
+    """Stands in for a strands Agent: records the prompt, streams canned events."""
 
-    def __init__(self, result: _Result | None = None, error: Exception | None = None) -> None:
-        self._result = result
+    def __init__(
+        self,
+        events: list[dict[str, Any]] | None = None,
+        error: Exception | None = None,
+    ) -> None:
+        self._events = events if events is not None else [{"result": _Result(_Output(value="ok"))}]
         self._error = error
         self.calls: list[str] = []
 
-    def __call__(self, prompt: str, structured_output_model: type[BaseModel]) -> _Result:
+    async def stream_async(
+        self, prompt: str, structured_output_model: type[BaseModel]
+    ) -> AsyncIterator[dict[str, Any]]:
         self.calls.append(prompt)
         if self._error is not None:
             raise self._error
-        assert self._result is not None
-        return self._result
+        for event in self._events:
+            yield event
 
 
 @pytest.fixture
 def stub_agent(monkeypatch: pytest.MonkeyPatch) -> _StubAgent:
-    agent = _StubAgent(_Result(_Output(value="ok")))
+    agent = _StubAgent()
 
     def fake_load_agent_config(name: str) -> AgentConfig:
         return AgentConfig(name=name, model_id="m", system_prompt="p")
@@ -70,41 +79,94 @@ def invoke(stub_agent: _StubAgent, monkeypatch: pytest.MonkeyPatch) -> Any:
     return captured["fn"]
 
 
-def test_returns_the_validated_structured_output(invoke: Any, stub_agent: _StubAgent) -> None:
-    assert invoke({"prompt": "do the thing"}, None) == {"result": {"value": "ok"}}
+async def _drain(events: AsyncGenerator[dict[str, Any], None]) -> list[dict[str, Any]]:
+    return [event async for event in events]
+
+
+async def test_returns_the_validated_structured_output(invoke: Any, stub_agent: _StubAgent) -> None:
+    events = await _drain(invoke({"prompt": "do the thing"}, None))
+
+    assert events == [{"result": {"value": "ok"}}]
     assert stub_agent.calls == ["do the thing"]
 
 
 @pytest.mark.parametrize("payload", [{}, {"prompt": ""}, {"prompt": "   "}, {"prompt": 7}])
-def test_rejects_a_missing_or_blank_prompt(
+async def test_rejects_a_missing_or_blank_prompt(
     invoke: Any, stub_agent: _StubAgent, payload: dict[str, Any]
 ) -> None:
-    assert invoke(payload, None) == {"error": "'prompt' must be a non-empty string"}
+    events = await _drain(invoke(payload, None))
+
+    assert events == [{"error": "'prompt' must be a non-empty string"}]
     assert stub_agent.calls == []
 
 
-def test_reports_an_error_when_the_agent_raises(
+async def test_reports_an_error_when_the_agent_raises(
     monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
 ) -> None:
     monkeypatch.setattr(stub_agent, "_error", RuntimeError("bedrock exploded"))
 
-    assert invoke({"prompt": "do the thing"}, None) == {"error": "agent invocation failed"}
+    events = await _drain(invoke({"prompt": "do the thing"}, None))
+
+    assert events == [{"error": "agent invocation failed"}]
 
 
-def test_reports_an_error_when_no_structured_output_is_produced(
+async def test_reports_an_error_when_no_structured_output_is_produced(
     monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
 ) -> None:
-    monkeypatch.setattr(stub_agent, "_result", _Result(None))
+    monkeypatch.setattr(stub_agent, "_events", [{"result": _Result(None)}])
 
-    assert invoke({"prompt": "do the thing"}, None) == {
-        "error": "agent did not produce structured output"
-    }
+    events = await _drain(invoke({"prompt": "do the thing"}, None))
+
+    assert events == [{"error": "agent did not produce structured output"}]
 
 
-def test_session_id_from_context_reaches_the_log_filter(invoke: Any) -> None:
+async def test_streams_free_text_chunks_before_the_result(
+    monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
+) -> None:
+    monkeypatch.setattr(
+        stub_agent,
+        "_events",
+        [{"data": "Analyzing"}, {"data": "..."}, {"result": _Result(_Output(value="ok"))}],
+    )
+
+    events = await _drain(invoke({"prompt": "do the thing"}, None))
+
+    assert events == [
+        {"chunk": "Analyzing"},
+        {"chunk": "..."},
+        {"result": {"value": "ok"}},
+    ]
+
+
+async def test_announces_each_tool_once_when_no_free_text_is_produced(
+    monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
+) -> None:
+    # Distill (and any agent forced into structured_output_model) mostly goes straight
+    # to tool calls with no free "data" text at all.
+    monkeypatch.setattr(
+        stub_agent,
+        "_events",
+        [
+            {"current_tool_use": {"name": "score_completeness"}},
+            {"current_tool_use": {"name": "score_completeness"}},
+            {"current_tool_use": {"name": "StructuredSpec"}},
+            {"result": _Result(_Output(value="ok"))},
+        ],
+    )
+
+    events = await _drain(invoke({"prompt": "do the thing"}, None))
+
+    assert events == [
+        {"chunk": "Using score_completeness...\n"},
+        {"chunk": "Using StructuredSpec...\n"},
+        {"result": {"value": "ok"}},
+    ]
+
+
+async def test_session_id_from_context_reaches_the_log_filter(invoke: Any) -> None:
     class _Context:
         session_id = "session-abc"
 
-    invoke({"prompt": "do the thing"}, _Context())
+    await _drain(invoke({"prompt": "do the thing"}, _Context()))
 
     assert factory.session_id_var.get() == "session-abc"

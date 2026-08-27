@@ -8,8 +8,10 @@ agent:
     requirements to gate criteria for a G1 spec quality gate, generate machine-readable
     rules for each criterion, and link evidence from the source text to each requirement.
     If the prompt gives a Confluence page id instead of raw FSD text, call the
-    `confluence_get_page` tool first to retrieve it. If it gives an S3 key instead, call
-    `s3_get_document_text` first. Before finalizing, call the
+    `confluence_get_page` tool first to retrieve it. If it gives a Jira issue key instead,
+    call `jira_get_issue` first (or `jira_search` if you only have a JQL query or partial
+    reference). If it gives an S3 key instead, call `s3_get_document_text` first. Before
+    finalizing, call the
     `score_completeness` tool with the requirement ids,
     the requirement ids that have evidence, the gate criteria ids, and the criteria ids
     that have a rule - use its returned score and gaps verbatim as the `completeness`

@@ -1,13 +1,27 @@
 """Project endpoints: create, inspect, and record gate decisions."""
 
+import json
+import logging
 import uuid
+from collections.abc import Iterator
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 
-from api.schemas.project import CreateProjectRequest, DecisionRequest, ProjectResponse
-from core.domain.project import APPROVAL_STATIONS, Project, Station
+from api.auth import get_current_user
+from api.schemas.project import (
+    AdvanceRequest,
+    ArtifactResponse,
+    CreateProjectRequest,
+    DecisionRequest,
+    ProjectResponse,
+    RenameProjectRequest,
+)
+from core.domain.project import AGENT_STATIONS, APPROVAL_STATIONS, Artifact, Project, Station
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(get_current_user)])
 
 
 def _to_response(project: Project) -> ProjectResponse:
@@ -20,11 +34,27 @@ def _to_response(project: Project) -> ProjectResponse:
     )
 
 
+def _artifact_to_response(artifact: Artifact) -> ArtifactResponse:
+    return ArtifactResponse(
+        agent=artifact.agent,
+        content=artifact.content,
+        created_at=artifact.created_at.isoformat(),
+    )
+
+
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(payload: CreateProjectRequest, request: Request) -> ProjectResponse:
     """Create a project and, once the state machine exists, start its execution."""
+    name = payload.name
+    if not name:
+        if not payload.message:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="either name or message is required"
+            )
+        name = request.app.state.project_namer.generate(payload.message)
+
     repo = request.app.state.project_repository
-    project = repo.create_project(project_id=str(uuid.uuid4()), name=payload.name)
+    project = repo.create_project(project_id=str(uuid.uuid4()), name=name)
     if (sfn := request.app.state.state_machine_client) is not None:
         sfn.start_execution(project.id)
     return _to_response(project)
@@ -45,6 +75,163 @@ def get_project(project_id: str, request: Request) -> ProjectResponse:
     if project is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
     return _to_response(project)
+
+
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_project(project_id: str, request: Request) -> None:
+    """Delete a project and everything under it (artifacts, decision history)."""
+    repo = request.app.state.project_repository
+    if repo.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    repo.delete_project(project_id)
+
+
+@router.patch("/{project_id}", response_model=ProjectResponse)
+def rename_project(
+    project_id: str, payload: RenameProjectRequest, request: Request
+) -> ProjectResponse:
+    """Rename a project in place - station and history are untouched."""
+    repo = request.app.state.project_repository
+    if repo.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="name must not be empty")
+    updated = repo.rename_project(project_id, name)
+    return _to_response(updated)
+
+
+@router.get("/{project_id}/artifacts", response_model=list[ArtifactResponse])
+def list_artifacts(project_id: str, request: Request) -> list[ArtifactResponse]:
+    """Return every artifact produced so far for a project."""
+    repo = request.app.state.project_repository
+    return [_artifact_to_response(a) for a in repo.list_artifacts(project_id)]
+
+
+@router.get("/{project_id}/artifacts/{agent}", response_model=ArtifactResponse)
+def get_artifact(project_id: str, agent: str, request: Request) -> ArtifactResponse:
+    """Return a single agent's artifact, 404ing if it hasn't run yet."""
+    repo = request.app.state.project_repository
+    artifact = repo.get_artifact(project_id, agent)
+    if artifact is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="artifact not found")
+    return _artifact_to_response(artifact)
+
+
+@router.post("/{project_id}/advance", response_model=ProjectResponse)
+def advance_project(
+    project_id: str, request: Request, payload: AdvanceRequest | None = None
+) -> ProjectResponse:
+    """Local-dev-only agent invocation, no streaming.
+
+    Invokes the current station's agent on its local dev HTTP server directly
+    (bypassing Step Functions/AgentCore Runtime, which aren't deployed - see
+    orchestration.local_agent_client) and advances the project. Disabled once a real
+    state machine is wired, since that drives progression on its own.
+    """
+    if request.app.state.state_machine_client is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="not available once the state machine is deployed",
+        )
+
+    repo = request.app.state.project_repository
+    project = repo.get_project(project_id)
+    if project is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    if project.station not in AGENT_STATIONS:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail=f"project is not at an agent station (at {project.station.value})",
+        )
+
+    agent = project.station.value
+    prompt = (payload.prompt if payload else None) or f"Project {project_id}"
+    result = request.app.state.local_agent_client.invoke(agent, prompt=prompt)
+    repo.save_artifact(project_id, agent, result)
+
+    # Only agents whose output models carry a `completeness` verdict (currently just
+    # Distill's StructuredSpec) support this elicitation loop - others have no such
+    # concept, so a single turn is always "done".
+    if _has_open_gaps(result):
+        return _to_response(project)
+    updated = repo.advance_after_artifact(project_id, agent)
+    return _to_response(updated)
+
+
+def _has_open_gaps(result: dict[str, Any]) -> bool:
+    completeness = result.get("completeness")
+    if not isinstance(completeness, dict):
+        return False
+    return bool(completeness.get("gaps"))
+
+
+def _sse(event: dict[str, Any]) -> str:
+    return f"data: {json.dumps(event)}\n\n"
+
+
+@router.post("/{project_id}/advance/stream")
+def advance_project_stream(
+    project_id: str, request: Request, payload: AdvanceRequest | None = None
+) -> StreamingResponse:
+    """Same local-dev-only bypass as `advance_project`, but streams the output.
+
+    As it's produced instead of blocking until it's done - see LocalAgentClient.stream.
+    Validation happens up front, before the stream starts, since an HTTP status can't
+    change once streaming begins; anything going wrong after that is surfaced as an
+    `{"error": ...}` SSE event instead of a status code.
+    """
+    if request.app.state.state_machine_client is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="not available once the state machine is deployed",
+        )
+
+    repo = request.app.state.project_repository
+    project = repo.get_project(project_id)
+    if project is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    if project.station not in AGENT_STATIONS:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail=f"project is not at an agent station (at {project.station.value})",
+        )
+
+    agent = project.station.value
+    prompt = (payload.prompt if payload else None) or f"Project {project_id}"
+    local_agent_client = request.app.state.local_agent_client
+
+    def event_stream() -> Iterator[str]:
+        result: dict[str, Any] | None = None
+        try:
+            for event in local_agent_client.stream(agent, prompt):
+                if "chunk" in event:
+                    yield _sse({"chunk": event["chunk"]})
+                elif "error" in event:
+                    yield _sse({"error": event["error"]})
+                    return
+                elif "result" in event:
+                    result = event["result"]
+
+            if result is None:
+                yield _sse({"error": f"{agent} agent invocation ended without a result"})
+                return
+
+            repo.save_artifact(project_id, agent, result)
+            if _has_open_gaps(result):
+                updated = project
+            else:
+                updated = repo.advance_after_artifact(project_id, agent)
+            yield _sse({"done": True, "project": _to_response(updated).model_dump(mode="json")})
+        except Exception as exc:
+            # covers the agent stream itself *and* the save-artifact/advance-station
+            # calls after it - those run after the HTTP response has already started
+            # streaming, so an uncaught exception here would otherwise just kill the
+            # connection (client sees a raw network error, not a clean {"error": ...}).
+            logger.exception("advance_project_stream failed for %s/%s", project_id, agent)
+            yield _sse({"error": str(exc)})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.post("/{project_id}/decisions", response_model=ProjectResponse)

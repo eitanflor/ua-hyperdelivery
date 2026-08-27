@@ -82,6 +82,7 @@ class OrchestrationStack(Stack):
             environment={
                 "AGENTCORE_REGION": _AGENTCORE_REGION,
                 "AGENT_RUNTIME_PREFIX": _RUNTIME_PREFIX,
+                "PROJECTS_TABLE": self.project_table.table_name,
             },
         )
         # ListAgentRuntimes has no resource-level filtering; InvokeAgentRuntime is scoped to
@@ -102,6 +103,9 @@ class OrchestrationStack(Stack):
                 ],
             )
         )
+        # Persists each agent's result as an artifact (sk=ARTIFACT#<agent>) for the
+        # console API to serve back - see ProjectRepository.save_artifact.
+        self.project_table.grant_write_data(self.agent_invoker)
 
         # TODO(ADVA-3015): same unbundled-asset caveat as agent_invoker/ConsoleApiStack.
         self.approval_persist = lambda_.Function(

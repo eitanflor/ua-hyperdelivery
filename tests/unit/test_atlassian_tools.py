@@ -45,3 +45,21 @@ def test_jira_mcp_client_returns_client_when_configured(monkeypatch: pytest.Monk
     client = atlassian.jira_mcp_client()
 
     assert isinstance(client, atlassian.MCPClient)
+
+
+def test_jira_read_mcp_client_returns_none_when_not_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(atlassian, "get_settings", lambda: _StubSettings(api_token=None))
+
+    assert atlassian.jira_read_mcp_client() is None
+
+
+def test_jira_read_mcp_client_returns_client_when_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(atlassian, "get_settings", lambda: _StubSettings())
+
+    client = atlassian.jira_read_mcp_client()
+
+    assert isinstance(client, atlassian.MCPClient)

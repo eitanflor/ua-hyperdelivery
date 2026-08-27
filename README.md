@@ -22,11 +22,12 @@ src/
 ├── tools/            # per-agent @tool functions - deterministic validators + the least-privilege policy layer
 ├── infrastructure/   # AWS adapters: DynamoDB repository, Step Functions client, logging/tracing
 ├── orchestration/    # Step Functions Lambda tasks (agent invoke, approval wait)
-├── api/              # console API (FastAPI + Mangum) - create projects, record gate decisions
+├── api/              # console API (FastAPI + Mangum) - projects, gate decisions, Entra ID auth (api/auth.py)
 └── sdk/python/       # client for the console API
 
 infra/                # AWS CDK: state machine, projects table, notifications, console API
 ui/                   # Streamlit harness for poking an agent by hand
+ui/console/           # React + Vite console UI - the real client for the console API (see its README)
 tests/unit/
 ```
 
@@ -105,14 +106,24 @@ Blueprint has a Jira issue-lifecycle MCP tool (generic client builders in
 `ATLASSIAN_*` env vars). Review and Showroom have no external tools yet - they take their
 input entirely from the prompt.
 
-**Phase 2 - console and orchestration (scaffolded, not deployed).** A FastAPI console API
-(`src/api/`) creates projects and records gate decisions against a single-table DynamoDB
-projection (`infrastructure/repositories/`), a Step Functions state machine sequences the
-line with `WAIT_FOR_TASK_TOKEN` holds at each human approval (`infra/stacks/`,
-`orchestration/`), and `sdk/python/` is the client every interface should go through.
-Nothing here is deployed yet: it is blocked on IAM, and the Lambda code assets still have
-no dependency bundling (TODO ADVA-3015).
+**Phase 2 - console and orchestration.** A FastAPI console API (`src/api/`) creates
+projects, records gate decisions, and streams agent turns over SSE, against a
+single-table DynamoDB projection (`infrastructure/repositories/`). Every route is gated
+behind Entra ID (Azure AD) sign-in (`api/auth.py` - validates the bearer ID token against
+Entra's JWKS; `sdk/python/` does not carry credentials and is not yet updated for this).
+A Step Functions state machine sequences the line with `WAIT_FOR_TASK_TOKEN` holds at
+each human approval (`infra/stacks/`, `orchestration/`) - this part is scaffolded but not
+deployed (blocked on IAM, and the Lambda code assets still have no dependency bundling,
+TODO ADVA-3015); until `STATE_MACHINE_ARN` is set the console API falls back to
+DynamoDB-only writes with no execution to start or resume.
 
-**Not started.** AgentCore Memory, Gateway and Identity; the Bedrock Knowledge Base; the
-M365, GitHub and Snowflake integrations; and any front end beyond the Streamlit harness.
-Add those as real use cases demand them, not speculatively.
+**The console UI (`ui/console/`).** A React + Vite + TypeScript app is the real client
+for the console API - a landing-page chatbox that names a new project via Claude Haiku,
+a sidebar with search/rename/delete, a pipeline stepper showing D/B/R/S progress, live
+SSE-streamed agent turns, and gate-decision approval. Signs in via MSAL against the same
+Entra ID app registration the API validates against. Talks to the API directly over
+`fetch` (`ui/console/src/api/client.ts`), not through `sdk/python`.
+
+**Not started.** AgentCore Memory, Gateway and Identity; the Bedrock Knowledge Base; and
+the M365, GitHub and Snowflake integrations. Add those as real use cases demand them, not
+speculatively.

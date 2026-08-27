@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     # None until the state machine is deployed (blocked on IAM) - console API falls back
     # to DynamoDB-only writes with no execution to start/resume.
     state_machine_arn: str | None = None
+    # Comma-separated origins allowed to call the console API - the Vite dev server by
+    # default (ui/console), so the console UI can hit this API cross-origin in local dev.
+    cors_origins: str = "http://localhost:5173"
+    # Entra ID (Azure AD) app registration backing the console UI's MSAL sign-in; required
+    # to validate the bearer ID token (see api/auth.py). Same tenant/app registration as
+    # the frontend's VITE_ENTRA_TENANT_ID/VITE_ENTRA_CLIENT_ID.
+    entra_tenant_id: str | None = None
+    entra_client_id: str | None = None
 
 
 @lru_cache

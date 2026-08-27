@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -23,6 +24,7 @@ class Station(StrEnum):
 
 
 APPROVAL_STATIONS = {Station.BLUEPRINT_APPROVAL, Station.REVIEW_APPROVAL}
+AGENT_STATIONS = {Station.DISTILL, Station.BLUEPRINT, Station.REVIEW, Station.SHOWROOM}
 
 _LINE = list(Station)
 
@@ -57,6 +59,19 @@ class Decision(BaseModel):
     signer: str
     comment: str | None = None
     decided_at: datetime
+
+
+class Artifact(BaseModel):
+    """One agent's output (FSD/TDD/gap report/demo package), keyed by the agent that produced it.
+
+    Persisted as sk='ARTIFACT#<agent>' - one per agent per project, latest
+    invocation wins (overwritten, not versioned - see docs/decisions.md).
+    """
+
+    project_id: str
+    agent: str
+    content: dict[str, Any]
+    created_at: datetime
 
 
 def utcnow() -> datetime:

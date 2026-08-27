@@ -1,0 +1,54 @@
+"""Generates a short, human-friendly project name from a user's first message.
+
+Uses a fast/cheap model (Claude Haiku) instead of Distill's Sonnet - naming is a trivial
+task and doesn't need a heavyweight model or tool access. Used by the console UI's
+landing-page chatbox, which creates a project directly from a message with no name typed
+in.
+"""
+
+import logging
+
+from strands import Agent
+from strands.models import BedrockModel
+
+logger = logging.getLogger(__name__)
+
+_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+_SYSTEM_PROMPT = (
+    "You name software projects. Given a short description of what someone wants to "
+    "build, reply with ONLY a concise project name (2-5 words, Title Case, no "
+    "punctuation, no quotes, no explanation)."
+)
+_MAX_NAME_LENGTH = 60
+
+
+class ProjectNamer:
+    """Names a project from its first message via Claude Haiku, falling back on failure."""
+
+    def __init__(self, region_name: str) -> None:
+        """`region_name` is the Bedrock region (see Settings.aws_region), not DynamoDB's."""
+        self._region_name = region_name
+
+    def generate(self, message: str) -> str:
+        """Best-effort naming.
+
+        Falls back to a heuristic (not an exception) on any model/network failure, since
+        a project should never fail to create just because naming it nicely didn't work.
+        """
+        try:
+            model = BedrockModel(model_id=_MODEL_ID, region_name=self._region_name, max_tokens=30)
+            # callback_handler=None: this is a one-off structured-ish text call, not an
+            # interactive session - the default handler otherwise prints every token to
+            # stdout, which would spam the console API's own server logs.
+            agent = Agent(model=model, system_prompt=_SYSTEM_PROMPT, callback_handler=None)
+            name = str(agent(message)).strip().strip("\"'").strip()
+            if name:
+                return name[:_MAX_NAME_LENGTH]
+        except Exception:
+            logger.exception("project naming failed, falling back to a heuristic name")
+        return _fallback_name(message)
+
+
+def _fallback_name(message: str) -> str:
+    name = " ".join(message.strip().split()[:6]) or "Untitled Project"
+    return name[:_MAX_NAME_LENGTH]

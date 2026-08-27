@@ -4,15 +4,23 @@ Separate from `core.domain.project` on purpose: the API contract can stay stable
 the domain model changes, and timestamps cross the wire as ISO strings.
 """
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from core.domain.project import Station
 
 
 class CreateProjectRequest(BaseModel):
-    """Body for `POST /projects`."""
+    """Body for `POST /projects`.
 
-    name: str
+    Either a name, or a first message to generate one from (see ProjectNamer) - the
+    console UI's landing-page chatbox creates a project straight from a message with
+    no name typed in.
+    """
+
+    name: str | None = None
+    message: str | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -31,3 +39,28 @@ class DecisionRequest(BaseModel):
     approved: bool
     signer: str
     comment: str | None = None
+
+
+class RenameProjectRequest(BaseModel):
+    """Body for `PATCH /projects/{id}`."""
+
+    name: str
+
+
+class ArtifactResponse(BaseModel):
+    """An agent's artifact as returned to the console."""
+
+    agent: str
+    content: dict[str, Any]
+    created_at: str
+
+
+class AdvanceRequest(BaseModel):
+    """Body for `POST /projects/{id}/advance(/stream)`.
+
+    Local-dev-only (see orchestration.local_agent_client): the raw material Distill
+    (or whichever agent is current) actually needs - falls back to a placeholder if
+    omitted, but a real chat turn should always supply one.
+    """
+
+    prompt: str | None = None

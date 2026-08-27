@@ -1,0 +1,77 @@
+"""Local-dev-only substitute for the Step Functions/AgentCore Runtime orchestration path.
+
+That real path (agent_invoker.py, a Lambda calling AgentCore Runtime) requires both the
+state machine and the AgentCore runtimes to be deployed - both blocked on IAM (see
+docs/decisions.md). This client instead talks straight to an agent's local dev HTTP
+server (`make dev-distill` etc., ports per the Makefile) so the console UI has something
+real to demo against without any AWS deploy. Never used in production - the console API
+only wires this in when `state_machine_arn` is unset.
+"""
+
+import json
+from collections.abc import Iterator
+from typing import Any, Protocol
+
+import requests
+
+_AGENT_PORTS = {"distill": 8080, "blueprint": 8081, "review": 8082, "showroom": 8083}
+
+
+class _Response(Protocol):
+    """The subset of `requests.Response` this client actually calls.
+
+    Lets tests inject a plain fake instead of a real HTTP response.
+    """
+
+    def raise_for_status(self) -> None: ...
+    def iter_lines(self, decode_unicode: bool = True) -> Iterator[str]: ...
+
+
+class _Session(Protocol):
+    """The subset of the `requests` module (or a session) this client actually calls."""
+
+    def post(
+        self, url: str, json: dict[str, Any], timeout: int, stream: bool = False
+    ) -> _Response: ...
+
+
+class LocalAgentClient:
+    """Talks to one agent's local dev HTTP server (see module docstring)."""
+
+    def __init__(self, base_url: str = "http://localhost", session: _Session | None = None) -> None:
+        """Pass `session` to inject a fake instead of the real `requests` module."""
+        self._base_url = base_url
+        self._session = session or requests
+
+    def stream(self, agent: str, prompt: str) -> Iterator[dict[str, Any]]:
+        """Yields the agent's events as they arrive over its `/invocations` SSE response.
+
+        See agent_runtime.factory: `{"chunk": str}` for each piece of streamed text,
+        followed by exactly one of `{"result": dict}` or `{"error": str}`.
+        """
+        port = _AGENT_PORTS[agent]
+        resp = self._session.post(
+            f"{self._base_url}:{port}/invocations",
+            json={"prompt": prompt},
+            timeout=120,
+            stream=True,
+        )
+        resp.raise_for_status()
+        for line in resp.iter_lines(decode_unicode=True):
+            if not line or not line.startswith("data: "):
+                continue
+            yield json.loads(line[len("data: ") :])
+
+    def invoke(self, agent: str, prompt: str) -> dict[str, Any]:
+        """Drains `stream()` and returns just the final result.
+
+        For callers that don't need the incremental chunks.
+        """
+        for event in self.stream(agent, prompt):
+            if "error" in event:
+                msg = f"{agent} agent invocation failed: {event['error']}"
+                raise RuntimeError(msg)
+            if "result" in event:
+                return event["result"]
+        msg = f"{agent} agent invocation ended without a result"
+        raise RuntimeError(msg)

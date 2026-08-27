@@ -17,6 +17,7 @@ dependencies = [
     "uvicorn>=0.30",
     "httpx>=0.27",
     "mangum>=0.19",
+    "pyjwt[crypto]>=2.10.0",
     # opentelemetry-api/-instrumentation come in via bedrock-agentcore, but without the SDK
     # its tracing hook silently no-ops against a ProxyTracerProvider.
     "opentelemetry-sdk>=1.27",
@@ -170,6 +171,10 @@ convention = "google"
 ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
+# FastAPI's Depends() *must* be a call in the default value - that's the framework's
+# actual dependency-injection mechanism, not the mutable-default footgun B008 guards
+# against.
+"src/api/auth.py" = ["B008"]
 # Test doubles mirror third-party call shapes (boto3's PascalCase kwargs, httpx handlers),
 # so PEP 8 naming and unused-argument rules would make them less faithful, not more.
 "tests/**/*.py" = [

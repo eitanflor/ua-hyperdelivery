@@ -1,11 +1,13 @@
 """DynamoDB persistence for project state and the decision audit trail."""
 
+import json
 from typing import TYPE_CHECKING, Any
 
 import boto3
 
 from core.domain.project import (
     APPROVAL_STATIONS,
+    Artifact,
     Decision,
     Project,
     Station,
@@ -96,6 +98,72 @@ class ProjectRepository:
         self._table.put_item(Item=self._state_item(project))
         return decision
 
+    def save_artifact(self, project_id: str, agent: str, content: dict[str, Any]) -> Artifact:
+        """Persist an agent's structured output, replacing any prior artifact for it."""
+        artifact = Artifact(
+            project_id=project_id, agent=agent, content=content, created_at=utcnow()
+        )
+        self._table.put_item(Item=self._artifact_item(artifact))
+        return artifact
+
+    def get_artifact(self, project_id: str, agent: str) -> Artifact | None:
+        """Return a single agent's artifact, or None if it hasn't run yet."""
+        resp = self._table.get_item(Key={"pk": project_pk(project_id), "sk": f"ARTIFACT#{agent}"})
+        item = resp.get("Item")
+        return self._artifact_from_item(item) if item else None
+
+    def list_artifacts(self, project_id: str) -> list[Artifact]:
+        """Return every artifact produced so far for a project, in no particular order."""
+        resp = self._table.query(
+            KeyConditionExpression="pk = :pk AND begins_with(sk, :prefix)",
+            ExpressionAttributeValues={":pk": project_pk(project_id), ":prefix": "ARTIFACT#"},
+        )
+        return [self._artifact_from_item(item) for item in resp.get("Items", [])]
+
+    def advance_after_artifact(self, project_id: str, agent: str) -> Project:
+        """Moves a project past an agent station once its artifact has been produced.
+
+        The local-dev substitute for what the Step Functions chain does in production
+        (see orchestration.local_agent_client). Raises if the project isn't currently at
+        that station, so a stale/duplicate "run" call can't double-advance it.
+        """
+        project = self.get_project(project_id)
+        if project is None:
+            msg = f"unknown project {project_id}"
+            raise ValueError(msg)
+        if project.station.value != agent:
+            msg = f"project is not at {agent} (currently at {project.station.value})"
+            raise ValueError(msg)
+
+        project.station = next_station(project.station)
+        project.updated_at = utcnow()
+        self._table.put_item(Item=self._state_item(project))
+        return project
+
+    def delete_project(self, project_id: str) -> None:
+        """Deletes a project's state, artifacts, and decision history.
+
+        Everything under its `pk` (see the schema note on the class docstring). No-op if
+        the project doesn't exist, matching DynamoDB's own delete_item semantics.
+        """
+        resp = self._table.query(
+            KeyConditionExpression="pk = :pk",
+            ExpressionAttributeValues={":pk": project_pk(project_id)},
+        )
+        for item in resp.get("Items", []):
+            self._table.delete_item(Key={"pk": item["pk"], "sk": item["sk"]})
+
+    def rename_project(self, project_id: str, name: str) -> Project:
+        """Change a project's display name in place - station/history are untouched."""
+        project = self.get_project(project_id)
+        if project is None:
+            msg = f"unknown project {project_id}"
+            raise ValueError(msg)
+        project.name = name
+        project.updated_at = utcnow()
+        self._table.put_item(Item=self._state_item(project))
+        return project
+
     @staticmethod
     def _state_item(project: Project) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -135,4 +203,25 @@ class ProjectRepository:
             task_token=item.get("task_token"),
             created_at=item["created_at"],
             updated_at=item["updated_at"],
+        )
+
+    @staticmethod
+    def _artifact_item(artifact: Artifact) -> dict[str, Any]:
+        return {
+            "pk": project_pk(artifact.project_id),
+            "sk": f"ARTIFACT#{artifact.agent}",
+            "agent": artifact.agent,
+            # DynamoDB's Table resource rejects native float (agent output models use
+            # plain floats, e.g. CompletenessScore.score) - store as a JSON string instead.
+            "content": json.dumps(artifact.content),
+            "created_at": artifact.created_at.isoformat(),
+        }
+
+    @staticmethod
+    def _artifact_from_item(item: dict[str, Any]) -> Artifact:
+        return Artifact(
+            project_id=item["pk"].removeprefix("PROJECT#"),
+            agent=item["agent"],
+            content=json.loads(item["content"]),
+            created_at=item["created_at"],
         )
