@@ -17,6 +17,30 @@ Template for new entries:
 
 ---
 
+## 2026-08-27 - Step Functions + DynamoDB for Phase 2 orchestration
+
+- **Status**: Accepted
+- **Context**: Phase 2 needs a per-project state machine that sequences the four agents,
+  survives a multi-day human approval wait, and keeps an audit trail (FSD/prompt/model
+  version, signer) per decision - none of which exists yet.
+- **Decision**: Use AWS Step Functions **Standard** workflows (not Express - supports
+  executions up to 1 year) as the state machine, with the `waitForTaskToken` callback
+  pattern for the human-hold/approval steps. DynamoDB holds the queryable project
+  projection (current station, artifact versions, pending task tokens) since Step
+  Functions execution history alone isn't efficient to query for "where is project X."
+  EventBridge rules on Step Functions state-entered events drive notifications (who owes
+  a decision) via SNS/SES. Each task state invokes the existing per-agent AgentCore
+  Runtime `/invocations` endpoint - no change to the agents themselves.
+- **Alternatives considered**: A custom Lambda/DynamoDB-only state machine - rejected
+  because it would reinvent callback-token bookkeeping, retries, and execution history
+  that Step Functions provides natively, for a workflow that genuinely needs multi-day
+  durable waits.
+- **Consequences**: Ties orchestration to a proprietary AWS service (harder to test
+  locally, per-transition cost) in exchange for not hand-rolling durable human-in-the-loop
+  waits and audit history. The project console (Phase 2 front end) becomes a thin client
+  over the DynamoDB projection + an approval endpoint that calls `SendTaskSuccess`/
+  `SendTaskFailure` - no orchestration logic in the frontend.
+
 ## 2026-08-26 - No AgentCore Memory/Gateway/Identity yet
 
 - **Status**: Accepted
