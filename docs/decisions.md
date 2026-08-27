@@ -17,6 +17,40 @@ Template for new entries:
 
 ---
 
+## 2026-08-27 - Lambda glue for agent invocation and human-approval task tokens
+
+- **Status**: Accepted
+- **Context**: The state machine's Task states were `Pass` placeholders. Needed real
+  integrations for (1) invoking each of the four agents' AgentCore Runtime endpoints
+  (cross-region: state machine in ap-southeast-2, AgentCore Runtime in us-east-1) and (2)
+  pausing on human approval while persisting the callback task token onto the project's
+  DynamoDB item. Discovered along the way: CDK's `DynamoUpdateItem` does not support
+  `integration_pattern=WAIT_FOR_TASK_TOKEN` - it's silently ignored (verified against the
+  compiled aws-cdk-lib JS; DynamoDB Step Functions integrations are Request/Response only).
+- **Decision**: Added `src/orchestration/agent_invoker.py` (a Lambda, resolves the
+  AgentCore runtime ARN by name via `list_agent_runtimes` since it isn't known at CDK
+  synth/deploy time, then calls `invoke_agent_runtime`) as the `LambdaInvoke` Task for
+  Distill/Blueprint/Review/Showroom. Added `src/orchestration/persist_approval.py` (a
+  second Lambda) as a `LambdaInvoke` Task with `integration_pattern=WAIT_FOR_TASK_TOKEN`
+  for the two approval waits - it writes `task_token`/`station`/gsi1 pending-lookup
+  attributes and returns immediately, while the execution itself stays paused until the
+  console API calls `send_task_success`/`send_task_failure` (now wired into
+  `POST /projects/{id}/decisions`, replacing the earlier TODO stub; `POST /projects` now
+  also starts the execution). Both Lambdas get least-privilege IAM: `agent_invoker` is
+  scoped to `bedrock-agentcore:InvokeAgentRuntime` on `runtime/hyperdelivery_*` only;
+  `persist_approval` gets DynamoDB write on the project table only.
+- **Alternatives considered**: `DynamoUpdateItem` directly with `WAIT_FOR_TASK_TOKEN` -
+  not actually supported by the CDK construct/AWS service integration, would have deployed
+  successfully but never paused. A single combined Lambda for both agent invocation and
+  approval-persistence - rejected for clearer least-privilege IAM boundaries (one function
+  never needs the other's permissions).
+- **Consequences**: Both Lambdas still use an unbundled code asset (no real dependency
+  packaging - deferred like `ConsoleApiStack`'s Lambda, since deploy is blocked on IAM
+  regardless). Rejections currently fail the whole execution (`States.ALL` catch to a
+  `Fail` state) - no resubmit/retry loop; revisit if that's needed before Showroom's
+  iteration-loop work (Phase 3+) lands. Agent prompts are placeholders (`"Project {id}"`)
+  until Phase 3 memory/retrieval work supplies real artifact-grounded prompts.
+
 ## 2026-08-27 - One core service, two integration seams, for multi-interface support
 
 - **Status**: Accepted

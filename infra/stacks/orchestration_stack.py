@@ -1,18 +1,29 @@
 """Phase 2 orchestration infra: project state machine, state projection, notifications.
 
 See docs/decisions.md, "2026-08-27 - Step Functions + DynamoDB for Phase 2 orchestration".
-The state machine's Task states are Pass placeholders until the per-agent invocation
-Lambdas exist - swap them in without changing the surrounding shape (they mark where
-`waitForTaskToken` human-approval waits attach too).
+Agent Task states invoke `src/orchestration/agent_invoker.py` (a Lambda that resolves and
+calls the AgentCore Runtime for that agent, cross-region into us-east-1). Approval waits
+persist the Step Functions task token onto the project's DynamoDB item via a
+`waitForTaskToken` DynamoUpdateItem, which the console API resumes from
+(`send_task_success`/`send_task_failure`) once a human decides.
 """
 
-from aws_cdk import RemovalPolicy, Stack
+from pathlib import Path
+
+from aws_cdk import Duration, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as targets
+from aws_cdk import aws_iam as iam
+from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_stepfunctions as sfn
+from aws_cdk import aws_stepfunctions_tasks as tasks
 from constructs import Construct
+
+_SRC_DIR = Path(__file__).resolve().parents[2] / "src"
+_AGENTCORE_REGION = "us-east-1"  # Bedrock/AgentCore Runtime lives here, not ap-southeast-2
+_RUNTIME_PREFIX = "hyperdelivery_"  # matches scripts/deploy_agent.sh's runtime_name
 
 
 class OrchestrationStack(Stack):
@@ -43,6 +54,73 @@ class OrchestrationStack(Stack):
             topic_name="hyperdelivery-decision-notifications",
         )
 
+        # TODO(ADVA-3015): plain unbundled code asset, same as ConsoleApiStack - no
+        # third-party deps (boto3 aside, which the Lambda runtime provides) installed yet.
+        self.agent_invoker = lambda_.Function(
+            self,
+            "AgentInvokerFunction",
+            function_name="hyperdelivery-agent-invoker",
+            runtime=lambda_.Runtime.PYTHON_3_11,
+            handler="orchestration.agent_invoker.handler",
+            code=lambda_.Code.from_asset(
+                str(_SRC_DIR),
+                exclude=[
+                    "api",
+                    "agent_runtime",
+                    "providers",
+                    "tools",
+                    "mcp_clients",
+                    "__pycache__",
+                ],
+            ),
+            timeout=Duration.minutes(5),
+            memory_size=256,
+            environment={
+                "AGENTCORE_REGION": _AGENTCORE_REGION,
+                "AGENT_RUNTIME_PREFIX": _RUNTIME_PREFIX,
+            },
+        )
+        # ListAgentRuntimes has no resource-level filtering; InvokeAgentRuntime is scoped to
+        # this project's runtimes only.
+        self.agent_invoker.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock-agentcore-control:ListAgentRuntimes"], resources=["*"]
+            )
+        )
+        self.agent_invoker.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock-agentcore:InvokeAgentRuntime"],
+                resources=[
+                    f"arn:aws:bedrock-agentcore:{_AGENTCORE_REGION}:{self.account}:"
+                    f"runtime/{_RUNTIME_PREFIX}*"
+                ],
+            )
+        )
+
+        # TODO(ADVA-3015): same unbundled-asset caveat as agent_invoker/ConsoleApiStack.
+        self.approval_persist = lambda_.Function(
+            self,
+            "ApprovalPersistFunction",
+            function_name="hyperdelivery-approval-persist",
+            runtime=lambda_.Runtime.PYTHON_3_11,
+            handler="orchestration.persist_approval.handler",
+            code=lambda_.Code.from_asset(
+                str(_SRC_DIR),
+                exclude=[
+                    "api",
+                    "agent_runtime",
+                    "providers",
+                    "tools",
+                    "mcp_clients",
+                    "__pycache__",
+                ],
+            ),
+            timeout=Duration.seconds(10),
+            memory_size=128,
+            environment={"PROJECTS_TABLE": "hyperdelivery-projects"},
+        )
+        self.project_table.grant_write_data(self.approval_persist)
+
         self.state_machine = sfn.StateMachine(
             self,
             "ProjectStateMachine",
@@ -63,12 +141,21 @@ class OrchestrationStack(Stack):
         )
 
     def _build_definition(self) -> sfn.IChainable:
-        distill = sfn.Pass(self, "Distill")
-        wait_blueprint_approval = sfn.Pass(self, "WaitForBlueprintApproval")
-        blueprint = sfn.Pass(self, "Blueprint")
-        wait_review_approval = sfn.Pass(self, "WaitForReviewApproval")
-        review = sfn.Pass(self, "Review")
-        showroom = sfn.Pass(self, "Showroom")
+        distill = self._agent_task("Distill", "distill")
+        blueprint = self._agent_task("Blueprint", "blueprint")
+        review = self._agent_task("Review", "review")
+        showroom = self._agent_task("Showroom", "showroom")
+
+        wait_blueprint_approval = self._approval_wait(
+            "WaitForBlueprintApproval", "blueprint_approval"
+        )
+        wait_review_approval = self._approval_wait("WaitForReviewApproval", "review_approval")
+
+        # A rejection fails the execution outright - no retry/resubmit loop yet (not asked
+        # for by the plan; Showroom->Blueprint iteration is separate, later scope).
+        rejected = sfn.Fail(self, "Rejected", cause="Approval rejected", error="Rejected")
+        wait_blueprint_approval.add_catch(rejected, errors=["States.ALL"])
+        wait_review_approval.add_catch(rejected, errors=["States.ALL"])
 
         return (
             distill.next(wait_blueprint_approval)
@@ -77,3 +164,44 @@ class OrchestrationStack(Stack):
             .next(review)
             .next(showroom)
         )
+
+    def _agent_task(self, id_: str, agent: str) -> tasks.LambdaInvoke:
+        return tasks.LambdaInvoke(
+            self,
+            id_,
+            lambda_function=self.agent_invoker,
+            payload=sfn.TaskInput.from_object(
+                {
+                    "agent": agent,
+                    "project_id": sfn.JsonPath.string_at("$.project_id"),
+                    # TODO(ADVA-3015): real artifact-grounded prompts (FSD/TDD content,
+                    # retrieval, etc.) are Phase 3 scope - this is a placeholder.
+                    "prompt": sfn.JsonPath.format(
+                        "Project {}", sfn.JsonPath.string_at("$.project_id")
+                    ),
+                }
+            ),
+            payload_response_only=True,
+            result_path=f"$.{agent}_result",
+        )
+
+    def _approval_wait(self, id_: str, station: str) -> tasks.LambdaInvoke:
+        """Pauses the execution (WAIT_FOR_TASK_TOKEN) after persisting the task token + the
+        gsi1 pending-lookup attributes onto the project's STATE item, so `list_pending`
+        picks the project up immediately. Resumed by the console API via
+        send_task_success/send_task_failure - see api/routers/projects.py:submit_decision."""
+        return tasks.LambdaInvoke(
+            self,
+            id_,
+            lambda_function=self.approval_persist,
+            integration_pattern=sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
+            payload=sfn.TaskInput.from_object(
+                {
+                    "project_id": sfn.JsonPath.string_at("$.project_id"),
+                    "station": station,
+                    "task_token": sfn.JsonPath.task_token,
+                }
+            ),
+            result_path="$.approval",
+        )
+

@@ -22,6 +22,8 @@ def _to_response(project: Project) -> ProjectResponse:
 def create_project(payload: CreateProjectRequest, request: Request) -> ProjectResponse:
     repo = request.app.state.project_repository
     project = repo.create_project(project_id=str(uuid.uuid4()), name=payload.name)
+    if (sfn := request.app.state.state_machine_client) is not None:
+        sfn.start_execution(project.id)
     return _to_response(project)
 
 
@@ -61,6 +63,9 @@ def submit_decision(
         signer=payload.signer,
         comment=payload.comment,
     )
-    # TODO(ADVA-3015): once the state machine is deployed, resume the paused execution here
-    # via stepfunctions.send_task_success/send_task_failure using project.task_token.
+    if (sfn := request.app.state.state_machine_client) is not None and project.task_token:
+        if payload.approved:
+            sfn.send_task_success(project.task_token, {"approved": True})
+        else:
+            sfn.send_task_failure(project.task_token, error="Rejected")
     return _to_response(repo.get_project(project_id))

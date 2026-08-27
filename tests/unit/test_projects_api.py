@@ -26,6 +26,20 @@ class _FakeTable:
         return {"Items": matches}
 
 
+class _FakeStateMachineClient:
+    def __init__(self):
+        self.calls: list[tuple[str, tuple]] = []
+
+    def start_execution(self, project_id: str) -> None:
+        self.calls.append(("start_execution", (project_id,)))
+
+    def send_task_success(self, task_token: str, output: dict) -> None:
+        self.calls.append(("send_task_success", (task_token, output)))
+
+    def send_task_failure(self, task_token: str, error: str) -> None:
+        self.calls.append(("send_task_failure", (task_token, error)))
+
+
 @pytest.fixture
 def client(monkeypatch) -> TestClient:
     # avoid create_app() reaching for real AWS credentials/table during app construction
@@ -36,7 +50,9 @@ def client(monkeypatch) -> TestClient:
             {"_table": _FakeTable()}
         ),
     )
-    return TestClient(create_app())
+    app = create_app()
+    app.state.state_machine_client = _FakeStateMachineClient()
+    return TestClient(app)
 
 
 def test_create_and_get_project(client: TestClient):
@@ -81,3 +97,44 @@ def test_decision_advances_station_and_appears_in_pending_list(client: TestClien
 
     assert resp.status_code == 200
     assert resp.json()["station"] == Station.BLUEPRINT.value
+
+
+def test_create_project_starts_a_state_machine_execution(client: TestClient):
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    sfn: _FakeStateMachineClient = client.app.state.state_machine_client
+    assert sfn.calls == [("start_execution", (created["id"],))]
+
+
+def test_approved_decision_resumes_execution_via_task_token(client: TestClient):
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = client.app.state.project_repository
+    project = repo.get_project(created["id"])
+    project.station = Station.BLUEPRINT_APPROVAL
+    project.task_token = "token-123"
+    repo._table.put_item(Item=repo._state_item(project))
+
+    client.post(
+        f"/projects/{created['id']}/decisions",
+        json={"approved": True, "signer": "rahul"},
+    )
+
+    sfn: _FakeStateMachineClient = client.app.state.state_machine_client
+    assert ("send_task_success", ("token-123", {"approved": True})) in sfn.calls
+
+
+def test_rejected_decision_fails_execution_via_task_token(client: TestClient):
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = client.app.state.project_repository
+    project = repo.get_project(created["id"])
+    project.station = Station.BLUEPRINT_APPROVAL
+    project.task_token = "token-123"
+    repo._table.put_item(Item=repo._state_item(project))
+
+    client.post(
+        f"/projects/{created['id']}/decisions",
+        json={"approved": False, "signer": "rahul"},
+    )
+
+    sfn: _FakeStateMachineClient = client.app.state.state_machine_client
+    assert ("send_task_failure", ("token-123", "Rejected")) in sfn.calls
