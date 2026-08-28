@@ -4,14 +4,16 @@ No custom "Expose an API" scope is configured - the frontend sends its ID token 
 access token) as the bearer credential. That's sufficient here: the token is still signed by
 Entra ID for this exact app registration (`aud` == our client id), so validating its signature
 + claims proves who signed in without needing a separate API scope. Same pattern as
-Material_Libraray_AI_Assistant's `mai.core.auth` - see that repo's docs/decisions.md for why.
+Material_Library_AI_Assistant's `mai.core.auth` - see that repo's docs/decisions.md for why.
 """
 
 import logging
+import ssl
 from functools import lru_cache
 from typing import Any
 
 import jwt
+import truststore
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
@@ -39,7 +41,9 @@ class CurrentUser(BaseModel):
 @lru_cache
 def _get_jwk_client(tenant_id: str) -> PyJWKClient:
     jwks_uri = f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys"
-    return PyJWKClient(jwks_uri)
+    # OS trust store, not certifi: under corporate TLS inspection the JWKS response is
+    # re-signed by a root only the system store knows. See CONTRIBUTING.md.
+    return PyJWKClient(jwks_uri, ssl_context=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT))
 
 
 def clear_auth_cache() -> None:

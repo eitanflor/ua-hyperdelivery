@@ -1,33 +1,110 @@
 @import "tailwindcss";
 
+/* Theme is switched by `data-theme` on <html> (see lib/theme.ts). Light is the default
+   and is what ships when JS hasn't run yet. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
+  /* Brand primitives. Components must not reference these directly - use the semantic
+     tokens below, which is what makes the light/dark flip a one-file change. */
   --color-ua-red: #e4002b;
   --color-ua-red-dark: #b80022;
-  --color-ua-black: #101010;
-  --color-ua-carbon: #1d1d1d;
-  --color-ua-steel: #767676;
-  --color-ua-fog: #b3b3b3;
-  --color-ua-mist: #e6e6e6;
-  --color-ua-cloud: #f2f2f2;
 
-  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  /* Semantic surfaces - light theme. Page sits slightly off-white so raised surfaces
+     can be pure white and read as elevated without a shadow doing all the work. */
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-sunken: #f1f1f2;
+  --color-overlay: #ffffff;
 
-  --animate-fade-in-up: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-fade-in: fade-in 0.3s ease both;
-  --animate-scale-in: scale-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-pulse-dot: pulse-dot 1.4s ease-in-out infinite;
+  /* Foreground. Verified >=4.5:1 against the *darkest* surface each is used on
+     (--color-sunken), not just the canvas - that gap is what made the old palette fail. */
+  --color-fg: #101010; /* 18.9:1 */
+  --color-fg-muted: #5a5a5e; /* 6.3:1 */
+  --color-fg-subtle: #6a6a6f; /* 4.7:1 - the floor, never go lighter for text */
+  --color-fg-on-accent: #ffffff; /* 4.9:1 on --color-accent */
 
-  @keyframes fade-in-up {
+  --color-line-subtle: #eaeaec;
+  --color-line: #dcdce0;
+  --color-line-strong: #c2c2c8;
+
+  /* Accent is reserved: primary action, current station, gate, needs-you. Never
+     decoration. `accent-text` is the variant that holds up as small body text. */
+  --color-accent: #e4002b;
+  --color-accent-hover: #b80022;
+  --color-accent-text: #c2001f; /* 6.0:1 - #e4002b is 4.85:1 and drops below AA when small */
+  --color-accent-bg: #fdecef;
+  --color-accent-line: #f7c3cd;
+
+  --color-success: #0e7a4d;
+  --color-success-bg: #e7f5ee;
+  --color-warning: #8a5a00;
+  --color-warning-bg: #fbf1de;
+  --color-danger: #b3261e;
+  --color-danger-bg: #fdecea;
+  --color-info: #1a5fb4;
+  --color-info-bg: #e9f0fb;
+
+  /* Agent identity. These are data, not decoration - they may tint a mark, a station
+     node or an artifact tab, and must never appear on interactive chrome. */
+  --color-distill: #0a6e7a;
+  --color-distill-bg: #e4f4f6;
+  --color-blueprint: #3f4ca8;
+  --color-blueprint-bg: #ebedfa;
+  --color-review: #8a5a00;
+  --color-review-bg: #fbf1de;
+  --color-showroom: #0e7a4d;
+  --color-showroom-bg: #e7f5ee;
+
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
+
+  /* Fixed rem scale, ratio ~1.2. No fluid clamps: a heading that shrinks inside a panel
+     looks worse, not better. 0.75rem/12px is the floor. */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.125rem;
+
+  /* Shape lock: sm for inputs and chips, md for cards and panels, full for avatars and
+     pills. Nothing else. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-raised: 0 1px 2px rgb(16 16 16 / 0.05), 0 1px 1px rgb(16 16 16 / 0.03);
+  --shadow-overlay: 0 12px 32px -8px rgb(16 16 16 / 0.16), 0 4px 8px -4px rgb(16 16 16 / 0.08);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-rise: rise 0.22s var(--ease-out-expo) both;
+  --animate-fade: fade 0.16s ease both;
+  --animate-pop: pop 0.14s var(--ease-out-expo) both;
+  --animate-caret: caret 1.1s ease-in-out infinite;
+  --animate-drift: drift 1.4s ease-in-out infinite;
+  --animate-blink: blink 4.6s ease-in-out infinite;
+
+  @keyframes rise {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: none;
     }
   }
-  @keyframes fade-in {
+  @keyframes fade {
     from {
       opacity: 0;
     }
@@ -35,17 +112,26 @@
       opacity: 1;
     }
   }
-  @keyframes scale-in {
+  @keyframes pop {
     from {
       opacity: 0;
-      transform: scale(0.96);
+      transform: scale(0.97);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: none;
     }
   }
-  @keyframes pulse-dot {
+  @keyframes caret {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.2;
+    }
+  }
+  @keyframes drift {
     0%,
     80%,
     100% {
@@ -57,24 +143,135 @@
       transform: scale(1);
     }
   }
+  @keyframes blink {
+    0%,
+    91%,
+    100% {
+      transform: scaleY(1);
+    }
+    95% {
+      transform: scaleY(0.1);
+    }
+  }
 }
 
-* {
-  scrollbar-color: var(--color-ua-steel) transparent;
-  scrollbar-width: thin;
+/* Dark theme. Authored as a sibling palette, not derived by inversion - every pairing
+   below is verified against its own background. */
+[data-theme="dark"] {
+  --color-canvas: #0d0d0f;
+  --color-surface: #17171a;
+  --color-sunken: #09090a;
+  --color-overlay: #1c1c20;
+
+  --color-fg: #f5f5f6; /* 17.4:1 */
+  --color-fg-muted: #a9a9b2; /* 7.7:1 */
+  --color-fg-subtle: #86868f; /* 4.7:1 - the floor */
+  --color-fg-on-accent: #ffffff;
+
+  --color-line-subtle: #212125;
+  --color-line: #2c2c32;
+  --color-line-strong: #3e3e46;
+
+  /* Fill stays brand red so buttons match across themes; text lightens because #e4002b
+     is only 3.95:1 on this canvas. */
+  --color-accent: #e4002b;
+  --color-accent-hover: #ff1a41;
+  --color-accent-text: #ff3355; /* 5.4:1 */
+  --color-accent-bg: #2a0710;
+  --color-accent-line: #591220;
+
+  --color-success: #3ecf8e;
+  --color-success-bg: #0c2419;
+  --color-warning: #f0b45b;
+  --color-warning-bg: #2a1e0a;
+  --color-danger: #ff6b6b;
+  --color-danger-bg: #2c1110;
+  --color-info: #7aa9ff;
+  --color-info-bg: #101d33;
+
+  --color-distill: #4dd4e0;
+  --color-distill-bg: #0a2429;
+  --color-blueprint: #8b9cff;
+  --color-blueprint-bg: #14172e;
+  --color-review: #f0b45b;
+  --color-review-bg: #2a1e0a;
+  --color-showroom: #3ecf8e;
+  --color-showroom-bg: #0c2419;
+
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-overlay: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 4px 8px -4px rgb(0 0 0 / 0.4);
 }
 
-::selection {
-  background: color-mix(in srgb, var(--color-ua-red) 40%, transparent);
+@layer base {
+  * {
+    scrollbar-color: var(--color-line-strong) transparent;
+    scrollbar-width: thin;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 28%, transparent);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* One focus treatment for the whole app. Nothing may set `outline: none` without
+     replacing it - this is that replacement. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Numerals in timestamps, scores and IDs must not jitter as they update. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The Under Armour wordmark lockup: italic, uppercase, heavy. Station and gate names
+     carry it so the line reads as UA. Never body copy or control labels. */
+  .stencil {
+    font-style: italic;
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+
+  /* The one industrial signature borrowed from the factory-line concept. Used only on the
+     gate, where "stop, a human is required" is the literal meaning. */
+  .hazard {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--color-accent) 0 7px,
+      transparent 7px 14px
+    );
+  }
 }
 
-body {
-  margin: 0;
-  background: var(--color-ua-black);
-  color: var(--color-ua-cloud);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+/* Reduced motion keeps the state change and drops the travel - an intentional
+   alternative rather than a blanket kill. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 

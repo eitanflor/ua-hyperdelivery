@@ -1,4 +1,5 @@
 import type { Station } from "../api/types";
+import type { AgentFaceName } from "../components/agents/AgentFace";
 
 export const PIPELINE: Station[] = [
   "distill",
@@ -12,69 +13,111 @@ export const PIPELINE: Station[] = [
 
 export const AGENT_STATIONS: Station[] = ["distill", "blueprint", "review", "showroom"];
 
-export const AGENT_META: Record<
-  string,
-  { label: string; initial: string; gradient: string; ring: string }
-> = {
+export interface AgentMeta {
+  /** Who works this station - a staff title, so the console can say "Coach starts when you
+   * sign". Deliberately not the station's own label: the station is the place, this is the
+   * person. See the naming decision in docs/decisions.md. */
+  name: string;
+  /** Station number on the line, in the factory's own notation. */
+  number: string;
+  face: AgentFaceName;
+  /** Plain-language answer to "what does this one do?" - tooltips, the glossary, onboarding. */
+  role: string;
+  /** What it hands to the next station, in the same language. */
+  output: string;
+  fg: string;
+  bg: string;
+}
+
+/** The crew.
+ *
+ * Staff titles from the arc an athlete goes through: a scout measures raw talent at the
+ * combine, a coach turns the read into a playbook, an official grades the tape in the film
+ * room, a host calls the game. Each title is a job a person holds, which is what makes
+ * these read as teammates rather than as pipeline stages. The wire ids below (`distill`,
+ * `blueprint`, `review`, `showroom`) are the backend's and are deliberately untouched -
+ * this is a display layer.
+ */
+export const AGENT_META: Record<string, AgentMeta> = {
   distill: {
-    label: "Distill",
-    initial: "D",
-    gradient: "from-sky-500 to-blue-600",
-    ring: "ring-sky-500/30",
+    name: "Scout",
+    number: "ST 01",
+    face: "scout",
+    role: "Measures the brief: every requirement pinned down and cited, and an honest list of what is still missing.",
+    output: "Scouting report",
+    fg: "text-distill",
+    bg: "bg-distill-bg",
   },
   blueprint: {
-    label: "Blueprint",
-    initial: "B",
-    gradient: "from-violet-500 to-purple-600",
-    ring: "ring-violet-500/30",
+    name: "Coach",
+    number: "ST 02",
+    face: "coach",
+    role: "Turns the signed scouting report into the units of work that get built, and the order to build them in.",
+    output: "Call sheet",
+    fg: "text-blueprint",
+    bg: "bg-blueprint-bg",
   },
   review: {
-    label: "Review",
-    initial: "R",
-    gradient: "from-amber-500 to-orange-600",
-    ring: "ring-amber-500/30",
+    name: "Ref",
+    number: "ST 03",
+    face: "ref",
+    role: "Grades the build against the scouting report and calls what fails, worst first.",
+    output: "Grade sheet",
+    fg: "text-review",
+    bg: "bg-review-bg",
   },
   showroom: {
-    label: "Showroom",
-    initial: "S",
-    gradient: "from-emerald-500 to-teal-600",
-    ring: "ring-emerald-500/30",
+    name: "Host",
+    number: "ST 04",
+    face: "host",
+    role: "Sets up the walkthrough: a run of show and the seed data to demo the real thing with.",
+    output: "Run of show",
+    fg: "text-showroom",
+    bg: "bg-showroom-bg",
   },
+};
+
+export interface StationMeta {
+  /** Canonical short label. The only string shown for this station anywhere. */
+  label: string;
+  /** Long form, for headers and the gate itself. */
+  full: string;
+  kind: "agent" | "gate" | "done";
+  agent?: string;
+  /** Gates only: whose work is being signed off, and what signing unlocks. */
+  reviewing?: string;
+  unlocks?: string;
+}
+
+/** One vocabulary for all seven stations. Nothing else may derive a user-facing label
+ * from the raw enum - that is how "G1", "blueprint approval" and "D" all ended up
+ * naming the same thing. */
+export const STATION_META: Record<Station, StationMeta> = {
+  distill: { label: "Combine", full: "Combine", kind: "agent", agent: "distill" },
+  blueprint_approval: {
+    label: "Gate 1",
+    full: "Gate 1 · Scouting report sign-off",
+    kind: "gate",
+    reviewing: "distill",
+    unlocks: "blueprint",
+  },
+  blueprint: { label: "Playbook", full: "Playbook", kind: "agent", agent: "blueprint" },
+  review_approval: {
+    label: "Gate 2",
+    full: "Gate 2 · Call sheet sign-off",
+    kind: "gate",
+    reviewing: "blueprint",
+    unlocks: "review",
+  },
+  review: { label: "Film Room", full: "Film Room", kind: "agent", agent: "review" },
+  showroom: { label: "Gameday", full: "Gameday", kind: "agent", agent: "showroom" },
+  done: { label: "Shipped", full: "Off the line", kind: "done" },
 };
 
 export function stationIndex(station: Station): number {
   return PIPELINE.indexOf(station);
 }
 
-/** The chat's single, continuous persona - regardless of which internal agent
- * (Distill/Blueprint/Review/Showroom) is actually running a given turn. Swapping the
- * visible name/avatar per pipeline stage made the conversation read like a form for an
- * internal artifact-generation tool rather than one chat with an assistant; the current
- * station is still shown, just as a small badge in the thread header, not as who's
- * "speaking". */
-export const ASSISTANT_META = {
-  label: "Assistant",
-  initial: "H",
-  gradient: "from-ua-red to-ua-red-dark",
-};
-
-/** Compact badge for a project's current station, for sidebar list rows - agent
- * stations reuse their AGENT_META initial/gradient, the two approval stations get a
- * distinct "G1"/"G2" (gate) badge in the accent color so a project awaiting a decision
- * stands out inline instead of needing its own separate list section. */
-export function stationBadge(station: Station): { label: string; className: string } {
-  switch (station) {
-    case "blueprint_approval":
-      return { label: "G1", className: "bg-ua-red text-white" };
-    case "review_approval":
-      return { label: "G2", className: "bg-ua-red text-white" };
-    case "done":
-      return { label: "✓", className: "bg-emerald-500 text-white" };
-    default: {
-      const meta = AGENT_META[station];
-      return meta
-        ? { label: meta.initial, className: `bg-gradient-to-br ${meta.gradient} text-white` }
-        : { label: "?", className: "bg-ua-steel text-white" };
-    }
-  }
+export function isGate(station: Station): boolean {
+  return STATION_META[station].kind === "gate";
 }

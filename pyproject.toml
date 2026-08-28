@@ -18,6 +18,9 @@ dependencies = [
     "httpx>=0.27",
     "mangum>=0.19",
     "pyjwt[crypto]>=2.10.0",
+    # Lets the JWKS fetch in api/auth.py verify against the OS trust store, which is the
+    # only place a TLS-inspecting proxy's root CA lives. No-ops onto OpenSSL on Linux.
+    "truststore>=0.10",
     # opentelemetry-api/-instrumentation come in via bedrock-agentcore, but without the SDK
     # its tracing hook silently no-ops against a ProxyTracerProvider.
     "opentelemetry-sdk>=1.27",

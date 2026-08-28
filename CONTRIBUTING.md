@@ -27,6 +27,12 @@ Put that in your shell profile. `scripts/precheck.sh` sets it already. The `gitl
 pre-commit hook downloads a release binary over HTTPS and may still fail on first install -
 if it does, `brew install gitleaks` and it will use the local binary instead.
 
+The same inspection breaks any HTTPS call Python makes with its bundled certificate store.
+That is why `api/auth.py` fetches Entra's JWKS through a `truststore` SSL context: the
+corporate root CA is in the OS keychain, never in certifi. If you add another outbound
+HTTPS call and see `CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate`,
+that is this - use the same context rather than disabling verification.
+
 ## The gate
 
 ```bash

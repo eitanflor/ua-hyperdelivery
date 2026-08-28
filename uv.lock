@@ -840,6 +840,7 @@ dependencies = [
     { name = "pypdf" },
     { name = "pyyaml" },
     { name = "strands-agents" },
+    { name = "truststore" },
     { name = "uvicorn" },
 ]
 
@@ -875,6 +876,7 @@ requires-dist = [
     { name = "pypdf", specifier = ">=4.3" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "strands-agents", specifier = ">=1.0" },
+    { name = "truststore", specifier = ">=0.10" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
 

@@ -17,12 +17,212 @@ Template for new entries:
 
 ---
 
-## 2026-08-28 - Entra ID (Azure AD) SSO, ported from Material_Libraray_AI_Assistant
+## 2026-08-28 - Splitting station from crew: staff titles for the agents
+
+- **Status**: Accepted. Supersedes 2026-08-27 "The crew: naming the agents after the
+  apparel line, not the code".
+- **Context**: The apparel naming (Draft / Pattern / Fit / Showroom) was an improvement on
+  the engineering ids, but every name was still a process noun, so the console read as a
+  list of stages rather than a team: "Fit found 3 blockers" names a step, not a someone.
+  The faces made this worse, not better - a face implies a person, and the label under it
+  was a verb. The underlying mistake was that one string was doing two jobs: naming the
+  place work happens *and* naming who does it.
+- **Decision**: Split the two, and move the vocabulary to the arc an athlete goes through -
+  a world Under Armour owns, and one where all four stages already exist:
+
+  | Wire id | Station (place) | Agent (person) | Hands over |
+  |---|---|---|---|
+  | `distill` | Combine (ST 01) | **Scout** | Scouting report |
+  | `blueprint` | Playbook (ST 02) | **Coach** | Call sheet |
+  | `review` | Film Room (ST 03) | **Ref** | Grade sheet |
+  | `showroom` | Gameday (ST 04) | **Host** | Run of show |
+
+  `AgentMeta.label` became `AgentMeta.name` and now holds a staff title;
+  `StationMeta.label` keeps the place. Gate 1 is the scouting report sign-off, Gate 2 the
+  call sheet sign-off. Station chrome (the line, station bands, the rail chip) shows the
+  station; anything speaking about a teammate (avatars, turn bylines, the composer, gate
+  copy) shows the agent. Crests moved with the names: a scout's tick, a coach's X, tally
+  marks, a mic.
+
+  Still a display layer only - the wire ids, `Station`, `AgentName`, the config filenames
+  and the API contract are untouched, so this stayed a `ui/console/` change.
+- **Alternatives considered**: Locker-room handles (`Scout`, `Chalk`, `Tape`, `Mic`) -
+  more distinctive and they double as the instrument each role is named for, but `Chalk`
+  and `Tape` need explaining once and the console is not a surface where you get to explain
+  things. Baltimore place-surnames (`Camden`, `Fells`, `Locust`, `Canton`) - read as real
+  names and lean on UA's actual roots, but carry no signal about what the agent does.
+  Keeping the stage words as the agent names - rejected; that is the problem being fixed.
+  Renaming the backend ids to match - rejected, the mapping cost is one table and the wire
+  id is what every log line and API path carries.
+- **Consequences**: The gate copy now reads as a handoff between people - "Ref is done.
+  Host starts when you sign" - which is the sentence the whole product is about. Two
+  strings per agent instead of one is the cost, and the risk is that they drift; the
+  landing roster deliberately shows both (`ST 01  SCOUT  Combine`) so the mapping is
+  taught rather than assumed. `Ref` sitting in `Film Room` is the one seam - an official
+  grading tape is replay review rather than film study - and if it reads wrong to users,
+  the station is the cheaper of the two to rename.
+
+## 2026-08-27 - The crew: naming the agents after the apparel line, not the code
+
+- **Status**: Superseded by 2026-08-28 "Splitting station from crew: staff titles for the
+  agents". The display-layer-only constraint it established still holds.
+- **Context**: The console showed the backend's internal agent ids as user-facing names -
+  "Distill", "Blueprint", "Review", "Showroom". Three of those are engineering words for a
+  product being sold inside a sportswear company, and they describe what the code does
+  rather than what the user gets. Grok Bot was raised as a reference: its bots are named
+  by job in plain language ("Chief of Staff", "Talent Scout", "Inbox Manager"), which is
+  what makes them read as teammates rather than functions.
+- **Decision**: Name the four stations after the steps a garment actually goes through, and
+  give each a face:
+  - `distill` -> **Draft** (ST 01), hands over a **tech pack**
+  - `blueprint` -> **Pattern** (ST 02), hands over a **cut plan**
+  - `review` -> **Fit** (ST 03), hands over a **fit report**
+  - `showroom` -> **Showroom** (ST 04), hands over a **showroom pack**
+
+  Gate 1 becomes "Tech pack sign-off", Gate 2 "Cut plan sign-off", and `done` becomes
+  "Off the line". Every string lives in `ui/console/src/lib/pipeline.ts`.
+
+  **This is a display layer only.** The wire ids, the `Station` enum, `AgentName`, the
+  config filenames and the API contract are all untouched, so the naming can be revised
+  without touching the backend.
+- **Alternatives considered**: Invented character names (Ani-style) - rejected, they carry
+  no meaning and would need explaining forever. Job titles in the Grok mould ("Spec
+  Writer", "Patternmaker", "Fit Technician") - closer, but longer, and a station on a line
+  is not a person. Leaving the engineering names - rejected; "Showroom" was already an
+  apparel term sitting in the codebase, which is the tell that the original naming was
+  reaching for this and stopped at one word.
+- **Consequences**: The vocabulary now teaches the model instead of hiding it: "Draft is
+  done. Pattern starts when you sign" explains the gate without a glossary. The risk is a
+  mapping cost for engineers, who see `distill` in logs and "Draft" in the UI; the
+  `AGENT_META` table is the one place that mapping lives, and the wire id is still what
+  every error message and API path carries.
+
+## 2026-08-27 - Console visual signature: faces, the UA lockup, and one hazard stripe
+
+- **Status**: Accepted. The crest motifs below were superseded by 2026-08-28 "Splitting
+  station from crew"; the one-head-per-agent family rule and the blink-while-working rule
+  still stand.
+- **Context**: With the crew named, they needed to be recognizable. Two references were
+  supplied: the Hyperdelivery concept page (an industrial factory line - hazard stripes,
+  station numbering, italic uppercase headings, conveyor) and Grok Bot (avatars with eyes
+  that react).
+- **Decision**: Three borrowings, each with a rule:
+  - **Faces.** One head shape per agent with a different crest drawn from apparel - a
+    tailor's chalk stroke for Draft, a dart notch for Pattern, tape ticks for Fit, a hanger
+    hook for Showroom - so the four read as a family. Eyes carry state, and **blink only
+    while that agent is working**, which keeps the motion a status indicator rather than
+    decoration.
+  - **The UA lockup.** Italic uppercase heavy type, matching the wordmark, on station and
+    gate names only. Never on body copy or control labels.
+  - **The hazard stripe.** Used exactly once, on the gate header, where "work stops here
+    until a person signs" is the literal meaning. Anywhere else it would be costume.
+- **Alternatives considered**: The concept page's animated conveyor belt and rollers -
+  rejected for the console; perpetual decorative motion is what Operate-mode guidance
+  exists to prevent, and this surface is used all day. Keeping the earlier abstract craft
+  glyphs (funnel, grid, crosshair) - they were more legible at 16px but carried no
+  personality, which was the thing being asked for.
+- **Consequences**: Draft's first crest was a hangtag arch, which read as a padlock and
+  collided with the gate's lock icon; it was replaced with an off-centre diagonal chalk
+  stroke. Faces need ~18px to read, so they sit at `size-4.5` and up rather than `size-3`.
+
+## 2026-08-27 - Console redesign: semantic token layer, light-default dual theme
+
+- **Status**: Accepted
+- **Context**: A three-lens audit ([docs/console-redesign.md](console-redesign.md)) scored
+  the console 7/20 on technical quality. The root cause was one mismatch: the color tokens
+  were authored for a dark surface (`--color-ua-fog` is 9.1:1 on `ua-black`) and then the
+  app was built light, where the same token is 2.1:1. `body` was `ua-black` while `App`
+  rendered `bg-white`. That single conflict produced most of the contrast failures.
+- **Decision**: Replace the eight raw brand colors with a semantic layer - surface, fg,
+  line, accent, status and agent-identity tokens - in `ui/console/src/index.css`.
+  Components may only reference semantic tokens; brand values stay as private primitives.
+  Light is the default and ships in the HTML so the first paint never flashes; dark is
+  authored as a sibling palette under `[data-theme="dark"]`, not derived by inversion.
+  Both verified at >=4.5:1 against the darkest surface each token is actually used on -
+  which is what the earlier "verified on the canvas" check missed by 0.05.
+- **Alternatives considered**: Dark-first (originally recommended in the plan; the user
+  chose light-default, and both are now first-class so the order only sets the default).
+  Deriving dark by inverting lightness - rejected, it produces muddy mid-tones and would
+  have needed per-component correction anyway. Keeping the brand tokens and fixing
+  contrast case by case - rejected, it treats the symptom in ~20 places instead of the
+  cause in one.
+- **Consequences**: Changing the palette is a one-file change and a theme flip cannot
+  silently break contrast. Costs a naming indirection: `text-fg-muted`, not
+  `text-ua-steel`. Verified in a browser across both themes: 0 contrast failures, worst
+  ratio 4.77 light / 4.85 dark.
+
+## 2026-08-27 - Console frontend dependencies: icons, motion, primitives, router, fonts
+
+- **Status**: Accepted
+- **Context**: The console had zero UI dependencies. Every glyph was a hand-rolled inline
+  SVG or a literal Unicode character (nine of those across seven files), motion was four
+  CSS keyframes with no `prefers-reduced-motion`, there were no accessible primitives, and
+  no routing at all - the selected project lived in `useState`, so a project could not be
+  linked to a colleague.
+- **Decision**: Add `@phosphor-icons/react` (one icon family, tree-shakes cleanly - the
+  production bundle contains no unused icons), `motion` (state-carrying transitions and
+  the gate handoff), `@radix-ui/react-{dialog,dropdown-menu,tooltip}` (focus trap, Escape,
+  ARIA wiring), `react-router` (deep links to `/projects/:id`), and
+  `@fontsource-variable/geist{,-mono}` self-hosted, replacing the render-blocking Google
+  Fonts `<link>`.
+- **Alternatives considered**: Hand-rolling a focus trap and menu - rejected, this is the
+  category of thing that is always subtly wrong and Radix is unstyled so it costs no
+  design control. `lucide-react` - the taste skill discourages it and Phosphor has the
+  weight range this UI needs. Keeping icons hand-drawn - rejected except for the four
+  agent marks, which are identity and have no library equivalent.
+- **Consequences**: Bundle is ~800 kB minified / 240 kB gzipped, up from roughly 450 kB;
+  most of that total is MSAL and React, and this is an authenticated internal console, not
+  a landing page, so first-load weight is a weak constraint. Revisit with route-level code
+  splitting if it grows further.
+
+## 2026-08-27 - Gate decisions: authenticated signer and an undo window, not a confirm dialog
+
+- **Status**: Accepted. Partially supersedes the free-text signer introduced in the
+  "five console UX quick wins" entry below.
+- **Context**: The signer on a gate decision was a free-text input remembered in
+  `localStorage`, while the app already held a verified Entra ID identity through
+  `useCurrentUser`. Anyone could sign as anyone, in the one record the product exists to
+  produce. Separately, the audit asked for an "are you sure?" confirmation before an
+  irreversible approval.
+- **Decision**: Take the signer from the MSAL account and show it as identity rather than
+  an input. Replace the proposed confirmation dialog with deliberateness by construction -
+  the gate criteria must be acknowledged before signing, sending work back requires a
+  reason - plus a twelve-second undo window before the decision is dispatched.
+- **Alternatives considered**: A confirmation modal - rejected on craft grounds; the
+  `impeccable` craft floor calls a modal for a task needing neither interruption nor
+  protected focus a refusal, and undo costs nothing when the user is right while a modal
+  taxes every correct decision. Type-to-confirm - too heavy for a routine gate.
+- **Consequences**: The undo timer is client-side, so closing the tab inside the window
+  drops the decision instead of sending it - the safe direction to fail for an audit gate,
+  but not durable. **The backend still trusts the signer string it is sent**; closing that
+  requires reading the identity from the validated token server-side. Both are recorded as
+  open items in `ui/console/README.md`.
+
+## 2026-08-27 - Agent attribution in the thread
+
+- **Status**: Accepted. Partially supersedes the single-persona decision recorded in
+  `ui/console/src/lib/pipeline.ts`.
+- **Context**: The thread deliberately showed one "Assistant" persona across all four
+  agents, because swapping the visible name per stage "made the conversation read like a
+  form for an internal artifact-generation tool". But it also meant the four agents were
+  invisible, and a reviewer could not tell which one produced what.
+- **Decision**: Keep one continuous conversation and one composer, but stamp every turn,
+  artifact tab and station node with the agent that produced it - each with an authored
+  geometric mark and an identity hue. Station bands break the thread into chapters.
+- **Alternatives considered**: Keeping one anonymous persona - loses the factory-line
+  story the product is selling. Full per-agent personas with distinct voices - this is
+  what the original decision correctly rejected; it fragments the conversation.
+- **Consequences**: The original decision was right about *voice* and wrong about
+  *attribution*; only the latter is reversed. Agent identity hues are now a semantic token
+  group, with a rule that they never appear on interactive chrome so they cannot compete
+  with the accent.
+
+## 2026-08-28 - Entra ID (Azure AD) SSO, ported from Material_Library_AI_Assistant
 
 - **Status**: Accepted
 - **Context**: The console had no auth at all - anyone who could reach the API could see
   and mutate any project. Rather than design something new, ported the exact pattern
-  already validated in `Material_Libraray_AI_Assistant` (frontend MSAL + backend ID-token
+  already validated in `Material_Library_AI_Assistant` (frontend MSAL + backend ID-token
   validation), including its explicit design tradeoffs.
 - **Decision**:
   - New Entra ID app registration ("Hyperdelivery Console - Dev", single-tenant, SPA
@@ -63,6 +263,72 @@ Template for new entries:
   real browser login round-trip (needs a human to click through the actual Microsoft
   sign-in page) - only unauthenticated 401s and the sign-in screen render were
   confirmed automated.
+
+---
+
+## 2026-08-27 - Verify the Entra JWKS fetch against the OS trust store
+
+- **Status**: Accepted
+- **Context**: Every request to the console API returned 401 on a UA machine, with
+  `CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate` behind it. The
+  browser sign-in succeeded because the browser trusts the corporate root CA from the
+  macOS keychain; `PyJWKClient`'s server-side JWKS fetch used Python's bundled certifi
+  store, which does not contain it, so no token could ever be validated. This is the same
+  TLS inspection that forces `UV_SYSTEM_CERTS=1` for `uv`, surfacing in a second place.
+- **Decision**: Add `truststore` as a runtime dependency and pass
+  `truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)` to `PyJWKClient` in `api/auth.py`. It
+  reads the OS trust store on macOS and Windows and falls back to OpenSSL's default paths
+  on Linux, so the Lambda deployment is unaffected.
+- **Alternatives considered**: Documenting `SSL_CERT_FILE` pointing at a keychain export -
+  works, but every developer has to produce and re-produce that PEM by hand, and it is
+  invisible until it breaks. Global `truststore.inject_into_ssl()` at API startup - fixes
+  more than the bug, and quietly changes TLS behavior for boto3 and every other client;
+  scope it back up if a second call site actually needs it. Disabling verification - no.
+- **Consequences**: One new runtime dependency, already present in the lock file as a
+  transitive dev dependency of `httpx2`. `truststore` ships `py.typed`, so pyright strict
+  stays clean without a stub exception. Local dev needs no per-machine certificate setup.
+
+---
+
+## 2026-08-27 - Vendored three third-party design skill sets, prose only
+
+- **Status**: Accepted
+- **Context**: `ui/console/` is a real React/Vite frontend, but the repo carries no design
+  guidance for agents working on it - `.github/skills/` held only `log-decision` and
+  `sync-docs`. Three upstream skill sets were proposed: `leonxlnx/taste-skill` (13 skills),
+  `pbakaus/impeccable` (a Claude Code plugin), and `jamiemill/layers-skills` (9 skills).
+- **Decision**: Copy the useful subset into `.github/skills/`, flat, one folder per skill,
+  named after each skill's own `name` field. Provenance, upstream commit and license for
+  every vendored skill live in `.github/skills/THIRD_PARTY_NOTICES.md`, with license texts
+  in `.github/skills/licenses/`.
+  - taste-skill: 6 of 13. Skipped `brandkit`, `gpt-tasteskill`, both `imagegen-*`,
+    `stitch-skill`, `output-skill` and `taste-skill-v1` - image generation, Google Stitch
+    and a superseded version, none of which this repo does.
+  - impeccable: `SKILL.md` + `reference/` only. Its 3 MB `scripts/` bundle (browser
+    overlay, design detector, hooks) is not vendored, so `live`, `hooks`, `doctor` and
+    pinning are removed rather than left as instructions that would fail.
+  - layers-skills: all 9, verbatim. They cross-reference each other.
+  - Each vendored skill folder is added to `cspell.json` `ignorePaths`; layers-skills is
+    written in British English and would otherwise fail the `flagWords` gate on every run.
+    `log-decision` and `sync-docs` stay inside the gate.
+- **Alternatives considered**:
+  - *Vendor everything, all 23 skills plus impeccable's scripts.* Rejected: 3.4 MB of
+    bundled Node in a Python repo, and a skill catalog where most entries can never fire.
+    Skill descriptions are loaded into every agent's context; unusable ones are a tax.
+  - *Install impeccable as an upstream Claude Code plugin instead of vendoring.* Rejected
+    for now because it does not give VS Code Copilot the skill; if someone needs live mode,
+    that is the route, and the notices file says so.
+  - *Git submodules instead of copies.* Rejected: skill discovery wants
+    `.github/skills/<name>/SKILL.md`, and none of the three repos has that shape at its
+    root. Pinning the upstream commit in the notices file gives traceability without the
+    submodule tax.
+  - *Exclude `.github/skills/**` wholesale from cspell.* Rejected: it would silently
+    un-lint our own two skills. The exclusions name each vendored folder.
+- **Consequences**: Agents get design and product-design guidance for `ui/console/`, at the
+  cost of ~712 KB of vendored prose that will drift from upstream. There is no sync
+  automation - re-vendoring is manual, against the commits recorded in the notices file.
+  Revisit if a vendored skill starts fighting the house conventions in `AGENTS.md`, or if
+  VS Code gains a first-class way to consume remote skills.
 
 ---
 
@@ -155,7 +421,7 @@ Template for new entries:
 
 - **Status**: Accepted
 - **Context**: The landing (no-project-selected) page was just a static empty state -
-  noticed live ("the landing page seems empty why dont we add chatbox... let the
+  noticed live ("the landing page seems empty why don't we add chatbox... let the
   project pick a name using haiku"). Starting a project required clicking "+ New
   project", typing a name, then separately typing the actual first message to Distill -
   two steps for one intent.
@@ -321,7 +587,7 @@ Template for new entries:
   compact "Distill finished (100% complete) - <title>" notice with a "View artifact"
   button - no structured content inline anymore. A new `ArtifactPanel`, always visible
   alongside the chat, renders the selected artifact's structured content field-by-field
-  (completeness as a progress bar + gap warnings, arrays as labelled lists, strings as
+  (completeness as a progress bar + gap warnings, arrays as labeled lists, strings as
   paragraphs - generic over whatever fields a given agent's model happens to have, via
   `lib/formatArtifact.ts`'s `humanizeKey`/`renderListItem`), with tabs across agents that
   have produced one and a raw-JSON toggle. `ProjectWorkspace` (new) owns which agent's

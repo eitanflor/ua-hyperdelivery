@@ -118,11 +118,21 @@ TODO ADVA-3015); until `STATE_MACHINE_ARN` is set the console API falls back to
 DynamoDB-only writes with no execution to start or resume.
 
 **The console UI (`ui/console/`).** A React + Vite + TypeScript app is the real client
-for the console API - a landing-page chatbox that names a new project via Claude Haiku,
-a sidebar with search/rename/delete, a pipeline stepper showing D/B/R/S progress, live
-SSE-streamed agent turns, and gate-decision approval. Signs in via MSAL against the same
-Entra ID app registration the API validates against. Talks to the API directly over
-`fetch` (`ui/console/src/api/client.ts`), not through `sdk/python`.
+for the console API. The four agents are presented as a crew, each named for the job a
+person holds on the arc from raw talent to gameday - **Scout** measures the brief,
+**Coach** turns it into the work, **Ref** grades the build against it, **Host** sets up the
+walkthrough - each with its own face and identity color. The station is the place and the
+agent is the person working it, so the line reads `Combine -> Gate 1 -> Playbook -> Gate 2
+-> Film Room -> Gameday`. The line itself is the primary navigation object in the top
+bar. The two approval gates are the loudest surface in the product: a gate shows the
+criteria being signed against, takes the signer from the Entra ID token rather than a typed
+name, and keeps every decision undoable for twelve seconds before it is sent. Light and
+dark themes ship from one semantic token layer. Signs in via MSAL against the same Entra ID
+app registration the API validates against. Talks to the API directly over `fetch`
+(`ui/console/src/api/client.ts`), not through `sdk/python`. The crew names are a display
+layer only - the wire ids stay `distill`, `blueprint`, `review`, `showroom`. See
+[ui/console/README.md](ui/console/README.md) and
+[docs/console-redesign.md](docs/console-redesign.md).
 
 **Not started.** AgentCore Memory, Gateway and Identity; the Bedrock Knowledge Base; and
 the M365, GitHub and Snowflake integrations. Add those as real use cases demand them, not

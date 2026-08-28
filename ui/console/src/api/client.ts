@@ -121,12 +121,14 @@ export const api = {
   advanceProject: async function* (
     projectId: string,
     prompt?: string,
+    signal?: AbortSignal,
   ): AsyncGenerator<AdvanceStreamEvent> {
     const token = await getIdToken();
     const resp = await fetch(`${API_BASE_URL}/projects/${projectId}/advance/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ prompt: prompt ?? null }),
+      signal,
     });
     if (!resp.ok) {
       const detail = await resp.text();

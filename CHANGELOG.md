@@ -42,6 +42,9 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   (`entra_tenant_id`/`entra_client_id` `Settings` fields); the console UI signs in via
   MSAL (`@azure/msal-browser`/`@azure/msal-react`) against the same app registration and
   attaches the token to every request, including the `/advance/stream` SSE POST.
+- `truststore` dependency: `api/auth.py`'s JWKS fetch now verifies against the OS trust
+  store, so token validation works behind TLS-inspecting corporate networks where certifi
+  does not carry the intercepting root CA.
 - `PATCH /projects/{id}` (rename) and `DELETE /projects/{id}` (delete, cascading to
   artifacts and decision history) endpoints, plus `ProjectRepository.rename_project`/
   `delete_project`.
@@ -49,9 +52,52 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   the agent's output as it's produced (`orchestration/local_agent_client.py`'s `stream`,
   `agent_runtime/factory.py`'s `agent_invocation` as an async generator) instead of
   blocking until the whole turn finishes.
+- Sixteen vendored third-party skills under `.github/skills/`: six frontend design skills
+  from `leonxlnx/taste-skill`, all nine product-design skills from `jamiemill/layers-skills`,
+  and the prose half of `pbakaus/impeccable`. Provenance, upstream commits, licenses and
+  the modifications made are recorded in `.github/skills/THIRD_PARTY_NOTICES.md`.
 
 ### Changed
 
+- `ui/console/` rebuilt against the audit in
+  [docs/console-redesign.md](docs/console-redesign.md):
+  - **Theming**: a semantic token layer (surface / fg / line / accent / status / agent)
+    replaces the eight raw brand colors, with light as the default and dark as an authored
+    sibling palette. Resolves the `body`-is-dark / `App`-is-light conflict that caused most
+    contrast failures. Both themes verified in-browser at 0 failures against WCAG AA.
+  - **Type**: self-hosted Geist + Geist Mono replace the render-blocking Google Fonts
+    `<link>` to Inter. Fixed rem scale, 12px floor (was 9px).
+  - **Shell**: the delivery line is now the primary navigation object in a persistent top
+    bar, the signed-in user moved to the top right with a theme switcher, projects are
+    grouped by **Needs you** / Active / Done, and `⌘K` opens a command palette. Panels
+    collapse, and the reading column holds its measure on a 13" laptop.
+  - **Gates**: the gate shows the criteria being signed against and the open gaps, takes
+    the signer from the Entra ID token instead of a free-text field, requires a reason when
+    sending work back, and keeps every decision undoable for 12 seconds. A cleared gate is
+    now the strongest element in the thread rather than the quietest.
+  - **Artifacts**: typed renderers per agent - spec, plan, findings sorted by severity with
+    coverage, and demo package - replacing one generic field walk for all four.
+  - **Agents**: each of the four has an authored face and identity hue, and every turn is
+    stamped with the agent that produced it. The conversation stays continuous.
+  - **The crew**: the agents are now named for the job a person holds rather than for what
+    the code does - `distill` is **Scout** (hands over a scouting report), `blueprint` is
+    **Coach** (a call sheet), `review` is **Ref** (a grade sheet), `showroom` is **Host**
+    (a run of show). The station is the place and the agent is the person working it, so
+    the line reads Combine, Gate 1, Playbook, Gate 2, Film Room, Gameday, and a finished
+    project is "off the line". Display layer only: the wire ids, `Station`, `AgentName` and
+    the API contract are unchanged.
+  - **Visual signature**: station numbering (`ST 01`) in mono, the Under Armour italic
+    uppercase lockup on station and gate names, and a single hazard stripe on the gate
+    header. Agent eyes blink only while that agent is working.
+  - **Accessibility**: `prefers-reduced-motion` honored, `aria-live` on the streamed reply,
+    `role="alert"` on errors, a single `:focus-visible` treatment, real `<label>`s on every
+    input, `aria-current` on the selected project, and `window.confirm` replaced with a
+    focus-trapped dialog.
+  - **Resilience**: errors now diagnose, explain and offer recovery instead of surfacing raw
+    API strings; runs can be stopped mid-stream and retried; streamed tokens are batched
+    rather than rewriting the conversation map per token.
+  - **Routing**: `/projects/:id` deep links replace in-memory selection, so a project
+    awaiting a decision can be linked to the person who has to sign it.
 - Ruff expanded from five rule families to the full set, including docstring and annotation
   enforcement, with `ruff format` now checked in CI.
 - Every module, class and public function in `src/`, `ui/` and `infra/stacks/` now carries a
@@ -72,8 +118,11 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   Entra ID auth layer at all.
 - Console UI sidebar: merged the separate "needs a decision" section into the single
   project list as a gate badge (G1/G2), decluttered the double-signaling between badge
-  colour and a coloured left border, and gave the selected row a distinct neutral
+  color and a colored left border, and gave the selected row a distinct neutral
   indicator instead of relying on a faint background tint alone.
+- `cspell.json` now excludes each vendored skill folder - `layers-skills` is written in
+  British English and would otherwise fail the `flagWords` gate. The exclusions name each
+  folder rather than `.github/skills/**`, so `log-decision` and `sync-docs` stay checked.
 
 ### Fixed
 

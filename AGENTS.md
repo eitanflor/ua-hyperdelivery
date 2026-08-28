@@ -156,4 +156,8 @@ opens a browsable line-by-line report; `coverage.xml` exists for tooling, not fo
 - Do not build speculative infrastructure. `providers/agents/strands_factory.py` has no
   memory or gateway wiring because no use case has needed it yet. Keep it that way until
   one does.
+- Do not hand-edit a vendored skill under `.github/skills/`. Everything except
+  `log-decision` and `sync-docs` is copied from upstream - see
+  [.github/skills/THIRD_PARTY_NOTICES.md](.github/skills/THIRD_PARTY_NOTICES.md). Raise it
+  upstream, or record the divergence in that file.
 - Do not remove or bypass a human approval gate. The gates are the product.
