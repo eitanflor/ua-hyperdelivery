@@ -68,6 +68,30 @@ class ProjectRepository:
         )
         return [self._project_from_item(item) for item in resp.get("Items", [])]
 
+    def list_projects(self) -> list[Project]:
+        """Return every project, most recently updated first.
+
+        A table Scan, not a GSI query: the portfolio dashboard is a small admin view,
+        not a hot path, and this schema has no "all projects" partition key to query
+        against. Revisit with a dedicated GSI if the table grows large enough for a
+        Scan's cost to matter (see docs/decisions.md).
+        """
+        kwargs: dict[str, Any] = {
+            "FilterExpression": "sk = :sk",
+            "ExpressionAttributeValues": {":sk": STATE_SK},
+        }
+        items: list[dict[str, Any]] = []
+        while True:
+            resp = self._table.scan(**kwargs)
+            items.extend(resp.get("Items", []))
+            last_key = resp.get("LastEvaluatedKey")
+            if not last_key:
+                break
+            kwargs["ExclusiveStartKey"] = last_key
+        projects = [self._project_from_item(item) for item in items]
+        projects.sort(key=lambda p: p.updated_at, reverse=True)
+        return projects
+
     def record_decision(
         self,
         project_id: str,

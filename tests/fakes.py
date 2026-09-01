@@ -64,6 +64,14 @@ class FakeTable:
             matches = [item for (item_pk, _), item in self.items.items() if item_pk == pk]
         return {"Items": matches}
 
+    def scan(
+        self, FilterExpression: str, ExpressionAttributeValues: dict[str, Any]
+    ) -> dict[str, Any]:
+        # only the "sk = :sk" shape list_projects() uses is supported here
+        sk = ExpressionAttributeValues[":sk"]
+        matches = [item for (_, item_sk), item in self.items.items() if item_sk == sk]
+        return {"Items": matches}
+
     def update_item(self, **kwargs: Any) -> None:
         self.update_calls.append(kwargs)
 

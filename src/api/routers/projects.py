@@ -67,6 +67,13 @@ def list_pending(station: Station, request: Request) -> list[ProjectResponse]:
     return [_to_response(p) for p in repo.list_pending(station)]
 
 
+@router.get("", response_model=list[ProjectResponse])
+def list_projects(request: Request) -> list[ProjectResponse]:
+    """List every project, most recently updated first - backs the portfolio dashboard."""
+    repo = request.app.state.project_repository
+    return [_to_response(p) for p in repo.list_projects()]
+
+
 @router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(project_id: str, request: Request) -> ProjectResponse:
     """Return one project's current position on the line."""

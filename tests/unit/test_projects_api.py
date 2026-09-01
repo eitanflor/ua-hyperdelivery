@@ -76,6 +76,15 @@ def test_create_and_get_project(client: TestClient) -> None:
     assert fetched == created
 
 
+def test_list_projects_returns_every_project(client: TestClient) -> None:
+    first = client.post("/projects", json={"name": "First"}).json()
+    second = client.post("/projects", json={"name": "Second"}).json()
+
+    listed = client.get("/projects").json()
+
+    assert {p["id"] for p in listed} == {first["id"], second["id"]}
+
+
 def test_requests_without_a_sign_in_token_are_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     # unlike `client`, this app has no get_current_user override - it exercises the
     # real dependency, so a request with no Authorization header should 401 rather

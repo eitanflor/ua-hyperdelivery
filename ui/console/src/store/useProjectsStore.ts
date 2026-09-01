@@ -90,6 +90,9 @@ interface ProjectsState {
   // the landing-page chatbox behaves like one continuous action instead of two.
   createProjectFromMessage: (message: string) => Promise<Project>;
   loadProject: (projectId: string) => Promise<void>;
+  // Backs the portfolio dashboard - every project, not just the ones this browser has
+  // visited (unlike `recentProjects`, which is a local echo).
+  loadProjects: () => Promise<void>;
   loadArtifacts: (projectId: string) => Promise<void>;
   loadPending: (station: Station) => Promise<void>;
   decide: (projectId: string, station: Station, decision: DecisionRequest) => void;
@@ -166,6 +169,17 @@ export const useProjectsStore = create<ProjectsState>()(
           set((state) => ({
             projects: { ...state.projects, [projectId]: project },
             recentProjects: rememberRecent(state.recentProjects, project),
+          }));
+        }),
+
+      loadProjects: () =>
+        guarded(set, async () => {
+          const projects = await api.listProjects();
+          set((state) => ({
+            projects: {
+              ...state.projects,
+              ...Object.fromEntries(projects.map((p) => [p.id, p])),
+            },
           }));
         }),
 

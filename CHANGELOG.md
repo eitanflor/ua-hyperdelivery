@@ -10,6 +10,10 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- `GET /projects` (list every project, most recently updated first) and
+  `ProjectRepository.list_projects()`, backing a new `/portfolio` route in the console UI -
+  a dashboard of every project's station, progress and last-updated time, reachable from a
+  new icon in the top bar.
 - `AGENTS.md` as the single source of truth for repository conventions, with
   `.github/copilot-instructions.md` and path-scoped `.github/instructions/*` pointing at it.
 - `sync-docs` skill: a documentation review that runs as a step of every change.

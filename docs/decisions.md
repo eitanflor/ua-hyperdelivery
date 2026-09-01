@@ -17,6 +17,27 @@ Template for new entries:
 
 ---
 
+## 2026-08-29 - Project Portfolio dashboard: DynamoDB Scan instead of a new GSI
+
+- **Status**: Accepted.
+- **Context**: The console needed a "list every project" view (a portfolio dashboard,
+  reachable from a new top-bar icon) but the projects table has no partition key that
+  spans all projects - `pk=PROJECT#<id>` scopes everything to one project, and the only
+  existing GSI (`gsi1-pending-by-station`) only surfaces projects sitting at an approval
+  gate.
+- **Decision**: Added `ProjectRepository.list_projects()` as a table Scan filtered to
+  `sk = STATE` (excludes artifacts/decisions, which share the same partition), sorted by
+  `updated_at` in Python rather than in DynamoDB. Backs a new `GET /projects` endpoint and
+  the console's `/portfolio` route.
+- **Alternatives considered**: A dedicated GSI with a constant partition key (e.g.
+  `gsi2pk="ALL_PROJECTS"`) would scale better and avoid a full-table Scan, but this is a
+  demo-scale factory line with a human-gated pipeline (tens of projects, not thousands) -
+  provisioning a GSI for that is exactly the speculative infrastructure AGENTS.md warns
+  against building ahead of an actual bottleneck.
+- **Consequences**: Cheap to ship now, but a Scan's cost is O(table size), including
+  artifacts/decisions it then filters out - revisit with the GSI approach above if the
+  table grows large enough for the portfolio dashboard's latency or read-capacity cost to
+  become noticeable.
 ## 2026-08-28 - Splitting station from crew: staff titles for the agents
 
 - **Status**: Accepted. Supersedes 2026-08-27 "The crew: naming the agents after the

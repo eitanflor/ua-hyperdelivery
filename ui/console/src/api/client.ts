@@ -82,6 +82,8 @@ export const api = {
 
   getProject: (projectId: string) => request<Project>(`/projects/${projectId}`),
 
+  listProjects: () => request<Project[]>("/projects"),
+
   renameProject: (projectId: string, name: string) =>
     request<Project>(`/projects/${projectId}`, {
       method: "PATCH",

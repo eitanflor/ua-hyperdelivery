@@ -42,6 +42,30 @@ def test_list_pending_finds_projects_awaiting_approval(repo: ProjectRepository) 
     assert [p.id for p in pending] == ["p1"]
 
 
+def test_list_projects_returns_every_project_most_recently_updated_first(
+    repo: ProjectRepository,
+) -> None:
+    repo.create_project("p1", "Project One")
+    repo.create_project("p2", "Project Two")
+    repo.rename_project("p1", "Project One Renamed")  # bumps p1's updated_at past p2's
+
+    assert [p.id for p in repo.list_projects()] == ["p1", "p2"]
+
+
+def test_list_projects_excludes_artifacts_and_decisions(repo: ProjectRepository) -> None:
+    repo.create_project("p1", "Project One")
+    repo.save_artifact("p1", "distill", {"title": "FSD"})
+    repo.record_decision(
+        project_id="p1",
+        station=Station.DISTILL,
+        approved=True,
+        signer="rahul",
+        comment=None,
+    )
+
+    assert [p.id for p in repo.list_projects()] == ["p1"]
+
+
 def test_record_decision_approved_advances_to_next_station(repo: ProjectRepository) -> None:
     repo.create_project("p1", "Project One")
     project = loaded(repo.get_project("p1"))

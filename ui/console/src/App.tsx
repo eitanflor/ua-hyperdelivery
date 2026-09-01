@@ -8,6 +8,7 @@ import { CommandPalette } from "./components/shell/CommandPalette";
 import { ErrorToast } from "./components/ErrorToast";
 import { TooltipProvider } from "./components/ui/Tooltip";
 import { Landing } from "./routes/Landing";
+import { Portfolio } from "./routes/Portfolio";
 import { Workspace } from "./routes/Workspace";
 import { useProjectsStore } from "./store/useProjectsStore";
 import { AuthGate } from "./auth/AuthGate";
@@ -59,6 +60,7 @@ function Shell() {
         <main className="min-w-0 flex-1 overflow-hidden">
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/projects/:projectId" element={<Workspace />} />
             <Route path="*" element={<Landing />} />
           </Routes>

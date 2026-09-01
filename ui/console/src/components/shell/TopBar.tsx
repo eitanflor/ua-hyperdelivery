@@ -1,4 +1,5 @@
-import { CommandIcon, MagnifyingGlassIcon, SidebarSimpleIcon } from "@phosphor-icons/react";
+import { CommandIcon, MagnifyingGlassIcon, SidebarSimpleIcon, SquaresFourIcon } from "@phosphor-icons/react";
+import { useNavigate } from "react-router";
 import type { Project } from "../../api/types";
 import { LineIndicator } from "./LineIndicator";
 import { UserMenu } from "./UserMenu";
@@ -20,6 +21,7 @@ export function TopBar({
   onToggleRail: () => void;
   onOpenPalette: () => void;
 }) {
+  const navigate = useNavigate();
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line-subtle bg-surface px-3">
       <IconButton
@@ -65,6 +67,13 @@ export function TopBar({
           {needsYouCount} need{needsYouCount === 1 ? "s" : ""} you
         </Badge>
       )}
+
+      <IconButton
+        label="Project portfolio"
+        icon={<SquaresFourIcon className="size-4" />}
+        size="sm"
+        onClick={() => navigate("/portfolio")}
+      />
 
       <UserMenu />
     </header>
