@@ -111,14 +111,14 @@ export function Thread({
                     <StreamingTurn
                       key={turn.id}
                       agent={turn.agent}
-                      text={turn.text ?? ""}
-                      onStop={cancelRun}
+                      text={turn.text ?? ""}                      toolCalls={turn.toolCalls ?? []}                      onStop={cancelRun}
                     />
                   ) : (
                     <AgentTurn
                       key={turn.id}
                       agent={turn.agent}
                       content={turn.content ?? {}}
+                      toolCalls={turn.toolCalls}
                       onViewArtifact={onViewArtifact}
                     />
                   ),

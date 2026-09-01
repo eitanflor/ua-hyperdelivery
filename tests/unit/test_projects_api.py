@@ -24,10 +24,12 @@ class _FakeLocalAgentClient:
         result: dict[str, Any] | None = None,
         results: list[dict[str, Any]] | None = None,
         chunks: list[str] | None = None,
+        tool_calls: list[dict[str, Any]] | None = None,
     ) -> None:
         self.result = result if result is not None else {"title": "FSD"}
         self._results = list(results) if results is not None else None
         self._chunks = chunks if chunks is not None else []
+        self._tool_calls = tool_calls if tool_calls is not None else []
         self.calls: list[tuple[str, str]] = []
 
     def _next_result(self) -> dict[str, Any]:
@@ -43,6 +45,8 @@ class _FakeLocalAgentClient:
         self.calls.append((agent, prompt))
         for chunk in self._chunks:
             yield {"chunk": chunk}
+        for tool_call in self._tool_calls:
+            yield {"tool_call": tool_call}
         yield {"result": self._next_result()}
 
 
@@ -116,9 +120,17 @@ def test_create_project_generates_a_name_from_a_message_when_no_name_given(
 
     resp = client.post("/projects", json={"message": "We want a feedback portal."})
 
+    # the response comes back with the instant heuristic name - the console UI must not
+    # wait on the naming model call to navigate to the new project
     assert resp.status_code == 201
-    assert resp.json()["name"] == "Feedback Portal"
+    assert resp.json()["name"] == "We want a feedback portal."
     assert fake_namer.received == "We want a feedback portal."
+
+    # TestClient drives background tasks to completion before returning, so the nicer
+    # AI-generated name is already applied by the time we look again
+    project_id = resp.json()["id"]
+    fetched = client.get(f"/projects/{project_id}").json()
+    assert fetched["name"] == "Feedback Portal"
 
 
 def test_create_project_400s_when_neither_name_nor_message_given(client: TestClient) -> None:
@@ -391,6 +403,24 @@ def test_advance_stream_yields_chunks_then_a_done_event(client: TestClient) -> N
     assert events[-1]["project"]["station"] == Station.BLUEPRINT_APPROVAL.value
     artifact = client.get(f"/projects/{created['id']}/artifacts/distill").json()
     assert artifact["content"] == {"title": "FSD"}
+
+
+def test_advance_stream_yields_tool_call_events(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    tool_call = {
+        "id": "t1",
+        "name": "score_completeness",
+        "status": "done",
+        "result": {"score": 1.0},
+    }
+    fake_agent = _FakeLocalAgentClient({"title": "FSD"}, tool_calls=[tool_call])
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    events = _parse_sse(resp.text)
+    assert {"tool_call": tool_call} in events
 
 
 def test_advance_stream_stays_at_the_same_station_when_gaps_are_flagged(client: TestClient) -> None:

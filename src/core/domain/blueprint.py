@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel
 
+from core.domain.project import CompletenessScore
+
 
 class UnitOfWork(BaseModel):
     """One task sized for a single coding-agent run, with its upstream dependencies."""
@@ -18,3 +20,4 @@ class Blueprint(BaseModel):
     title: str
     architecture_summary: str
     units_of_work: list[UnitOfWork]
+    completeness: CompletenessScore

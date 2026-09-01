@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from core.domain.project import CompletenessScore
+
 
 class Finding(BaseModel):
     """One gap, mistake or standards deviation, traced back to what it violates."""
@@ -28,3 +30,4 @@ class ReviewReport(BaseModel):
     title: str
     findings: list[Finding]
     coverage: list[RequirementCoverage]
+    completeness: CompletenessScore

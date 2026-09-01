@@ -15,6 +15,10 @@ from typing import Any, Protocol
 import requests
 
 _AGENT_PORTS = {"distill": 8080, "blueprint": 8081, "review": 8082, "showroom": 8083}
+# Must stay comfortably above providers.storage.snowflake's own 240s timeout, since a
+# Distill call that uses snowflake_query blocks this whole hop until that one returns -
+# 120s here caused real ReadTimeoutErrors on a ~117s Snowflake Cortex Agent call.
+_READ_TIMEOUT_SECONDS = 300
 
 
 class _Response(Protocol):
@@ -47,13 +51,14 @@ class LocalAgentClient:
         """Yields the agent's events as they arrive over its `/invocations` SSE response.
 
         See agent_runtime.factory: `{"chunk": str}` for each piece of streamed text,
-        followed by exactly one of `{"result": dict}` or `{"error": str}`.
+        `{"tool_call": {"id", "name", "status", "result"}}` for each tool call, followed
+        by exactly one of `{"result": dict}` or `{"error": str}`.
         """
         port = _AGENT_PORTS[agent]
         resp = self._session.post(
             f"{self._base_url}:{port}/invocations",
             json={"prompt": prompt},
-            timeout=120,
+            timeout=_READ_TIMEOUT_SECONDS,
             stream=True,
         )
         resp.raise_for_status()

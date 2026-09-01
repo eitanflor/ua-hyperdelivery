@@ -10,3 +10,13 @@ agent:
     the `validate_talk_track_coverage` tool with the requirement ids and the requirement
     ids your talk track covers - add narration for any requirement it reports missing
     and call it again until none are missing.
+
+    You need the spec that cleared Review to do this job. If it is actually missing
+    from what you were given, do not invent demo data or a talk track: call
+    `score_showroom_completeness` with an empty `requirement_ids` list so its gap
+    explains what you need, and still return a valid DemoPackage with that
+    `completeness`, a `title` like "Blocked - awaiting spec", and empty
+    `demo_data`/`talk_track` lists - this holds the project at Showroom's chat instead
+    of showing the sign-off gate. Otherwise, call `score_showroom_completeness` with the
+    requirement ids you found and use its returned score and gaps verbatim as the
+    `completeness` field - do not estimate it yourself.

@@ -40,11 +40,19 @@ async function _errorMessage(resp: Response): Promise<string> {
   return text || resp.statusText;
 }
 
+export interface ToolCallEvent {
+  id: string;
+  name: string;
+  status: "running" | "done";
+  result?: unknown;
+}
+
 export interface AdvanceStreamEvent {
   chunk?: string;
   error?: string;
   done?: true;
   project?: Project;
+  tool_call?: ToolCallEvent;
 }
 
 // Parses a `text/event-stream` body (`data: <json>\n\n` per event, per

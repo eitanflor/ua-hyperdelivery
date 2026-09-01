@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel
 
+from core.domain.project import CompletenessScore
+
 
 class Requirement(BaseModel):
     """One numbered thing the deliverable must do."""
@@ -29,13 +31,6 @@ class EvidenceLink(BaseModel):
 
     requirement_id: str
     evidence: str
-
-
-class CompletenessScore(BaseModel):
-    """How much of the spec is evidenced and rule-covered, plus what is still missing."""
-
-    score: float
-    gaps: list[str] = []
 
 
 class StructuredSpec(BaseModel):

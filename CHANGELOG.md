@@ -60,9 +60,51 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   from `leonxlnx/taste-skill`, all nine product-design skills from `jamiemill/layers-skills`,
   and the prose half of `pbakaus/impeccable`. Provenance, upstream commits, licenses and
   the modifications made are recorded in `.github/skills/THIRD_PARTY_NOTICES.md`.
+- `core.domain.project.CompletenessScore` (moved from `core.domain.spec`) is now a field
+  on `Blueprint`, `ReviewReport` and `DemoPackage` too, not just `StructuredSpec` - every
+  station can report `gaps` when its required upstream input (approved spec content, a
+  Jira reference, a description of the build) was not actually given, instead of
+  fabricating a plausible-looking artifact. `tools.blueprint.score_blueprint_completeness`,
+  `tools.review.score_review_completeness` and `tools.showroom.score_showroom_completeness`
+  are the deterministic scorers each agent calls before finalizing, mirroring
+  `tools.distill.score_completeness`. `_has_open_gaps` (`api/routers/projects.py`) already
+  read this field generically, so Blueprint/Review/Showroom now hold at their own chat
+  instead of showing the next sign-off gate whenever they are blocked.
+- `tools.distill.validate_structured_spec`: Distill's referential-integrity check (the
+  other three agents already each had one), catching a duplicate requirement/gate
+  criterion id, a rule referencing an unknown gate criterion, or an evidence link
+  referencing an unknown requirement - Distill now calls it before `score_completeness`
+  the same way Blueprint/Review/Showroom call their own `validate_*` tool first.
+- Distill's system prompt now covers the case where the prompt already gives discrete,
+  itemized requirements directly instead of narrative FSD prose to extract them from -
+  it uses each requirement's own stated text as its evidence rather than fabricating a
+  citation to a source document that was never given.
+- Tool-call streaming: `agent_runtime.factory`'s SSE stream now emits
+  `{"tool_call": {"id", "name", "status", "result"}}` events (`status` is `"running"`
+  when a call starts and `"done"` with its decoded result when it finishes, keyed by
+  tool use id so a retried call gets its own pair) instead of a one-line "Using X..."
+  text chunk announced once per tool name. `advance_project_stream` and
+  `LocalAgentClient.stream` forward these through unchanged. Console UI: each streaming
+  turn shows its tool calls live - greyed out with a spinner while running, then a
+  minimized row a reader can expand to see the raw result, so the chat reply itself
+  stays uncluttered.
+- `snowflake_query` tool for Distill (`tools/snowflake.py`, `providers/storage/snowflake.py`):
+  when a prompt references Snowflake data instead of raw FSD text, Distill asks Snowflake's
+  own hosted Cortex Agent (`/api/v2/cortex/agent:run`, `code_toolset_all`) a plain-language
+  question and mines the returned text for requirements. This repo carries no SQL-building,
+  result-polling or table-discovery logic of its own - the Cortex Agent decides what to run
+  and returns the answer as text. Configured via `SNOWFLAKE_ACCOUNT` and `SNOWFLAKE_PAT`
+  (PAT auth); `SNOWFLAKE_DATABASE`/`SNOWFLAKE_SCHEMA` are optional scoping hints, not
+  requirements - left unset, the agent explores the whole account on its own. See
+  `docs/decisions.md` for why this replaced an earlier hand-built SQL REST API tool.
 
 ### Changed
 
+- Console UI: approving a gate now fires the next station's agent automatically
+  (`useProjectsStore.decide`), instead of leaving the project sitting at the new station
+  until someone happened to type into its composer - matches what the state machine does
+  on its own once deployed (`docs/console-redesign.md`: "when a decision commits, the
+  line visibly advances and the next agent takes the station").
 - `ui/console/` rebuilt against the audit in
   [docs/console-redesign.md](docs/console-redesign.md):
   - **Theming**: a semantic token layer (surface / fg / line / accent / status / agent)
@@ -143,3 +185,26 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   with a new object on every chunk, so reference equality broke the moment one chunk had
   arrived before an error, leaving a permanently "stuck" partial bubble. `ChatTurn` now
   carries a stable `id`, used for both cleanup and React's list keys (was array index).
+- `tools.distill.score_completeness` returned `{"score": 0.0, "gaps": []}` when no
+  requirements or gate criteria were extracted at all - an empty `gaps` list reads as "no
+  open gaps" to `_has_open_gaps`, so a blank/unreadable FSD advanced straight past G1
+  instead of holding at Distill's chat. It now returns an explicit gap in that case.
+- Tool-call streaming never reached "done": `agent_runtime.factory` read a
+  `"tool_result"` key off `agent.stream_async()`'s events, but Strands' `ToolResultEvent`
+  opts out of that stream entirely (`is_callback_event` is `False`) - it is never yielded
+  there, only observable via the hooks system. Console UI showed every tool call stuck
+  in its greyed-out "running" state forever. Now registers
+  `agent.hooks.add_callback(AfterToolCallEvent, ...)` once per agent and drains the
+  results it captures into the SSE stream instead.
+- Live testing surfaced two Snowflake bugs from an incorrect assumed event schema and an
+  undersized timeout: `providers.storage.snowflake.run_agent` parsed the Cortex Agent's
+  SSE body as `{"delta": {"type": ...}}` per `data:` line, but the real framing is
+  separate `event: <type>` / `data: {...}` line pairs (fixed by tracking the preceding
+  `event:` line and only parsing `response.text` payloads), and a literal `data: [DONE]`
+  sentinel isn't JSON at all and crashed `json.loads`. Separately,
+  `orchestration.local_agent_client.LocalAgentClient`'s hardcoded `timeout=120` (proxying
+  a local dev agent's `/invocations` call) was shorter than
+  `providers.storage.snowflake`'s own 120s httpx timeout plus FastAPI/Strands overhead -
+  a real single-table Cortex Agent query took ~117s end-to-end and tripped the local
+  proxy's read timeout before the response could arrive. Both timeouts raised: the
+  Snowflake provider's to 240s, the local proxy's to 300s.

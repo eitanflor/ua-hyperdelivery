@@ -28,6 +28,21 @@ class ProjectNamer:
     def __init__(self, region_name: str) -> None:
         """`region_name` is the Bedrock region (see Settings.aws_region), not DynamoDB's."""
         self._region_name = region_name
+        self._agent: Agent | None = None
+
+    def _get_agent(self) -> Agent:
+        """Built once and reused.
+
+        Rebuilding per call re-pays boto3/credential-chain resolution on every naming
+        request, which otherwise dominates the call's latency.
+        """
+        if self._agent is None:
+            model = BedrockModel(model_id=_MODEL_ID, region_name=self._region_name, max_tokens=30)
+            # callback_handler=None: this is a one-off structured-ish text call, not an
+            # interactive session - the default handler otherwise prints every token to
+            # stdout, which would spam the console API's own server logs.
+            self._agent = Agent(model=model, system_prompt=_SYSTEM_PROMPT, callback_handler=None)
+        return self._agent
 
     def generate(self, message: str) -> str:
         """Best-effort naming.
@@ -36,19 +51,19 @@ class ProjectNamer:
         a project should never fail to create just because naming it nicely didn't work.
         """
         try:
-            model = BedrockModel(model_id=_MODEL_ID, region_name=self._region_name, max_tokens=30)
-            # callback_handler=None: this is a one-off structured-ish text call, not an
-            # interactive session - the default handler otherwise prints every token to
-            # stdout, which would spam the console API's own server logs.
-            agent = Agent(model=model, system_prompt=_SYSTEM_PROMPT, callback_handler=None)
-            name = str(agent(message)).strip().strip("\"'").strip()
+            name = str(self._get_agent()(message)).strip().strip("\"'").strip()
             if name:
                 return name[:_MAX_NAME_LENGTH]
         except Exception:
             logger.exception("project naming failed, falling back to a heuristic name")
-        return _fallback_name(message)
+        return heuristic_name(message)
 
 
-def _fallback_name(message: str) -> str:
+def heuristic_name(message: str) -> str:
+    """The first few words of the message, used as an instant provisional name.
+
+    Public so the API router can use it as the project's initial name before the (slower)
+    model call finishes in the background - see `api.routers.projects.create_project`.
+    """
     name = " ".join(message.strip().split()[:6]) or "Untitled Project"
     return name[:_MAX_NAME_LENGTH]

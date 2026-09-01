@@ -6,7 +6,7 @@ import uuid
 from collections.abc import Iterator
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
 from api.auth import get_current_user
@@ -19,6 +19,8 @@ from api.schemas.project import (
     RenameProjectRequest,
 )
 from core.domain.project import AGENT_STATIONS, APPROVAL_STATIONS, Artifact, Project, Station
+from infrastructure.repositories.project_repository import ProjectRepository
+from orchestration.project_namer import ProjectNamer, heuristic_name
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(get_current_user)])
@@ -43,21 +45,51 @@ def _artifact_to_response(artifact: Artifact) -> ArtifactResponse:
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-def create_project(payload: CreateProjectRequest, request: Request) -> ProjectResponse:
-    """Create a project and, once the state machine exists, start its execution."""
+def create_project(
+    payload: CreateProjectRequest, request: Request, background_tasks: BackgroundTasks
+) -> ProjectResponse:
+    """Create a project and, once the state machine exists, start its execution.
+
+    A message-only request gets an instant heuristic name so creation never blocks on the
+    naming model call - the console UI navigates to the project immediately. The nicer
+    AI-generated name is applied afterward, in the background, via `rename_project`.
+    """
     name = payload.name
     if not name:
         if not payload.message:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST, detail="either name or message is required"
             )
-        name = request.app.state.project_namer.generate(payload.message)
+        name = heuristic_name(payload.message)
 
     repo = request.app.state.project_repository
     project = repo.create_project(project_id=str(uuid.uuid4()), name=name)
+    if payload.name is None and payload.message:
+        background_tasks.add_task(
+            _apply_generated_name,
+            repo,
+            request.app.state.project_namer,
+            project.id,
+            payload.message,
+        )
     if (sfn := request.app.state.state_machine_client) is not None:
         sfn.start_execution(project.id)
     return _to_response(project)
+
+
+def _apply_generated_name(
+    repo: ProjectRepository, project_namer: ProjectNamer, project_id: str, message: str
+) -> None:
+    """Runs after the response is sent.
+
+    A slow/failed model or rename must not surface to the client that already got its
+    201, so this is the one place besides agent_runtime.factory that deliberately
+    catches everything.
+    """
+    try:
+        repo.rename_project(project_id, project_namer.generate(message))
+    except Exception:
+        logger.exception("background project naming failed for %s", project_id)
 
 
 @router.get("/pending/{station}", response_model=list[ProjectResponse])
@@ -214,6 +246,8 @@ def advance_project_stream(
             for event in local_agent_client.stream(agent, prompt):
                 if "chunk" in event:
                     yield _sse({"chunk": event["chunk"]})
+                elif "tool_call" in event:
+                    yield _sse({"tool_call": event["tool_call"]})
                 elif "error" in event:
                     yield _sse({"error": event["error"]})
                     return

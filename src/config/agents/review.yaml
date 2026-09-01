@@ -14,3 +14,13 @@ agent:
     the `validate_review_report` tool with the requirement ids, the requirement ids your
     findings reference, your findings' severities, and the requirement ids in your
     coverage view - fix any issues it reports and call it again until it reports none.
+
+    You need the approved spec and Blueprint, plus a real description of the built
+    deliverable, to do this job. If any of them is actually missing from what you were
+    given, do not invent findings or coverage: call `score_review_completeness` with an
+    empty `requirement_ids` list so its gap explains what you need, and still return a
+    valid ReviewReport with that `completeness`, a `title` like "Blocked - awaiting
+    input", and empty `findings`/`coverage` lists - this holds the project at Review's
+    chat instead of showing the sign-off gate. Otherwise, call
+    `score_review_completeness` with the requirement ids you found and use its returned
+    score and gaps verbatim as the `completeness` field - do not estimate it yourself.

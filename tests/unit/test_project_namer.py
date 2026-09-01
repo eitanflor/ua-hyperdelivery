@@ -4,7 +4,7 @@ import pytest
 from strands.models import BedrockModel
 
 from orchestration import project_namer as namer_module
-from orchestration.project_namer import ProjectNamer, _fallback_name
+from orchestration.project_namer import ProjectNamer, heuristic_name
 
 
 class _FakeAgentResult:
@@ -48,8 +48,28 @@ def test_generate_falls_back_to_a_heuristic_when_the_model_call_fails(
 
 def test_fallback_name_uses_the_first_six_words() -> None:
     message = "one two three four five six seven eight"
-    assert _fallback_name(message) == "one two three four five six"
+    assert heuristic_name(message) == "one two three four five six"
 
 
 def test_fallback_name_defaults_when_the_message_is_blank() -> None:
-    assert _fallback_name("   ") == "Untitled Project"
+    assert heuristic_name("   ") == "Untitled Project"
+
+
+def test_generate_reuses_the_agent_across_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    built = 0
+
+    class _CountingAgent(_FakeAgent):
+        def __init__(
+            self, model: BedrockModel, system_prompt: str, callback_handler: object = None
+        ) -> None:
+            nonlocal built
+            built += 1
+            super().__init__(model, system_prompt, callback_handler)
+
+    monkeypatch.setattr(namer_module, "Agent", _CountingAgent)
+    namer = ProjectNamer(region_name="us-east-1")
+
+    namer.generate("first message")
+    namer.generate("second message")
+
+    assert built == 1

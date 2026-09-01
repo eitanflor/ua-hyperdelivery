@@ -35,6 +35,18 @@ def next_station(current: Station) -> Station:
     return _LINE[idx + 1] if idx + 1 < len(_LINE) else current
 
 
+class CompletenessScore(BaseModel):
+    """How ready one station's draft artifact is, plus what is still missing.
+
+    Shared by every agent station's output contract (not just Distill's) so the API can
+    hold a project at its current station - instead of showing the next gate - whenever
+    `gaps` is non-empty. See `api.routers.projects._has_open_gaps`.
+    """
+
+    score: float
+    gaps: list[str] = []
+
+
 class Project(BaseModel):
     """Current-state projection of a project's position on the line.
 

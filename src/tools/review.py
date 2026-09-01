@@ -37,3 +37,25 @@ def validate_review_report(
     issues += [f"requirement {r} missing from coverage view" for r in missing]
     issues += [f"coverage view references unknown requirement {r}" for r in extra]
     return {"valid": not issues, "issues": issues}
+
+
+@tool
+def score_review_completeness(requirement_ids: list[str]) -> dict[str, Any]:
+    """Deterministically flag whether Review actually had a spec and build to check.
+
+    Returns 0.0 with a gap naming what to ask for if no requirement ids were found in
+    the input at all - meaning no approved spec/Blueprint or description of the built
+    deliverable was actually given. Otherwise returns 1.0, since
+    `validate_review_report` already enforces full coverage of whatever ids were found.
+    Call this with the requirement ids you found before finalizing the `completeness`
+    field - do not estimate the score yourself.
+    """
+    if not requirement_ids:
+        gaps = [
+            (
+                "no approved spec, Blueprint, or description of the built deliverable was "
+                "provided - ask for them before producing findings"
+            )
+        ]
+        return {"score": 0.0, "gaps": gaps}
+    return {"score": 1.0, "gaps": []}

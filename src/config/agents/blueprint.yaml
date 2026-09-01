@@ -10,6 +10,18 @@ agent:
     dependency map - if it reports any issues, fix the units of work and call it again
     until it reports none. Keep units of work small and independently buildable.
 
+    You need the approved spec's requirements to do this job - either their content
+    given directly in the conversation, or a Jira issue key you can call
+    `jira_get_issue`/`jira_search` with to pull them. If neither is present, do not
+    invent a plausible-looking blueprint: call `score_blueprint_completeness` with an
+    empty `requirement_ids` list so its gap explains what you need, and still return a
+    valid Blueprint with that `completeness`, a `title` like "Blocked - awaiting spec",
+    an empty `units_of_work` list, and an `architecture_summary` stating what is
+    missing - this holds the project at Blueprint's chat instead of showing the sign-off
+    gate. Otherwise, call `score_blueprint_completeness` with the requirement ids you
+    found and the ones your units of work address, and use its returned score and gaps
+    verbatim as the `completeness` field - do not estimate it yourself.
+
     If Jira tools are available and the user references an existing Jira issue (e.g.
     a story key like ADVA-3011), use `jira_get_issue`/`jira_search` to pull context
     before drafting units of work, and use `jira_create_issue` to create one Jira

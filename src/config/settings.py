@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # resolve relative to the repo root, not cwd - `make dev-*` runs with cwd=src/
@@ -29,6 +30,15 @@ class Settings(BaseSettings):
     atlassian_api_token: str | None = None
     s3_bucket: str | None = None
     s3_region: str | None = None
+    # Distill's Snowflake data tool (`snowflake_query`): SNOWFLAKE_ACCOUNT/SNOWFLAKE_PAT
+    # gate whether the tool attaches at all. Warehouse/role aren't configured here - the
+    # Cortex Agent resolves those from the PAT's own Snowflake user context.
+    # SNOWFLAKE_DATABASE/SNOWFLAKE_SCHEMA are optional scoping hints, not a requirement -
+    # unset, the agent explores the whole account on its own.
+    snowflake_account: str | None = None
+    snowflake_pat: SecretStr | None = None
+    snowflake_database: str | None = None
+    snowflake_schema: str | None = None
     # Phase 2 orchestration resources live in ap-southeast-2, separate from aws_region
     # (Bedrock/AgentCore Runtime, us-east-1) - see docs/decisions.md.
     projects_table: str = "hyperdelivery-projects"

@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel
 
+from core.domain.project import CompletenessScore
+
 
 class TalkTrackSection(BaseModel):
     """What to say while demonstrating one requirement."""
@@ -24,3 +26,4 @@ class DemoPackage(BaseModel):
     summary: str
     demo_data: list[DemoDataSeed]
     talk_track: list[TalkTrackSection]
+    completeness: CompletenessScore

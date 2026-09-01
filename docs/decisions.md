@@ -17,6 +17,84 @@ Template for new entries:
 
 ---
 
+## 2026-09-02 - Excluded `notebooks/` from ruff instead of fixing the merged notebook
+
+- **Status**: Accepted.
+- **Context**: Merging `origin/dev`'s `feat/dashboard` work into `feat/flow` pulled in
+  `notebooks/distill_agent_tools.ipynb` (an exploratory scratch notebook, not previously
+  run through `make check` on `dev`), which failed `ruff`'s format and lint gates with 89
+  errors - mostly `print()` calls (`T201`), which is exactly what a notebook is for and
+  not the "never `print`, use `logging`" convention that applies to `src/`.
+- **Decision**: Added `"notebooks"` to `[tool.ruff] extend-exclude` in `pyproject.toml`,
+  alongside the existing `cdk.out` exclusion.
+- **Alternatives considered**: Rewriting the notebook's cells to satisfy `T201`/format
+  rules (rejected - fighting a scratch/exploratory artifact's natural style against
+  production-code lint rules is exactly the kind of "weaken a rule to make it pass"
+  AGENTS.md warns against in spirit, just inverted: the rule doesn't fit the artifact,
+  not the other way around).
+- **Consequences**: `notebooks/` is now unchecked by `make check` entirely - anything
+  added there won't be caught by CI. Acceptable since it's explicitly scratch/exploration
+  space, not part of the shipped pipeline (`src/`, `tests/`, `infra/`). Revisit if a
+  notebook's code is ever meant to be copied into `src/` verbatim - lint it before that
+  copy, not as a standing exception.
+
+---
+
+## 2026-08-29 - Snowflake access for Distill: Cortex Agent, not a hand-built SQL tool
+
+- **Status**: Accepted. Supersedes the initial implementation from the same session (a
+  `snowflake_query`/`snowflake_list_tables` pair calling Snowflake's SQL REST API
+  (`/api/v2/statements`) directly).
+- **Context**: Distill needed to answer prompts that reference live Snowflake data (e.g.
+  "the MATERIAL_IMAGES table") instead of only raw FSD text. The first implementation
+  hand-built SQL (`SHOW TABLES`, `SELECT ... LIMIT`), required `warehouse`/`database`/
+  `schema`/`role` config, and needed a follow-up `snowflake_list_tables` tool after a live
+  test showed Distill guessing a wrong table name. The user then directed a full reversal:
+  replace it with a call to Snowflake's own hosted Cortex Agent
+  (`/api/v2/cortex/agent:run`, `code_toolset_all`), which can discover schemas/tables and
+  run its own SQL inside a managed sandbox, over my objections that a custom tool gives
+  tighter least-privilege, determinism and testability.
+- **Decision**: `providers/storage/snowflake.py` calls the Cortex Agent's SSE endpoint with
+  a plain-language question and a system-instructions string, and concatenates each
+  `response.text` event's text into one string. `tools/snowflake.py` exposes a single
+  `snowflake_query` tool with the least-privilege system prompt (read-only, no DDL/DML).
+  Config dropped from 6 fields to 4: `SNOWFLAKE_ACCOUNT` and `SNOWFLAKE_PAT` are required;
+  `SNOWFLAKE_DATABASE`/`SNOWFLAKE_SCHEMA` are optional scoping hints appended to the system
+  prompt when both are set, otherwise the agent explores the whole account unscoped - the
+  whole point of using Snowflake's own agent instead of hand-built SQL. Live testing
+  against the real account surfaced two bugs the initial code (from following an assumed
+  event schema) got wrong: the real SSE framing is separate `event: <type>` / `data: {...}`
+  line pairs (not a nested `delta.type` field), including a non-JSON `data: [DONE]`
+  sentinel; and the default httpx timeout (5s) is nowhere near enough because sandbox
+  provisioning plus tool calls routinely take 30s+, so the client now sets an explicit
+  120s timeout.
+- **Alternatives considered**: Kept the hand-built SQL tool (rejected by explicit user
+  directive - the maintenance cost of hand-rolled discovery/pagination/error-handling for
+  every future data need outweighs the reduced attack surface, given the Cortex Agent's
+  own sandbox is already scoped to the PAT's own Snowflake grants). A dedicated
+  `snowflake_list_tables` tool to fix the wrong-table-name failure mode (rejected - the
+  Cortex Agent's own discovery makes it redundant).
+- **Consequences**: Distill's Snowflake integration is now far less code and needs no
+  SQL-building/polling logic in this repo at all, at the cost of: slower responses (a real
+  sandbox-backed agent call vs. a direct SQL query), a less deterministic/harder-to-unit-test
+  data path (mocked at the HTTP/SSE boundary rather than at a typed query interface), and a
+  wider effective permission surface per call (the Cortex Agent can run arbitrary read
+  queries the PAT's role allows, not just the ones this repo's code explicitly wrote).
+  Revisit if response latency becomes a real UX problem, or if a future agent needs
+  writes/DDL (this tool is read-only by prompt instruction only, not by grant - a
+  determined prompt injection could attempt DML/DDL if the PAT's underlying role allows it;
+  true enforcement would need a read-only role/PAT, which was not verified this session).
+- **Addendum (same day)**: An end-to-end run through the console confirmed the latency
+  cost above is real, not theoretical - a single-table listing question took ~117s
+  through the Cortex Agent, and `orchestration.local_agent_client.LocalAgentClient`'s
+  hardcoded 120s timeout (proxying the local dev agent's `/invocations` call) tripped
+  before the response arrived. Raised the Snowflake provider's own timeout to 240s and
+  the local proxy's to 300s, so the proxy always outlives the call it's waiting on. This
+  is the first concrete latency data point for the "revisit if latency becomes a real UX
+  problem" trigger above - a ~2 minute wait for a single tool call is already borderline.
+
+---
+
 ## 2026-08-29 - Project Portfolio dashboard: DynamoDB Scan instead of a new GSI
 
 - **Status**: Accepted.
@@ -38,6 +116,9 @@ Template for new entries:
   artifacts/decisions it then filters out - revisit with the GSI approach above if the
   table grows large enough for the portfolio dashboard's latency or read-capacity cost to
   become noticeable.
+
+---
+
 ## 2026-08-28 - Splitting station from crew: staff titles for the agents
 
 - **Status**: Accepted. Supersedes 2026-08-27 "The crew: naming the agents after the

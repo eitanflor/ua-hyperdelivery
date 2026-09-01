@@ -1,4 +1,4 @@
-from tools.review import validate_review_report
+from tools.review import score_review_completeness, validate_review_report
 
 
 def test_validate_review_report_accepts_full_coverage_and_valid_severities() -> None:
@@ -36,3 +36,16 @@ def test_validate_review_report_flags_missing_and_extra_coverage() -> None:
     assert result["valid"] is False
     assert "requirement r2 missing from coverage view" in result["issues"]
     assert "coverage view references unknown requirement r3" in result["issues"]
+
+
+def test_score_review_completeness_flags_no_upstream_input() -> None:
+    result = score_review_completeness(requirement_ids=[])
+
+    assert result["score"] == 0.0
+    assert any("no approved spec" in gap for gap in result["gaps"])
+
+
+def test_score_review_completeness_scores_present_input_as_one() -> None:
+    result = score_review_completeness(requirement_ids=["r1"])
+
+    assert result == {"score": 1.0, "gaps": []}

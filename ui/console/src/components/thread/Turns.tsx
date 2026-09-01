@@ -1,8 +1,12 @@
-import { ArrowSquareOutIcon, StopIcon } from "@phosphor-icons/react";
+import { useState } from "react";
+import { ArrowSquareOutIcon, CaretRightIcon, StopIcon } from "@phosphor-icons/react";
+import type { ToolCallEvent } from "../../api/client";
 import { AGENT_META } from "../../lib/pipeline";
 import { composeReply } from "../../lib/formatArtifact";
+import { cn } from "../../lib/cn";
 import { AgentAvatar } from "./AgentAvatar";
 import { Button } from "../ui/Button";
+import { Spinner } from "../ui/Spinner";
 
 export function UserTurn({ text }: { text: string }) {
   return (
@@ -28,16 +32,25 @@ function Attribution({ agent, state }: { agent: string; state?: "idle" | "workin
 export function AgentTurn({
   agent,
   content,
+  toolCalls,
   onViewArtifact,
 }: {
   agent: string;
   content: Record<string, unknown>;
+  toolCalls?: ToolCallEvent[];
   onViewArtifact: (agent: string) => void;
 }) {
   return (
     <div className="animate-rise">
       <Attribution agent={agent} />
       <div className="pl-9">
+        {toolCalls && toolCalls.length > 0 && (
+          <div className="mb-2 flex flex-col gap-1">
+            {toolCalls.map((toolCall) => (
+              <ToolCallRow key={toolCall.id} toolCall={toolCall} />
+            ))}
+          </div>
+        )}
         <p className="text-xs leading-relaxed whitespace-pre-wrap text-fg">
           {composeReply(content)}
         </p>
@@ -57,16 +70,25 @@ export function AgentTurn({
 export function StreamingTurn({
   agent,
   text,
+  toolCalls,
   onStop,
 }: {
   agent: string;
   text: string;
+  toolCalls: ToolCallEvent[];
   onStop: () => void;
 }) {
   return (
     <div className="animate-rise">
       <Attribution agent={agent} state="working" />
       <div className="pl-9">
+        {toolCalls.length > 0 && (
+          <div className="mb-2 flex flex-col gap-1">
+            {toolCalls.map((toolCall) => (
+              <ToolCallRow key={toolCall.id} toolCall={toolCall} />
+            ))}
+          </div>
+        )}
         {/* the only live region in the thread: without it the stream is silent to a
             screen reader, which is the one thing here that changes with no user action */}
         <p
@@ -100,6 +122,46 @@ export function StreamingTurn({
           Stop
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** One tool call, live: greyed and unexpandable while running, then a minimized
+ * "done" row a reader can open to see the raw result - visible without cluttering
+ * the reply itself, which is what actually answers the request. */
+function ToolCallRow({ toolCall }: { toolCall: ToolCallEvent }) {
+  const [expanded, setExpanded] = useState(false);
+  const running = toolCall.status === "running";
+
+  return (
+    <div className="overflow-hidden rounded-sm border border-line/60 bg-sunken/60">
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        disabled={running}
+        aria-expanded={expanded}
+        className={cn(
+          "flex w-full items-center gap-1.5 px-2 py-1 text-left text-2xs transition-colors",
+          running ? "text-fg-subtle" : "text-fg-muted hover:text-fg",
+        )}
+      >
+        {running ? (
+          <Spinner className="size-3 shrink-0 text-fg-subtle" />
+        ) : (
+          <CaretRightIcon
+            className={cn("size-3 shrink-0 transition-transform", expanded && "rotate-90")}
+          />
+        )}
+        <span className="truncate font-mono">{toolCall.name}</span>
+        <span className="ml-auto shrink-0 text-2xs text-fg-subtle">
+          {running ? "running…" : "done"}
+        </span>
+      </button>
+      {expanded && !running && (
+        <pre className="overflow-x-auto border-t border-line/60 px-2 py-1.5 font-mono text-2xs text-fg-muted">
+          {JSON.stringify(toolCall.result ?? null, null, 2)}
+        </pre>
+      )}
     </div>
   );
 }

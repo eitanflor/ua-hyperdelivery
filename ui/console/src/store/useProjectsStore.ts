@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { api } from "../api/client";
+import type { ToolCallEvent } from "../api/client";
 import { buildTranscript } from "../lib/transcript";
 import { describeError, type FriendlyError } from "../lib/errors";
+import { AGENT_META, AGENT_STATIONS } from "../lib/pipeline";
 import type { Artifact, DecisionRequest, Project, Station } from "../api/types";
 
 const MAX_RECENTS = 30;
@@ -36,6 +38,7 @@ export interface ChatTurn {
   text?: string; // user turns, and the accumulating text of an in-progress agent turn
   content?: Record<string, unknown>; // finished agent turns
   streaming?: boolean; // true while an agent turn is still receiving chunks
+  toolCalls?: ToolCallEvent[]; // tool calls made so far during a streaming turn
   createdAt: string;
 }
 
@@ -235,6 +238,16 @@ export const useProjectsStore = create<ProjectsState>()(
             }));
             await get().loadArtifacts(pending.projectId);
             for (const gate of GATES) void get().loadPending(gate);
+
+            // "when a decision commits, the line visibly advances and the next agent
+            // takes the station" (docs/console-redesign.md) - the state machine does
+            // this on its own in production; this local-dev bypass has to do it too,
+            // rather than leaving the project sitting at the new station until someone
+            // happens to type into its composer.
+            if (pending.decision.approved && AGENT_STATIONS.includes(project.station)) {
+              const label = AGENT_META[project.station]?.name ?? project.station;
+              void get().advanceProject(pending.projectId, project.station, `${label} may begin.`);
+            }
           });
         }, UNDO_MS);
       },
@@ -310,6 +323,31 @@ export const useProjectsStore = create<ProjectsState>()(
               flush();
             }, STREAM_FLUSH_MS);
           };
+          // a running call becomes its own done call in place once it finishes - matched
+          // by tool use id, so a retried call (same name, new id) gets its own row
+          const upsertToolCall = (toolCall: ToolCallEvent) =>
+            set((state) => {
+              const turns = state.conversationByProject[projectId] ?? [];
+              return {
+                conversationByProject: {
+                  ...state.conversationByProject,
+                  [projectId]: turns.map((t) => {
+                    if (t.id !== streamingTurnId) return t;
+                    const existing = t.toolCalls ?? [];
+                    const safeToolCall =
+                      typeof toolCall.result === "string" && toolCall.result.length > 10_000
+                        ? { ...toolCall, result: `${toolCall.result.slice(0, 10_000)}… (truncated)` }
+                        : toolCall;
+                    const idx = existing.findIndex((tc) => tc.id === safeToolCall.id);
+                    const toolCalls =
+                      idx === -1
+                        ? [...existing, safeToolCall]
+                        : existing.map((tc, i) => (i === idx ? safeToolCall : tc));
+                    return { ...t, toolCalls };
+                  }),
+                },
+              };
+            });
           // undoes both turns pushed above so a failed send leaves nothing behind to
           // duplicate or confuse a retry (e.g. the composer reading stale "prior turns")
           const dropFailedTurns = () =>
@@ -332,6 +370,7 @@ export const useProjectsStore = create<ProjectsState>()(
               runController.signal,
             )) {
               if (typeof event.chunk === "string") appendChunk(event.chunk);
+              else if (event.tool_call) upsertToolCall(event.tool_call);
               else if (typeof event.error === "string") throw new Error(event.error);
               else if (event.done && event.project) project = event.project;
             }
@@ -348,15 +387,19 @@ export const useProjectsStore = create<ProjectsState>()(
           flush();
 
           const artifact = await api.getArtifact(projectId, agent);
-          const agentTurn: ChatTurn = {
-            id: crypto.randomUUID(),
-            role: "agent",
-            agent,
-            content: artifact.content,
-            createdAt: artifact.created_at,
-          };
           set((state) => {
             const turns = state.conversationByProject[projectId] ?? [];
+            const streamingTurn = turns.find((t) => t.id === streamingTurnId);
+            const agentTurn: ChatTurn = {
+              id: crypto.randomUUID(),
+              role: "agent",
+              agent,
+              content: artifact.content,
+              // carried over from the streaming turn so the tool calls that produced
+              // this artifact stay visible instead of vanishing once it's done
+              toolCalls: streamingTurn?.toolCalls,
+              createdAt: artifact.created_at,
+            };
             const withoutStreaming = turns.filter((t) => t.id !== streamingTurnId);
             return {
               projects: { ...state.projects, [projectId]: project! },

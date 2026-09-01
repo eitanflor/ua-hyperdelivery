@@ -2,9 +2,10 @@ import pytest
 from pydantic import ValidationError
 
 from core.domain.blueprint import Blueprint, UnitOfWork
+from core.domain.project import CompletenessScore
 from core.domain.review import Finding, RequirementCoverage, ReviewReport
 from core.domain.showroom import DemoDataSeed, DemoPackage, TalkTrackSection
-from core.domain.spec import CompletenessScore, StructuredSpec
+from core.domain.spec import StructuredSpec
 
 
 def test_structured_spec_requires_completeness_score() -> None:
@@ -39,9 +40,17 @@ def test_blueprint_accepts_units_of_work_with_dependencies() -> None:
             UnitOfWork(id="u1", title="first", description="d"),
             UnitOfWork(id="u2", title="second", description="d", depends_on=["u1"]),
         ],
+        completeness=CompletenessScore(score=1.0, gaps=[]),
     )
 
     assert blueprint.units_of_work[1].depends_on == ["u1"]
+
+
+def test_blueprint_requires_completeness_score() -> None:
+    with pytest.raises(ValidationError):
+        Blueprint(  # pyright: ignore[reportCallIssue]  # omission is the assertion
+            title="t", architecture_summary="s", units_of_work=[]
+        )
 
 
 def test_review_report_accepts_finding_without_requirement_id() -> None:
@@ -49,9 +58,15 @@ def test_review_report_accepts_finding_without_requirement_id() -> None:
         title="t",
         findings=[Finding(id="f1", severity="minor", description="d")],
         coverage=[RequirementCoverage(requirement_id="r1", met=True)],
+        completeness=CompletenessScore(score=1.0, gaps=[]),
     )
 
     assert report.findings[0].requirement_id is None
+
+
+def test_review_report_requires_completeness_score() -> None:
+    with pytest.raises(ValidationError):
+        ReviewReport(title="t", findings=[], coverage=[])  # pyright: ignore[reportCallIssue]  # omission is the assertion
 
 
 def test_demo_package_accepts_talk_track_and_demo_data() -> None:
@@ -60,6 +75,14 @@ def test_demo_package_accepts_talk_track_and_demo_data() -> None:
         summary="s",
         demo_data=[DemoDataSeed(entity="User", description="a sample user")],
         talk_track=[TalkTrackSection(requirement_id="r1", narration="n")],
+        completeness=CompletenessScore(score=1.0, gaps=[]),
     )
 
     assert package.talk_track[0].requirement_id == "r1"
+
+
+def test_demo_package_requires_completeness_score() -> None:
+    with pytest.raises(ValidationError):
+        DemoPackage(  # pyright: ignore[reportCallIssue]  # omission is the assertion
+            title="t", summary="s", demo_data=[], talk_track=[]
+        )
