@@ -100,6 +100,11 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Changed
 
+- Shared agent runtimes now serialize overlapping invocations, preventing Strands
+  `ConcurrencyException` failures and releasing the queue after failed requests.
+- Distill local-document ingestion now creates a normalized Markdown sidecar and sends
+  that same structure-preserving content to the model, retaining pages, DOCX block order,
+  headings, lists, tables, slides, notes, and workbook sheets for evidence citations.
 - Console UI: approving a gate now fires the next station's agent automatically
   (`useProjectsStore.decide`), instead of leaving the project sitting at the new station
   until someone happened to type into its composer - matches what the state machine does
