@@ -44,6 +44,27 @@ def _artifact_to_response(artifact: Artifact) -> ArtifactResponse:
     )
 
 
+# Each agent needs its named predecessors' artifacts as grounding - the real state
+# machine handoff (ADVA-3015) will do this via Step Functions JSONPath; this local-dev
+# bypass has to stitch it in itself, since the console UI only ever sends a short
+# instruction like "Blueprint may begin.".
+_PREDECESSOR_ARTIFACTS: dict[str, list[str]] = {
+    Station.BLUEPRINT.value: [Station.DISTILL.value],
+    Station.REVIEW.value: [Station.DISTILL.value, Station.BLUEPRINT.value],
+    Station.SHOWROOM.value: [Station.DISTILL.value],
+}
+
+
+def _build_prompt(repo: ProjectRepository, project_id: str, agent: str, user_prompt: str) -> str:
+    """Prepend each predecessor station's artifact so the agent isn't drafting blind."""
+    sections = [
+        f"# {predecessor}'s output\n```json\n{json.dumps(artifact.content, indent=2)}\n```"
+        for predecessor in _PREDECESSOR_ARTIFACTS.get(agent, [])
+        if (artifact := repo.get_artifact(project_id, predecessor)) is not None
+    ]
+    return "\n\n".join([*sections, user_prompt])
+
+
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
     payload: CreateProjectRequest, request: Request, background_tasks: BackgroundTasks
@@ -186,6 +207,7 @@ def advance_project(
 
     agent = project.station.value
     prompt = (payload.prompt if payload else None) or f"Project {project_id}"
+    prompt = _build_prompt(repo, project_id, agent, prompt)
     result = request.app.state.local_agent_client.invoke(agent, prompt=prompt)
     repo.save_artifact(project_id, agent, result)
 
@@ -238,6 +260,7 @@ def advance_project_stream(
 
     agent = project.station.value
     prompt = (payload.prompt if payload else None) or f"Project {project_id}"
+    prompt = _build_prompt(repo, project_id, agent, prompt)
     local_agent_client = request.app.state.local_agent_client
 
     def event_stream() -> Iterator[str]:

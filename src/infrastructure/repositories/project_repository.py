@@ -12,6 +12,7 @@ from core.domain.project import (
     Project,
     Station,
     next_station,
+    prior_station,
     utcnow,
 )
 from infrastructure.repositories.keys import (
@@ -116,7 +117,7 @@ class ProjectRepository:
         )
         self._table.put_item(Item=self._decision_item(decision))
 
-        project.station = next_station(station) if approved else station
+        project.station = next_station(station) if approved else prior_station(station)
         project.updated_at = decision.decided_at
         project.task_token = None
         self._table.put_item(Item=self._state_item(project))

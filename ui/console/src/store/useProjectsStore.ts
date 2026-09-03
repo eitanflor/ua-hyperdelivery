@@ -243,10 +243,17 @@ export const useProjectsStore = create<ProjectsState>()(
             // takes the station" (docs/console-redesign.md) - the state machine does
             // this on its own in production; this local-dev bypass has to do it too,
             // rather than leaving the project sitting at the new station until someone
-            // happens to type into its composer.
-            if (pending.decision.approved && AGENT_STATIONS.includes(project.station)) {
+            // happens to type into its composer. A rejection lands back on the agent
+            // whose artifact was under review (see prior_station on the backend), so
+            // it needs the same treatment - fed the reviewer's comment as its next
+            // prompt instead of a generic "may begin.", so the send-back reason
+            // actually reaches the LLM rather than only living in the audit trail.
+            if (AGENT_STATIONS.includes(project.station)) {
               const label = AGENT_META[project.station]?.name ?? project.station;
-              void get().advanceProject(pending.projectId, project.station, `${label} may begin.`);
+              const prompt = pending.decision.approved
+                ? `${label} may begin.`
+                : `Sent back: ${pending.decision.comment?.trim() || "no reason given"}`;
+              void get().advanceProject(pending.projectId, project.station, prompt);
             }
           });
         }, UNDO_MS);

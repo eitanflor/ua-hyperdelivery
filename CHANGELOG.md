@@ -10,6 +10,16 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- Review can hand its own blocker/major findings off to GitHub Copilot's coding agent
+  (`assign_copilot_to_issue`, validated by `validate_copilot_assignments`), only when
+  explicitly asked - same GitHub connector as Blueprint's, now living on Review instead
+  of a dedicated Handoff agent. Assignments render in the console UI's `ReviewView` as
+  a "Copilot assignments" section with an assigned/failed badge and a clickable link to
+  the actual GitHub issue. See docs/decisions.md.
+- Blueprint's GitHub connector (`tools/github.py`, `mcp_clients/github.py`, gated on
+  `GITHUB_PAT`): repo scaffolding and one issue per unit of work, via GitHub's official
+  remote MCP server (`api.githubcopilot.com`) - no local binary/Docker to run. Curated
+  tool allow-list deliberately excludes merge/delete - see docs/decisions.md.
 - `GET /projects` (list every project, most recently updated first) and
   `ProjectRepository.list_projects()`, backing a new `/portfolio` route in the console UI -
   a dashboard of every project's station, progress and last-updated time, reachable from a
@@ -172,6 +182,17 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Fixed
 
+- Rejecting a gate ("Send back") recorded the comment in the audit trail but never
+  actually sent the project back to the agent - `record_decision` left `station` set to
+  the gate itself instead of the agent under review, so the reviewer's reason never
+  reached the LLM. Added `prior_station()` and wired the console's auto-advance to fire
+  on rejection too, feeding the comment back as the agent's next prompt.
+- `advance_project`/`advance_project_stream` (the local-dev orchestration bypass) never
+  handed a station's predecessor artifact to the next agent - only a short instruction
+  like "Blueprint may begin.", so Blueprint/Review/Showroom always opened with no spec to
+  work from and correctly reported themselves blocked. `_build_prompt` now prepends each
+  station's named predecessor artifacts (e.g. Blueprint gets Distill's `StructuredSpec`,
+  Review gets both). The real state machine handoff (ADVA-3015) still needs the same fix.
 - Settings leaked between tests through the `get_settings` `lru_cache`.
 - `starlette` 1.6 deprecates `httpx` in its test client; added the `httpx2` dev dependency
   it expects.

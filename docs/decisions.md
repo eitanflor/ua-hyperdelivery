@@ -17,7 +17,257 @@ Template for new entries:
 
 ---
 
-## 2026-09-02 - Excluded `notebooks/` from ruff instead of fixing the merged notebook
+## 2026-09-03 - Rejecting a gate now actually sends the project back to the agent, with the reason as its next prompt
+
+- **Status**: Accepted.
+- **Context**: `GateConsole`'s "Send back" CTA existed everywhere a gate does (one
+  shared component, rendered generically for every `kind: "gate"` station), captured a
+  required comment, and recorded the rejection in the audit trail - but
+  `ProjectRepository.record_decision`'s reject branch set `project.station = station`
+  (the gate itself), never moving it back to the agent whose artifact was under review.
+  The frontend's auto-advance only fired `if (pending.decision.approved && ...)`, so a
+  rejection left the project stuck at the gate forever: the comment was recorded but
+  never actually reached the LLM as a new prompt - only a UI polish question surfaced
+  the gap ("where ever we have gate approval we need to have another cta to send back
+  to llm right?"), which turned out to already have the CTA but not the wiring behind
+  it.
+- **Decision**: Added `core.domain.project.prior_station()` (mirrors `next_station()`,
+  walks `Station`'s declaration order backwards) and used it in `record_decision`'s
+  reject branch instead of leaving `station` unchanged. `useProjectsStore.decide()`'s
+  auto-advance condition dropped its `pending.decision.approved &&` guard - it now
+  fires whenever the resulting station is an agent station, approved or not - and
+  builds the prompt as `Sent back: ${comment}` on rejection instead of the generic
+  `"${label} may begin."` used on approval, so the reviewer's reason is what the agent
+  actually sees on its next turn.
+- **Alternatives considered**: Leaving rejection as a terminal, human-only state (open a
+  new turn manually) - rejected, it defeats the point of requiring a comment on
+  send-back if that comment never reaches the agent. A separate "resubmit" button
+  instead of auto-advancing - rejected, it would duplicate `advanceProject`'s existing
+  auto-invoke-on-approval behavior for no reason; a rejection is symmetrical to an
+  approval in this respect, not a different action.
+- **Consequences**: A rejected `blueprint_approval` now correctly lands back on
+  `blueprint` (which re-runs, then naturally advances back to `blueprint_approval` via
+  the existing `next_station` chain, same as any other agent turn) - not stuck at the
+  gate. Renamed the test that had encoded the old (buggy) behavior:
+  `test_record_decision_rejected_stays_at_same_station` ->
+  `test_record_decision_rejected_returns_to_the_reviewing_agent`.
+
+---
+
+## 2026-09-03 - Consolidated the Handoff agent back into Review
+
+- **Status**: Accepted. Supersedes "2026-09-02 - Fifth station: Handoff (G4) assigns
+  Review's findings to Copilot, gated on a new G3 sign-off" below.
+- **Context**: the Handoff agent/G3-gate design (below) was built and live-tested
+  successfully end-to-end (real repo, issue, and PR opened by GitHub Copilot's coding
+  agent against `underarmour/ua-distill-agent`). After seeing it built out, explicit
+  direction was to keep the original four-agent scope rather than carry a fifth
+  agent/station for this: "why do we have 5 agents we need only the 4 we discussed
+  about these will be taken care in review agent itself."
+- **Decision**: Removed `AgentName.HANDOFF`, `Station.HANDOFF`/`HANDOFF_APPROVAL`, the
+  `agent_runtime/handoff/` container, and `config/agents/handoff.yaml`. Review absorbed
+  the capability directly: `CopilotAssignment` now lives in `core/domain/review.py` as a
+  field on `ReviewReport` (`assignments: list[CopilotAssignment] = []`, empty unless
+  explicitly asked for), `validate_copilot_assignments` lives in `tools/review.py`
+  alongside `validate_review_report`, and `tools/github.py::review_github_mcp_client`
+  replaces `handoff_github_mcp_client` with the same tool scope (`issue_read`,
+  `issue_write`, `list_issues`, `search_issues`, `assign_copilot_to_issue`,
+  `create_pull_request_with_copilot`; toolsets `issues,copilot`). No new station and no
+  new gate - Review does this only when explicitly asked, the same "ask-gated"
+  discipline Blueprint already uses for its own GitHub tools, not a standing G3
+  sign-off.
+- **Alternatives considered**: Keeping Handoff as designed (rejected per the explicit
+  instruction above - the gate did work, but a fifth agent/station was judged more
+  ceremony than the capability needed once the mechanics were proven out).
+- **Consequences**: Reverted the backend domain/tools/agent-runtime/infra/CDK/console-UI
+  surface (~20 files) back to the four-agent shape (`AGENT_STATIONS =
+  {distill, blueprint, review, showroom}`, two approval gates). The real live-tested
+  GitHub artifacts remain valid proof the underlying mechanics work - only which agent
+  calls them changed. Review's system prompt (`config/agents/review.yaml`) now documents
+  how to resolve a finding to an issue and call `assign_copilot_to_issue` before calling
+  `validate_copilot_assignments`. The console UI's `HandoffView` was folded into
+  `ReviewView` (the "Copilot assignments" section now renders from `ReviewReport.
+  assignments` directly) rather than deleted outright, since the rendering itself was
+  correct and still needed.
+
+---
+
+## 2026-09-03 - GitHub PAT for SSO-enforced orgs: classic + SSO-authorized, not fine-grained
+
+- **Status**: Accepted. Amends (does not replace) the "GitHub connector: remote
+  first-party MCP server..." decision below, which still stands for the transport/tool
+  design - this only changes which *token type* `GITHUB_PAT` should hold when the target
+  org enforces SAML SSO.
+- **Context**: Verified live against the real `underarmour` GitHub org. A fine-grained
+  PAT hit two errors that looked separate - `search_repositories` blocked by SAML SSO,
+  `create_repository` 403 "need admin access to the organization" - and neither was
+  fixable from the token side: fine-grained PATs have no post-creation "authorize for
+  SSO" step (SSO authorization is bound in at *creation* time, contingent on already
+  having a linked identity for that org), unlike classic PATs' explicit "Configure SSO"
+  button.
+- **Decision**: Switched `GITHUB_PAT` to a **classic** PAT with `repo` scope, SSO-
+  authorized for `underarmour` via Settings > Developer settings > Personal access
+  tokens (classic) > token > Configure SSO > Authorize. This resolved both errors at
+  once - `create_repository` under `underarmour` then succeeded with no separate
+  org-admin grant needed, confirming the "admin access" 403 was downstream of the same
+  SSO/token-type gap, not a genuinely distinct permission problem. Verified full chain
+  end-to-end: repo created, issue filed, `assign_copilot_to_issue` succeeded, GitHub
+  Copilot's coding agent opened a real PR (github.com/underarmour/ua-distill-agent/pull/2).
+- **Alternatives considered**: Getting an `underarmour` org admin to grant repo-creation
+  rights to the fine-grained PAT directly (rejected as the first fix - would not have
+  addressed the SSO block either way, and the classic+SSO token fixed both in one step
+  without needing to involve an org admin at all). Sticking with fine-grained per GitHub's
+  general security recommendation (rejected here specifically - SSO enforcement on the
+  target org is a harder blocker than the coarser scopes of a classic token are a
+  liability, for this connector's threat model).
+- **Consequences**: `tools/github.py`'s permission-mapping guidance (see
+  docs/decisions.md's GitHub connector entry and /memories/repo/mcp-architecture.md)
+  should note classic-PAT `repo` scope as the working option for SSO-enforced orgs,
+  fine-grained as the option for personal accounts/non-SSO orgs. No code changed - this
+  is purely which token string goes in `.env`'s `GITHUB_PAT`.
+
+---
+
+## 2026-09-02 - Fifth station: Handoff (G4) assigns Review's findings to Copilot, gated on a new G3 sign-off
+
+- **Status**: Superseded by "2026-09-03 - Consolidated the Handoff agent back into
+  Review" above. Was itself "Accepted. Supersedes the Copilot-on-Blueprint half of
+  '2026-09-02 - Copilot coding-agent hand-off added to Blueprint's existing GitHub
+  connector' below" - that supersession still stands, only this entry's own status
+  changed.
+- **Context**: the plan calls for Review's findings to actually get fixed, not just
+  reported. The initial idea (Blueprint calls `assign_copilot_to_issue` on request) only
+  handed off *new* work, not fixes to *findings Review discovers later*. It also raised a
+  real conflict: the requested design had Review spawn a Copilot session automatically
+  the moment it found a blocker/major finding, with no human step first - which directly
+  contradicts AGENTS.md's "do not remove or bypass a human approval gate. The gates are
+  the product." That was flagged explicitly and resolved by gating instead.
+- **Decision**: Added a fifth agent, Handoff (`AgentName.HANDOFF`, `core/domain/handoff.py
+  ::HandoffReport`), sitting after Review and before Showroom. A new `Station.
+  HANDOFF_APPROVAL` gate (G3, "Grade sheet sign-off" in the console UI) sits between them
+  - so a human sees Review's findings and signs off *before* Handoff runs, not after.
+  Handoff does not write or review code itself: for each blocker/major finding it
+  resolves a GitHub issue (an existing one from Blueprint's units of work, or a new one
+  for a purely structural finding) and calls `assign_copilot_to_issue`
+  (`tools/github.py::handoff_github_mcp_client`) - GitHub's own Copilot cloud agent does
+  the actual coding, in its own ephemeral environment. `assign_copilot_to_issue` was
+  removed from Blueprint's toolset (it never fit Blueprint's "one issue per unit of work"
+  job cleanly) and Blueprint instead gained brownfield read tools (`get_repository_tree`,
+  `search_code`) so it can inspect an existing linked repo before drafting units of work,
+  for enhancement/maintenance projects rather than only greenfield ones.
+- **Alternatives considered**: Handoff generating/pushing code itself via our own
+  Bedrock/Claude setup and git tools (rejected - GitHub Copilot's coding agent already
+  does this, in a sandboxed GitHub Actions environment, with its own PR lifecycle; building
+  a parallel code-writer would duplicate that for no benefit and take on real-code-change
+  risk this repo doesn't need to own). Auto-triggering Handoff without a gate (rejected -
+  the AGENTS.md conflict above). Keeping the hand-off on Blueprint (rejected - Blueprint's
+  job is drafting the initial build; reacting to Review's findings is a distinct
+  responsibility with its own trigger (G3 sign-off) and its own narrower tool scope).
+- **Consequences**: A new Strands agent/station touches a lot of surface that must move
+  together - `AgentName`/`Station` enums, `infra/stacks/orchestration_stack.py`'s state
+  machine, `Makefile`/`scripts/dev_all.sh`/`deploy_agent.sh`, and the console UI's
+  `lib/pipeline.ts` (persona "GM", station "Free Agency", Gate 3) - all updated in this
+  change; keep them in sync if the line changes again. Assigning Copilot to an issue only
+  works if GitHub Copilot's coding agent is actually enabled/licensed for the target
+  repo/org (see the "GitHub Copilot coding-agent hand-off" entry below for the real-world
+  prerequisites and the SSO/admin blocker already hit against the `underarmour` org).
+
+---
+
+## 2026-09-02 - Copilot coding-agent hand-off added to Blueprint's existing GitHub connector
+
+- **Status**: Superseded by "2026-09-02 - Fifth station: Handoff (G4) assigns Review's
+  findings to Copilot, gated on a new G3 sign-off" above - `assign_copilot_to_issue`
+  moved from Blueprint to the new Handoff agent. The rest of this entry (why the remote
+  MCP server + `issue_write`/repo-scaffolding half of the connector was built the way it
+  was) still stands.
+- **Context**: Phase 3 of the plan calls for "approved tasks become issues and are
+  assigned automatically, one pull request per task" (docs/hyperdelivery-plan.md). With
+  Blueprint already filing one GitHub issue per unit of work, the natural next step is
+  handing a filed issue to GitHub Copilot's coding agent so it opens the PR - without
+  standing up a fifth "Build" agent.
+- **Decision**: Added `assign_copilot_to_issue` (the `copilot` toolset, remote-server
+  tool - not a separate integration) to Blueprint's existing allow-list in
+  `tools/github.py`/`config/agents/blueprint.yaml`, gated the same way as the rest of the
+  connector: only when explicitly asked, one issue at a time, no default follow-on after
+  filing issues. Same `GITHUB_PAT` auth already wired for repo/issue creation - no new
+  credential or connector needed.
+- **Alternatives considered**: `create_pull_request_with_copilot` (remote-only, skips
+  the issue entirely and has Copilot open a PR directly from a problem statement) -
+  rejected for now, since it bypasses the "one issue per unit of work" traceability
+  Blueprint already establishes; `assign_copilot_to_issue` keeps the issue as the unit of
+  work's durable record.
+- **Consequences**: This only works if GitHub Copilot's coding agent is actually usable
+  on the target repo - a paid Copilot plan, an org admin enabling the coding-agent policy
+  (Business/Enterprise), the repo not opted out, and the token owner holding an assigned
+  Copilot seat, all outside this repo's control. We already hit an analogous real-world
+  gate testing repo creation against the `underarmour` GitHub org (SAML SSO + no admin
+  access) - assigning Copilot there will likely need the same org-side authorization
+  fixed first. Revisit `create_pull_request_with_copilot` if the issue-per-unit-of-work
+  model turns out to be unnecessary overhead once this is used in practice.
+
+
+
+- **Status**: Accepted.
+- **Context**: Blueprint (and Review/Showroom) always opened with no spec to work from.
+  The console UI's gate-approval handoff only ever sends a short instruction like
+  "Blueprint may begin." (`useProjectsStore.ts`), and `advance_project`/
+  `advance_project_stream` passed that straight through as the agent's whole prompt -
+  never fetching the prior station's saved artifact. The agents' own deterministic
+  completeness scorers correctly reported "no spec given" - that part worked as
+  designed - but the handoff feeding them was the actual gap.
+- **Decision**: `api/routers/projects.py` gained `_PREDECESSOR_ARTIFACTS` (a station ->
+  list of predecessor agent names map: Blueprint needs Distill; Review needs Distill and
+  Blueprint; Showroom needs Distill) and `_build_prompt`, which fetches each named
+  predecessor's saved artifact and prepends its JSON content before the user's own
+  instruction. Wired into both `advance_project` and `advance_project_stream`.
+- **Alternatives considered**: Fixing it in the console UI instead (rejected - the
+  backend already owns artifact storage and is the single place both the streaming and
+  non-streaming endpoints share; duplicating the fetch-and-format logic in TypeScript
+  would just be a second copy to keep in sync). Fixing the real Step Functions handoff at
+  the same time (rejected - out of scope here: `infra/stacks/orchestration_stack.py`
+  already tracks that gap explicitly as `TODO(ADVA-3015)`, a separate Phase 3 unit of
+  work with its own JSONPath-based design, not a copy of this local-dev shortcut).
+- **Consequences**: The local-dev bypass now matches what a real artifact-grounded
+  handoff should look like closely enough to demo end-to-end. `_PREDECESSOR_ARTIFACTS` is
+  a second place (besides each agent's own system prompt) that encodes "who needs whose
+  output" - if a new agent or dependency is added, both must be updated together. ADVA-3015
+  still needs its own implementation for the production path; this does not close it.
+
+
+
+- **Status**: Accepted.
+- **Context**: Blueprint needs to scaffold a project repo from the golden path template
+  and file one GitHub issue per unit of work (docs/hyperdelivery-plan.md Phase 3: "GitHub
+  for repositories, issues, and pull requests"). Needed a connector shaped like the
+  existing Atlassian/Snowflake ones - least-privilege, no standing infra to run ourselves
+  if avoidable.
+- **Decision**: GitHub's official `github/github-mcp-server` has a *remote* hosted mode
+  (`https://api.githubcopilot.com/mcp/`, plain streamable-HTTP, PAT as an `Authorization:
+  Bearer` header, `X-MCP-Toolsets` header to restrict tool groups server-side) - used that
+  instead of the local Go binary. `strands.tools.mcp.MCPClient(url=..., headers=...)`
+  talks to it directly, no OAuth wrapper needed. `tools/github.py` further restricts
+  Blueprint to a curated allow-list via `tool_filters` (create/scaffold repo tools,
+  issue create/read/comment, PR create/read/update) - deliberately excludes
+  `merge_pull_request`, `pull_request_review_write`, `delete_repository`, `delete_file`,
+  `fork_repository`: merging and deleting stay human/CI decisions, not an agent's (AGENTS.md,
+  "do not remove or bypass a human approval gate").
+- **Alternatives considered**: The local Go binary via stdio (rejected - needs either a Go
+  binary baked into the agent's own Docker image, or `docker run` from inside that
+  container, i.e. Docker-in-Docker; the remote server needs neither and matches this
+  repo's existing "no subprocess to manage" preference from the Snowflake PAT decision).
+  A single shared GitHub MCP client across future consumers (rejected for now, same
+  least-privilege reasoning as the Atlassian split - revisit when a second consumer, e.g.
+  Review reading PR diffs, needs a different tool scope).
+- **Consequences**: Requires a fine-grained PAT (`GITHUB_PAT`) scoped to only the
+  repos/orgs Blueprint should touch, not a classic account-wide `repo`-scope token. No new
+  infra to deploy or operate. If GitHub Enterprise Server is ever needed, the remote
+  server doesn't support it (`github-mcp-server` docs) - would need to add the local
+  binary path at that point.
+
+---
+
+
 
 - **Status**: Accepted.
 - **Context**: Merging `origin/dev`'s `feat/dashboard` work into `feat/flow` pulled in

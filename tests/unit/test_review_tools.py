@@ -1,4 +1,8 @@
-from tools.review import score_review_completeness, validate_review_report
+from tools.review import (
+    score_review_completeness,
+    validate_copilot_assignments,
+    validate_review_report,
+)
 
 
 def test_validate_review_report_accepts_full_coverage_and_valid_severities() -> None:
@@ -49,3 +53,61 @@ def test_score_review_completeness_scores_present_input_as_one() -> None:
     result = score_review_completeness(requirement_ids=["r1"])
 
     assert result == {"score": 1.0, "gaps": []}
+
+
+def test_validate_copilot_assignments_accepts_full_coverage_of_blocker_and_major_findings() -> None:
+    result = validate_copilot_assignments(
+        finding_ids=["f1", "f2", "f3"],
+        finding_severities=["blocker", "major", "minor"],
+        assignment_finding_ids=["f1", "f2"],
+    )
+
+    assert result == {"valid": True, "issues": []}
+
+
+def test_validate_copilot_assignments_flags_unassigned_blocker_and_major_findings() -> None:
+    result = validate_copilot_assignments(
+        finding_ids=["f1", "f2", "f3"],
+        finding_severities=["blocker", "major", "minor"],
+        assignment_finding_ids=[],
+    )
+
+    assert result["valid"] is False
+    assert "blocker/major finding f1 has no assignment" in result["issues"]
+    assert "blocker/major finding f2 has no assignment" in result["issues"]
+
+
+def test_validate_copilot_assignments_flags_unknown_and_non_assignable_assignments() -> None:
+    result = validate_copilot_assignments(
+        finding_ids=["f1", "f2"],
+        finding_severities=["blocker", "minor"],
+        assignment_finding_ids=["missing", "f2"],
+    )
+
+    assert result["valid"] is False
+    assert "assignment references unknown finding missing" in result["issues"]
+    assert "assignment references non-assignable finding f2" in result["issues"]
+    assert "blocker/major finding f1 has no assignment" in result["issues"]
+
+
+def test_validate_copilot_assignments_flags_duplicate_assignments_instead_of_passing() -> None:
+    result = validate_copilot_assignments(
+        finding_ids=["f1"],
+        finding_severities=["blocker"],
+        assignment_finding_ids=["f1", "f1"],
+    )
+
+    assert result["valid"] is False
+    assert "blocker/major finding f1 has 2 assignments, expected exactly one" in result["issues"]
+
+
+def test_validate_copilot_assignments_reports_mismatched_lengths_instead_of_raising() -> None:
+    result = validate_copilot_assignments(
+        finding_ids=["f1", "f2"],
+        finding_severities=["blocker"],
+        assignment_finding_ids=["f1"],
+    )
+
+    assert result["valid"] is False
+    assert len(result["issues"]) == 1
+    assert "finding_ids has 2 entries but finding_severities has 1" in result["issues"][0]

@@ -8,6 +8,7 @@ import {
   SEVERITY_ORDER,
   str,
   type Coverage,
+  type CopilotAssignment,
   type DemoSeed,
   type EvidenceLink,
   type Finding,
@@ -216,6 +217,7 @@ export function ReviewView({ content }: { content: Content }) {
     .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
   const coverage = list<Coverage>(content, "coverage");
   const met = coverage.filter((c) => c.met).length;
+  const assignments = list<CopilotAssignment>(content, "assignments");
 
   return (
     <div className="flex flex-col gap-5">
@@ -266,6 +268,41 @@ export function ReviewView({ content }: { content: Content }) {
                     {f.unit_id && <span>in {f.unit_id}</span>}
                   </p>
                 )}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {assignments.length > 0 && (
+        // Only present when Review was explicitly asked to hand findings off to
+        // Copilot - not part of every ReviewReport, see core/domain/review.py.
+        <Section title="Copilot assignments" count={assignments.length}>
+          <ul className="flex flex-col gap-2">
+            {assignments.map((a) => (
+              <li key={a.finding_id} className="rounded-sm border border-line-subtle bg-surface p-3">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <Badge tone={a.assigned ? "success" : "danger"}>
+                    {a.assigned ? "assigned" : "failed"}
+                  </Badge>
+                  <code className="tabular font-mono text-2xs text-fg-subtle">{a.finding_id}</code>
+                  {a.created_new_issue && (
+                    <span className="text-2xs text-fg-subtle">new issue</span>
+                  )}
+                </div>
+                {a.issue_url ? (
+                  <a
+                    href={a.issue_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-accent-text underline underline-offset-2"
+                  >
+                    {a.issue_url}
+                  </a>
+                ) : (
+                  <span className="tabular text-xs text-fg-muted">issue #{a.issue_number}</span>
+                )}
+                {a.note && <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">{a.note}</p>}
               </li>
             ))}
           </ul>

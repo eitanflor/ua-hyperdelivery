@@ -320,6 +320,28 @@ def test_advance_falls_back_to_a_placeholder_prompt_when_none_given(client: Test
     assert fake_agent.calls == [("distill", f"Project {created['id']}")]
 
 
+def test_advance_prepends_the_predecessor_artifact_as_context(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient({"title": "Blueprint draft"})
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "distill", {"title": "FSD", "requirements": []})
+    project = loaded(repo.get_project(created["id"]))
+    project.station = Station.BLUEPRINT
+    repo._table.put_item(Item=repo._state_item(project))
+
+    resp = client.post(
+        f"/projects/{created['id']}/advance", json={"prompt": "Blueprint may begin."}
+    )
+
+    assert resp.status_code == 200
+    agent, prompt = fake_agent.calls[0]
+    assert agent == "blueprint"
+    assert '"title": "FSD"' in prompt
+    assert prompt.endswith("Blueprint may begin.")
+
+
 def test_advance_stays_at_the_same_station_when_gaps_are_flagged(client: TestClient) -> None:
     _state(client).state_machine_client = None
     fake_agent = _FakeLocalAgentClient(

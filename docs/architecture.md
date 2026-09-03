@@ -19,7 +19,7 @@ flowchart LR
         blueprint["Strands Agent\nStructuredSpec -> Blueprint"]
     end
     subgraph G3["Review (G3)"]
-        review["Strands Agent\nCode + FSD/Blueprint -> ReviewReport"]
+        review["Strands Agent\nCode + FSD/Blueprint -> ReviewReport\n(can assign Copilot's coding agent)"]
     end
     subgraph G4["Showroom (G4)"]
         showroom["Strands Agent\nReviewed FSD -> DemoPackage"]
@@ -28,6 +28,7 @@ flowchart LR
     bedrock[("Amazon Bedrock\n(Claude)")]
     s3[("S3\nedma-ai-test")]
     atlassian[("Atlassian Cloud\nConfluence + Jira")]
+    github[("GitHub\n(remote MCP server)")]
 
     client -->|"POST /invocations"| distill
     client -->|"POST /invocations"| blueprint
@@ -42,6 +43,8 @@ flowchart LR
     distill -->|"s3_get_document_text"| s3
     distill -->|"confluence_* (read-only)"| atlassian
     blueprint -->|"jira_* (issue lifecycle)"| atlassian
+    blueprint -->|"repo scaffold + issues (no merge/delete)"| github
+    review -->|"issues + assign_copilot_to_issue (no repo/PR/merge)"| github
 
     distill -.->|"human moves signed-off spec"| blueprint
     blueprint -.->|"human moves approved blueprint"| review
@@ -120,8 +123,8 @@ See [docs/decisions.md](./decisions.md) for why each of these shapes was chosen.
 ## Low-level (per-agent composition)
 
 Every agent container is built from the same composition root shape. Distill (the most
-built-out agent, with two external tools) is shown below; Blueprint/Review/Showroom follow
-the identical shape with fewer tools (see the table after the diagram).
+built-out agent, with two external tools) is shown below; Blueprint/Review/Showroom
+follow the identical shape with fewer tools (see the table after the diagram).
 
 ```mermaid
 flowchart TD
@@ -144,6 +147,7 @@ flowchart TD
     subgraph providers["providers/ + mcp_clients/ (generic, reusable, no policy)"]
         s3provider["providers/storage/s3.py\nget_document_text() / parse_document()"]
         mcpclient["mcp_clients/atlassian.py\nconfluence/jira session builders"]
+        githubclient["mcp_clients/github.py\ngithub_client()\n(remote MCP, PAT bearer header)"]
     end
 
     subgraph obs["infrastructure/observability/"]
@@ -177,8 +181,8 @@ flowchart TD
 | Agent | Deterministic validator tool | External tools | Output model |
 |---|---|---|---|
 | Distill | `score_completeness` | `s3_get_document_text`, Confluence MCP (read-only) | `StructuredSpec` |
-| Blueprint | `validate_units_of_work` | Jira MCP (issue lifecycle) | `Blueprint` |
-| Review | `validate_review_report` | none | `ReviewReport` |
+| Blueprint | `validate_units_of_work` | Jira MCP (issue lifecycle), GitHub MCP (repo scaffold/brownfield-read + issues/PRs, no merge/delete/Copilot) | `Blueprint` |
+| Review | `validate_review_report`, `validate_copilot_assignments` | GitHub MCP (issues + `assign_copilot_to_issue`, no repo/PR/merge) | `ReviewReport` |
 | Showroom | `validate_talk_track_coverage` | none | `DemoPackage` |
 
 **Standing convention**: for any new external integration, split it into a generic,

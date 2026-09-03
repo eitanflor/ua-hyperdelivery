@@ -35,6 +35,16 @@ def next_station(current: Station) -> Station:
     return _LINE[idx + 1] if idx + 1 < len(_LINE) else current
 
 
+def prior_station(current: Station) -> Station:
+    """Return the station before `current`, or `current` itself at the start of the line.
+
+    Used when a gate is rejected: the project goes back to the agent whose artifact was
+    under review, not the gate itself, so that agent gets another turn with the reason.
+    """
+    idx = _LINE.index(current)
+    return _LINE[idx - 1] if idx > 0 else current
+
+
 class CompletenessScore(BaseModel):
     """How ready one station's draft artifact is, plus what is still missing.
 

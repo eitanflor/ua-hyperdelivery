@@ -62,6 +62,15 @@ export interface DemoSeed {
   description: string;
 }
 
+export interface CopilotAssignment {
+  finding_id: string;
+  issue_number: number;
+  issue_url?: string | null;
+  created_new_issue: boolean;
+  assigned: boolean;
+  note?: string | null;
+}
+
 type Content = Record<string, unknown>;
 
 export function str(content: Content, key: string): string | undefined {

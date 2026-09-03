@@ -83,7 +83,7 @@ def test_record_decision_approved_advances_to_next_station(repo: ProjectReposito
     assert loaded(repo.get_project("p1")).station == Station.BLUEPRINT
 
 
-def test_record_decision_rejected_stays_at_same_station(repo: ProjectRepository) -> None:
+def test_record_decision_rejected_returns_to_the_reviewing_agent(repo: ProjectRepository) -> None:
     repo.create_project("p1", "Project One")
     project = loaded(repo.get_project("p1"))
     project.station = Station.REVIEW_APPROVAL
@@ -97,7 +97,7 @@ def test_record_decision_rejected_stays_at_same_station(repo: ProjectRepository)
         comment="needs more work",
     )
 
-    assert loaded(repo.get_project("p1")).station == Station.REVIEW_APPROVAL
+    assert loaded(repo.get_project("p1")).station == Station.BLUEPRINT
 
 
 def test_record_decision_raises_for_unknown_project(repo: ProjectRepository) -> None:

@@ -61,7 +61,7 @@ export const AGENT_META: Record<string, AgentMeta> = {
     name: "Ref",
     number: "ST 03",
     face: "ref",
-    role: "Grades the build against the scouting report and calls what fails, worst first.",
+    role: "Grades the build against the scouting report, calls what fails worst first, and can send a fix over to Copilot when asked.",
     output: "Grade sheet",
     fg: "text-review",
     bg: "bg-review-bg",

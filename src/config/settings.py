@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     snowflake_pat: SecretStr | None = None
     snowflake_database: str | None = None
     snowflake_schema: str | None = None
+    # Blueprint's/Review's GitHub tools: gates whether create_repository/issue_write/
+    # assign_copilot_to_issue attach at all. Reaches GitHub's official remote MCP server
+    # (api.githubcopilot.com), not a locally-run process - see tools/github.py,
+    # docs/decisions.md.
+    github_pat: SecretStr | None = None
     # Phase 2 orchestration resources live in ap-southeast-2, separate from aws_region
     # (Bedrock/AgentCore Runtime, us-east-1) - see docs/decisions.md.
     projects_table: str = "hyperdelivery-projects"

@@ -24,6 +24,17 @@ class RequirementCoverage(BaseModel):
     met: bool
 
 
+class CopilotAssignment(BaseModel):
+    """One blocker/major finding's resolution: the GitHub issue it was filed/found under."""
+
+    finding_id: str
+    issue_number: int
+    issue_url: str | None = None
+    created_new_issue: bool
+    assigned: bool
+    note: str | None = None
+
+
 class ReviewReport(BaseModel):
     """G3 output contract: a gap report and coverage view against the FSD and Blueprint."""
 
@@ -31,3 +42,6 @@ class ReviewReport(BaseModel):
     findings: list[Finding]
     coverage: list[RequirementCoverage]
     completeness: CompletenessScore
+    # Only present when Review was explicitly asked to hand blocker/major findings off
+    # to GitHub Copilot's coding agent - empty otherwise, never invented.
+    assignments: list[CopilotAssignment] = []
