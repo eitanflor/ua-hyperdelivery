@@ -44,10 +44,12 @@ class Settings(BaseSettings):
     # (api.githubcopilot.com), not a locally-run process - see tools/github.py,
     # docs/decisions.md.
     github_pat: SecretStr | None = None
-    # Phase 2 orchestration resources live in ap-southeast-2, separate from aws_region
-    # (Bedrock/AgentCore Runtime, us-east-1) - see docs/decisions.md.
-    projects_table: str = "hyperdelivery-projects"
-    orchestration_region: str = "ap-southeast-2"
+    # Phase 2 orchestration resources. Table name is env-suffixed by
+    # infra/stacks/storage_stack.py (see docs/decisions.md); default here matches the
+    # dev environment's table. Same region as aws_region now - the prior
+    # ap-southeast-2 split is gone, see docs/decisions.md, 'Consolidate all AWS
+    # resources into us-east-1'.
+    projects_table: str = "hyperdelivery-dev-projects"
     # None until the state machine is deployed (blocked on IAM) - console API falls back
     # to DynamoDB-only writes with no execution to start/resume.
     state_machine_arn: str | None = None

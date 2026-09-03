@@ -15,6 +15,7 @@ class _FakeResponse:
     def __init__(self, lines: list[str], status_code: int = 200) -> None:
         self._lines = lines
         self.status_code = status_code
+        self.closed = False
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
@@ -22,6 +23,9 @@ class _FakeResponse:
 
     def iter_lines(self, decode_unicode: bool = True) -> Iterator[str]:
         return iter(self._lines)
+
+    def close(self) -> None:
+        self.closed = True
 
 
 class _FakeSession:
@@ -87,3 +91,14 @@ def test_stream_yields_chunks_then_the_final_result() -> None:
         {"chunk": "..."},
         {"result": {"title": "FSD"}},
     ]
+
+
+def test_stream_calls_on_response_with_the_raw_response_before_reading_it() -> None:
+    session = _FakeSession(_sse({"result": {"title": "FSD"}}))
+    client = LocalAgentClient(session=session)
+    seen: list[Any] = []
+
+    list(client.stream("distill", "Project p1", on_response=seen.append))
+
+    assert len(seen) == 1
+    assert seen[0].closed is False  # stream() itself never closes it - only a caller does

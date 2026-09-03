@@ -46,7 +46,9 @@ export function Landing() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void send();
+            if (e.key !== "Enter" || e.shiftKey || e.metaKey || e.ctrlKey) return;
+            e.preventDefault();
+            void send();
           }}
         />
         <span className="pointer-events-none absolute bottom-3 left-4 text-2xs text-fg-subtle">
@@ -55,7 +57,7 @@ export function Landing() {
               <Spinner className="size-3" /> Naming it and starting Scout…
             </span>
           ) : (
-            "⌘/Ctrl + Enter to send"
+            "Enter to send, ⇧/⌘/Ctrl + Enter for a new line"
           )}
         </span>
         <button

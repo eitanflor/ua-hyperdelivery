@@ -17,6 +17,9 @@ dependencies = [
     "uvicorn>=0.30",
     "httpx>=0.27",
     "mangum>=0.19",
+    # already pulled in transitively by fastapi/starlette, but routers/projects.py now
+    # imports it directly to cancel a stuck agent stream on client disconnect.
+    "anyio>=4.0",
     "pyjwt[crypto]>=2.10.0",
     # Lets the JWKS fetch in api/auth.py verify against the OS trust store, which is the
     # only place a TLS-inspecting proxy's root CA lives. No-ops onto OpenSSL on Linux.
@@ -40,7 +43,7 @@ dev = [
     # The runtime httpx dependency above is unrelated - it backs sdk/python/client.py.
     "httpx2>=2.0",
     # Typed boto3 clients so the injectable AWS seams aren't `Any` under pyright strict.
-    "boto3-stubs[dynamodb,s3,sns,stepfunctions]>=1.34",
+    "boto3-stubs[bedrock-runtime,dynamodb,s3,sns,stepfunctions]>=1.34",
     "types-pyyaml>=6.0",
     "types-requests>=2.32",
 ]
@@ -85,7 +88,7 @@ exclude_also = [
 ]
 
 [tool.pyright]
-include = ["src", "tests", "ui"]
+include = ["src", "tests", "ui", "scripts"]
 extraPaths = ["src"]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"

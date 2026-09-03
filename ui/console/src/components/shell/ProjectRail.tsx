@@ -60,11 +60,9 @@ function StationChip({ station }: { station: Station | undefined }) {
 
 export function ProjectRail({ open }: { open: boolean }) {
   const navigate = useNavigate();
-  const recentProjects = useProjectsStore((s) => s.recentProjects);
   const projectsById = useProjectsStore((s) => s.projects);
-  const pendingByStation = useProjectsStore((s) => s.pendingByStation);
   const loadPending = useProjectsStore((s) => s.loadPending);
-  const loadProject = useProjectsStore((s) => s.loadProject);
+  const loadProjects = useProjectsStore((s) => s.loadProjects);
   const deleteProject = useProjectsStore((s) => s.deleteProject);
   const renameProject = useProjectsStore((s) => s.renameProject);
 
@@ -75,26 +73,18 @@ export function ProjectRail({ open }: { open: boolean }) {
 
   useEffect(() => {
     for (const station of GATES) void loadPending(station);
-    // refresh each recent project's station so its chip reflects reality even if it was
-    // advanced elsewhere since the last visit
-    for (const p of useProjectsStore.getState().recentProjects) void loadProject(p.id);
-    // mount-only: re-running per recentProjects change would refetch everything on
-    // every rename or reorder
+    // the source of truth for the rail, not a client-cached recent-projects echo - so a
+    // project deleted or created elsewhere shows up correctly on next mount
+    void loadProjects();
+    // mount-only: re-running per rename/reorder would refetch everything unnecessarily
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const rows = useMemo<Row[]>(() => {
-    const byId = new Map<string, Row>();
-    for (const p of recentProjects) {
-      byId.set(p.id, { id: p.id, name: p.name, station: projectsById[p.id]?.station });
-    }
-    for (const station of GATES) {
-      for (const p of pendingByStation[station] ?? []) {
-        if (!byId.has(p.id)) byId.set(p.id, { id: p.id, name: p.name, station: p.station });
-      }
-    }
-    return [...byId.values()];
-  }, [recentProjects, pendingByStation, projectsById]);
+  const rows = useMemo<Row[]>(
+    () =>
+      Object.values(projectsById).map((p) => ({ id: p.id, name: p.name, station: p.station })),
+    [projectsById],
+  );
 
   const groups = useMemo(() => {
     const q = filter.trim().toLowerCase();

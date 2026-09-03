@@ -1,17 +1,17 @@
-"""Phase 2 orchestration infra: project state machine, state projection, notifications.
+"""Phase 2 orchestration infra: project state machine, Lambda tasks, notifications.
 
-See docs/decisions.md, "2026-08-27 - Step Functions + DynamoDB for Phase 2 orchestration".
-Agent Task states invoke `src/orchestration/agent_invoker.py` (a Lambda that resolves and
-calls the AgentCore Runtime for that agent, cross-region into us-east-1). Approval waits
-persist the Step Functions task token onto the project's DynamoDB item via a
-`waitForTaskToken` DynamoUpdateItem, which the console API resumes from
-(`send_task_success`/`send_task_failure`) once a human decides.
+See docs/decisions.md, "2026-08-27 - Step Functions + DynamoDB for Phase 2 orchestration"
+and "S3 + DynamoDB: scalable single-environment-aware design" (the project table itself
+moved to StorageStack, injected here). Approval waits persist the Step Functions task
+token onto the project's DynamoDB item via a `waitForTaskToken` DynamoUpdateItem, which
+the console API resumes from (`send_task_success`/`send_task_failure`) once a human
+decides.
 """
 
 from pathlib import Path
 from typing import Any
 
-from aws_cdk import Duration, RemovalPolicy, Stack
+from aws_cdk import Duration, Stack
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as targets
@@ -22,35 +22,29 @@ from aws_cdk import aws_stepfunctions as sfn
 from aws_cdk import aws_stepfunctions_tasks as tasks
 from constructs import Construct
 
+from stacks.naming import REGION
+
 _SRC_DIR = Path(__file__).resolve().parents[2] / "src"
-_AGENTCORE_REGION = "us-east-1"  # Bedrock/AgentCore Runtime lives here, not ap-southeast-2
 _RUNTIME_PREFIX = "hyperdelivery_"  # matches scripts/deploy_agent.sh's runtime_name
 
 
 class OrchestrationStack(Stack):
-    """The project line: state machine, projects table, Lambda tasks and notifications."""
+    """The project line: state machine, Lambda tasks and notifications."""
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs: Any) -> None:  # noqa: ANN401
-        """Provision the orchestration plane for one environment."""
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        project_table: dynamodb.ITable,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> None:
+        """Provision the orchestration plane for one environment.
+
+        `project_table` is owned by StorageStack, not created here - see that module's
+        docstring for why the two are split.
+        """
         super().__init__(scope, construct_id, **kwargs)
-
-        # Single-table design: pk=project id, sk=record type ("STATE" or "DECISION#<iso-ts>"),
-        # so a project's current state and its full audit trail share one partition query.
-        self.project_table = dynamodb.Table(
-            self,
-            "ProjectTable",
-            table_name="hyperdelivery-projects",
-            partition_key=dynamodb.Attribute(name="pk", type=dynamodb.AttributeType.STRING),
-            sort_key=dynamodb.Attribute(name="sk", type=dynamodb.AttributeType.STRING),
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.RETAIN,
-        )
-        # Lists projects with a pending approval at a given station ("who owes a decision").
-        self.project_table.add_global_secondary_index(
-            index_name="gsi1-pending-by-station",
-            partition_key=dynamodb.Attribute(name="gsi1pk", type=dynamodb.AttributeType.STRING),
-            sort_key=dynamodb.Attribute(name="gsi1sk", type=dynamodb.AttributeType.STRING),
-        )
+        self.project_table = project_table
 
         self.notifications_topic = sns.Topic(
             self,
@@ -80,7 +74,7 @@ class OrchestrationStack(Stack):
             timeout=Duration.minutes(5),
             memory_size=256,
             environment={
-                "AGENTCORE_REGION": _AGENTCORE_REGION,
+                "AGENTCORE_REGION": REGION,
                 "AGENT_RUNTIME_PREFIX": _RUNTIME_PREFIX,
                 "PROJECTS_TABLE": self.project_table.table_name,
             },
@@ -96,10 +90,7 @@ class OrchestrationStack(Stack):
             iam.PolicyStatement(
                 actions=["bedrock-agentcore:InvokeAgentRuntime"],
                 resources=[
-                    (
-                        f"arn:aws:bedrock-agentcore:{_AGENTCORE_REGION}:{self.account}:"
-                        f"runtime/{_RUNTIME_PREFIX}*"
-                    )
+                    f"arn:aws:bedrock-agentcore:{REGION}:{self.account}:runtime/{_RUNTIME_PREFIX}*"
                 ],
             )
         )
@@ -128,7 +119,7 @@ class OrchestrationStack(Stack):
             timeout=Duration.seconds(10),
             memory_size=128,
             environment={
-                "PROJECTS_TABLE": "hyperdelivery-projects",
+                "PROJECTS_TABLE": self.project_table.table_name,
                 "NOTIFICATIONS_TOPIC_ARN": self.notifications_topic.topic_arn,
             },
         )

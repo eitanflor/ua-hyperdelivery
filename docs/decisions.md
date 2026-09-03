@@ -17,6 +17,97 @@ Template for new entries:
 
 ---
 
+## 2026-09-04 - Semantic search over historical FSDs: Bedrock Titan embeddings + a precomputed S3 index
+
+- **Status**: Accepted.
+- **Context**: Distill's `s3_list_reference_documents` only lets the LLM browse
+  historical FSDs by S3 key/category, so it can miss a relevant past FSD filed under a
+  differently-worded category. Asked whether to add real semantic ("vectorize") search
+  before this lookup always runs (see the unconditional-lookup change logged the same
+  day in CHANGELOG.md).
+- **Decision**: Add `providers/storage/embeddings.py` (Bedrock Titan Text Embeddings V2,
+  cosine similarity) and a new tool, `s3_find_similar_reference_documents`, that ranks
+  FSDs against a plain-language query using a precomputed `{key: embedding}` index
+  cached at `fsds/_index.json` in the same bucket. The index is built/refreshed by a new
+  standalone script, `scripts/build_fsd_index.py` (`make build-fsd-index`), run with the
+  operator's own AWS credentials - not the agent's runtime role, which stays read-only
+  (`s3:GetObject` only) on this bucket per the existing least-privilege bucket policy.
+  Distill's prompt now tries `s3_find_similar_reference_documents` first and falls back
+  to `s3_list_reference_documents` if the index is empty/stale.
+- **Alternatives considered**:
+  - **Snowflake Cortex `EMBED_TEXT`/vector table**: rejected for now - the repo only has
+    a natural-language Cortex Agent client (`snowflake_query`), not a raw SQL/vector
+    client, so this would mean adding a new Snowflake dependency and an ingestion
+    pipeline just for this feature.
+  - **No vectors, cache a short per-doc summary instead**: cheaper and simpler, but
+    weaker at surfacing a relevant FSD filed under an unrelated-sounding category -
+    rejected in favor of real similarity search since that was the specific gap raised.
+- **Consequences**: A new script (not just bash) lives under `scripts/`, now included in
+  pyright's `include` list. The index must be rebuilt manually after adding/removing
+  reference FSDs - there's no trigger wired to S3 uploads yet; revisit if the reference
+  library grows large/frequently-updated enough to need automatic reindexing (e.g. an S3
+  event notification driving a Lambda).
+
+---
+
+## 2026-09-03 - S3 + DynamoDB: consolidate onto us-east-1, own the documents bucket, versioned single-table schema
+
+- **Status**: Accepted. Supersedes the `orchestration_region`/`aws_region` split logged in
+  "2026-08-27 - Console backend as a standalone FastAPI service, not another AgentCore
+  Runtime" and the `ap-southeast-2` orchestration region referenced throughout the Phase 2
+  entries below - both are now historical context, not current behavior.
+- **Context**: The orchestration table and Distill's document bucket grew organically
+  (manually-created table in `ap-southeast-2`, borrowed external `edma-ai-test` bucket)
+  while IAM access to actually deploy the CDK stacks was blocked. Asked to design both
+  properly before real deployment happens: single region, an owned bucket, and a schema
+  that scales past the "one project, one artifact" case it was built to prove out.
+- **Decision**:
+  - **Region**: every resource (DynamoDB, S3, Step Functions, both Lambdas, the console
+    API) now lives in `us-east-1`, matching Bedrock/AgentCore Runtime - no more
+    cross-region split. The manually-created `ap-southeast-2` table is disposable (no
+    real data) and gets recreated fresh, not migrated.
+  - **Stateful resources split out**: `infra/stacks/storage_stack.py` now owns the
+    DynamoDB table and a new dedicated S3 bucket (`RemovalPolicy.RETAIN` on both),
+    injected into `OrchestrationStack`/`ConsoleApiStack` as real CDK cross-stack
+    references instead of each stack re-deriving (or duplicating) the table name string.
+  - **Environment-aware naming**: every physical resource name is built through
+    `infra/stacks/naming.py`'s `resource_name(env, ...)` (e.g. `hyperdelivery-dev-projects`),
+    with `env` read from CDK context (`-c env=`, default `dev`) - so a future `prod`
+    environment can never collide with `dev`'s resources.
+  - **Own the documents bucket**: a dedicated, CDK-managed, versioned, fully
+    public-access-blocked bucket replaces the borrowed `edma-ai-test` bucket. AgentCore
+    Runtime execution roles are created outside CDK and PowerUserAccess cannot attach a
+    policy to an existing IAM role (no `iam:*`, see the entry below on
+    `AWSPowerUserAccess`) - so read access is granted via an S3 *bucket* policy naming
+    the role ARN as principal (an `s3:PutBucketPolicy` call, not an IAM write), scoped to
+    the `documents/*` and `fsds/*` prefixes (Distill's inputs and its historical-FSD
+    reference lookups, respectively).
+  - **GSI2 replaces the Scan**: `list_projects` used a full table Scan (see "2026-08-29 -
+    Project Portfolio dashboard" below) because the schema had no "all projects"
+    partition key. Added `gsi2-all-projects-by-updated` (every `STATE` item carries a
+    constant `gsi2pk`, sorted by `gsi2sk=updated_at`), so listing is now a single-
+    partition Query, descending, instead of reading every item in the table.
+  - **Artifact versioning**: `save_artifact` now writes an immutable
+    `ARTIFACT_VERSION#<agent>#v<NNNN>` history item alongside the overwritten
+    `ARTIFACT#<agent>` latest alias `get_artifact`/`list_artifacts` still read by default.
+    New `list_artifact_versions` reads the full history.
+- **Alternatives considered**: A sharded `gsi2pk` (e.g. hash-bucketed) for the
+  all-projects index - rejected as premature; a single constant partition key is fine at
+  this app's scale (an internal delivery line, not a public multi-tenant service) and a
+  shard key adds real query complexity (fan-out reads) for a problem that doesn't exist
+  yet. Migrating the `ap-southeast-2` table's data - rejected, nothing real depends on it
+  (Phase 2 isn't deployed). A full separate CDK App/pipeline per environment - rejected
+  as more than this repo needs today; env-suffixed naming within one App covers the
+  "dev and prod don't collide" requirement without the extra pipeline machinery.
+- **Consequences**: `Settings.orchestration_region` is gone - `aws_region` now covers
+  every AWS call. `OrchestrationStack`/`ConsoleApiStack` are no longer standalone
+  constructible without a `project_table` argument (existing infra tests updated
+  accordingly). `AGENTCORE_ROLE_ARN` must be set in the environment `cdk synth`/`deploy`
+  runs in for the bucket policy statement to attach - without it the bucket still
+  deploys, just with no cross-role grant. Revisit the constant `gsi2pk` if the project
+  count ever grows large enough to make that partition a throughput hot spot.
+
+
 ## 2026-09-03 - Rejecting a gate now actually sends the project back to the agent, with the reason as its next prompt
 
 - **Status**: Accepted.

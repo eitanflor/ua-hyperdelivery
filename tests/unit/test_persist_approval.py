@@ -4,9 +4,9 @@ from orchestration.persist_approval import ApprovalPersister
 
 def _persister(table: FakeTable, sns: FakeSnsClient) -> ApprovalPersister:
     return ApprovalPersister(
-        region="ap-southeast-2",
+        region="us-east-1",
         projects_table="projects",
-        notifications_topic_arn="arn:aws:sns:ap-southeast-2:123456789012:topic",
+        notifications_topic_arn="arn:aws:sns:us-east-1:123456789012:topic",
         clients=FakeBotoClients(
             clients={"sns": sns}, resources={"dynamodb": FakeDynamoResource(table)}
         ),
@@ -41,6 +41,6 @@ def test_persist_publishes_a_decision_needed_notification() -> None:
 
     assert len(sns.publish_calls) == 1
     call = sns.publish_calls[0]
-    assert call["TopicArn"] == "arn:aws:sns:ap-southeast-2:123456789012:topic"
+    assert call["TopicArn"] == "arn:aws:sns:us-east-1:123456789012:topic"
     assert "review_approval" in call["Subject"]
     assert "proj-1" in call["Message"]

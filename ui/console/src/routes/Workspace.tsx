@@ -44,12 +44,11 @@ export function Workspace() {
 
   return (
     <div className="flex h-full min-w-0">
-      <div className="min-w-0 flex-1 overflow-y-auto">
-        {/* 65-75ch measure floor: the reading column no longer collapses when both
-            panels are open on a 13" laptop */}
-        <div className="mx-auto w-full max-w-[46rem] px-6 py-6">
-          <Thread projectId={projectId} onViewArtifact={openArtifact} />
-        </div>
+      {/* 65-75ch measure floor: the reading column no longer collapses when both
+          panels are open on a 13" laptop. Thread owns its own scroll region so the
+          composer footer can stay fixed to the bottom instead of scrolling with it. */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <Thread projectId={projectId} onViewArtifact={openArtifact} />
       </div>
 
       {open ? (

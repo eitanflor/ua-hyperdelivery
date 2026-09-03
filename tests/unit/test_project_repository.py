@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 @pytest.fixture
 def repo(fake_dynamodb: "DynamoDBServiceResource") -> ProjectRepository:
     return ProjectRepository(
-        table_name="hyperdelivery-projects",
-        region="ap-southeast-2",
+        table_name="hyperdelivery-dev-projects",
+        region="us-east-1",
         dynamodb_resource=fake_dynamodb,
     )
 
@@ -158,6 +158,41 @@ def test_list_artifacts_returns_only_this_projects_artifacts(repo: ProjectReposi
 
     assert {a.agent for a in artifacts} == {"distill", "blueprint"}
     assert all(a.project_id == "p1" for a in artifacts)
+
+
+def test_save_artifact_increments_version_on_rerun(repo: ProjectRepository) -> None:
+    repo.create_project("p1", "Project One")
+
+    first = repo.save_artifact("p1", "distill", {"title": "FSD v1"})
+    second = repo.save_artifact("p1", "distill", {"title": "FSD v2"})
+
+    assert (first.version, second.version) == (1, 2)
+    latest = repo.get_artifact("p1", "distill")
+    assert latest is not None
+    assert (latest.version, latest.content) == (2, {"title": "FSD v2"})
+
+
+def test_list_artifact_versions_returns_full_history_oldest_first(
+    repo: ProjectRepository,
+) -> None:
+    repo.create_project("p1", "Project One")
+    repo.save_artifact("p1", "distill", {"title": "FSD v1"})
+    repo.save_artifact("p1", "distill", {"title": "FSD v2"})
+
+    versions = repo.list_artifact_versions("p1", "distill")
+
+    assert [(v.version, v.content["title"]) for v in versions] == [
+        (1, "FSD v1"),
+        (2, "FSD v2"),
+    ]
+
+
+def test_list_artifacts_excludes_historical_versions(repo: ProjectRepository) -> None:
+    repo.create_project("p1", "Project One")
+    repo.save_artifact("p1", "distill", {"title": "FSD v1"})
+    repo.save_artifact("p1", "distill", {"title": "FSD v2"})
+
+    assert [a.agent for a in repo.list_artifacts("p1")] == ["distill"]
 
 
 def test_delete_project_removes_state_artifacts_and_decisions(repo: ProjectRepository) -> None:

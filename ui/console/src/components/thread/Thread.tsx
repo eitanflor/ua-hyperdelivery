@@ -41,7 +41,6 @@ export function Thread({
   const signatures = useProjectsStore((s) => s.signaturesByProject[projectId]);
   const failedRun = useProjectsStore((s) => s.failedRun);
   const retryFailedRun = useProjectsStore((s) => s.retryFailedRun);
-  const cancelRun = useProjectsStore((s) => s.cancelRun);
   const bottom = useRef<HTMLDivElement>(null);
 
   const streamingText = conversation?.find((t) => t.streaming)?.text ?? "";
@@ -51,110 +50,133 @@ export function Thread({
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [conversation?.length, streamingText]);
 
-  if (!project) return <Skeleton />;
+  if (!project) {
+    return (
+      <div className="mx-auto w-full max-w-[46rem] px-6 py-6">
+        <Skeleton />
+      </div>
+    );
+  }
 
   const currentIdx = stationIndex(project.station);
   const artifactByAgent = new Map(artifacts.map((a) => [a.agent, a]));
   const signatureFor = (station: Station) => signatures?.find((s) => s.station === station);
+  // only an agent station (not a gate/"done") holds a live composer.
+  const activeAgent = AGENT_STATIONS.includes(project.station) ? project.station : null;
 
   return (
-    <div className="flex flex-col gap-5">
-      {PIPELINE.map((station) => {
-        const meta = STATION_META[station];
-        const index = stationIndex(station);
+    // fixed-height column, not scrolled itself - the message list below owns its own
+    // scroll region so the composer footer stays put instead of riding the content down.
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-5 px-6 py-6">
+          {PIPELINE.map((station) => {
+            const meta = STATION_META[station];
+            const index = stationIndex(station);
 
-        if (meta.kind === "done") {
-          return project.station === "done" ? (
-            <div
-              key={station}
-              className="flex animate-rise items-center gap-3 rounded-md border border-success/25 bg-success-bg px-4 py-3"
-            >
-              <ConfettiIcon weight="fill" className="size-5 shrink-0 text-success" />
-              <div>
-                <p className="stencil text-xs text-fg">Off the line.</p>
-                <p className="mt-0.5 text-2xs text-fg-muted">
-                  Four stations cleared, both gates signed. The run of show is in the
-                  artifacts panel.
-                </p>
-              </div>
-            </div>
-          ) : null;
-        }
-
-        if (meta.kind === "gate") {
-          if (project.station === station) {
-            return <GateConsole key={station} project={project} artifacts={artifacts} />;
-          }
-          if (index < currentIdx) {
-            return (
-              <SignedCheckpoint key={station} station={station} signature={signatureFor(station)} />
-            );
-          }
-          return null;
-        }
-
-        if (!AGENT_STATIONS.includes(station) || index > currentIdx) return null;
-
-        const turns = conversation?.filter((t) => t.agent === station) ?? [];
-        const artifact = artifactByAgent.get(station);
-        const isCurrent = project.station === station;
-
-        return (
-          <section key={station} className="flex flex-col gap-4">
-            <StationBand station={station} />
-
-            {turns.length > 0
-              ? turns.map((turn) =>
-                  turn.role === "user" ? (
-                    <UserTurn key={turn.id} text={turn.text ?? ""} />
-                  ) : turn.streaming ? (
-                    <StreamingTurn
-                      key={turn.id}
-                      agent={turn.agent}
-                      text={turn.text ?? ""}                      toolCalls={turn.toolCalls ?? []}                      onStop={cancelRun}
-                    />
-                  ) : (
-                    <AgentTurn
-                      key={turn.id}
-                      agent={turn.agent}
-                      content={turn.content ?? {}}
-                      toolCalls={turn.toolCalls}
-                      onViewArtifact={onViewArtifact}
-                    />
-                  ),
-                )
-              : // no local turns (e.g. this project was opened on another machine) -
-                // fall back to the persisted artifact so a finished station still shows
-                artifact && (
-                  <AgentTurn
-                    agent={artifact.agent}
-                    content={artifact.content}
-                    onViewArtifact={onViewArtifact}
-                  />
-                )}
-
-            {isCurrent && failedRun?.projectId === projectId && (
-              <div className="flex animate-rise items-center gap-3 rounded-md border border-danger/25 bg-danger-bg px-3.5 py-2.5">
-                <p className="flex-1 text-xs text-fg">
-                  That run did not finish. Nothing was saved.
-                </p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  icon={<ArrowClockwiseIcon className="size-3.5" />}
-                  onClick={() => void retryFailedRun()}
+            if (meta.kind === "done") {
+              return project.station === "done" ? (
+                <div
+                  key={station}
+                  className="flex animate-rise items-center gap-3 rounded-md border border-success/25 bg-success-bg px-4 py-3"
                 >
-                  Retry
-                </Button>
-              </div>
-            )}
+                  <ConfettiIcon weight="fill" className="size-5 shrink-0 text-success" />
+                  <div>
+                    <p className="stencil text-xs text-fg">Off the line.</p>
+                    <p className="mt-0.5 text-2xs text-fg-muted">
+                      Four stations cleared, both gates signed. The run of show is in the
+                      artifacts panel.
+                    </p>
+                  </div>
+                </div>
+              ) : null;
+            }
 
-            {isCurrent && <Composer projectId={projectId} agent={station} />}
-          </section>
-        );
-      })}
+            if (meta.kind === "gate") {
+              if (project.station === station) {
+                return <GateConsole key={station} project={project} artifacts={artifacts} />;
+              }
+              if (index < currentIdx) {
+                return (
+                  <SignedCheckpoint
+                    key={station}
+                    station={station}
+                    signature={signatureFor(station)}
+                  />
+                );
+              }
+              return null;
+            }
 
-      <div ref={bottom} />
+            if (!AGENT_STATIONS.includes(station) || index > currentIdx) return null;
+
+            const turns = conversation?.filter((t) => t.agent === station) ?? [];
+            const artifact = artifactByAgent.get(station);
+            const isCurrent = project.station === station;
+
+            return (
+              <section key={station} className="flex flex-col gap-4">
+                <StationBand station={station} />
+
+                {turns.length > 0
+                  ? turns.map((turn) =>
+                      turn.role === "user" ? (
+                        <UserTurn key={turn.id} text={turn.text ?? ""} />
+                      ) : turn.streaming ? (
+                        <StreamingTurn
+                          key={turn.id}
+                          agent={turn.agent}
+                          text={turn.text ?? ""}
+                          toolCalls={turn.toolCalls ?? []}
+                        />
+                      ) : (
+                        <AgentTurn
+                          key={turn.id}
+                          agent={turn.agent}
+                          content={turn.content ?? {}}
+                          toolCalls={turn.toolCalls}
+                          onViewArtifact={onViewArtifact}
+                        />
+                      ),
+                    )
+                  : // no local turns (e.g. this project was opened on another machine) -
+                    // fall back to the persisted artifact so a finished station still shows
+                    artifact && (
+                      <AgentTurn
+                        agent={artifact.agent}
+                        content={artifact.content}
+                        onViewArtifact={onViewArtifact}
+                      />
+                    )}
+
+                {isCurrent && failedRun?.projectId === projectId && (
+                  <div className="flex animate-rise items-center gap-3 rounded-md border border-danger/25 bg-danger-bg px-3.5 py-2.5">
+                    <p className="flex-1 text-xs text-fg">
+                      That run did not finish. Nothing was saved.
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<ArrowClockwiseIcon className="size-3.5" />}
+                      onClick={() => void retryFailedRun()}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                )}
+              </section>
+            );
+          })}
+
+          <div ref={bottom} />
+        </div>
+      </div>
+
+      {activeAgent && (
+        <div className="mx-auto w-full max-w-[46rem] px-6 pb-6">
+          <Composer projectId={projectId} agent={activeAgent} />
+        </div>
+      )}
     </div>
   );
 }

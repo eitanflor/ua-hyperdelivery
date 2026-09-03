@@ -3,9 +3,10 @@
 import json
 import logging
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from typing import Any
 
+from anyio.to_thread import run_sync
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
@@ -263,10 +264,30 @@ def advance_project_stream(
     prompt = _build_prompt(repo, project_id, agent, prompt)
     local_agent_client = request.app.state.local_agent_client
 
-    def event_stream() -> Iterator[str]:
+    async def event_stream() -> AsyncIterator[str]:
         result: dict[str, Any] | None = None
+        # boxes the raw HTTP response to the agent's dev server, so a disconnect (see
+        # below) can close it from here and unblock the `next()` call that's stuck
+        # reading it in the worker thread - without this the agent invocation (and any
+        # tool call it's mid-way through) just keeps running unseen after "Stop".
+        held_response: list[Any] = []
+        gen = local_agent_client.stream(agent, prompt, on_response=held_response.append)
+
+        def next_event() -> dict[str, Any] | None:
+            # `None` (rather than raising StopIteration across the thread hop) keeps
+            # the type simple and side-steps PEP 479 turning a StopIteration that
+            # escapes an async generator's frame into an opaque RuntimeError.
+            return next(gen, None)
+
         try:
-            for event in local_agent_client.stream(agent, prompt):
+            while True:
+                # abandon_on_cancel=True: if the client disconnects, Starlette cancels
+                # this task while it's awaiting exactly this call (see StreamingResponse's
+                # own listen_for_disconnect) - the `finally` below still runs, closing
+                # the connection to the agent's dev server so its blocked read unblocks.
+                event = await run_sync(next_event, abandon_on_cancel=True)
+                if event is None:
+                    break
                 if "chunk" in event:
                     yield _sse({"chunk": event["chunk"]})
                 elif "tool_call" in event:
@@ -294,6 +315,9 @@ def advance_project_stream(
             # connection (client sees a raw network error, not a clean {"error": ...}).
             logger.exception("advance_project_stream failed for %s/%s", project_id, agent)
             yield _sse({"error": str(exc)})
+        finally:
+            if held_response:
+                held_response[0].close()
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

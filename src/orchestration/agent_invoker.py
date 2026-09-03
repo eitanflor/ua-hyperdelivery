@@ -1,10 +1,8 @@
 """Step Functions Task glue: invokes one AgentCore Runtime agent and returns its result.
 
-Bridges two regions by design (see docs/decisions.md): the state machine lives in
-ap-southeast-2, but AgentCore Runtime only exists in us-east-1. Resolves the runtime ARN
-by name on every call (via the control plane) rather than hardcoding it, since the actual
-`hyperdelivery_<agent>` runtimes don't exist yet (blocked on IAM) and their ARNs aren't
-known at CDK synth time.
+Resolves the runtime ARN by name on every call (via the control plane) rather than
+hardcoding it, since the actual `hyperdelivery_<agent>` runtimes don't exist yet (blocked
+on IAM) and their ARNs aren't known at CDK synth time.
 """
 
 import json

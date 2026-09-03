@@ -21,22 +21,29 @@ from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_lambda as lambda_
 from constructs import Construct
 
+from stacks.naming import resource_name
+
 _SRC_DIR = Path(__file__).resolve().parents[2] / "src"
 
 
 class ConsoleApiStack(Stack):
     """The console API Lambda and the HTTP API in front of it."""
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs: Any) -> None:  # noqa: ANN401
-        """Provision the console API for one environment."""
-        super().__init__(scope, construct_id, **kwargs)
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        env_name: str,
+        project_table: dynamodb.ITable,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> None:
+        """Provision the console API for one environment.
 
-        # Imported, not owned here - the table is managed by OrchestrationStack (or, today,
-        # the manually-created table pending `cdk import`). Avoids a premature cross-stack
-        # dependency before that reconciliation happens.
-        project_table = dynamodb.Table.from_table_name(
-            self, "ProjectTable", "hyperdelivery-projects"
-        )
+        `project_table` is owned by StorageStack, not created here - a real CDK
+        cross-stack reference, not a `from_table_name` string (see StorageStack's
+        docstring for why the name string used to be able to drift between stacks).
+        """
+        super().__init__(scope, construct_id, **kwargs)
 
         # TODO(ADVA-3015): replace with a Docker-bundled PythonFunction (or a dependencies
         # layer) once IAM access allows a real deploy - this asset has no third-party
@@ -44,7 +51,7 @@ class ConsoleApiStack(Stack):
         self.function = lambda_.Function(
             self,
             "ConsoleApiFunction",
-            function_name="hyperdelivery-console-api",
+            function_name=resource_name(env_name, "console-api"),
             runtime=lambda_.Runtime.PYTHON_3_11,
             handler="api.lambda_handler.handler",
             code=lambda_.Code.from_asset(
@@ -55,7 +62,8 @@ class ConsoleApiStack(Stack):
             memory_size=512,
             environment={
                 "PROJECTS_TABLE": project_table.table_name,
-                "ORCHESTRATION_REGION": self.region,
+                # AWS_REGION is a Lambda-reserved env var (set automatically by the
+                # runtime) - Settings.aws_region reads it without this stack setting it.
                 "LOG_LEVEL": "INFO",
             },
         )
@@ -64,7 +72,7 @@ class ConsoleApiStack(Stack):
         self.http_api = apigwv2.HttpApi(
             self,
             "ConsoleHttpApi",
-            api_name="hyperdelivery-console-api",
+            api_name=resource_name(env_name, "console-api"),
             default_integration=apigwv2_integrations.HttpLambdaIntegration(
                 "ConsoleApiIntegration", handler=self.function
             ),

@@ -22,10 +22,10 @@ def loaded(project: Project | None) -> Project:
 class FakeTable:
     """In-memory stand-in for a boto3 DynamoDB Table resource.
 
-    Covers put_item/get_item/delete_item/query (single GSI, or a plain pk/begins_with
-    scan for the "everything under this project" queries) plus update_item, which is
-    recorded rather than applied - the approval Lambda only ever asserts on the call it
-    made.
+    Covers put_item/get_item/delete_item/query (any single GSI by name convention
+    `<index>pk`/`<index>sk`, or a plain pk/begins_with query for the "everything under
+    this project" lookups) plus update_item, which is recorded rather than applied - the
+    approval Lambda only ever asserts on the call it made.
     """
 
     def __init__(self) -> None:
@@ -47,11 +47,17 @@ class FakeTable:
         KeyConditionExpression: str,
         ExpressionAttributeValues: dict[str, Any],
         IndexName: str | None = None,
+        ScanIndexForward: bool = True,
+        Limit: int | None = None,
     ) -> dict[str, Any]:
         if IndexName is not None:
+            # e.g. "gsi2pk = :pk" -> pk attribute "gsi2pk", sk attribute "gsi2sk".
+            pk_attr = KeyConditionExpression.split(" = ", maxsplit=1)[0].strip()
+            sk_attr = pk_attr.replace("pk", "sk")
             target = ExpressionAttributeValues[":pk"]
-            matches = [item for item in self.items.values() if item.get("gsi1pk") == target]
-            return {"Items": matches}
+            matches = [item for item in self.items.values() if item.get(pk_attr) == target]
+            matches.sort(key=lambda item: item.get(sk_attr, ""), reverse=not ScanIndexForward)
+            return {"Items": matches[:Limit]}
         pk = ExpressionAttributeValues[":pk"]
         if "begins_with" in KeyConditionExpression:
             prefix = ExpressionAttributeValues[":prefix"]
@@ -62,15 +68,9 @@ class FakeTable:
             ]
         else:
             matches = [item for (item_pk, _), item in self.items.items() if item_pk == pk]
-        return {"Items": matches}
-
-    def scan(
-        self, FilterExpression: str, ExpressionAttributeValues: dict[str, Any]
-    ) -> dict[str, Any]:
-        # only the "sk = :sk" shape list_projects() uses is supported here
-        sk = ExpressionAttributeValues[":sk"]
-        matches = [item for (_, item_sk), item in self.items.items() if item_sk == sk]
-        return {"Items": matches}
+        # real DynamoDB Query guarantees sk order; some repository methods rely on it.
+        matches.sort(key=lambda item: item.get("sk", ""), reverse=not ScanIndexForward)
+        return {"Items": matches[:Limit]}
 
     def update_item(self, **kwargs: Any) -> None:
         self.update_calls.append(kwargs)

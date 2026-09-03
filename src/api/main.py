@@ -25,20 +25,17 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.state.project_repository = ProjectRepository(
-        table_name=settings.projects_table, region=settings.orchestration_region
+        table_name=settings.projects_table, region=settings.aws_region
     )
     # None until the state machine is deployed - routers must treat this as optional.
     app.state.state_machine_client = (
-        StateMachineClient(
-            state_machine_arn=settings.state_machine_arn, region=settings.orchestration_region
-        )
+        StateMachineClient(state_machine_arn=settings.state_machine_arn, region=settings.aws_region)
         if settings.state_machine_arn
         else None
     )
     # Local-dev-only stand-in for Step Functions/AgentCore Runtime - see
     # orchestration.local_agent_client and routers/projects.py:advance_project.
     app.state.local_agent_client = LocalAgentClient()
-    # Bedrock/AgentCore Runtime live in aws_region, not orchestration_region (DynamoDB).
     app.state.project_namer = ProjectNamer(region_name=settings.aws_region)
     app.include_router(projects.router)
     return app

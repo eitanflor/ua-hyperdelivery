@@ -10,6 +10,20 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- `infra/stacks/storage_stack.py`: DynamoDB table and a dedicated, versioned, CDK-managed
+  S3 documents bucket now live in their own stack, injected into
+  `OrchestrationStack`/`ConsoleApiStack` as cross-stack references. Read access for the
+  AgentCore Runtime execution role is granted via an S3 bucket policy (not an IAM identity
+  policy - `AWSPowerUserAccess` excludes `iam:*`), scoped to the `documents/` and `fsds/`
+  prefixes (Distill's inputs and its historical-FSD reference lookups, respectively).
+- `infra/stacks/naming.py`: single source of truth for the AWS region (`us-east-1`) and
+  env-suffixed resource naming (`resource_name(env, resource)`), driven by CDK context
+  (`-c env=`, default `dev`).
+- `gsi2-all-projects-by-updated` GSI on the projects table - `list_projects` is now a
+  single-partition Query instead of a full table Scan.
+- Artifact versioning: `save_artifact` writes an immutable `ARTIFACT_VERSION#<agent>#v<NNNN>`
+  history item alongside the latest `ARTIFACT#<agent>` alias. New
+  `ProjectRepository.list_artifact_versions`.
 - Review can hand its own blocker/major findings off to GitHub Copilot's coding agent
   (`assign_copilot_to_issue`, validated by `validate_copilot_assignments`), only when
   explicitly asked - same GitHub connector as Blueprint's, now living on Review instead
@@ -26,11 +40,27 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   new icon in the top bar.
 - `AGENTS.md` as the single source of truth for repository conventions, with
   `.github/copilot-instructions.md` and path-scoped `.github/instructions/*` pointing at it.
+- Semantic search over historical FSDs: `providers/storage/embeddings.py` (Bedrock Titan
+  Text Embeddings V2), a new `s3_find_similar_reference_documents` tool ranking FSDs by
+  similarity to a plain-language query against a precomputed index, and
+  `scripts/build_fsd_index.py` (`make build-fsd-index`) to build/refresh that index. See
+  docs/decisions.md.
+
+### Changed
+
+- `src/config/agents/distill.yaml`: Scout now always calls `s3_list_reference_documents`
+  before writing a new `StructuredSpec`, and skims any plausibly related historical FSD -
+  previously this only happened when a request explicitly asked to reference a past FSD.
+  It now also prefers `s3_find_similar_reference_documents` for this, falling back to
+  `s3_list_reference_documents` only if the semantic index is empty/stale.
 - `sync-docs` skill: a documentation review that runs as a step of every change.
 - `scripts/precheck.sh` - one red/green gate for format, lint, types, tests, infra, secret
   scanning and spelling. CI runs the same script, so local and CI cannot drift.
 - `make check`, `make check-fix`, `make format`, `make typecheck`, `make coverage`,
   `make hooks`.
+- `ProjectRepository.save_artifact` looks up the latest existing version with a single
+  reverse-order, `Limit=1` Query instead of reading every version item and taking the max -
+  an O(1) targeted read instead of O(n) in the number of existing versions.
 - `cspell.json` spelling gate, whose `flagWords` list also enforces US English by failing
   British spellings with the American form as the suggested fix.
 - Pre-commit hooks: ruff, ruff-format, gitleaks, cspell, and the standard file hygiene set.
@@ -110,6 +140,10 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Changed
 
+- Every AWS resource (state machine, DynamoDB, S3, both Lambdas, the console API) now
+  lives in a single region, `us-east-1` - the prior `ap-southeast-2` orchestration /
+  `us-east-1` Bedrock split is gone. `Settings.orchestration_region` is removed;
+  `aws_region` covers every AWS call. See docs/decisions.md.
 - Console UI: approving a gate now fires the next station's agent automatically
   (`useProjectsStore.decide`), instead of leaving the project sitting at the new station
   until someone happened to type into its composer - matches what the state machine does

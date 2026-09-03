@@ -86,13 +86,15 @@ class Decision(BaseModel):
 class Artifact(BaseModel):
     """One agent's output (FSD/TDD/gap report/demo package), keyed by the agent that produced it.
 
-    Persisted as sk='ARTIFACT#<agent>' - one per agent per project, latest
-    invocation wins (overwritten, not versioned - see docs/decisions.md).
+    Persisted twice per save: sk='ARTIFACT#<agent>' (latest, what the console reads by
+    default) and sk='ARTIFACT_VERSION#<agent>#v<NNNN>' (immutable history) - see
+    docs/decisions.md.
     """
 
     project_id: str
     agent: str
     content: dict[str, Any]
+    version: int = 1
     created_at: datetime
 
 

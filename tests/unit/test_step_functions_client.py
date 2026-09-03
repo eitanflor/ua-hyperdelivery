@@ -23,8 +23,8 @@ class _FakeSfnClient:
 def _client() -> tuple[StateMachineClient, _FakeSfnClient]:
     fake = _FakeSfnClient()
     return StateMachineClient(
-        state_machine_arn="arn:aws:states:ap-southeast-2:123:stateMachine:hd",
-        region="ap-southeast-2",
+        state_machine_arn="arn:aws:states:us-east-1:123:stateMachine:hd",
+        region="us-east-1",
         sfn_client=cast("SFNClient", fake),
     ), fake
 
@@ -36,7 +36,7 @@ def test_start_execution_uses_project_id_as_execution_name() -> None:
 
     name, kwargs = fake.calls[0]
     assert name == "start_execution"
-    assert kwargs["stateMachineArn"] == "arn:aws:states:ap-southeast-2:123:stateMachine:hd"
+    assert kwargs["stateMachineArn"] == "arn:aws:states:us-east-1:123:stateMachine:hd"
     assert kwargs["name"] == "p1"
     assert kwargs["input"] == '{"project_id": "p1"}'
 

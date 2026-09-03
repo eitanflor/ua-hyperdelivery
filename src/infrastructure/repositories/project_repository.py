@@ -16,8 +16,14 @@ from core.domain.project import (
     utcnow,
 )
 from infrastructure.repositories.keys import (
+    ALL_PROJECTS_GSI2PK,
+    ALL_PROJECTS_INDEX,
+    ARTIFACT_PREFIX,
     PENDING_BY_STATION_INDEX,
     STATE_SK,
+    artifact_sk,
+    artifact_version_prefix,
+    artifact_version_sk,
     decision_sk,
     pending_gsi1pk,
     project_pk,
@@ -30,9 +36,11 @@ if TYPE_CHECKING:  # boto3-stubs is a dev-only dependency
 class ProjectRepository:
     """DynamoDB-backed project state + decision audit trail.
 
-    Single-table schema: pk=PROJECT#<id>, sk='STATE' or 'DECISION#<iso-ts>', plus GSI
-    gsi1-pending-by-station for "who owes a decision" queries. Schema owned by
-    infra/stacks/orchestration_stack.py - keep both in sync.
+    Single-table schema: pk=PROJECT#<id>, sk='STATE' | 'DECISION#<iso-ts>' |
+    'ARTIFACT#<agent>' (latest) | 'ARTIFACT_VERSION#<agent>#v<NNNN>' (history), plus
+    gsi1-pending-by-station ("who owes a decision") and gsi2-all-projects-by-updated
+    ("every project, most recent first"). Schema owned by infra/stacks/storage_stack.py -
+    keep both in sync.
     """
 
     def __init__(
@@ -72,26 +80,25 @@ class ProjectRepository:
     def list_projects(self) -> list[Project]:
         """Return every project, most recently updated first.
 
-        A table Scan, not a GSI query: the portfolio dashboard is a small admin view,
-        not a hot path, and this schema has no "all projects" partition key to query
-        against. Revisit with a dedicated GSI if the table grows large enough for a
-        Scan's cost to matter (see docs/decisions.md).
+        A Query against gsi2-all-projects-by-updated, not a table Scan - every STATE
+        item carries a constant gsi2pk so this is a single-partition query DynamoDB can
+        serve efficiently instead of reading (and filtering) every item in the table.
         """
         kwargs: dict[str, Any] = {
-            "FilterExpression": "sk = :sk",
-            "ExpressionAttributeValues": {":sk": STATE_SK},
+            "IndexName": ALL_PROJECTS_INDEX,
+            "KeyConditionExpression": "gsi2pk = :pk",
+            "ExpressionAttributeValues": {":pk": ALL_PROJECTS_GSI2PK},
+            "ScanIndexForward": False,  # gsi2sk = updated_at ISO string - descending = newest first
         }
         items: list[dict[str, Any]] = []
         while True:
-            resp = self._table.scan(**kwargs)
+            resp = self._table.query(**kwargs)
             items.extend(resp.get("Items", []))
             last_key = resp.get("LastEvaluatedKey")
             if not last_key:
                 break
             kwargs["ExclusiveStartKey"] = last_key
-        projects = [self._project_from_item(item) for item in items]
-        projects.sort(key=lambda p: p.updated_at, reverse=True)
-        return projects
+        return [self._project_from_item(item) for item in items]
 
     def record_decision(
         self,
@@ -124,26 +131,80 @@ class ProjectRepository:
         return decision
 
     def save_artifact(self, project_id: str, agent: str, content: dict[str, Any]) -> Artifact:
-        """Persist an agent's structured output, replacing any prior artifact for it."""
+        """Persist an agent's structured output as a new version, and update the latest alias.
+
+        Writes two items: an immutable `ARTIFACT_VERSION#<agent>#v<NNNN>` history record,
+        and the overwritten `ARTIFACT#<agent>` alias `get_artifact`/`list_artifacts` read
+        by default - see `list_artifact_versions` for the full history.
+        """
+        next_version = self._latest_artifact_version(project_id, agent) + 1
         artifact = Artifact(
-            project_id=project_id, agent=agent, content=content, created_at=utcnow()
+            project_id=project_id,
+            agent=agent,
+            content=content,
+            version=next_version,
+            created_at=utcnow(),
         )
-        self._table.put_item(Item=self._artifact_item(artifact))
+        self._table.put_item(
+            Item=self._artifact_item(artifact, artifact_version_sk(agent, next_version))
+        )
+        self._table.put_item(Item=self._artifact_item(artifact, artifact_sk(agent)))
         return artifact
 
+    def _latest_artifact_version(self, project_id: str, agent: str) -> int:
+        """Return the highest existing version number for an agent's artifact, or 0.
+
+        Version sort keys are zero-padded, so lexicographic order matches numeric order -
+        a single-item, reverse-order query gets the latest without reading full history.
+        """
+        resp = self._table.query(
+            KeyConditionExpression="pk = :pk AND begins_with(sk, :prefix)",
+            ExpressionAttributeValues={
+                ":pk": project_pk(project_id),
+                ":prefix": artifact_version_prefix(agent),
+            },
+            ScanIndexForward=False,
+            Limit=1,
+        )
+        items: list[dict[str, Any]] = resp.get("Items", [])
+        return int(items[0]["version"]) if items else 0
+
     def get_artifact(self, project_id: str, agent: str) -> Artifact | None:
-        """Return a single agent's artifact, or None if it hasn't run yet."""
-        resp = self._table.get_item(Key={"pk": project_pk(project_id), "sk": f"ARTIFACT#{agent}"})
+        """Return an agent's latest artifact, or None if it hasn't run yet."""
+        resp = self._table.get_item(Key={"pk": project_pk(project_id), "sk": artifact_sk(agent)})
         item = resp.get("Item")
         return self._artifact_from_item(item) if item else None
 
     def list_artifacts(self, project_id: str) -> list[Artifact]:
-        """Return every artifact produced so far for a project, in no particular order."""
+        """Return every agent's latest artifact for a project, in no particular order."""
         resp = self._table.query(
             KeyConditionExpression="pk = :pk AND begins_with(sk, :prefix)",
-            ExpressionAttributeValues={":pk": project_pk(project_id), ":prefix": "ARTIFACT#"},
+            ExpressionAttributeValues={":pk": project_pk(project_id), ":prefix": ARTIFACT_PREFIX},
         )
         return [self._artifact_from_item(item) for item in resp.get("Items", [])]
+
+    def list_artifact_versions(self, project_id: str, agent: str) -> list[Artifact]:
+        """Return every version of one agent's artifact for a project, oldest first."""
+        items = self._artifact_version_items(project_id, agent)
+        return [self._artifact_from_item(item) for item in items]
+
+    def _artifact_version_items(self, project_id: str, agent: str) -> list[dict[str, Any]]:
+        kwargs: dict[str, Any] = {
+            "KeyConditionExpression": "pk = :pk AND begins_with(sk, :prefix)",
+            "ExpressionAttributeValues": {
+                ":pk": project_pk(project_id),
+                ":prefix": artifact_version_prefix(agent),
+            },
+        }
+        items: list[dict[str, Any]] = []
+        while True:
+            resp = self._table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            last_key = resp.get("LastEvaluatedKey")
+            if not last_key:
+                break
+            kwargs["ExclusiveStartKey"] = last_key
+        return items
 
     def advance_after_artifact(self, project_id: str, agent: str) -> Project:
         """Moves a project past an agent station once its artifact has been produced.
@@ -199,6 +260,10 @@ class ProjectRepository:
             "station": project.station.value,
             "created_at": project.created_at.isoformat(),
             "updated_at": project.updated_at.isoformat(),
+            # Every STATE item carries this so gsi2-all-projects-by-updated can serve
+            # list_projects as a single-partition Query instead of a table Scan.
+            "gsi2pk": ALL_PROJECTS_GSI2PK,
+            "gsi2sk": project.updated_at.isoformat(),
         }
         if project.station in APPROVAL_STATIONS:
             item["gsi1pk"] = pending_gsi1pk(project.station.value)
@@ -231,11 +296,12 @@ class ProjectRepository:
         )
 
     @staticmethod
-    def _artifact_item(artifact: Artifact) -> dict[str, Any]:
+    def _artifact_item(artifact: Artifact, sk: str) -> dict[str, Any]:
         return {
             "pk": project_pk(artifact.project_id),
-            "sk": f"ARTIFACT#{artifact.agent}",
+            "sk": sk,
             "agent": artifact.agent,
+            "version": artifact.version,
             # DynamoDB's Table resource rejects native float (agent output models use
             # plain floats, e.g. CompletenessScore.score) - store as a JSON string instead.
             "content": json.dumps(artifact.content),
@@ -248,5 +314,6 @@ class ProjectRepository:
             project_id=item["pk"].removeprefix("PROJECT#"),
             agent=item["agent"],
             content=json.loads(item["content"]),
+            version=int(item.get("version", 1)),
             created_at=item["created_at"],
         )

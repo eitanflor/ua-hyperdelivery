@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { ArrowSquareOutIcon, CaretRightIcon, StopIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CaretRightIcon } from "@phosphor-icons/react";
 import type { ToolCallEvent } from "../../api/client";
 import { AGENT_META } from "../../lib/pipeline";
 import { composeReply } from "../../lib/formatArtifact";
+import { Markdown } from "../../lib/markdown";
 import { cn } from "../../lib/cn";
 import { AgentAvatar } from "./AgentAvatar";
-import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
 
 export function UserTurn({ text }: { text: string }) {
@@ -51,9 +51,9 @@ export function AgentTurn({
             ))}
           </div>
         )}
-        <p className="text-xs leading-relaxed whitespace-pre-wrap text-fg">
-          {composeReply(content)}
-        </p>
+        <div className="text-xs leading-relaxed text-fg">
+          <Markdown text={composeReply(content)} />
+        </div>
         <button
           type="button"
           onClick={() => onViewArtifact(agent)}
@@ -71,12 +71,10 @@ export function StreamingTurn({
   agent,
   text,
   toolCalls,
-  onStop,
 }: {
   agent: string;
   text: string;
   toolCalls: ToolCallEvent[];
-  onStop: () => void;
 }) {
   return (
     <div className="animate-rise">
@@ -91,13 +89,13 @@ export function StreamingTurn({
         )}
         {/* the only live region in the thread: without it the stream is silent to a
             screen reader, which is the one thing here that changes with no user action */}
-        <p
+        <div
           role="status"
           aria-live="polite"
           aria-atomic="false"
-          className="text-xs leading-relaxed whitespace-pre-wrap text-fg"
+          className="text-xs leading-relaxed text-fg"
         >
-          {text}
+          <Markdown text={text} />
           {text ? (
             <span className="ml-0.5 inline-block h-3.5 w-px animate-caret bg-accent align-middle" />
           ) : (
@@ -111,16 +109,7 @@ export function StreamingTurn({
               ))}
             </span>
           )}
-        </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<StopIcon className="size-3.5" />}
-          onClick={onStop}
-          className="mt-2 -ml-3"
-        >
-          Stop
-        </Button>
+        </div>
       </div>
     </div>
   );

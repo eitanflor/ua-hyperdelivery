@@ -1,5 +1,5 @@
 import json
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any, Never, cast
 
 import pytest
@@ -18,6 +18,16 @@ def _state(client: TestClient) -> Any:
     return cast(FastAPI, client.app).state
 
 
+class _FakeAgentResponse:
+    """Stands in for the raw HTTP response `LocalAgentClient.stream` hands to `on_response`."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class _FakeLocalAgentClient:
     def __init__(
         self,
@@ -31,6 +41,7 @@ class _FakeLocalAgentClient:
         self._chunks = chunks if chunks is not None else []
         self._tool_calls = tool_calls if tool_calls is not None else []
         self.calls: list[tuple[str, str]] = []
+        self.last_response = _FakeAgentResponse()
 
     def _next_result(self) -> dict[str, Any]:
         if self._results is not None:
@@ -41,8 +52,12 @@ class _FakeLocalAgentClient:
         self.calls.append((agent, prompt))
         return self._next_result()
 
-    def stream(self, agent: str, prompt: str) -> Iterator[dict[str, Any]]:
+    def stream(
+        self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
+    ) -> Iterator[dict[str, Any]]:
         self.calls.append((agent, prompt))
+        if on_response is not None:
+            on_response(self.last_response)
         for chunk in self._chunks:
             yield {"chunk": chunk}
         for tool_call in self._tool_calls:
@@ -423,6 +438,20 @@ def test_advance_stream_yields_chunks_then_a_done_event(client: TestClient) -> N
     assert events[:2] == [{"chunk": "Analyzing"}, {"chunk": "..."}]
     assert events[-1]["done"] is True
     assert events[-1]["project"]["station"] == Station.BLUEPRINT_APPROVAL.value
+
+
+def test_advance_stream_closes_the_agent_response_once_finished(client: TestClient) -> None:
+    # a real bug: the connection to the agent's dev server was never explicitly closed,
+    # so an abandoned stream (e.g. the browser tab closing) kept it - and whatever the
+    # agent was still doing - running unseen instead of actually stopping.
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient({"title": "FSD"})
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    assert fake_agent.last_response.closed is True
     artifact = client.get(f"/projects/{created['id']}/artifacts/distill").json()
     assert artifact["content"] == {"title": "FSD"}
 
@@ -463,7 +492,9 @@ def test_advance_stream_surfaces_agent_errors_as_an_sse_event(client: TestClient
     _state(client).state_machine_client = None
 
     class _FailingAgentClient:
-        def stream(self, agent: str, prompt: str) -> Iterator[dict[str, Any]]:
+        def stream(
+            self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
+        ) -> Iterator[dict[str, Any]]:
             yield {"chunk": "Analyzing"}
             yield {"error": "agent invocation failed"}
 

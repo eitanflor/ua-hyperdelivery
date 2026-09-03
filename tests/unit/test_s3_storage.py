@@ -49,8 +49,52 @@ def test_get_document_text_uses_injected_client_and_bucket() -> None:
     client = _StubS3Client(b"raw fsd text")
 
     result = s3.get_document_text(
-        "my-bucket", "fsd.txt", "ap-southeast-2", s3_client=cast("S3Client", client)
+        "my-bucket", "fsd.txt", "us-east-1", s3_client=cast("S3Client", client)
     )
 
     assert result == "raw fsd text"
     assert client.calls == [("my-bucket", "fsd.txt")]
+
+
+class _StubPaginator:
+    def __init__(self, pages: list[dict[str, Any]]) -> None:
+        self._pages = pages
+
+    def paginate(self, Bucket: str, Prefix: str) -> list[dict[str, Any]]:
+        return self._pages
+
+
+class _StubPaginatedS3Client:
+    def __init__(self, pages: list[dict[str, Any]]) -> None:
+        self._pages = pages
+        self.paginator_name: str | None = None
+
+    def get_paginator(self, name: str) -> _StubPaginator:
+        self.paginator_name = name
+        return _StubPaginator(self._pages)
+
+
+def test_list_document_keys_paginates_and_sorts() -> None:
+    client = _StubPaginatedS3Client(
+        [
+            {"Contents": [{"Key": "fsds/inventory/b.pdf"}]},
+            {"Contents": [{"Key": "fsds/inventory/a.pdf"}]},
+        ]
+    )
+
+    result = s3.list_document_keys(
+        "my-bucket", "fsds/inventory/", "us-east-1", s3_client=cast("S3Client", client)
+    )
+
+    assert result == ["fsds/inventory/a.pdf", "fsds/inventory/b.pdf"]
+    assert client.paginator_name == "list_objects_v2"
+
+
+def test_list_document_keys_handles_empty_page() -> None:
+    client = _StubPaginatedS3Client([{}])
+
+    result = s3.list_document_keys(
+        "my-bucket", "fsds/none/", "us-east-1", s3_client=cast("S3Client", client)
+    )
+
+    assert result == []

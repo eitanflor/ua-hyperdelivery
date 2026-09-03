@@ -1,5 +1,5 @@
 .PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-console dev-console-ui test lint \
-	format typecheck coverage check check-fix hooks check-aws ui deploy
+	format typecheck coverage check check-fix hooks check-aws ui deploy build-fsd-index
 
 ifneq (,$(wildcard .env))
 include .env
@@ -35,6 +35,12 @@ ui:
 
 deploy: check-aws
 	./scripts/deploy_agent.sh $(AGENT)
+
+# Refreshes fsds/_index.json (semantic search over historical FSDs) - run after adding
+# or removing reference documents. Needs your own AWS creds; the agent's runtime role
+# is read-only on this bucket.
+build-fsd-index: check-aws
+	PYTHONPATH=src uv run python scripts/build_fsd_index.py
 
 test:
 	uv run pytest

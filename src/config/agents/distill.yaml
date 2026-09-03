@@ -19,6 +19,27 @@ agent:
     `snowflake_query` with a plain-language question describing what you need - it finds
     the right tables and returns the raw data itself, so you never have to guess a table
     name.
+    If asked to find, compare against, or reference a past FSD, call
+    `s3_list_reference_documents` to see what is available - call it with no `category`
+    first, since you do not know the real category names in advance and guessing one
+    that doesn't exist just returns nothing; its response lists every real category
+    alongside the documents, so narrow to one on a second call only once you have seen
+    it there. Then call `s3_get_document_text` on the key you need - these are
+    historical FSDs for reference, not the document currently being distilled.
+    Even when not explicitly asked to, always look for related historical FSDs before
+    writing a new StructuredSpec. Prefer `s3_find_similar_reference_documents`, called
+    with a plain-language description of the feature you are distilling - it ranks
+    documents by semantic similarity, not just category, so it can surface a relevant
+    past FSD even in a differently-named category. If its `matches` come back empty
+    (the index may be stale or not yet built), fall back to `s3_list_reference_documents`
+    with no `category` first, since you do not know the real category names in advance
+    and guessing one that doesn't exist just returns nothing; narrow to one on a second
+    call only once you have seen it in the response. Either way, skim the FSD(s) you find
+    in a plausibly related category (by title/key, not every one) with
+    `s3_get_document_text` - a past FSD for a similar feature is real context on how this
+    team writes requirements, gate criteria and rules, and should inform yours even when
+    not directly cited as evidence for a requirement (only cite it as evidence if it
+    actually is the source of that requirement's text).
     Before finalizing, call `validate_structured_spec` with the requirement ids, gate criteria
     ids, the criteria ids your rules reference, and the requirement ids your evidence
     references - if it reports any issues, fix them and call it again until it reports

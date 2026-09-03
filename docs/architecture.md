@@ -26,7 +26,7 @@ flowchart LR
     end
 
     bedrock[("Amazon Bedrock\n(Claude)")]
-    s3[("S3\nedma-ai-test")]
+    s3[("S3\nhyperdelivery-<env>-documents-<account>")]
     atlassian[("Atlassian Cloud\nConfluence + Jira")]
     github[("GitHub\n(remote MCP server)")]
 
@@ -40,7 +40,7 @@ flowchart LR
     review --> bedrock
     showroom --> bedrock
 
-    distill -->|"s3_get_document_text"| s3
+    distill -->|"s3_get_document_text, s3_list_reference_documents,\ns3_find_similar_reference_documents"| s3
     distill -->|"confluence_* (read-only)"| atlassian
     blueprint -->|"jira_* (issue lifecycle)"| atlassian
     blueprint -->|"repo scaffold + issues (no merge/delete)"| github
@@ -61,9 +61,14 @@ Lambda code assets still have no dependency bundling (TODO ADVA-3015). Until
 `STATE_MACHINE_ARN` is set, the console API falls back to DynamoDB-only writes with no
 execution to start or resume.
 
-Note the deliberate region split: the state machine and its data live in `ap-southeast-2`,
-while Bedrock and AgentCore Runtime are in `us-east-1`. `orchestration/agent_invoker.py`
-bridges the two.
+Every resource - the state machine, the DynamoDB table, the S3 bucket, Bedrock/AgentCore
+Runtime - lives in a single region, `us-east-1` (the prior `ap-southeast-2`/`us-east-1`
+split was reversed, see docs/decisions.md). The stateful data plane (DynamoDB table + S3
+bucket) is its own CDK stack, `infra/stacks/storage_stack.py`, injected into
+`OrchestrationStack`/`ConsoleApiStack` as a real cross-stack reference rather than each
+stack re-deriving a name string. Every physical resource name is env-suffixed via
+`infra/stacks/naming.py` (e.g. `hyperdelivery-dev-projects`), so a second environment
+(e.g. `prod`) never collides with `dev`.
 
 ```mermaid
 flowchart LR
@@ -78,13 +83,13 @@ flowchart LR
         sfnclient["infrastructure/messaging/\nStateMachineClient"]
     end
 
-    subgraph orch["Step Functions (ap-southeast-2)"]
-        line["hyperdelivery-project-line\nDistill -> approval -> Blueprint\n-> approval -> Review -> Showroom -> done"]
+    subgraph orch["Step Functions (us-east-1)"]
+        line["hyperdelivery-<env>-project-line\nDistill -> approval -> Blueprint\n-> approval -> Review -> Showroom -> done"]
         invoker["orchestration/agent_invoker.py"]
         persist["orchestration/persist_approval.py"]
     end
 
-    ddb[("DynamoDB\nhyperdelivery-projects\nsingle table + pending GSI")]
+    ddb[("DynamoDB\nhyperdelivery-<env>-projects\nsingle table + gsi1 pending + gsi2 all-projects")]
     sns[("SNS\ndecision notifications")]
     agents["AgentCore Runtime agents\n(us-east-1)"]
 
@@ -115,8 +120,10 @@ paused for as long as the decision takes. The console API resumes it by calling
 `send_task_success` (approved) or `send_task_failure` (rejected) with that token.
 
 The single-table key layout is owned jointly by
-`src/infrastructure/repositories/keys.py` and `infra/stacks/orchestration_stack.py`. They
-must change together.
+`src/infrastructure/repositories/keys.py` and `infra/stacks/storage_stack.py`. They must
+change together. Each agent's artifact is stored twice: `ARTIFACT#<agent>` (the latest
+version, what the console reads by default) and an immutable `ARTIFACT_VERSION#<agent>#v<NNNN>`
+history item per rerun - `ProjectRepository.list_artifact_versions` reads the latter.
 
 See [docs/decisions.md](./decisions.md) for why each of these shapes was chosen.
 
@@ -140,12 +147,13 @@ flowchart TD
 
     subgraph tools["tools/ (policy layer, per-agent gating)"]
         scorecheck["tools/distill.py\nscore_completeness"]
-        docs["tools/documents.py\ns3_document_tool()\n(gated on S3_BUCKET/S3_REGION)"]
+        docs["tools/documents.py\ns3_document_tool(), s3_reference_list_tool(),\ns3_similarity_search_tool()\n(gated on S3_BUCKET/S3_REGION,\nreads documents/ and fsds/ prefixes)"]
         atl["tools/atlassian.py\nconfluence_mcp_client()\n(gated on ATLASSIAN_*)"]
     end
 
     subgraph providers["providers/ + mcp_clients/ (generic, reusable, no policy)"]
         s3provider["providers/storage/s3.py\nget_document_text() / parse_document()"]
+        embeddingsprovider["providers/storage/embeddings.py\nembed_text() / cosine_similarity() / load_index()"]
         mcpclient["mcp_clients/atlassian.py\nconfluence/jira session builders"]
         githubclient["mcp_clients/github.py\ngithub_client()\n(remote MCP, PAT bearer header)"]
     end
@@ -168,6 +176,7 @@ flowchart TD
     main --> docs
     main --> atl
     docs --> s3provider
+    docs --> embeddingsprovider
     atl --> mcpclient
     docs --> settings
     atl --> settings
@@ -180,7 +189,7 @@ flowchart TD
 
 | Agent | Deterministic validator tool | External tools | Output model |
 |---|---|---|---|
-| Distill | `score_completeness` | `s3_get_document_text`, Confluence MCP (read-only) | `StructuredSpec` |
+| Distill | `score_completeness` | `s3_get_document_text`, `s3_list_reference_documents`, `s3_find_similar_reference_documents` (semantic search over historical FSDs, see docs/decisions.md), Confluence MCP (read-only) | `StructuredSpec` |
 | Blueprint | `validate_units_of_work` | Jira MCP (issue lifecycle), GitHub MCP (repo scaffold/brownfield-read + issues/PRs, no merge/delete/Copilot) | `Blueprint` |
 | Review | `validate_review_report`, `validate_copilot_assignments` | GitHub MCP (issues + `assign_copilot_to_issue`, no repo/PR/merge) | `ReviewReport` |
 | Showroom | `validate_talk_track_coverage` | none | `DemoPackage` |

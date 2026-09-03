@@ -2,11 +2,16 @@ import aws_cdk as cdk
 from aws_cdk.assertions import Match, Template
 
 from stacks.console_api_stack import ConsoleApiStack
+from stacks.storage_stack import StorageStack
 
 
 def _template() -> Template:
     app = cdk.App()
-    stack = ConsoleApiStack(app, "TestStack", env=cdk.Environment(region="ap-southeast-2"))
+    env = cdk.Environment(region="us-east-1")
+    storage = StorageStack(app, "TestStorageStack", "test", env=env)
+    stack = ConsoleApiStack(
+        app, "TestStack", env_name="test", project_table=storage.project_table, env=env
+    )
     return Template.from_stack(stack)
 
 

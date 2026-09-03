@@ -41,3 +41,18 @@ def get_document_text(
     client = s3_client or boto3.client("s3", region_name=region)
     body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
     return parse_document(key, body)
+
+
+def list_document_keys(
+    bucket: str, prefix: str, region: str, s3_client: "S3Client | None" = None
+) -> list[str]:
+    """Return every object key under `prefix`, sorted.
+
+    Paginated so callers don't have to think about `ContinuationToken`. Pass
+    `s3_client` to inject a fake/stub client in tests.
+    """
+    client = s3_client or boto3.client("s3", region_name=region)
+    keys: list[str] = []
+    for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket, Prefix=prefix):
+        keys.extend(key for obj in page.get("Contents", []) if (key := obj.get("Key")))
+    return sorted(keys)

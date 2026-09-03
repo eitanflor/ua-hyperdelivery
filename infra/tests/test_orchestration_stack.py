@@ -4,28 +4,15 @@ import aws_cdk as cdk
 from aws_cdk.assertions import Match, Template
 
 from stacks.orchestration_stack import OrchestrationStack
+from stacks.storage_stack import StorageStack
 
 
 def _template() -> Template:
     app = cdk.App()
-    stack = OrchestrationStack(app, "TestStack", env=cdk.Environment(region="ap-southeast-2"))
+    env = cdk.Environment(region="us-east-1")
+    storage = StorageStack(app, "TestStorageStack", "test", env=env)
+    stack = OrchestrationStack(app, "TestStack", project_table=storage.project_table, env=env)
     return Template.from_stack(stack)
-
-
-def test_project_table_has_pk_sk_and_gsi() -> None:
-    template = _template()
-    template.has_resource_properties(
-        "AWS::DynamoDB::Table",
-        {
-            "KeySchema": [
-                {"AttributeName": "pk", "KeyType": "HASH"},
-                {"AttributeName": "sk", "KeyType": "RANGE"},
-            ],
-            "GlobalSecondaryIndexes": Match.array_with(
-                [Match.object_like({"IndexName": "gsi1-pending-by-station"})]
-            ),
-        },
-    )
 
 
 def test_state_machine_is_standard_type() -> None:
