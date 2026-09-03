@@ -28,10 +28,6 @@ class Settings(BaseSettings):
     atlassian_base_url: str | None = None
     atlassian_email: str | None = None
     atlassian_api_token: str | None = None
-    github_token: str | None = None
-    github_verify_tls: bool = True
-    github_ca_bundle: str | None = None
-    requests_ca_bundle: str | None = None
     s3_bucket: str | None = None
     s3_region: str | None = None
     # Distill's Snowflake data tool (`snowflake_query`): SNOWFLAKE_ACCOUNT/SNOWFLAKE_PAT

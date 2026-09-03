@@ -6,7 +6,6 @@ entrypoint is a streaming async generator (see factory.py's docstring) - these t
 drain it into a list of events rather than asserting on a single return value.
 """
 
-import asyncio
 import json
 from collections.abc import AsyncGenerator, AsyncIterator
 from typing import Any
@@ -300,64 +299,3 @@ async def test_session_id_from_context_reaches_the_log_filter(invoke: Any) -> No
     await _drain(invoke({"prompt": "do the thing"}, _Context()))
 
     assert factory.session_id_var.get() == "session-abc"
-
-
-async def test_serializes_concurrent_invocations(
-    monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
-) -> None:
-    first_started = asyncio.Event()
-    release_first = asyncio.Event()
-    active_calls = 0
-    max_active_calls = 0
-
-    async def delayed_stream(
-        prompt: str, structured_output_model: type[BaseModel]
-    ) -> AsyncIterator[dict[str, Any]]:
-        nonlocal active_calls, max_active_calls
-        stub_agent.calls.append(prompt)
-        active_calls += 1
-        max_active_calls = max(max_active_calls, active_calls)
-        if prompt == "first":
-            first_started.set()
-            await release_first.wait()
-        yield {"result": _Result(_Output(value=prompt))}
-        active_calls -= 1
-
-    monkeypatch.setattr(stub_agent, "stream_async", delayed_stream)
-
-    first = asyncio.create_task(_drain(invoke({"prompt": "first"}, None)))
-    await first_started.wait()
-    second = asyncio.create_task(_drain(invoke({"prompt": "second"}, None)))
-    await asyncio.sleep(0)
-
-    assert stub_agent.calls == ["first"]
-    release_first.set()
-    assert await asyncio.gather(first, second) == [
-        [{"result": {"value": "first"}}],
-        [{"result": {"value": "second"}}],
-    ]
-    assert max_active_calls == 1
-
-
-async def test_failed_invocation_releases_the_lock(
-    monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
-) -> None:
-    attempts = 0
-
-    async def fail_then_succeed(
-        prompt: str, structured_output_model: type[BaseModel]
-    ) -> AsyncIterator[dict[str, Any]]:
-        nonlocal attempts
-        attempts += 1
-        if attempts == 1:
-            raise RuntimeError("bedrock exploded")
-        yield {"result": _Result(_Output(value=prompt))}
-
-    monkeypatch.setattr(stub_agent, "stream_async", fail_then_succeed)
-
-    assert await _drain(invoke({"prompt": "first"}, None)) == [
-        {"error": "agent invocation failed"}
-    ]
-    assert await _drain(invoke({"prompt": "second"}, None)) == [
-        {"result": {"value": "second"}}
-    ]

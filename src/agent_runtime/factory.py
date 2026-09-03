@@ -1,6 +1,5 @@
 """Shared composition root: turns declarative config into an AgentCore Runtime app."""
 
-import asyncio
 import json
 import logging
 from collections.abc import AsyncGenerator
@@ -8,7 +7,6 @@ from typing import Any, TypeVar
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from pydantic import BaseModel
-from strands import Agent
 from strands.hooks import AfterToolCallEvent
 from strands.types.tools import ToolResult
 
@@ -38,20 +36,6 @@ def _tool_result_payload(tool_result: ToolResult) -> object:
     return None
 
 
-def _capture_finished_tool_calls(agent: Agent) -> list[tuple[str, str, ToolResult]]:
-    """Register the single callback that captures completed tool calls."""
-    finished_tool_calls: list[tuple[str, str, ToolResult]] = []
-
-    def _on_after_tool_call(event: AfterToolCallEvent) -> None:
-        tool_use = event.tool_use
-        finished_tool_calls.append(
-            (tool_use.get("toolUseId", ""), tool_use.get("name", ""), event.result)
-        )
-
-    agent.hooks.add_callback(AfterToolCallEvent, _on_after_tool_call)
-    return finished_tool_calls
-
-
 def create_app(
     agent_name: str, output_model: type[OutputT], tools: list[Any] | None = None
 ) -> BedrockAgentCoreApp:
@@ -65,7 +49,6 @@ def create_app(
     configure_tracing()
 
     agent = build_agent(load_agent_config(agent_name), region_name=settings.aws_region, tools=tools)
-    invocation_lock = asyncio.Lock()
     app = BedrockAgentCoreApp()
     logger = logging.getLogger(agent_name)
 
@@ -78,7 +61,15 @@ def create_app(
     # concurrent call raises `ConcurrencyException`), so a plain list closed over by both
     # the hook and the request handler below is safe without per-request registration -
     # there is no `remove_callback` to undo one anyway.
-    finished_tool_calls = _capture_finished_tool_calls(agent)
+    finished_tool_calls: list[tuple[str, str, ToolResult]] = []
+
+    def _on_after_tool_call(event: AfterToolCallEvent) -> None:
+        tool_use = event.tool_use
+        finished_tool_calls.append(
+            (tool_use.get("toolUseId", ""), tool_use.get("name", ""), event.result)
+        )
+
+    agent.hooks.add_callback(AfterToolCallEvent, _on_after_tool_call)
 
     @app.entrypoint
     async def agent_invocation(  # pyright: ignore[reportUnusedFunction]  # registered by the decorator
@@ -120,35 +111,34 @@ def create_app(
             return events
 
         try:
-            async with invocation_lock:
-                async for event in agent.stream_async(prompt, structured_output_model=output_model):
-                    # ahead of this event's own chunk/tool-use so a call that finished
-                    # between stream events is announced before the next one starts
-                    for done_event in _drain_finished_tool_calls():
-                        yield done_event
-
-                    if isinstance(event.get("data"), str):
-                        yield {"chunk": event["data"]}
-
-                    current_tool_use = event.get("current_tool_use") or {}
-                    tool_use_id = current_tool_use.get("toolUseId")
-                    tool_name = current_tool_use.get("name")
-                    if tool_use_id and tool_name and tool_use_id not in tool_names:
-                        tool_names[tool_use_id] = tool_name
-                        yield {
-                            "tool_call": {
-                                "id": tool_use_id,
-                                "name": tool_name,
-                                "status": "running",
-                            }
-                        }
-
-                    if "result" in event:
-                        result = event["result"]
-                # a tool call can finish after the last model-stream event we see but before
-                # the loop above exits - drain once more so its "done" event is never lost
+            async for event in agent.stream_async(prompt, structured_output_model=output_model):
+                # ahead of this event's own chunk/tool-use so a call that finished
+                # between stream events is announced before the next one starts
                 for done_event in _drain_finished_tool_calls():
                     yield done_event
+
+                if isinstance(event.get("data"), str):
+                    yield {"chunk": event["data"]}
+
+                current_tool_use = event.get("current_tool_use") or {}
+                tool_use_id = current_tool_use.get("toolUseId")
+                tool_name = current_tool_use.get("name")
+                if tool_use_id and tool_name and tool_use_id not in tool_names:
+                    tool_names[tool_use_id] = tool_name
+                    yield {
+                        "tool_call": {
+                            "id": tool_use_id,
+                            "name": tool_name,
+                            "status": "running",
+                        }
+                    }
+
+                if "result" in event:
+                    result = event["result"]
+            # a tool call can finish after the last model-stream event we see but before
+            # the loop above exits - drain once more so its "done" event is never lost
+            for done_event in _drain_finished_tool_calls():
+                yield done_event
         except Exception:
             logger.exception("agent invocation failed")
             yield {"error": "agent invocation failed"}
