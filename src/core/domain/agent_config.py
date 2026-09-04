@@ -12,3 +12,6 @@ class AgentConfig(BaseModel):
     # StructuredSpec/units-of-work output can be large (many requirements/criteria/rules) -
     # the Bedrock/Strands default is too low for that, so every agent overrides it.
     max_tokens: int = 8192
+    # Sent only when set: Bedrock rejects the parameter outright on newer Anthropic models
+    # ("`temperature` is deprecated for this model"), so it cannot be defaulted here.
+    temperature: float | None = None

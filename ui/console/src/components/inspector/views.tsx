@@ -7,20 +7,60 @@ import {
   list,
   SEVERITY_ORDER,
   str,
+  type AcceptanceCriterion,
+  type ApiContract,
+  type BusinessValue,
+  type Component,
   type Coverage,
   type CopilotAssignment,
+  type DataEntity,
   type DemoSeed,
   type EvidenceLink,
+  type EvidenceSource,
+  type FileChange,
   type Finding,
   type GateCriterion,
+  type IntegrationPoint,
   type MachineRule,
   type Requirement,
+  type RequirementIntent,
+  type RequirementIntentKind,
+  type RuleCorrelation,
   type Severity,
   type TalkTrackSection,
   type UnitOfWork,
 } from "../../api/artifacts";
 
 type Content = Record<string, unknown>;
+
+const INTENT_TONE: Record<RequirementIntentKind, "accent" | "info" | "neutral" | "warning"> = {
+  functional: "accent",
+  non_functional: "neutral",
+  integration: "info",
+  reporting: "info",
+  compliance: "warning",
+  data_migration: "warning",
+};
+
+const FILE_CHANGE_TONE: Record<FileChange, "accent" | "neutral" | "warning"> = {
+  add: "accent",
+  modify: "neutral",
+  delete: "warning",
+};
+
+// A citation to the submitted document can be re-read; an answer given in chat is only
+// as good as who gave it; reference material is a different project's document.
+const EVIDENCE_LABEL: Record<EvidenceSource, string> = {
+  source_document: "cited",
+  stakeholder_answer: "answered",
+  reference_material: "reference",
+};
+const EVIDENCE_TONE: Record<EvidenceSource, "neutral" | "info" | "warning"> = {
+  source_document: "neutral",
+  stakeholder_answer: "info",
+  reference_material: "warning",
+};
+
 
 export function Section({
   title,
@@ -92,6 +132,13 @@ export function CompletenessMeter({ content }: { content: Content }) {
           ))}
         </ul>
       )}
+      {score.questions.length > 0 && (
+        <p className="mt-3 rounded-sm border border-line bg-surface px-2.5 py-1.5 text-2xs text-fg-muted">
+          {score.questions.length === 1
+            ? "One question is waiting above the message box."
+            : `${score.questions.length} questions are waiting above the message box.`}
+        </p>
+      )}
     </div>
   );
 }
@@ -100,8 +147,25 @@ export function SpecView({ content }: { content: Content }) {
   const requirements = list<Requirement>(content, "requirements");
   const criteria = list<GateCriterion>(content, "gate_criteria");
   const rules = list<MachineRule>(content, "rules");
+  const correlations = list<RuleCorrelation>(content, "rule_correlations");
   const evidence = list<EvidenceLink>(content, "evidence");
-  const evidenceFor = new Map(evidence.map((e) => [e.requirement_id, e.evidence]));
+  const acceptanceCriteria = list<AcceptanceCriterion>(content, "acceptance_criteria");
+  const businessValue = list<BusinessValue>(content, "business_value");
+  const intents = list<RequirementIntent>(content, "intents");
+
+  // grouped, not keyed: a requirement is expected to carry several citations, and the
+  // G1 gate reasons about the set of their sources - showing one hides why it scored
+  const evidenceFor = new Map<string, EvidenceLink[]>();
+  for (const e of evidence) {
+    evidenceFor.set(e.requirement_id, [...(evidenceFor.get(e.requirement_id) ?? []), e]);
+  }
+  const intentFor = new Map(intents.map((i) => [i.requirement_id, i.intent]));
+  const businessValueFor = new Map(businessValue.map((b) => [b.requirement_id, b]));
+  const acceptanceFor = new Map<string, AcceptanceCriterion[]>();
+  for (const ac of acceptanceCriteria) {
+    acceptanceFor.set(ac.requirement_id, [...(acceptanceFor.get(ac.requirement_id) ?? []), ac]);
+  }
+  const ruleById = new Map(rules.map((r) => [r.id, r.rule]));
 
   return (
     <div className="flex flex-col gap-5">
@@ -122,18 +186,60 @@ export function SpecView({ content }: { content: Content }) {
       {requirements.length > 0 && (
         <Section title="Requirements" count={requirements.length}>
           <ul className="divide-y divide-line-subtle">
-            {requirements.map((r) => (
-              <Row key={r.id} id={r.id}>
-                {r.description}
-                {evidenceFor.has(r.id) && (
-                  // the citation is the reason a reviewer can trust the requirement,
-                  // so it belongs next to it rather than in a section of its own
-                  <span className="mt-1 block text-2xs text-fg-subtle italic">
-                    {evidenceFor.get(r.id)}
-                  </span>
-                )}
-              </Row>
-            ))}
+            {requirements.map((r) => {
+              const value = businessValueFor.get(r.id);
+              const acceptance = acceptanceFor.get(r.id) ?? [];
+              const citations = evidenceFor.get(r.id) ?? [];
+              const intent = intentFor.get(r.id);
+              return (
+                <Row key={r.id} id={r.id}>
+                  <div className="flex items-baseline gap-1.5">
+                    <span>{r.description}</span>
+                    {intent && (
+                      <Badge tone={INTENT_TONE[intent]} className="shrink-0">
+                        {intent.replace("_", " ")}
+                      </Badge>
+                    )}
+                  </div>
+                  {citations.map((citation, index) => (
+                    // the citation is the reason a reviewer can trust the requirement,
+                    // so it belongs next to it rather than in a section of its own
+                    <span
+                      key={`${citation.source}-${index}`}
+                      className="mt-1 flex items-baseline gap-1.5"
+                    >
+                      <Badge tone={EVIDENCE_TONE[citation.source ?? "source_document"]}>
+                        {EVIDENCE_LABEL[citation.source ?? "source_document"]}
+                      </Badge>
+                      <span className="text-2xs text-fg-subtle italic">{citation.evidence}</span>
+                    </span>
+                  ))}
+                  {value && (
+                    <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
+                      <span className="font-semibold text-fg-subtle">{value.use_case}</span>
+                      {" — "}
+                      {value.roi}
+                    </p>
+                  )}
+                  {acceptance.length > 0 && (
+                    <ul className="mt-1.5 flex flex-col gap-0.5">
+                      {acceptance.map((ac) => (
+                        <li
+                          key={ac.id}
+                          className="flex gap-1.5 text-2xs leading-relaxed text-fg-muted"
+                        >
+                          <CheckIcon
+                            weight="bold"
+                            className="mt-0.5 size-3 shrink-0 text-fg-subtle"
+                          />
+                          {ac.description}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Row>
+              );
+            })}
           </ul>
         </Section>
       )}
@@ -142,9 +248,32 @@ export function SpecView({ content }: { content: Content }) {
         <Section title="Machine-readable rules" count={rules.length}>
           <ul className="divide-y divide-line-subtle">
             {rules.map((rule) => (
-              <Row key={rule.criterion_id} id={rule.criterion_id}>
+              <Row key={rule.id} id={rule.criterion_id}>
                 <code className="font-mono text-2xs">{rule.rule}</code>
               </Row>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {correlations.length > 0 && (
+        <Section title="Rule correlations" count={correlations.length}>
+          <ul className="flex flex-col gap-2">
+            {correlations.map((corr) => (
+              <li key={corr.id} className="rounded-sm border border-line-subtle bg-surface p-3">
+                <p className="text-2xs leading-relaxed text-fg">{corr.description}</p>
+                <p className="mt-1.5 flex flex-wrap gap-1">
+                  {corr.rule_ids.map((ruleId) => (
+                    <code
+                      key={ruleId}
+                      title={ruleById.get(ruleId) ?? ruleId}
+                      className="tabular rounded-sm bg-sunken px-1 py-0.5 font-mono text-2xs text-fg-muted"
+                    >
+                      {ruleId}
+                    </code>
+                  ))}
+                </p>
+              </li>
             ))}
           </ul>
         </Section>
@@ -153,16 +282,84 @@ export function SpecView({ content }: { content: Content }) {
   );
 }
 
+
 export function BlueprintView({ content }: { content: Content }) {
   const units = list<UnitOfWork>(content, "units_of_work");
+  const contracts = list<ApiContract>(content, "api_contracts");
+  const components = list<Component>(content, "components");
+  const entities = list<DataEntity>(content, "data_entities");
+  const integrations = list<IntegrationPoint>(content, "integration_points");
   const summary = str(content, "architecture_summary");
   const titleOf = new Map(units.map((u) => [u.id, u.title]));
+  const componentName = new Map(components.map((c) => [c.id, c.name]));
 
   return (
     <div className="flex flex-col gap-5">
       {summary && (
         <Section title="Architecture">
           <p className="text-xs leading-relaxed text-fg">{summary}</p>
+        </Section>
+      )}
+
+      {components.length > 0 && (
+        <Section title="Components" count={components.length}>
+          <ul className="flex flex-col gap-2">
+            {components.map((component) => (
+              <li key={component.id} className="rounded-sm border border-line-subtle bg-surface p-3">
+                <h4 className="text-xs font-medium text-fg">{component.name}</h4>
+                <p className="mt-1 text-2xs leading-relaxed text-fg-muted">
+                  {component.responsibility}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {entities.length > 0 && (
+        <Section title="Data model" count={entities.length}>
+          <ul className="flex flex-col gap-2">
+            {entities.map((entity) => (
+              <li key={entity.id} className="rounded-sm border border-line-subtle bg-surface p-3">
+                <div className="flex items-baseline gap-2">
+                  <h4 className="text-xs font-medium text-fg">{entity.name}</h4>
+                  <span className="text-2xs text-fg-subtle">
+                    {componentName.get(entity.component_id) ?? entity.component_id}
+                  </span>
+                </div>
+                <p className="mt-1 text-2xs leading-relaxed text-fg-muted">{entity.description}</p>
+                {(entity.fields ?? []).length > 0 && (
+                  <ul className="mt-2 flex flex-col gap-0.5">
+                    {(entity.fields ?? []).map((field) => (
+                      <li key={field.name} className="flex items-baseline gap-1.5 text-2xs">
+                        <code className="font-mono text-fg-muted">{field.name}</code>
+                        <span className="tabular rounded-sm bg-sunken px-1 font-mono text-fg-subtle">
+                          {field.type}
+                        </span>
+                        <span className="text-fg-subtle">{field.description}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {integrations.length > 0 && (
+        <Section title="Integration points" count={integrations.length}>
+          <ul className="flex flex-col gap-2">
+            {integrations.map((point) => (
+              <li key={point.id} className="rounded-sm border border-line-subtle bg-surface p-3">
+                <div className="flex items-baseline gap-2">
+                  <h4 className="text-xs font-medium text-fg">{point.system}</h4>
+                  <Badge tone="info">{point.direction}</Badge>
+                </div>
+                <p className="mt-1 text-2xs leading-relaxed text-fg-muted">{point.description}</p>
+              </li>
+            ))}
+          </ul>
         </Section>
       )}
 
@@ -180,6 +377,40 @@ export function BlueprintView({ content }: { content: Content }) {
                 <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
                   {unit.description}
                 </p>
+                {(unit.requirement_ids ?? []).length > 0 && (
+                  // the edges the G2 gate scores coverage from - a unit with none of
+                  // these counts as covering nothing, however good its description reads
+                  <p className="mt-2 flex flex-wrap items-center gap-1 text-2xs text-fg-subtle">
+                    <span>Covers</span>
+                    {(unit.requirement_ids ?? []).map((rid) => (
+                      <span
+                        key={rid}
+                        className="tabular rounded-sm bg-sunken px-1 py-0.5 font-mono text-fg-muted"
+                      >
+                        {rid}
+                      </span>
+                    ))}
+                    {(unit.acceptance_criterion_ids ?? []).map((cid) => (
+                      <span
+                        key={cid}
+                        className="tabular rounded-sm bg-sunken px-1 py-0.5 font-mono text-fg-subtle"
+                      >
+                        {cid}
+                      </span>
+                    ))}
+                  </p>
+                )}
+                {(unit.files ?? []).length > 0 && (
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {(unit.files ?? []).map((file) => (
+                      <li key={file.path} className="flex items-baseline gap-1.5 text-2xs">
+                        <Badge tone={FILE_CHANGE_TONE[file.change]}>{file.change}</Badge>
+                        <code className="font-mono text-fg-muted">{file.path}</code>
+                        <span className="text-fg-subtle">{file.purpose}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {unit.depends_on.length > 0 && (
                   // dependencies are modeled but were previously invisible - without
                   // them the list reads as unordered work rather than a plan
@@ -199,6 +430,37 @@ export function BlueprintView({ content }: { content: Content }) {
               </li>
             ))}
           </ol>
+        </Section>
+      )}
+
+      {contracts.length > 0 && (
+        <Section title="API contracts" count={contracts.length}>
+          <ul className="flex flex-col gap-2">
+            {contracts.map((contract) => (
+              <li
+                key={contract.id}
+                className="rounded-sm border border-line-subtle bg-surface p-3"
+              >
+                <div className="flex items-baseline gap-2">
+                  <Badge tone="info">{contract.method}</Badge>
+                  <code className="font-mono text-xs text-fg">{contract.path}</code>
+                </div>
+                <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
+                  {contract.summary}
+                </p>
+                {contract.request_schema && (
+                  <p className="mt-1 text-2xs text-fg-subtle">
+                    <span className="text-fg-muted">Request</span> {contract.request_schema}
+                  </p>
+                )}
+                {contract.response_schema && (
+                  <p className="mt-1 text-2xs text-fg-subtle">
+                    <span className="text-fg-muted">Response</span> {contract.response_schema}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
         </Section>
       )}
     </div>

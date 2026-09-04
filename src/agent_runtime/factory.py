@@ -90,6 +90,14 @@ def create_app(
         if not isinstance(prompt, str) or not prompt.strip():
             yield {"error": "'prompt' must be a non-empty string"}
             return
+        # `agent` is one shared instance across every invocation this container ever
+        # handles (built once, above), and _build_prompt already reconstructs full
+        # grounding (predecessor artifacts + the latest message) on every call - so any
+        # history Strands accumulated on a prior call is both stale and, worse, a
+        # different project's data. Start every invocation from a clean slate instead of
+        # letting Strands' default SlidingWindowConversationManager carry messages across
+        # projects/sessions that have nothing to do with each other.
+        agent.messages = []
         logger.info("invocation started")
         result = None
         tool_names: dict[str, str] = {}  # tool use id -> name, so a "done" event can name it

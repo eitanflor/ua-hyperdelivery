@@ -1,12 +1,22 @@
 import { useState } from "react";
-import { ArrowSquareOutIcon, CaretRightIcon } from "@phosphor-icons/react";
+import {
+  ArrowSquareOutIcon,
+  CaretRightIcon,
+  CheckIcon,
+  CircleDashedIcon,
+  FileTextIcon,
+} from "@phosphor-icons/react";
 import type { ToolCallEvent } from "../../api/client";
+import { hasContent } from "../../api/artifacts";
 import { AGENT_META } from "../../lib/pipeline";
-import { composeReply } from "../../lib/formatArtifact";
+import { artifactStats, composeReply } from "../../lib/formatArtifact";
 import { Markdown } from "../../lib/markdown";
 import { cn } from "../../lib/cn";
 import { AgentAvatar } from "./AgentAvatar";
 import { Spinner } from "../ui/Spinner";
+
+/** The shared planning tool (see src/tools/planning.py) - rendered as a plan, not a call. */
+const PLAN_TOOL = "track_plan";
 
 export function UserTurn({ text }: { text: string }) {
   return (
@@ -29,24 +39,64 @@ function Attribution({ agent, state }: { agent: string; state?: "idle" | "workin
   );
 }
 
+/** The station's output as something you can look at and click, rather than a link
+ * buried under the reply - the document is the point of the turn. */
+function ArtifactCard({
+  agent,
+  content,
+  onOpen,
+}: {
+  agent: string;
+  content: Record<string, unknown>;
+  onOpen: () => void;
+}) {
+  const meta = AGENT_META[agent];
+  const stats = artifactStats(content);
+  const title = typeof content.title === "string" ? content.title : (meta?.output ?? agent);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="mt-2.5 flex w-full items-center gap-3 rounded-md border border-line-subtle bg-surface px-3 py-2.5 text-left transition-colors hover:border-line hover:bg-sunken"
+    >
+      <FileTextIcon className={cn("size-5 shrink-0", meta?.fg ?? "text-fg-subtle")} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-medium text-fg">{title}</span>
+        <span className="mt-0.5 block text-2xs text-fg-subtle">
+          {meta?.output ?? "Output"}
+          {stats.length > 0 && " · "}
+          {stats.map((s) => `${s.value} ${s.label}`).join(" · ")}
+        </span>
+      </span>
+      <ArrowSquareOutIcon className="size-3.5 shrink-0 text-fg-subtle" />
+    </button>
+  );
+}
+
 export function AgentTurn({
   agent,
   content,
+  text,
   toolCalls,
   onViewArtifact,
 }: {
   agent: string;
   content: Record<string, unknown>;
+  text?: string;
   toolCalls?: ToolCallEvent[];
   onViewArtifact: (agent: string) => void;
 }) {
+  const { plan, rest } = splitPlan(toolCalls);
   return (
     <div className="animate-rise">
       <Attribution agent={agent} />
       <div className="pl-9">
-        {toolCalls && toolCalls.length > 0 && (
+        {(plan || text?.trim() || rest.length > 0) && (
           <div className="mb-2 flex flex-col gap-1">
-            {toolCalls.map((toolCall) => (
+            {plan && <PlanList steps={plan} />}
+            {text?.trim() && <ReasoningRow text={text} />}
+            {rest.map((toolCall) => (
               <ToolCallRow key={toolCall.id} toolCall={toolCall} />
             ))}
           </div>
@@ -54,14 +104,9 @@ export function AgentTurn({
         <div className="text-xs leading-relaxed text-fg">
           <Markdown text={composeReply(content)} />
         </div>
-        <button
-          type="button"
-          onClick={() => onViewArtifact(agent)}
-          className="mt-2 inline-flex items-center gap-1.5 text-2xs font-medium text-fg-subtle transition-colors hover:text-accent-text"
-        >
-          <ArrowSquareOutIcon className="size-3.5" />
-          Open the {(AGENT_META[agent]?.output ?? "output").toLowerCase()}
-        </button>
+        {hasContent(content) && (
+          <ArtifactCard agent={agent} content={content} onOpen={() => onViewArtifact(agent)} />
+        )}
       </div>
     </div>
   );
@@ -76,13 +121,15 @@ export function StreamingTurn({
   text: string;
   toolCalls: ToolCallEvent[];
 }) {
+  const { plan, rest } = splitPlan(toolCalls);
   return (
     <div className="animate-rise">
       <Attribution agent={agent} state="working" />
       <div className="pl-9">
-        {toolCalls.length > 0 && (
+        {(plan || rest.length > 0) && (
           <div className="mb-2 flex flex-col gap-1">
-            {toolCalls.map((toolCall) => (
+            {plan && <PlanList steps={plan} />}
+            {rest.map((toolCall) => (
               <ToolCallRow key={toolCall.id} toolCall={toolCall} />
             ))}
           </div>
@@ -111,6 +158,81 @@ export function StreamingTurn({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** The agent's plan, as a todo list that updates in place.
+ *
+ * `track_plan` is called once per step, so rendering each call as its own tool row buries
+ * the actual work under near-identical entries. Only the latest call is the plan. */
+function PlanList({ steps }: { steps: [string, string][] }) {
+  return (
+    <ol className="flex flex-col gap-1 rounded-sm border border-line/60 bg-sunken/60 px-2 py-1.5">
+      {steps.map(([title, status]) => (
+        <li key={title} className="flex items-center gap-1.5 text-2xs">
+          {status === "done" ? (
+            <CheckIcon weight="bold" className="size-3 shrink-0 text-success" />
+          ) : status === "in_progress" ? (
+            <Spinner className="size-3 shrink-0 text-accent-text" />
+          ) : (
+            <CircleDashedIcon className="size-3 shrink-0 text-fg-subtle" />
+          )}
+          <span
+            className={cn(
+              status === "done" && "text-fg-subtle line-through",
+              status === "in_progress" && "text-fg",
+              status === "pending" && "text-fg-muted",
+            )}
+          >
+            {title}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Splits the plan out of a turn's tool calls: the last `track_plan` result is the
+ * current plan, and every earlier one is a superseded snapshot of it. */
+function splitPlan(toolCalls: ToolCallEvent[] | undefined): {
+  plan: [string, string][] | null;
+  rest: ToolCallEvent[];
+} {
+  const rest = (toolCalls ?? []).filter((tc) => tc.name !== PLAN_TOOL);
+  const latest = (toolCalls ?? []).filter((tc) => tc.name === PLAN_TOOL).at(-1);
+  const steps = (latest?.result as { steps?: unknown } | undefined)?.steps;
+  if (!steps || typeof steps !== "object" || Array.isArray(steps)) return { plan: null, rest };
+  const entries = Object.entries(steps).filter(
+    (entry): entry is [string, string] => typeof entry[1] === "string",
+  );
+  return { plan: entries.length > 0 ? entries : null, rest };
+}
+
+/** What the agent said while working, kept after the run finishes. The summary below
+ * is derived from the artifact and can't mention what the agent couldn't do (a table it
+ * had no access to, a source it fell back from), so the narrative stays reachable. */
+function ReasoningRow({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="overflow-hidden rounded-sm border border-line/60 bg-sunken/60">
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
+        className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-2xs text-fg-muted transition-colors hover:text-fg"
+      >
+        <CaretRightIcon
+          className={cn("size-3 shrink-0 transition-transform", expanded && "rotate-90")}
+        />
+        <span className="truncate">Reasoning</span>
+      </button>
+      {expanded && (
+        <div className="border-t border-line/60 px-2 py-1.5 text-2xs leading-relaxed text-fg-muted">
+          <Markdown text={text} />
+        </div>
+      )}
     </div>
   );
 }

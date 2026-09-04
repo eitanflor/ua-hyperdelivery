@@ -1,4 +1,4 @@
-import type { Artifact, DecisionRequest, Project, Station } from "./types";
+import type { Artifact, Builds, DecisionRequest, Project, Station } from "./types";
 import { getIdToken } from "../auth/idToken";
 
 const API_BASE_URL: string =
@@ -117,6 +117,8 @@ export const api = {
 
   getArtifact: (projectId: string, agent: string) =>
     request<Artifact>(`/projects/${projectId}/artifacts/${agent}`),
+
+  listBuilds: (projectId: string) => request<Builds>(`/projects/${projectId}/builds`),
 
   submitDecision: (projectId: string, decision: DecisionRequest) =>
     request<Project>(`/projects/${projectId}/decisions`, {

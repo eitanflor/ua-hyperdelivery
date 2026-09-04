@@ -43,14 +43,45 @@ def test_validate_review_report_flags_missing_and_extra_coverage() -> None:
 
 
 def test_score_review_completeness_flags_no_upstream_input() -> None:
-    result = score_review_completeness(requirement_ids=[])
+    result = score_review_completeness(requirement_ids=[], coverage_requirement_ids=[])
 
     assert result["score"] == 0.0
-    assert any("no approved spec" in gap for gap in result["gaps"])
+    assert any(
+        "no approved spec or Blueprint reached this station" in gap for gap in result["gaps"]
+    )
 
 
-def test_score_review_completeness_scores_present_input_as_one() -> None:
-    result = score_review_completeness(requirement_ids=["r1"])
+def test_score_review_completeness_tells_a_missing_build_apart_from_a_missing_spec() -> None:
+    # A greenfield project that has only been planned is the normal case here, not a
+    # broken line - one message for both hides which of the two actually happened.
+    result = score_review_completeness(
+        requirement_ids=["r1"], coverage_requirement_ids=["r1"], build_reference=""
+    )
+
+    assert result["score"] == 1.0
+    assert any("nothing was given to check them against" in gap for gap in result["gaps"])
+    assert not any("reached this station" in gap for gap in result["gaps"])
+
+
+def test_score_review_completeness_scores_partial_coverage() -> None:
+    result = score_review_completeness(
+        requirement_ids=["r1", "r2"],
+        coverage_requirement_ids=["r1"],
+        build_reference="underarmour/promo-tier-validator#12",
+    )
+
+    assert result["score"] == 0.5
+    assert (
+        "requirement r2 has no coverage entry saying whether the build meets it" in result["gaps"]
+    )
+
+
+def test_score_review_completeness_scores_full_coverage_as_one() -> None:
+    result = score_review_completeness(
+        requirement_ids=["r1"],
+        coverage_requirement_ids=["r1"],
+        build_reference="underarmour/promo-tier-validator#12",
+    )
 
     assert result == {"score": 1.0, "gaps": []}
 

@@ -1,30 +1,47 @@
 import { useState } from "react";
 import { ArrowUpIcon, StopIcon } from "@phosphor-icons/react";
 import { useProjectsStore } from "../../store/useProjectsStore";
+import type { OpenQuestion } from "../../api/artifacts";
 import { AGENT_META } from "../../lib/pipeline";
 import { Spinner } from "../ui/Spinner";
 import { cn } from "../../lib/cn";
+import { QuestionPrompt } from "./QuestionPrompt";
 
 /** Composer for the station currently holding the project. */
-export function Composer({ projectId, agent }: { projectId: string; agent: string }) {
+export function Composer({
+  projectId,
+  agent,
+  questions,
+}: {
+  projectId: string;
+  agent: string;
+  questions: OpenQuestion[];
+}) {
   const [text, setText] = useState("");
   const advanceProject = useProjectsStore((s) => s.advanceProject);
   const cancelRun = useProjectsStore((s) => s.cancelRun);
   const running = useProjectsStore((s) => s.runningProjectId === projectId);
   const label = AGENT_META[agent]?.name ?? agent;
 
-  const send = async () => {
-    const submitted = text.trim();
+  const submit = async (message: string) => {
+    const submitted = message.trim();
     if (!submitted || running) return;
     setText("");
     await advanceProject(projectId, agent, submitted);
     if (useProjectsStore.getState().error) setText(submitted);
   };
 
+  const send = () => submit(text);
+
   return (
     // a fixed footer, not part of the scrolled thread - Thread.tsx renders this
     // outside the message list's own scroll region so it never moves as it streams.
     <div className="border-t border-line-subtle bg-canvas pt-3">
+      <QuestionPrompt
+        questions={questions}
+        disabled={running}
+        onAnswer={(message) => void submit(message)}
+      />
       <div
         className={cn(
           "relative rounded-md border bg-surface transition-colors",

@@ -15,7 +15,11 @@ def test_structured_spec_requires_completeness_score() -> None:
             requirements=[],
             gate_criteria=[],
             rules=[],
+            rule_correlations=[],
             evidence=[],
+            acceptance_criteria=[],
+            business_value=[],
+            intents=[],
         )
 
 
@@ -25,7 +29,11 @@ def test_structured_spec_accepts_minimal_valid_payload() -> None:
         requirements=[],
         gate_criteria=[],
         rules=[],
+        rule_correlations=[],
         evidence=[],
+        acceptance_criteria=[],
+        business_value=[],
+        intents=[],
         completeness=CompletenessScore(score=0.5, gaps=["missing acceptance criteria"]),
     )
 

@@ -42,25 +42,51 @@ def validate_review_report(
 
 
 @tool
-def score_review_completeness(requirement_ids: list[str]) -> dict[str, Any]:
-    """Deterministically flag whether Review actually had a spec and build to check.
+def score_review_completeness(
+    requirement_ids: list[str],
+    coverage_requirement_ids: list[str],
+    build_reference: str = "",
+) -> dict[str, Any]:
+    """Deterministically score how much of the spec your review actually returned a verdict on.
 
-    Returns 0.0 with a gap naming what to ask for if no requirement ids were found in
-    the input at all - meaning no approved spec/Blueprint or description of the built
-    deliverable was actually given. Otherwise returns 1.0, since
-    `validate_review_report` already enforces full coverage of whatever ids were found.
-    Call this with the requirement ids you found before finalizing the `completeness`
-    field - do not estimate the score yourself.
+    Returns the fraction of requirements that have a coverage entry, and a gap naming
+    each one that does not. A requirement you marked `met=False` still counts as
+    reviewed - reporting that the build misses it is a complete verdict, not a gap.
+
+    `build_reference` is what you actually inspected: a repository, a pull request, or a
+    description of the delivered change. Leave it empty when nothing was given, and pass
+    an empty `requirement_ids` when no approved spec or Blueprint reached you. These are
+    different problems - a missing spec means the line is broken upstream, while a
+    missing build usually just means nothing has been built yet - so they are reported
+    separately rather than as one "something is missing".
+
+    Call this with the requirement ids you found, the ones your coverage view lists, and
+    what you reviewed against, before finalizing the `completeness` field - do not
+    estimate the score yourself.
     """
     if not requirement_ids:
         gaps = [
             (
-                "no approved spec, Blueprint, or description of the built deliverable was "
-                "provided - ask for them before producing findings"
+                "no approved spec or Blueprint reached this station - the upstream "
+                "artifacts are missing, not just the build; ask for them before "
+                "producing findings"
             )
         ]
         return {"score": 0.0, "gaps": gaps}
-    return {"score": 1.0, "gaps": []}
+
+    known = set(requirement_ids)
+    missing = sorted(known - set(coverage_requirement_ids))
+    gaps = [
+        f"requirement {rid} has no coverage entry saying whether the build meets it"
+        for rid in missing
+    ]
+    if not build_reference.strip():
+        gaps.append(
+            "the spec and Blueprint arrived but nothing was given to check them against - "
+            "ask for a repository, a pull request, or a description of what was built, or "
+            "confirm this should be a review of the plan alone"
+        )
+    return {"score": round((len(known) - len(missing)) / len(known), 2), "gaps": gaps}
 
 
 @tool
@@ -71,13 +97,14 @@ def validate_copilot_assignments(
 ) -> dict[str, Any]:
     """Deterministically validate a ReviewReport's `assignments` against its findings.
 
-    Only call this when the user has explicitly asked you to hand findings off to
-    GitHub Copilot's coding agent - otherwise `assignments` should stay empty and this
-    tool is not needed. Every blocker/major finding id must have exactly one assignment
-    entry, and every assignment must reference a known finding id - minor findings are
-    not assignable and must not appear. Call this with the finding ids/severities you
-    drafted and the finding ids your assignments reference before finalizing the
-    report - do not eyeball it.
+    Call this whenever GitHub tools are available and you raised any blocker/major
+    finding - assignment is automatic, not gated on being asked. `assignments` stays
+    empty only when there are no blocker/major findings or GitHub tools/a repository
+    reference are unavailable. Every blocker/major finding id must have exactly one
+    assignment entry, and every assignment must reference a known finding id - minor
+    findings are not assignable and must not appear. Call this with the finding
+    ids/severities you drafted and the finding ids your assignments reference before
+    finalizing the report - do not eyeball it.
     """
     if len(finding_ids) != len(finding_severities):
         issue = (

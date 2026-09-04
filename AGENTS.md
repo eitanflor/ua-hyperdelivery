@@ -108,6 +108,15 @@ until the config and the entrypoint both exist, which is the point.
 in `tools/`, returning `None` when its configuration is absent so the agent degrades
 instead of crashing. The docstring is the prompt the model reads - write it for the model.
 
+**Gate tools by direction, not by permission.** A read-only tool's docstring says *when it
+helps*; a writing tool's says *when it is allowed*. "Use this when the prompt gives an S3
+key instead of raw FSD text" reads as a permission and the model obeys it literally - it
+will skip a lookup that would have grounded its work because nobody explicitly asked. This
+has already caused three separate silent regressions (Snowflake, reference FSDs, the
+repository scan). Anything with a side effect outside the conversation - creating a repo,
+pushing files, filing an issue, assigning work - keeps its gate, because it lands before
+the human approval that authorizes it.
+
 **Add a setting.** Field on `Settings`, and the matching entry in `.env.example` with a
 comment saying when it is needed. The docs-drift test enforces the pair.
 

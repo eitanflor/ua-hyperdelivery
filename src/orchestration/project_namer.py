@@ -7,6 +7,7 @@ in.
 """
 
 import logging
+import threading
 
 from strands import Agent
 from strands.models import BedrockModel
@@ -29,12 +30,18 @@ class ProjectNamer:
         """`region_name` is the Bedrock region (see Settings.aws_region), not DynamoDB's."""
         self._region_name = region_name
         self._agent: Agent | None = None
+        # Naming runs in FastAPI's background-task threadpool, so two project creations
+        # can land here at once. Strands serializes per Agent instance and raises
+        # ConcurrencyException on the second - which the fallback below would swallow,
+        # silently downgrading one project to a heuristic name.
+        self._lock = threading.Lock()
 
     def _get_agent(self) -> Agent:
         """Built once and reused.
 
         Rebuilding per call re-pays boto3/credential-chain resolution on every naming
-        request, which otherwise dominates the call's latency.
+        request, which otherwise dominates the call's latency. Callers must hold
+        `self._lock`: this both builds and hands out one shared, stateful instance.
         """
         if self._agent is None:
             model = BedrockModel(model_id=_MODEL_ID, region_name=self._region_name, max_tokens=30)
@@ -51,7 +58,12 @@ class ProjectNamer:
         a project should never fail to create just because naming it nicely didn't work.
         """
         try:
-            name = str(self._get_agent()(message)).strip().strip("\"'").strip()
+            with self._lock:
+                agent = self._get_agent()
+                # Strands keeps history on the instance, and this one outlives every
+                # project the process names - see the same reset in agent_runtime.factory.
+                agent.messages = []
+                name = str(agent(message)).strip().strip("\"'").strip()
             if name:
                 return name[:_MAX_NAME_LENGTH]
         except Exception:

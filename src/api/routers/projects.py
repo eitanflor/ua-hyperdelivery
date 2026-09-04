@@ -9,19 +9,26 @@ from typing import Any
 from anyio.to_thread import run_sync
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
+from pydantic import ValidationError
 
 from api.auth import get_current_user
 from api.schemas.project import (
     AdvanceRequest,
     ArtifactResponse,
+    BuildResponse,
+    BuildsResponse,
     CreateProjectRequest,
     DecisionRequest,
     ProjectResponse,
     RenameProjectRequest,
 )
+from config.settings import get_settings
 from core.domain.project import AGENT_STATIONS, APPROVAL_STATIONS, Artifact, Project, Station
+from core.domain.review import ReviewReport
+from core.validation import evaluate_artifact
 from infrastructure.repositories.project_repository import ProjectRepository
 from orchestration.project_namer import ProjectNamer, heuristic_name
+from providers.github.pull_requests import read_pull_request
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(get_current_user)])
@@ -52,18 +59,54 @@ def _artifact_to_response(artifact: Artifact) -> ArtifactResponse:
 _PREDECESSOR_ARTIFACTS: dict[str, list[str]] = {
     Station.BLUEPRINT.value: [Station.DISTILL.value],
     Station.REVIEW.value: [Station.DISTILL.value, Station.BLUEPRINT.value],
-    Station.SHOWROOM.value: [Station.DISTILL.value],
+    Station.SHOWROOM.value: [Station.DISTILL.value, Station.BLUEPRINT.value, Station.REVIEW.value],
 }
 
 
-def _build_prompt(repo: ProjectRepository, project_id: str, agent: str, user_prompt: str) -> str:
-    """Prepend each predecessor station's artifact so the agent isn't drafting blind."""
-    sections = [
-        f"# {predecessor}'s output\n```json\n{json.dumps(artifact.content, indent=2)}\n```"
+def _predecessor_contents(
+    repo: ProjectRepository, project_id: str, agent: str
+) -> dict[str, dict[str, Any]]:
+    """Fetch each upstream station's latest artifact, skipping the ones that haven't run."""
+    return {
+        predecessor: artifact.content
         for predecessor in _PREDECESSOR_ARTIFACTS.get(agent, [])
         if (artifact := repo.get_artifact(project_id, predecessor)) is not None
+    }
+
+
+def _build_prompt(
+    predecessors: dict[str, dict[str, Any]],
+    previous_draft: dict[str, Any] | None,
+    user_prompt: str,
+) -> str:
+    """Ground the agent in its predecessors' artifacts and in its own last draft.
+
+    Every invocation starts from an empty message list (see agent_runtime.factory), so a
+    retry after an open gap would otherwise redraft from scratch instead of closing it.
+    """
+    sections = [
+        f"# {predecessor}'s output\n```json\n{json.dumps(content, indent=2)}\n```"
+        for predecessor, content in predecessors.items()
     ]
+    if previous_draft is not None:
+        sections.append(
+            "# your previous draft\nRevise this to close the gaps listed in its "
+            "`completeness`, keeping the ids and content that were already correct.\n"
+            f"```json\n{json.dumps(previous_draft, indent=2)}\n```"
+        )
     return "\n\n".join([*sections, user_prompt])
+
+
+def _scored(
+    result: dict[str, Any], agent: str, predecessors: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Replace the agent's self-reported `completeness` with the deterministic verdict.
+
+    The in-loop `@tool` validators are scored on ids the same model chose to hand them,
+    so they can only ever be advisory. This runs against the real artifact and its real
+    predecessors, and it is what `_has_open_gaps` - and therefore the gate - reads.
+    """
+    return {**result, "completeness": evaluate_artifact(agent, result, predecessors).model_dump()}
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
@@ -179,6 +222,54 @@ def get_artifact(project_id: str, agent: str, request: Request) -> ArtifactRespo
     return _artifact_to_response(artifact)
 
 
+@router.get("/{project_id}/builds", response_model=BuildsResponse)
+def list_builds(project_id: str, request: Request) -> BuildsResponse:
+    """Return the build pull requests Review opened, with whatever GitHub says now.
+
+    Polled by the console every few seconds while work is in flight, so it reads GitHub
+    directly rather than spending a model turn to ask the same question. Reports the
+    pull requests with unknown status when there is no token, instead of 404ing - a link
+    the human can click is still worth showing.
+    """
+    repo = request.app.state.project_repository
+    artifact = repo.get_artifact(project_id, Station.REVIEW.value)
+    if artifact is None:
+        return BuildsResponse()
+    try:
+        report = ReviewReport.model_validate(artifact.content)
+    except ValidationError:
+        # same rule as core.validation.artifacts: an artifact written before the contract
+        # gained a field is absent, not an error - and this one is polled every 15s
+        logger.warning("stored review artifact does not match ReviewReport - no builds")
+        return BuildsResponse()
+    if not report.builds:
+        return BuildsResponse(repository=report.repository)
+
+    token = get_settings().github_pat
+    watching = token is not None and report.repository is not None
+    builds: list[BuildResponse] = []
+    for build in report.builds:
+        state = (
+            read_pull_request(token.get_secret_value(), report.repository, build.number)
+            if watching and token is not None and report.repository is not None
+            else None
+        )
+        builds.append(
+            BuildResponse(
+                group_id=build.group_id,
+                number=build.number,
+                url=build.url,
+                title=state.title if state else None,
+                unit_ids=build.unit_ids,
+                issue_numbers=build.issue_numbers,
+                state=state.state if state else None,
+                checks=state.checks if state else None,
+                draft=state.draft if state else None,
+            )
+        )
+    return BuildsResponse(repository=report.repository, builds=builds, watching=watching)
+
+
 @router.post("/{project_id}/advance", response_model=ProjectResponse)
 def advance_project(
     project_id: str, request: Request, payload: AdvanceRequest | None = None
@@ -208,13 +299,16 @@ def advance_project(
 
     agent = project.station.value
     prompt = (payload.prompt if payload else None) or f"Project {project_id}"
-    prompt = _build_prompt(repo, project_id, agent, prompt)
-    result = request.app.state.local_agent_client.invoke(agent, prompt=prompt)
+    predecessors = _predecessor_contents(repo, project_id, agent)
+    previous = repo.get_artifact(project_id, agent)
+    prompt = _build_prompt(predecessors, previous.content if previous else None, prompt)
+    result = _scored(
+        request.app.state.local_agent_client.invoke(agent, prompt=prompt), agent, predecessors
+    )
     repo.save_artifact(project_id, agent, result)
 
-    # Only agents whose output models carry a `completeness` verdict (currently just
-    # Distill's StructuredSpec) support this elicitation loop - others have no such
-    # concept, so a single turn is always "done".
+    # A station only advances once its deterministic verdict has no open gaps - the
+    # agent's own opinion of its draft was overwritten in `_scored` above.
     if _has_open_gaps(result):
         return _to_response(project)
     updated = repo.advance_after_artifact(project_id, agent)
@@ -261,7 +355,9 @@ def advance_project_stream(
 
     agent = project.station.value
     prompt = (payload.prompt if payload else None) or f"Project {project_id}"
-    prompt = _build_prompt(repo, project_id, agent, prompt)
+    predecessors = _predecessor_contents(repo, project_id, agent)
+    previous = repo.get_artifact(project_id, agent)
+    prompt = _build_prompt(predecessors, previous.content if previous else None, prompt)
     local_agent_client = request.app.state.local_agent_client
 
     async def event_stream() -> AsyncIterator[str]:
@@ -302,6 +398,7 @@ def advance_project_stream(
                 yield _sse({"error": f"{agent} agent invocation ended without a result"})
                 return
 
+            result = _scored(result, agent, predecessors)
             repo.save_artifact(project_id, agent, result)
             if _has_open_gaps(result):
                 updated = project

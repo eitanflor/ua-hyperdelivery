@@ -31,3 +31,24 @@ export interface DecisionRequest {
   signer: string;
   comment?: string | null;
 }
+
+/** One pull request a coding agent is building, as the console polls it.
+ * `state`/`checks` are null when the backend has no GitHub token to ask with - unknown,
+ * not failed. */
+export interface Build {
+  group_id: string;
+  number: number;
+  url: string;
+  title: string | null;
+  unit_ids: string[];
+  issue_numbers: number[];
+  state: "open" | "merged" | "closed" | null;
+  checks: "pending" | "passing" | "failing" | "none" | null;
+  draft: boolean | null;
+}
+
+export interface Builds {
+  repository: string | null;
+  builds: Build[];
+  watching: boolean;
+}

@@ -35,6 +35,20 @@ class CopilotAssignment(BaseModel):
     note: str | None = None
 
 
+class BuildPullRequest(BaseModel):
+    """One delivery group handed to a coding agent, and where to watch it.
+
+    Recorded so the console can link straight to the work and poll its checks without a
+    second model call - see api.routers.builds.
+    """
+
+    group_id: str
+    number: int
+    url: str
+    unit_ids: list[str] = []
+    issue_numbers: list[int] = []
+
+
 class ReviewReport(BaseModel):
     """G3 output contract: a gap report and coverage view against the FSD and Blueprint."""
 
@@ -42,6 +56,10 @@ class ReviewReport(BaseModel):
     findings: list[Finding]
     coverage: list[RequirementCoverage]
     completeness: CompletenessScore
-    # Only present when Review was explicitly asked to hand blocker/major findings off
-    # to GitHub Copilot's coding agent - empty otherwise, never invented.
+    # Populated automatically for every blocker/major finding when GitHub tools and a
+    # repository reference are available - empty otherwise, never invented.
     assignments: list[CopilotAssignment] = []
+    # One entry per delivery group handed to a coding agent this turn (see core.delivery).
+    builds: list[BuildPullRequest] = []
+    #: "owner/repo" the builds live in, so the console can poll them.
+    repository: str | None = None

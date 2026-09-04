@@ -19,6 +19,34 @@ def loaded(project: Project | None) -> Project:
     return project
 
 
+def complete_spec_content(requirement_ids: list[str] | None = None) -> dict[str, Any]:
+    """A StructuredSpec that scores 1.0 against the deterministic G1 gate.
+
+    Artifacts now have to satisfy their real contract to advance the line, so a test that
+    only cares about station movement still needs a spec with every traceability edge in
+    place - build it here rather than in each test.
+    """
+    ids = requirement_ids if requirement_ids is not None else ["R1"]
+    return {
+        "title": "FSD",
+        "requirements": [{"id": rid, "description": f"do {rid}"} for rid in ids],
+        "gate_criteria": [{"id": "G1", "description": "is testable"}],
+        "rules": [{"id": "M1", "criterion_id": "G1", "rule": "value must be set"}],
+        "rule_correlations": [],
+        "evidence": [{"requirement_id": rid, "evidence": "page 1"} for rid in ids],
+        "acceptance_criteria": [
+            {"id": f"A{i}", "requirement_id": rid, "description": "works"}
+            for i, rid in enumerate(ids, start=1)
+        ],
+        "business_value": [
+            {"requirement_id": rid, "use_case": "an analyst", "roi": "saves an hour a week"}
+            for rid in ids
+        ],
+        "intents": [{"requirement_id": rid, "intent": "functional"} for rid in ids],
+        "completeness": {"score": 1.0, "gaps": []},
+    }
+
+
 class FakeTable:
     """In-memory stand-in for a boto3 DynamoDB Table resource.
 

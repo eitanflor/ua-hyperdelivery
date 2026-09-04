@@ -44,7 +44,7 @@ flowchart LR
     distill -->|"confluence_* (read-only)"| atlassian
     blueprint -->|"jira_* (issue lifecycle)"| atlassian
     blueprint -->|"repo scaffold + issues (no merge/delete)"| github
-    review -->|"issues + assign_copilot_to_issue (no repo/PR/merge)"| github
+    review -->|"issues + Copilot hand-off, one session per delivery group (no repo/merge)"| github
 
     distill -.->|"human moves signed-off spec"| blueprint
     blueprint -.->|"human moves approved blueprint"| review
@@ -141,7 +141,7 @@ flowchart TD
     yaml["config/agents/distill.yaml"]
     agentconfig["core/domain/agent_config.py\nAgentConfig\n(model_id, system_prompt, max_tokens)"]
     strandsfactory["providers/agents/strands_factory.py\nbuild_agent()"]
-    bedrockmodel["strands.models.BedrockModel"]
+    bedrockmodel["strands.models.BedrockModel\n(prompt + tool caching)"]
     agent["strands.Agent\n(tool-use loop)"]
     settings["config/settings.py\nSettings (env/.env)"]
 
@@ -189,10 +189,60 @@ flowchart TD
 
 | Agent | Deterministic validator tool | External tools | Output model |
 |---|---|---|---|
-| Distill | `score_completeness` | `s3_get_document_text`, `s3_list_reference_documents`, `s3_find_similar_reference_documents` (semantic search over historical FSDs, see docs/decisions.md), Confluence MCP (read-only) | `StructuredSpec` |
-| Blueprint | `validate_units_of_work` | Jira MCP (issue lifecycle), GitHub MCP (repo scaffold/brownfield-read + issues/PRs, no merge/delete/Copilot) | `Blueprint` |
-| Review | `validate_review_report`, `validate_copilot_assignments` | GitHub MCP (issues + `assign_copilot_to_issue`, no repo/PR/merge) | `ReviewReport` |
-| Showroom | `validate_talk_track_coverage` | none | `DemoPackage` |
+| Distill | `track_plan`, `detect_fsd_template`, `score_template_coverage`, `extract_field_rules`, `validate_structured_spec`, `validate_rule_correlations`, `score_completeness` | `s3_get_document_text`, `s3_list_reference_documents`, `s3_find_similar_reference_documents` (semantic search over historical FSDs, see docs/decisions.md), Confluence MCP (read-only) | `StructuredSpec` |
+| Blueprint | `track_plan`, `validate_units_of_work`, `plan_delivery`, `score_blueprint_completeness` | Jira MCP (issue lifecycle), GitHub MCP (repo scaffold/brownfield-read + issues/PRs, no merge/delete/Copilot) | `Blueprint` |
+| Review | `track_plan`, `validate_review_report`, `validate_copilot_assignments`, `plan_delivery` | GitHub MCP (issues + `assign_copilot_to_issue`/`create_pull_request_with_copilot`, no repo/merge) | `ReviewReport` |
+| Showroom | `track_plan`, `validate_talk_track_coverage` | none | `DemoPackage` |
+
+`track_plan` is shared by every station: called first with the steps the agent intends to
+take and again as each finishes, it keeps a long turn from drifting and shows the human
+what is actually happening. It is stateless - the whole plan is passed on every call.
+
+`plan_delivery` is shared by Blueprint and Review. A unit of work is a unit of *review*;
+the unit of *shipping* is a delivery group, because a coding-agent session branches from
+one ref and two units writing the same file would branch from the same base and overwrite
+each other. It merges units that share a file into one group - one branch, one pull
+request, several issues closed - and returns the groups in build order, so a group that
+depends on another can start from that group's branch via `base_ref` (see
+docs/decisions.md). Merging remains a human action; nothing here can merge.
+
+Review records each pull request it opens in `ReviewReport.builds`, and the console polls
+`GET /projects/{id}/builds` while any of them is still moving. That endpoint reads GitHub's
+REST API directly (`providers/github/pull_requests.py`) rather than spending a model turn
+on "is it green yet", and reports an unreadable pull request as unknown rather than failed.
+When every build settles the console sends one follow-up turn, so the station reports the
+outcome in the thread.
+
+**A station asks rather than guesses.** `CompletenessScore.questions` carries up to four
+`OpenQuestion`s written for the person who requested the work, with concrete options where
+they can be guessed. An intake turn - nothing drafted, questions asked - holds at its
+station via the same `_has_open_gaps` path, and the console renders it as question cards
+rather than a 0% score. The gate computes `score` and `gaps` but only bounds `questions`,
+since what is worth asking a human is not something a validator can derive.
+
+**These tools are advisory, not the gate.** Each one is called by the agent with id
+lists the agent itself chose, so it can only check a draft's internal consistency - a
+model is free to validate one thing and emit another. The gate is `core/validation`,
+which runs against the *persisted* artifact plus its predecessors' artifacts and
+overwrites `completeness` before the console API decides whether a station advances
+(`api/routers/projects.py`). Coverage is read off stored traceability edges - a
+`UnitOfWork`'s `requirement_ids`/`acceptance_criterion_ids`/`contract_ids`, a
+`RequirementCoverage`'s `requirement_id`, a `TalkTrackSection`'s `requirement_id` -
+never off prose. See docs/decisions.md for what this deliberately does *not* check.
+
+**The G2 artifact is portable by design.** A `UnitOfWork` carries the components it
+builds, the files it touches and the API contracts it implements alongside its spec
+traceability, so `GET /projects/{id}/artifacts/blueprint` gives any external coding agent
+everything it needs per unit without access to the conversation that produced it. That is
+why the hand-off is a JSON read rather than an integration with one vendor's agent.
+
+**GitHub access is split by direction, not by agent.** Blueprint reads a repository
+proactively on every run (`search_repositories`, `get_repository_tree`, `search_code`,
+`get_file_contents`) so a design is grounded in the codebase it will land in. Writing -
+creating a repository, pushing files, filing issues - stays gated on an explicit request,
+because Blueprint runs *before* the G2 sign-off and an irreversible resource must not
+appear ahead of the approval that authorizes it. Review has no repository-write tools at
+all, deliberately: an agent that authors cannot independently judge what it authored.
 
 **Standing convention**: for any new external integration, split it into a generic,
 policy-free provider/client (`providers/` or `mcp_clients/`) plus a per-agent `@tool`

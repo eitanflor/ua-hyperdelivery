@@ -7,6 +7,7 @@ import { useProjectsStore } from "../../store/useProjectsStore";
 import { useCurrentUser } from "../../auth/useCurrentUser";
 import { Button } from "../ui/Button";
 import { TextArea } from "../ui/Field";
+import { Spinner } from "../ui/Spinner";
 import { cn } from "../../lib/cn";
 
 function Countdown({ deadline }: { deadline: number }) {
@@ -48,27 +49,39 @@ export function GateConsole({ project, artifacts }: { project: Project; artifact
 
   if (isPendingHere) {
     const approved = pending.decision.approved;
+    const destination = approved
+      ? (unlocksAgent?.name ?? "the next station")
+      : (reviewingAgent?.name ?? "the previous station");
     return (
       <div className="animate-rise rounded-md border border-accent-line bg-accent-bg px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <SealCheckIcon weight="fill" className="size-5 shrink-0 text-accent-text" />
+          {pending.committing ? (
+            <Spinner className="size-5 shrink-0 text-accent-text" />
+          ) : (
+            <SealCheckIcon weight="fill" className="size-5 shrink-0 text-accent-text" />
+          )}
           <p className="flex-1 text-xs text-fg">
-            <span className="font-semibold">
-              {approved ? "Signed." : "Sending back."}
-            </span>{" "}
-            {approved
-              ? `Releasing to ${unlocksAgent?.name ?? "the next station"} in `
-              : `Returning to ${reviewingAgent?.name ?? "the previous station"} in `}
-            <Countdown deadline={pending.deadline} />.
+            <span className="font-semibold">{approved ? "Signed." : "Sending back."}</span>{" "}
+            {approved ? `Releasing to ${destination}` : `Returning to ${destination}`}
+            {pending.committing ? (
+              "…"
+            ) : (
+              <>
+                {" in "}
+                <Countdown deadline={pending.deadline} />.
+              </>
+            )}
           </p>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<ArrowUUpLeftIcon className="size-3.5" />}
-            onClick={undoDecision}
-          >
-            Undo
-          </Button>
+          {!pending.committing && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<ArrowUUpLeftIcon className="size-3.5" />}
+              onClick={undoDecision}
+            >
+              Undo
+            </Button>
+          )}
         </div>
       </div>
     );

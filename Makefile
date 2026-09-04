@@ -1,4 +1,4 @@
-.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-console dev-console-ui test lint \
+.PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-stop dev-console dev-console-ui test lint \
 	format typecheck coverage check check-fix hooks check-aws ui deploy build-fsd-index
 
 ifneq (,$(wildcard .env))
@@ -23,6 +23,11 @@ dev-showroom: check-aws
 
 dev-all: check-aws
 	./scripts/dev_all.sh
+
+# Ctrl-C does not always take everything with it - uv/pnpm spawn the real process as a
+# child, and uvicorn's --reload supervisor respawns its worker. Run this if a port is stuck.
+dev-stop:
+	./scripts/free_dev_ports.sh
 
 dev-console: check-aws
 	cd src && uv run uvicorn api.main:app --reload --port $${PORT:-8090}

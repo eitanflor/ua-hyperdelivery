@@ -19,17 +19,22 @@ def validate_talk_track_coverage(
 
 
 @tool
-def score_showroom_completeness(requirement_ids: list[str]) -> dict[str, Any]:
-    """Deterministically flag whether Showroom actually had a cleared spec to demo.
+def score_showroom_completeness(
+    requirement_ids: list[str], talk_track_requirement_ids: list[str]
+) -> dict[str, Any]:
+    """Deterministically score how much of the spec your talk track actually narrates.
 
-    Returns 0.0 with a gap naming what to ask for if no requirement ids were found in
-    the input at all - meaning no spec that cleared Review was actually given.
-    Otherwise returns 1.0, since `validate_talk_track_coverage` already enforces full
-    narration coverage of whatever ids were found. Call this with the requirement ids
-    you found before finalizing the `completeness` field - do not estimate the score
-    yourself.
+    Returns the fraction of requirements that have a narration section, and a gap naming
+    each one that does not. Returns 0.0 with a gap naming what to ask for if no
+    requirement ids were found in the input at all - meaning no spec that cleared Review
+    was actually given. Call this with the requirement ids you found and the ones your
+    talk track covers before finalizing the `completeness` field - do not estimate the
+    score yourself.
     """
     if not requirement_ids:
         gaps = ["no spec that cleared Review was provided - ask for it before assembling a demo"]
         return {"score": 0.0, "gaps": gaps}
-    return {"score": 1.0, "gaps": []}
+    known = set(requirement_ids)
+    missing = sorted(known - set(talk_track_requirement_ids))
+    gaps = [f"requirement {rid} has no talk track narration" for rid in missing]
+    return {"score": round((len(known) - len(missing)) / len(known), 2), "gaps": gaps}

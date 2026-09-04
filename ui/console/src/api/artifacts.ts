@@ -18,18 +18,110 @@ export interface GateCriterion {
 }
 
 export interface MachineRule {
+  id: string;
   criterion_id: string;
   rule: string;
 }
 
+export interface RuleCorrelation {
+  id: string;
+  rule_ids: string[];
+  description: string;
+}
+
+export type EvidenceSource = "source_document" | "stakeholder_answer" | "reference_material";
+
 export interface EvidenceLink {
   requirement_id: string;
   evidence: string;
+  source?: EvidenceSource;
+}
+
+export interface AcceptanceCriterion {
+  id: string;
+  requirement_id: string;
+  description: string;
+}
+
+export interface BusinessValue {
+  requirement_id: string;
+  use_case: string;
+  roi: string;
+}
+
+export type RequirementIntentKind =
+  | "functional"
+  | "non_functional"
+  | "integration"
+  | "reporting"
+  | "compliance"
+  | "data_migration";
+
+export interface RequirementIntent {
+  requirement_id: string;
+  intent: RequirementIntentKind;
+}
+
+export interface OpenQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  multi_select: boolean;
 }
 
 export interface Completeness {
   score: number;
   gaps: string[];
+  questions: OpenQuestion[];
+}
+
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+export type FileChange = "add" | "modify" | "delete";
+
+export interface ApiContract {
+  id: string;
+  method: HttpMethod;
+  path: string;
+  summary: string;
+  requirement_ids?: string[];
+  request_schema?: string | null;
+  response_schema?: string | null;
+}
+
+export interface FileTouchpoint {
+  path: string;
+  change: FileChange;
+  purpose: string;
+}
+
+export interface Component {
+  id: string;
+  name: string;
+  responsibility: string;
+}
+
+export interface EntityField {
+  name: string;
+  type: string;
+  description: string;
+}
+
+export interface DataEntity {
+  id: string;
+  name: string;
+  description: string;
+  component_id: string;
+  fields?: EntityField[];
+}
+
+export type IntegrationDirection = "inbound" | "outbound" | "bidirectional";
+
+export interface IntegrationPoint {
+  id: string;
+  system: string;
+  direction: IntegrationDirection;
+  description: string;
+  requirement_ids?: string[];
 }
 
 export interface UnitOfWork {
@@ -37,6 +129,11 @@ export interface UnitOfWork {
   title: string;
   description: string;
   depends_on: string[];
+  requirement_ids?: string[];
+  acceptance_criterion_ids?: string[];
+  component_ids?: string[];
+  contract_ids?: string[];
+  files?: FileTouchpoint[];
 }
 
 export interface Finding {
@@ -83,6 +180,35 @@ export function list<T>(content: Content, key: string): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+/** Every list a station fills in once it has actually drafted something. */
+const CONTENT_KEYS = [
+  "requirements",
+  "gate_criteria",
+  "rules",
+  "components",
+  "units_of_work",
+  "api_contracts",
+  "findings",
+  "coverage",
+  "talk_track",
+  "demo_data",
+] as const;
+
+/**
+ * Whether a station has produced a document yet, as opposed to an intake turn that only
+ * asked questions.
+ *
+ * An intake turn is still persisted - it is the record of the turn, and the next turn is
+ * grounded in it - but it is not a document, so it gets no artifact card and no slot in
+ * the inspector until it has content.
+ */
+export function hasContent(content: Content): boolean {
+  return CONTENT_KEYS.some((key) => {
+    const value = content[key];
+    return Array.isArray(value) && value.length > 0;
+  });
+}
+
 export function completeness(content: Content): Completeness | undefined {
   const raw = content.completeness;
   if (!raw || typeof raw !== "object") return undefined;
@@ -91,7 +217,12 @@ export function completeness(content: Content): Completeness | undefined {
   return {
     score: obj.score,
     gaps: Array.isArray(obj.gaps) ? (obj.gaps as string[]) : [],
+    questions: Array.isArray(obj.questions) ? (obj.questions as OpenQuestion[]) : [],
   };
+}
+
+export function openQuestions(content: Content): OpenQuestion[] {
+  return completeness(content)?.questions ?? [];
 }
 
 export const SEVERITY_ORDER: Record<Severity, number> = { blocker: 0, major: 1, minor: 2 };

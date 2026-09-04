@@ -13,14 +13,42 @@ repo_root="$(cd "${script_dir}/.." && pwd)" # absolute - the script cd's around 
 agents=(distill blueprint review showroom)
 base_port="${BASE_PORT:-8080}"
 console_api_port="${CONSOLE_API_PORT:-8090}"
+ui_port=5173
 pids=()
 
+all_ports=("${console_api_port}" "${ui_port}")
+for i in "${!agents[@]}"; do
+	all_ports+=($((base_port + i)))
+done
+
+# Signalling the process groups is the clean path; the port sweep afterwards is the one
+# that actually holds, because `uv`/`pnpm` can leave a grandchild in a group of its own
+# and uvicorn's --reload supervisor respawns its worker unless the supervisor is hit too.
 cleanup() {
-	for pid in "${pids[@]}"; do
-		kill -- "-${pid}" 2>/dev/null || true
-	done
+	trap - EXIT INT TERM # must not re-enter itself while it is killing things
+	if ((${#pids[@]})); then
+		for pid in "${pids[@]}"; do
+			kill -- "-${pid}" 2>/dev/null || true
+		done
+		for _ in $(seq 1 15); do
+			alive=0
+			for pid in "${pids[@]}"; do
+				kill -0 "${pid}" 2>/dev/null && alive=1
+			done
+			((alive)) || break
+			sleep 0.2
+		done
+		for pid in "${pids[@]}"; do
+			kill -9 -- "-${pid}" 2>/dev/null || true
+		done
+	fi
+	"${script_dir}/free_dev_ports.sh" "${all_ports[@]}"
 }
 trap cleanup EXIT INT TERM
+
+# A listener left from a previous run means the server below silently fails to bind and
+# the console talks to whatever is already there - a previous checkout's prompts and schema.
+"${script_dir}/free_dev_ports.sh" "${all_ports[@]}"
 
 cd "${repo_root}/src"
 for i in "${!agents[@]}"; do
@@ -36,7 +64,7 @@ uv run uvicorn api.main:app --reload --port "${console_api_port}" &
 pids+=($!)
 
 cd "${repo_root}/ui/console"
-echo "console-ui -> http://127.0.0.1:5173"
+echo "console-ui -> http://127.0.0.1:${ui_port}"
 pnpm dev &
 pids+=($!)
 

@@ -45,16 +45,36 @@ def prior_station(current: Station) -> Station:
     return _LINE[idx - 1] if idx > 0 else current
 
 
+class OpenQuestion(BaseModel):
+    """One thing an agent needs from a human before it can go further.
+
+    Written for the person who asked for the work, not for the next engineer: `options`
+    are concrete answers drawn from the domain, and an empty list means free text is the
+    only sensible reply. This is how a station elicits rather than guesses - see the
+    Distill Agent in docs/hyperdelivery-plan.md.
+    """
+
+    id: str
+    question: str
+    options: list[str] = []
+    multi_select: bool = False
+
+
 class CompletenessScore(BaseModel):
     """How ready one station's draft artifact is, plus what is still missing.
 
     Shared by every agent station's output contract (not just Distill's) so the API can
     hold a project at its current station - instead of showing the next gate - whenever
     `gaps` is non-empty. See `api.routers.projects._has_open_gaps`.
+
+    `score` and `gaps` are computed from the stored artifact and overwrite whatever the
+    agent claimed (see core.validation); `questions` are the agent's own, since what is
+    worth asking a human is a judgement no validator can make.
     """
 
     score: float
     gaps: list[str] = []
+    questions: list[OpenQuestion] = []
 
 
 class Project(BaseModel):

@@ -1,3 +1,5 @@
+import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Never
 
 import pytest
@@ -19,9 +21,13 @@ class _FakeAgent:
     def __init__(
         self, model: BedrockModel, system_prompt: str, callback_handler: object = None
     ) -> None:
-        pass
+        # A real Strands Agent accumulates history here across calls on the same instance.
+        self.messages: list[str] = []
+        self.seen: list[list[str]] = []
 
     def __call__(self, message: str) -> _FakeAgentResult:
+        self.seen.append(list(self.messages))
+        self.messages.append(message)
         return _FakeAgentResult('"Feedback Portal"')
 
 
@@ -73,3 +79,54 @@ def test_generate_reuses_the_agent_across_calls(monkeypatch: pytest.MonkeyPatch)
     namer.generate("second message")
 
     assert built == 1
+
+
+def test_generate_does_not_let_one_project_see_the_ones_named_before_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The agent outlives every project the process names, so without a reset each naming
+    # call carries every previous project's message into the next one's context.
+    agents: list[_FakeAgent] = []
+
+    class _RecordingAgent(_FakeAgent):
+        def __init__(
+            self, model: BedrockModel, system_prompt: str, callback_handler: object = None
+        ) -> None:
+            super().__init__(model, system_prompt, callback_handler)
+            agents.append(self)
+
+    monkeypatch.setattr(namer_module, "Agent", _RecordingAgent)
+    namer = ProjectNamer(region_name="us-east-1")
+
+    namer.generate("a feedback portal")
+    namer.generate("a returns dashboard")
+
+    assert agents[0].seen == [[], []]
+
+
+def test_generate_serializes_concurrent_calls_onto_the_shared_agent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Strands raises ConcurrencyException on a second concurrent call to one instance,
+    # which the heuristic fallback would hide as a silently worse project name.
+    overlaps = 0
+    active = 0
+
+    class _OverlapDetectingAgent(_FakeAgent):
+        def __call__(self, message: str) -> _FakeAgentResult:
+            nonlocal overlaps, active
+            active += 1
+            if active > 1:
+                overlaps += 1
+            time.sleep(0.01)
+            active -= 1
+            return super().__call__(message)
+
+    monkeypatch.setattr(namer_module, "Agent", _OverlapDetectingAgent)
+    namer = ProjectNamer(region_name="us-east-1")
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        names = list(pool.map(namer.generate, [f"project {i}" for i in range(4)]))
+
+    assert overlaps == 0
+    assert names == ["Feedback Portal"] * 4

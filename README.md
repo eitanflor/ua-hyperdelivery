@@ -15,7 +15,7 @@ decisions (why things are built the way they are, kept up to date via the
 ```
 src/
 ├── agent_runtime/    # one composition root per agent (distill/, blueprint/, review/, showroom/) + shared factory.py
-├── core/             # domain models per gate, plus AgentName - depends on nothing else
+├── core/             # domain models per gate, the artifact gate in core/validation, delivery grouping, plus AgentName - depends on nothing else
 ├── config/           # declarative {name}.yaml per agent + environment-backed Settings
 ├── providers/        # adapters onto third-party SDKs (Strands agent builder, S3 fetch+parse)
 ├── mcp_clients/      # generic MCP client builders (Confluence/Jira over stdio)
@@ -54,6 +54,13 @@ cp .env.example .env
 make hooks          # install pre-commit hooks, once
 make dev-distill    # or: make dev-blueprint / make dev-review / make dev-showroom
 ```
+
+`make dev-all` runs every agent, the console API and the console UI together. It frees the
+dev ports before starting and again on exit - Ctrl-C alone does not always take everything
+with it, since `uv`/`pnpm` spawn the real process as a child and uvicorn's `--reload`
+supervisor respawns its worker. If a port is still stuck, `make dev-stop` clears it. A
+leftover listener is worth catching: the new server cannot bind, so the console keeps
+talking to an agent running the previous checkout's prompts and schema.
 
 
 Test locally (in another terminal):

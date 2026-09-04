@@ -1,7 +1,25 @@
 import type { Artifact } from "../api/types";
+import { hasContent as hasAnyContent } from "../api/artifacts";
 
 export function artifactTitle(artifact: Artifact): string {
   return typeof artifact.content.title === "string" ? artifact.content.title : artifact.agent;
+}
+
+/** The two or three counts worth putting on an artifact card - what this document
+ * actually contains, so it can be judged without opening it. */
+export function artifactStats(content: Record<string, unknown>): { label: string; value: number }[] {
+  const of = (key: string) => (Array.isArray(content[key]) ? (content[key] as unknown[]).length : 0);
+  const candidates: { label: string; value: number }[] = [
+    { label: "requirements", value: of("requirements") },
+    { label: "rules", value: of("rules") },
+    { label: "components", value: of("components") },
+    { label: "units", value: of("units_of_work") },
+    { label: "endpoints", value: of("api_contracts") },
+    { label: "findings", value: of("findings") },
+    { label: "covered", value: of("coverage") },
+    { label: "talk track", value: of("talk_track") },
+  ];
+  return candidates.filter((c) => c.value > 0).slice(0, 3);
 }
 
 /** What the assistant "says" once a turn finishes - written in first person so the
@@ -9,7 +27,19 @@ export function artifactTitle(artifact: Artifact): string {
  * The structured content itself lives in the artifact panel. */
 export function composeReply(content: Record<string, unknown>): string {
   const title = typeof content.title === "string" ? content.title : undefined;
-  const completeness = content.completeness as { score?: number; gaps?: string[] } | undefined;
+  const completeness = content.completeness as
+    | { score?: number; gaps?: string[]; questions?: unknown[] }
+    | undefined;
+
+  // An intake turn drafted nothing on purpose - claiming "a first draft" and listing the
+  // validator's gaps would be both wrong and unanswerable. The questions themselves are
+  // rendered above the composer.
+  if (!hasAnyContent(content)) {
+    const asked = completeness?.questions?.length ?? 0;
+    return asked > 0
+      ? `Before I draft anything I need to understand a few things — ${asked === 1 ? "there's a question" : `there are ${asked} questions`} below the thread.`
+      : "I don't have enough to work from yet. Tell me what you're trying to build, or point me at an FSD, a Confluence page, or a Jira issue.";
+  }
 
   if (completeness) {
     if (completeness.gaps && completeness.gaps.length > 0) {

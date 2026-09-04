@@ -4,12 +4,13 @@ from agent_runtime.factory import create_app
 from config.settings import get_settings
 from core.constants import AgentName
 from core.domain.showroom import DemoPackage
+from tools.planning import track_plan
 from tools.showroom import score_showroom_completeness, validate_talk_track_coverage
 
 app = create_app(
     AgentName.SHOWROOM,
     DemoPackage,
-    tools=[validate_talk_track_coverage, score_showroom_completeness],
+    tools=[track_plan, validate_talk_track_coverage, score_showroom_completeness],
 )
 
 if __name__ == "__main__":

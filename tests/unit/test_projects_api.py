@@ -1,16 +1,19 @@
 import json
 from collections.abc import Callable, Iterator
+from types import SimpleNamespace
 from typing import Any, Never, cast
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 
 from api.auth import CurrentUser, get_current_user
 from api.main import create_app
 from core.domain.project import Station
-from fakes import FakeStateMachineClient, FakeTable, loaded
+from fakes import FakeStateMachineClient, FakeTable, complete_spec_content, loaded
 from infrastructure.repositories.project_repository import ProjectRepository
+from providers.github.pull_requests import PullRequestState
 
 
 def _state(client: TestClient) -> Any:
@@ -305,7 +308,7 @@ def test_list_artifacts_returns_all_agents_for_project(client: TestClient) -> No
 
 def test_advance_invokes_the_local_agent_and_moves_to_the_next_station(client: TestClient) -> None:
     _state(client).state_machine_client = None
-    fake_agent = _FakeLocalAgentClient({"title": "FSD"})
+    fake_agent = _FakeLocalAgentClient(complete_spec_content())
     _state(client).local_agent_client = fake_agent
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -320,7 +323,7 @@ def test_advance_invokes_the_local_agent_and_moves_to_the_next_station(client: T
         ("distill", "Users must be able to reset their password via email.")
     ]
     artifact = client.get(f"/projects/{created['id']}/artifacts/distill").json()
-    assert artifact["content"] == {"title": "FSD"}
+    assert artifact["content"]["title"] == "FSD"
 
 
 def test_advance_falls_back_to_a_placeholder_prompt_when_none_given(client: TestClient) -> None:
@@ -359,9 +362,11 @@ def test_advance_prepends_the_predecessor_artifact_as_context(client: TestClient
 
 def test_advance_stays_at_the_same_station_when_gaps_are_flagged(client: TestClient) -> None:
     _state(client).state_machine_client = None
-    fake_agent = _FakeLocalAgentClient(
-        {"title": "FSD", "completeness": {"score": 0.4, "gaps": ["no success metric given"]}}
-    )
+    incomplete = complete_spec_content()
+    incomplete["business_value"] = []
+    # the model still claims a clean bill of health - the gate has to overrule it
+    incomplete["completeness"] = {"score": 1.0, "gaps": []}
+    fake_agent = _FakeLocalAgentClient(incomplete)
     _state(client).local_agent_client = fake_agent
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -370,17 +375,16 @@ def test_advance_stays_at_the_same_station_when_gaps_are_flagged(client: TestCli
     assert resp.status_code == 200
     assert resp.json()["station"] == Station.DISTILL.value
     artifact = client.get(f"/projects/{created['id']}/artifacts/distill").json()
-    assert artifact["content"]["completeness"]["gaps"] == ["no success metric given"]
+    assert artifact["content"]["completeness"]["gaps"] == [
+        "requirement R1 has no business value (use case/ROI)"
+    ]
 
 
 def test_advance_supports_multiple_turns_until_gaps_are_resolved(client: TestClient) -> None:
     _state(client).state_machine_client = None
-    fake_agent = _FakeLocalAgentClient(
-        results=[
-            {"title": "FSD", "completeness": {"score": 0.4, "gaps": ["no success metric"]}},
-            {"title": "FSD", "completeness": {"score": 1.0, "gaps": []}},
-        ]
-    )
+    incomplete = complete_spec_content()
+    incomplete["acceptance_criteria"] = []
+    fake_agent = _FakeLocalAgentClient(results=[incomplete, complete_spec_content()])
     _state(client).local_agent_client = fake_agent
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -393,6 +397,8 @@ def test_advance_supports_multiple_turns_until_gaps_are_resolved(client: TestCli
     )
     assert second.json()["station"] == Station.BLUEPRINT_APPROVAL.value
     assert len(fake_agent.calls) == 2
+    # the retry turn is grounded in the draft it has to fix, not started from scratch
+    assert "your previous draft" in fake_agent.calls[1][1]
 
 
 def test_advance_409s_when_a_state_machine_is_configured(client: TestClient) -> None:
@@ -424,7 +430,7 @@ def _parse_sse(text: str) -> list[dict[str, Any]]:
 
 def test_advance_stream_yields_chunks_then_a_done_event(client: TestClient) -> None:
     _state(client).state_machine_client = None
-    fake_agent = _FakeLocalAgentClient({"title": "FSD"}, chunks=["Analyzing", "..."])
+    fake_agent = _FakeLocalAgentClient(complete_spec_content(), chunks=["Analyzing", "..."])
     _state(client).local_agent_client = fake_agent
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -445,7 +451,7 @@ def test_advance_stream_closes_the_agent_response_once_finished(client: TestClie
     # so an abandoned stream (e.g. the browser tab closing) kept it - and whatever the
     # agent was still doing - running unseen instead of actually stopping.
     _state(client).state_machine_client = None
-    fake_agent = _FakeLocalAgentClient({"title": "FSD"})
+    fake_agent = _FakeLocalAgentClient(complete_spec_content())
     _state(client).local_agent_client = fake_agent
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -453,7 +459,7 @@ def test_advance_stream_closes_the_agent_response_once_finished(client: TestClie
 
     assert fake_agent.last_response.closed is True
     artifact = client.get(f"/projects/{created['id']}/artifacts/distill").json()
-    assert artifact["content"] == {"title": "FSD"}
+    assert artifact["content"]["title"] == "FSD"
 
 
 def test_advance_stream_yields_tool_call_events(client: TestClient) -> None:
@@ -549,3 +555,96 @@ def test_advance_stream_409s_when_not_at_an_agent_station(client: TestClient) ->
     resp = client.post(f"/projects/{created['id']}/advance/stream")
 
     assert resp.status_code == 409
+
+
+def test_builds_are_empty_before_review_has_run(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    body = client.get(f"/projects/{created['id']}/builds").json()
+
+    assert body == {"repository": None, "builds": [], "watching": False}
+
+
+def test_builds_are_returned_as_links_when_the_console_has_no_github_token(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    # pinned rather than inherited: a developer with GITHUB_PAT in .env would otherwise
+    # have this test reach the real api.github.com
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings", lambda: SimpleNamespace(github_pat=None)
+    )
+
+    body = client.get(f"/projects/{created['id']}/builds").json()
+
+    # unreadable is not failed: the human can still click through
+    assert body["watching"] is False
+    assert body["repository"] == "o/r"
+    assert body["builds"][0]["url"] == "https://github.com/o/r/pull/7"
+    assert body["builds"][0]["state"] is None
+    assert body["builds"][0]["issue_numbers"] == [17, 18]
+
+
+def test_builds_carry_live_status_when_a_token_is_configured(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(github_pat=SecretStr("token")),
+    )
+
+    def _state_of(_token: str, _repository: str, _number: int) -> PullRequestState:
+        return PullRequestState(
+            number=7,
+            state="open",
+            checks="passing",
+            draft=False,
+            title="Persist history results",
+            url="https://github.com/o/r/pull/7",
+        )
+
+    monkeypatch.setattr("api.routers.projects.read_pull_request", _state_of)
+
+    body = client.get(f"/projects/{created['id']}/builds").json()
+
+    assert body["watching"] is True
+    assert body["builds"][0]["checks"] == "passing"
+    assert body["builds"][0]["title"] == "Persist history results"
+
+
+def test_builds_are_empty_when_the_stored_review_no_longer_matches_its_contract(
+    client: TestClient,
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", {"title": "written before the contract"})
+
+    resp = client.get(f"/projects/{created['id']}/builds")
+
+    # polled every few seconds - an artifact the contract outgrew must not 500 the console
+    assert resp.status_code == 200
+    assert resp.json()["builds"] == []
+
+
+def _review_with_build() -> dict[str, Any]:
+    return {
+        "title": "Review",
+        "findings": [],
+        "coverage": [],
+        "completeness": {"score": 1.0, "gaps": []},
+        "repository": "o/r",
+        "builds": [
+            {
+                "group_id": "D1",
+                "number": 7,
+                "url": "https://github.com/o/r/pull/7",
+                "unit_ids": ["U1", "U2"],
+                "issue_numbers": [17, 18],
+            }
+        ],
+    }

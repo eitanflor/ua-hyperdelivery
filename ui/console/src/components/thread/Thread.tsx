@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { ArrowClockwiseIcon, ConfettiIcon } from "@phosphor-icons/react";
 import type { Artifact, Station } from "../../api/types";
+import { openQuestions } from "../../api/artifacts";
 import { useProjectsStore } from "../../store/useProjectsStore";
 import { AGENT_STATIONS, PIPELINE, STATION_META, stationIndex } from "../../lib/pipeline";
 import { Button } from "../ui/Button";
+import { BuildBoard } from "./BuildBoard";
 import { Composer } from "./Composer";
 import { GateConsole } from "./GateConsole";
 import { SignedCheckpoint, StationBand } from "./StationBand";
@@ -41,7 +43,13 @@ export function Thread({
   const signatures = useProjectsStore((s) => s.signaturesByProject[projectId]);
   const failedRun = useProjectsStore((s) => s.failedRun);
   const retryFailedRun = useProjectsStore((s) => s.retryFailedRun);
+  const builds = useProjectsStore((s) => s.buildsByProject[projectId]);
+  const watchBuilds = useProjectsStore((s) => s.watchBuilds);
   const bottom = useRef<HTMLDivElement>(null);
+
+  // polls only while this project's thread is on screen - a build that settles after the
+  // tab closes is caught by the first poll on the way back in
+  useEffect(() => watchBuilds(projectId), [projectId, watchBuilds]);
 
   const streamingText = conversation?.find((t) => t.streaming)?.text ?? "";
 
@@ -63,6 +71,9 @@ export function Thread({
   const signatureFor = (station: Station) => signatures?.find((s) => s.station === station);
   // only an agent station (not a gate/"done") holds a live composer.
   const activeAgent = AGENT_STATIONS.includes(project.station) ? project.station : null;
+  const pendingQuestions = activeAgent
+    ? openQuestions(artifactByAgent.get(activeAgent)?.content ?? {})
+    : [];
 
   return (
     // fixed-height column, not scrolled itself - the message list below owns its own
@@ -134,6 +145,7 @@ export function Thread({
                           key={turn.id}
                           agent={turn.agent}
                           content={turn.content ?? {}}
+                          text={turn.text}
                           toolCalls={turn.toolCalls}
                           onViewArtifact={onViewArtifact}
                         />
@@ -148,6 +160,14 @@ export function Thread({
                         onViewArtifact={onViewArtifact}
                       />
                     )}
+
+                {isCurrent && builds && builds.builds.length > 0 && (
+                  <BuildBoard
+                    repository={builds.repository}
+                    builds={builds.builds}
+                    watching={builds.watching}
+                  />
+                )}
 
                 {isCurrent && failedRun?.projectId === projectId && (
                   <div className="flex animate-rise items-center gap-3 rounded-md border border-danger/25 bg-danger-bg px-3.5 py-2.5">
@@ -174,7 +194,7 @@ export function Thread({
 
       {activeAgent && (
         <div className="mx-auto w-full max-w-[46rem] px-6 pb-6">
-          <Composer projectId={projectId} agent={activeAgent} />
+          <Composer projectId={projectId} agent={activeAgent} questions={pendingQuestions} />
         </div>
       )}
     </div>

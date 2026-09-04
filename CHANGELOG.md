@@ -10,6 +10,242 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- Bedrock prompt caching on the system prompt and the tool schema. Every invocation
+  starts from an empty message list, so both were re-sent in full on every turn - and a
+  station is invoked repeatedly within one project (redraft after a gap, answers to its
+  questions, a look at a finished build). Distill's and Blueprint's prompts are ~1,900
+  tokens before the tool schemas, well over the minimum cacheable prefix. `strategy="auto"`
+  resolves to Anthropic caching for Claude model ids and to no caching at all otherwise,
+  so pointing an agent at a different model degrades instead of failing.
+- The console watches the pull requests a coding agent is building. Review records each
+  one in `ReviewReport.builds` (group, number, URL, the units it delivers and the issues
+  it closes) plus the `repository` they live in, so the links are clickable the moment
+  they exist instead of after the station finishes. `GET /projects/{id}/builds` reads
+  GitHub directly - a poll should not cost a model turn - and returns each pull request's
+  state and a single verdict for its checks, with `null` meaning "could not ask" rather
+  than "failed". The thread polls it every 15s while anything is still moving, and once
+  everything has settled it sends one follow-up turn so the station says what happened
+  and what still needs a decision, in the thread, rather than leaving a status chip to be
+  noticed. An unfinished check outranks a failed one, so a red mid-run build is never
+  announced as broken. Nothing here can merge.
+- `plan_delivery` groups a blueprint's units of work into the pull requests that can
+  actually be built side by side. A coding-agent session branches from one ref, so two
+  units that write the same file produce two pull requests that each rewrite it and
+  cannot both be merged - which is exactly what happened on a real four-unit blueprint:
+  four sessions, four branches off the default branch, four incompatible definitions of
+  one schema. Units sharing a file are now collapsed into one group - one branch, one
+  pull request, several issues closed - and groups that merely depend on each other
+  chain through `base_ref` instead, starting from the predecessor's branch. Available to
+  Blueprint, which files its issues in group order and records the grouping on each one,
+  and to Review, which does the hand-off. Review also gains `list_pull_requests` (to find
+  a predecessor's branch) and `add_issue_comment` (to record which pull request covers
+  which issue). Merging is still nobody's job but a human's.
+
+### Fixed
+
+- Review findings on #14. `score_completeness` counted duplicate requirement and gate
+  criterion ids in its denominator while measuring coverage as a set, so a spec that
+  repeated an id scored lower in the loop than at the gate that overrules it. The
+  inspector kept one `EvidenceLink` per requirement, which is now actively wrong: the G1
+  gate reasons about the *set* of a requirement's sources, so showing only the last one
+  hid why it scored. The question card counted picks made against questions that were no
+  longer being asked, which could enable "Send" with nothing selected on the new set.
+  `GET /builds` re-raised a `ValidationError` from a stored artifact the contract had
+  outgrown, turning a 15-second poll into a 500 - it now degrades to "no builds", the
+  same rule `core.validation.artifacts` already applies. The GitHub poll created an
+  `httpx.Client` per call and never closed it, and raised if a response body was not
+  JSON. `free_dev_ports.sh` did nothing at all without `lsof` and reported success.
+- A build whose pull request reported no checks never settled, so the console polled
+  forever and the station never spoke. "No CI configured" and "CI has not started yet"
+  are indistinguishable over the API, so a non-draft pull request reporting no checks is
+  now settled once it has said so for two minutes, and the card says "no checks reported"
+  rather than showing a spinner.
+- A finished artifact still carried the questions that were asked on the way to it, so
+  the prompt above the composer stayed up over a spec the gate had already scored at
+  100%, asking about things the answers could no longer change. `evaluate_artifact` now
+  drops questions once an artifact is complete, and the card also clears the questions it
+  just sent rather than waiting for the next artifact to replace them.
+- The plan was buried in the tool list. `track_plan` is called once per step, so a turn
+  showed four near-identical `track_plan` rows and the real tool calls scrolled past them.
+  The latest plan now renders as a todo list that updates in place, above the tool calls;
+  the superseded snapshots are dropped. `track_plan` echoes its steps back in its result
+  so the console can render them - a tool call's input never reaches the browser.
+- Signing a gate made the gate form flash back before the line advanced. The undo banner
+  cleared the moment the countdown expired, but the project only leaves the gate station
+  once the backend has recorded the decision - for the length of that round trip the
+  station was still the gate, so the console re-rendered the form the user had just
+  signed. The banner now stays up, without a countdown or an undo button, until the
+  decision commits, and comes back to the form if the request fails.
+- The agent's narrative was thrown away the moment its artifact arrived. The console
+  replaced the streaming turn with a fresh one carrying only the structured content, so
+  everything the agent said while working - which table it could not reach, which source
+  it fell back to - disappeared and was replaced by a summary composed from the artifact,
+  which by construction cannot mention what is missing from it. The finished turn now
+  keeps the narrative behind a "Reasoning" disclosure next to the tool calls.
+- Read-only tools were gated on being asked, so agents skipped lookups that would have
+  grounded their work. Distill never called `snowflake_query` on an FSD saying "pull the
+  tier definitions from the PROMO_TIER table", because both the prompt and the tool's own
+  docstring said to use it when Snowflake was the input *instead of* a document. The same
+  phrasing gated the S3 reference-FSD lookup and, until this week, Blueprint's repository
+  scan. Every read-only tool across the four agents now says the opposite: look whenever
+  the input names something you can go and check, including in passing. Writes -
+  `create_repository`, `push_files`, `jira_create_issue`, `issue_write`,
+  `assign_copilot_to_issue` - still wait to be asked, since they land before the human
+  gate that authorizes them.
+- Ctrl-C out of `make dev-all` left listeners behind. `uv` and `pnpm` spawn the real
+  process as a child, and uvicorn's `--reload` supervisor respawns its worker when only
+  the worker is signalled, so a single round of SIGTERM to the process groups was not
+  enough - one console API process here needed SIGKILL. Cleanup now waits for the groups
+  to exit, escalates to SIGKILL, and then sweeps the ports themselves via the new
+  `scripts/free_dev_ports.sh`; `dev_all.sh` also sweeps *before* starting, since a
+  leftover listener means the new server cannot bind and the console silently keeps
+  talking to an agent running the previous checkout's prompts and schema. `make dev-stop`
+  clears the ports by hand.
+- `score_review_completeness` reported "no approved spec, Blueprint, or description of
+  the built deliverable was provided" for three different situations at once. A missing
+  spec means the line is broken upstream; a missing *build* is the normal state of a
+  greenfield project that has only been planned. It now takes a `build_reference` and
+  reports them separately, and `review.yaml` tells the agent to ask which the human wants
+  - a repository/PR to check, or an explicitly labelled review of the plan alone - rather
+  than producing findings about code it was never shown.
+- Four Distill tools were written and unit-tested but never attached to the agent:
+  `detect_fsd_template`, `score_template_coverage`, `extract_field_rules` and
+  `validate_rule_correlations`. `distill.yaml` instructed the agent to call the last of
+  these, which it could not - and the first three meant the deterministic FSD-template
+  path never ran at all, so a real UA FSD was extracted by the model as free prose. All
+  four are now wired, with the prompt describing the template path.
+- `ProjectNamer` reused one Strands `Agent` for the whole server process without ever
+  clearing its history, so every project named in that process stayed in the naming
+  model's context - each call slower, more expensive, and shown every previously named
+  project. Now reset per call, matching `agent_runtime.factory`, which already did this
+  for the same reason. The shared instance is also guarded by a lock: naming runs in
+  FastAPI's background-task threadpool, and Strands raises `ConcurrencyException` on a
+  second concurrent call to one instance, which the heuristic fallback silently swallowed
+  as a worse project name.
+
+### Added
+
+- `EvidenceLink` carries a `source`: `source_document`, `stakeholder_answer` or
+  `reference_material`. At G1 sign-off these are not interchangeable - a line in the
+  submitted document can be re-read, an answer given in the console is only as good as who
+  gave it, and reference material is a *different* project's document. The G1 gate flags a
+  requirement whose only citation is reference material, since Distill reads past FSDs for
+  grounding and one of them is never the reason this project needs something. The console
+  labels each citation accordingly.
+- Open questions are answered where the answer gets typed: an interactive prompt sits
+  directly above the composer, with options as toggleable chips that compose into one
+  message. They are deliberately not in the artifact panel, which can be closed - that
+  would leave a project held at its station with no visible reason why.
+- An intake turn - a station that asked questions rather than drafting a document - is
+  still persisted, since it is the record of the turn and the next turn is grounded in it,
+  but it no longer poses as a document: no artifact card in the thread, no slot in the
+  inspector, and a reply that says what it actually did instead of claiming a first draft.
+  The predicate is "has content", not "has questions", so a partial draft with open
+  questions still shows normally.
+- The console renders an artifact as a card in the thread - title, kind and what it
+  actually contains - which opens the inspector, now with tabs (**Design** for a
+  blueprint, **Requirements**, **JSON**) and an expand control that widens the panel from
+  a sidebar to roughly half the window.
+- **Design** draws the blueprint's component graph as SVG, derived entirely from the
+  stored artifact: `components` are nodes, unit-level `depends_on` edges lifted to the
+  components those units build are the arrows, laid out by longest-path depth. It is a
+  pure function of the artifact, so it cannot show a shape the plan does not have, and
+  falls back to the list view past twelve components rather than drawing a hairball.
+
+- Stations can ask before they guess. `CompletenessScore` gains `questions`
+  (`OpenQuestion`: text, optional concrete `options`, `multi_select`), shared by all four
+  agents. Distill now opens with questions rather than inventing a spec from a one-line
+  request - the plan doc's "it plans and asks before it drafts" - and the console renders
+  an intake turn as question cards instead of a 0% scorecard. Unlike `score` and `gaps`,
+  which the gate computes and overwrites, questions are the agent's own judgement and are
+  carried through - but bounded: duplicates dropped, malformed ones dropped, at most four
+  per turn, and a turn that drafts nothing and asks nothing is itself a gap.
+- `tools/planning.py`: `track_plan`, the one tool every station shares. Each agent calls
+  it first with the steps it intends to take and again as each finishes, which keeps a
+  long turn from drifting and shows the human what the agent is actually doing. Stateless
+  by design - the whole plan is passed every call, since an invocation is a clean slate
+  and a module-level store would leak one project's plan into the next run.
+
+- Blueprint now produces a design, not a paragraph about one. `Blueprint` gains
+  `components` (named parts with a single responsibility), `data_entities` (each owned
+  by a component, each with typed `fields`) and `integration_points` (external system,
+  direction, and the requirements needing that boundary); `UnitOfWork` gains
+  `component_ids`. The G2 gate scores components and integration coverage alongside
+  requirements, acceptance criteria and contracts, and flags a blueprint that names no
+  components at all. Every requirement the spec classified as an `integration` must be
+  covered by an integration point - which is the first thing that makes G1's intent
+  classification do real work downstream instead of being restated.
+- Blueprint reads the repository before drafting. `search_repositories`,
+  `get_repository_tree`, `search_code` and `get_file_contents` are now used proactively
+  on every run rather than only when asked, matching the posture Distill already has for
+  historical FSDs and Review has for code. Writing to GitHub (`create_repository`,
+  `push_files`, `issue_write`) still requires an explicit request: it is irreversible and
+  it would land before the G2 sign-off that authorizes the plan.
+- The G2 artifact is now a self-contained build contract, so a unit of work can be
+  handed to any coding agent that has no access to the conversation that produced it.
+  `UnitOfWork` gains `files` (the paths it touches, each with an add/modify/delete
+  `change` and a `purpose`) and `contract_ids`; `Blueprint` gains `api_contracts`
+  (`ApiContract`: method, path, summary, request/response schema, and the requirement
+  ids it serves). Modeled as an endpoint list rather than an embedded OpenAPI document -
+  it is checkable with plain Pydantic, generates a spec, and needs no parser dependency.
+  The G2 gate scores contracts as coverable units alongside requirements and acceptance
+  criteria, and flags a unit that names no files as not actionable.
+- `core/validation/`: a deterministic gate that scores each station's *persisted*
+  artifact against its predecessors, instead of trusting the `completeness` the model
+  reported about itself. The `@tool` validators under `tools/` take id lists chosen by
+  the same model they check, so they can only ever be advisory; `evaluate_artifact`
+  takes the real artifacts, and `api/routers/projects.py` overwrites `completeness`
+  with its verdict before deciding whether a station advances. Covers all four
+  stations: spec self-consistency (G1), requirement/acceptance-criterion coverage and
+  dependency-DAG soundness (G2), coverage-view completeness and assignment consistency
+  (G3), and talk-track coverage (G4).
+- `UnitOfWork` now carries `requirement_ids` and `acceptance_criterion_ids` - the
+  traceability edges back to the approved spec. Without them stored on the artifact,
+  G2 coverage was unverifiable in principle: nothing recorded which requirement a unit
+  addressed, so the score was whatever the model asserted. The console UI's
+  `BlueprintView` renders them per unit.
+- `AgentConfig.temperature`, unset by default and passed to `BedrockModel` only when a
+  config actually sets it. Bedrock rejects the parameter outright on newer Anthropic
+  models (`ValidationException: `temperature` is deprecated for this model`), so it
+  cannot be defaulted - determinism for these agents comes from the artifact gate
+  redrafting until gaps close, not from sampling controls.
+
+### Changed
+
+- The question card and the artifact panel's "questions are waiting" notice sat on the
+  accent surface, which reads as an alert next to the gate and the hazard stripe - the
+  loud surfaces are reserved for a decision that stops the line. Both now use the neutral
+  theme surface, so they follow light/dark/system like the rest of the thread.
+- `score_review_completeness` and `score_showroom_completeness` returned `1.0` for any
+  non-empty input - a "did I get input?" boolean wearing a score's clothes. Both now
+  take the ids they actually covered and return a real coverage fraction with a gap per
+  uncovered requirement. A requirement Review marks `met=False` still counts as
+  reviewed: reporting that the build misses it is a complete verdict, not a gap.
+- A retry after an open gap is now grounded in the agent's own previous draft.
+  `agent.messages` is reset on every invocation (so one project's history cannot leak
+  into another's), which meant a "close this gap" turn redrafted from scratch instead
+  of patching - maximum churn on exactly the path that needs stability.
+- Showroom now receives the Blueprint and the ReviewReport as predecessor artifacts,
+  not just the spec. It was being asked to demo work that cleared Review while having
+  no way to see what Review said.
+- `StructuredSpec` (G1) now carries the business context Blueprint needs to plan
+  technical work, not just requirement text: `BusinessValue` (use case + ROI, one
+  step up from a requirement - why it exists), `AcceptanceCriterion` (a testable
+  definition of done per requirement, distinct from the G1 `gate_criteria` that score
+  the spec itself), `RequirementIntent` (functional/non_functional/integration/
+  reporting/compliance/data_migration classification, one per requirement), and
+  `RuleCorrelation` (how two or more machine-readable rules depend on or constrain
+  each other - `MachineReadableRule` now has its own `id` so correlations can
+  reference it). Distill's prompt extracts all four from the source FSD (an EDM
+  FSD's "User Story" and "Value Add"/"Success Criteria" sections are the usual
+  source); `validate_structured_spec`, the new `validate_rule_correlations`, and
+  `score_completeness` in `tools/distill.py` validate and score them alongside the
+  existing fields. Blueprint's prompt now uses intent to size/sequence units of work,
+  folds acceptance criteria into unit descriptions as the definition of done, uses
+  business value to justify sequencing and write an intent-driven architecture
+  summary, and keeps correlated rules' units from being split apart. The console
+  UI's `SpecView` renders all of this (intent badge per requirement, use case/ROI,
+  acceptance criteria checklist, rule correlations section). See docs/decisions.md.
 - `infra/stacks/storage_stack.py`: DynamoDB table and a dedicated, versioned, CDK-managed
   S3 documents bucket now live in their own stack, injected into
   `OrchestrationStack`/`ConsoleApiStack` as cross-stack references. Read access for the
@@ -25,11 +261,12 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   history item alongside the latest `ARTIFACT#<agent>` alias. New
   `ProjectRepository.list_artifact_versions`.
 - Review can hand its own blocker/major findings off to GitHub Copilot's coding agent
-  (`assign_copilot_to_issue`, validated by `validate_copilot_assignments`), only when
-  explicitly asked - same GitHub connector as Blueprint's, now living on Review instead
-  of a dedicated Handoff agent. Assignments render in the console UI's `ReviewView` as
-  a "Copilot assignments" section with an assigned/failed badge and a clickable link to
-  the actual GitHub issue. See docs/decisions.md.
+  (`assign_copilot_to_issue`, validated by `validate_copilot_assignments`),
+  automatically whenever GitHub tools and a repository reference are available - same
+  GitHub connector as Blueprint's, now living on Review instead of a dedicated Handoff
+  agent. Assignments render in the console UI's `ReviewView` as a "Copilot assignments"
+  section with an assigned/failed badge and a clickable link to the actual GitHub
+  issue. See docs/decisions.md.
 - Blueprint's GitHub connector (`tools/github.py`, `mcp_clients/github.py`, gated on
   `GITHUB_PAT`): repo scaffolding and one issue per unit of work, via GitHub's official
   remote MCP server (`api.githubcopilot.com`) - no local binary/Docker to run. Curated

@@ -1,15 +1,31 @@
 import { useEffect, useState } from "react";
-import { BracketsCurlyIcon, XIcon } from "@phosphor-icons/react";
+import {
+  ArrowsInSimpleIcon,
+  ArrowsOutSimpleIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import type { Artifact } from "../../api/types";
-import { artifactKind, str } from "../../api/artifacts";
+import {
+  artifactKind,
+  hasContent,
+  list,
+  str,
+  type ApiContract,
+  type Component,
+  type DataEntity,
+  type IntegrationPoint,
+  type UnitOfWork,
+} from "../../api/artifacts";
 import { AGENT_META } from "../../lib/pipeline";
 import { AgentFace } from "../agents/AgentFace";
 import { IconButton } from "../ui/IconButton";
 import { cn } from "../../lib/cn";
+import { ArchitectureDiagram } from "./ArchitectureDiagram";
 import { BlueprintView, DemoView, GenericView, ReviewView, SpecView } from "./views";
 
-function Body({ artifact, raw }: { artifact: Artifact; raw: boolean }) {
-  if (raw) return <GenericView content={artifact.content} />;
+type TabId = "design" | "content" | "raw";
+
+function ContentBody({ artifact }: { artifact: Artifact }) {
   switch (artifactKind(artifact.agent)) {
     case "spec":
       return <SpecView content={artifact.content} />;
@@ -22,6 +38,18 @@ function Body({ artifact, raw }: { artifact: Artifact; raw: boolean }) {
     default:
       return <GenericView content={artifact.content} />;
   }
+}
+
+function DesignBody({ artifact }: { artifact: Artifact }) {
+  return (
+    <ArchitectureDiagram
+      components={list<Component>(artifact.content, "components")}
+      units={list<UnitOfWork>(artifact.content, "units_of_work")}
+      integrations={list<IntegrationPoint>(artifact.content, "integration_points")}
+      entities={list<DataEntity>(artifact.content, "data_entities")}
+      contracts={list<ApiContract>(artifact.content, "api_contracts")}
+    />
+  );
 }
 
 /** The structured output of each station, rendered by a view that knows what it is
@@ -38,8 +66,16 @@ export function Inspector({
   onSelectAgent: (agent: string) => void;
   onClose: () => void;
 }) {
-  const [raw, setRaw] = useState(false);
-  const selected = artifacts.find((a) => a.agent === selectedAgent) ?? null;
+  const [tab, setTab] = useState<TabId>("content");
+  const [expanded, setExpanded] = useState(false);
+  // An intake turn is persisted but is not a document - it belongs above the composer as
+  // a question, not in here as something to review.
+  const documents = artifacts.filter((a) => hasContent(a.content));
+  const selected = documents.find((a) => a.agent === selectedAgent) ?? null;
+  // Only a blueprint has an architecture to draw; switching stations must not strand the
+  // panel on a tab that no longer exists.
+  const hasDesign = selected !== null && artifactKind(selected.agent) === "blueprint";
+  const activeTab: TabId = tab === "design" && !hasDesign ? "content" : tab;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -49,23 +85,44 @@ export function Inspector({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const tabs: { id: TabId; label: string }[] = [
+    ...(hasDesign ? [{ id: "design" as const, label: "Design" }] : []),
+    { id: "content", label: "Requirements" },
+    { id: "raw", label: "JSON" },
+  ];
+
   return (
     <aside
       aria-label="Artifacts"
-      className="flex w-[22rem] shrink-0 flex-col border-l border-line-subtle bg-canvas 2xl:w-[26rem]"
+      className={cn(
+        "flex shrink-0 flex-col border-l border-line-subtle bg-canvas transition-[width] duration-200",
+        expanded ? "w-[min(48rem,55vw)]" : "w-[22rem] 2xl:w-[26rem]",
+      )}
     >
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line-subtle px-3">
         <h2 className="text-2xs font-semibold tracking-wide text-fg-subtle uppercase">Artifacts</h2>
+        <IconButton
+          label={expanded ? "Collapse artifacts" : "Expand artifacts"}
+          size="sm"
+          icon={
+            expanded ? (
+              <ArrowsInSimpleIcon className="size-4" />
+            ) : (
+              <ArrowsOutSimpleIcon className="size-4" />
+            )
+          }
+          onClick={() => setExpanded((v) => !v)}
+          className="ml-auto"
+        />
         <IconButton
           label="Close artifacts"
           size="sm"
           icon={<XIcon className="size-4" />}
           onClick={onClose}
-          className="ml-auto"
         />
       </div>
 
-      {artifacts.length === 0 ? (
+      {documents.length === 0 ? (
         <p className="p-5 text-xs leading-relaxed text-fg-subtle">
           Each station hands its work over here as it finishes — the scouting report from
           Scout, the call sheet from Coach, the grade sheet from Ref, and the run of show
@@ -74,7 +131,7 @@ export function Inspector({
       ) : (
         <>
           <div className="flex gap-1 overflow-x-auto border-b border-line-subtle p-2">
-            {artifacts.map((a) => {
+            {documents.map((a) => {
               const meta = AGENT_META[a.agent];
               const active = a.agent === selectedAgent;
               return (
@@ -102,20 +159,37 @@ export function Inspector({
               <h3 className="text-sm font-semibold text-fg">
                 {str(selected.content, "title") ?? AGENT_META[selected.agent]?.output ?? selected.agent}
               </h3>
-              <p className="tabular mt-0.5 mb-4 text-2xs text-fg-subtle">
+              <p className="tabular mt-0.5 text-2xs text-fg-subtle">
                 {new Date(selected.created_at).toLocaleString()}
               </p>
 
-              <Body artifact={selected} raw={raw} />
-
-              <button
-                type="button"
-                onClick={() => setRaw((v) => !v)}
-                className="mt-5 flex items-center gap-1.5 text-2xs text-fg-subtle transition-colors hover:text-fg-muted"
+              <div
+                role="tablist"
+                aria-label="Artifact view"
+                className="mt-3 mb-4 flex gap-1 border-b border-line-subtle"
               >
-                <BracketsCurlyIcon className="size-3.5" />
-                {raw ? "Show formatted view" : "View raw JSON"}
-              </button>
+                {tabs.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === id}
+                    onClick={() => setTab(id)}
+                    className={cn(
+                      "-mb-px border-b-2 px-2.5 py-1.5 text-2xs font-medium transition-colors",
+                      activeTab === id
+                        ? "border-accent text-fg"
+                        : "border-transparent text-fg-subtle hover:text-fg-muted",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {activeTab === "design" && <DesignBody artifact={selected} />}
+              {activeTab === "content" && <ContentBody artifact={selected} />}
+              {activeTab === "raw" && <GenericView content={selected.content} />}
             </div>
           )}
         </>

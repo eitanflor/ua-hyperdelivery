@@ -5,9 +5,34 @@ import type { ToolCallEvent } from "../api/client";
 import { buildTranscript } from "../lib/transcript";
 import { describeError, type FriendlyError } from "../lib/errors";
 import { AGENT_META, AGENT_STATIONS } from "../lib/pipeline";
-import type { Artifact, DecisionRequest, Project, Station } from "../api/types";
+import type { Artifact, Build, Builds, DecisionRequest, Project, Station } from "../api/types";
 
 const MAX_RECENTS = 30;
+
+/** How often the console asks GitHub what a build pull request is doing. Slow enough not
+ * to burn the API's hourly rate limit over a run that takes minutes, fast enough that the
+ * card is not visibly stale. */
+const BUILD_POLL_MS = 15_000;
+
+/** How long a non-draft pull request has to report no checks at all before the console
+ * accepts that none are coming. Without this a repository with no CI never settles; with
+ * a shorter one, a pull request whose workflow has not started yet settles immediately
+ * and the station announces a build that has not run. */
+const NO_CHECKS_GRACE_MS = 120_000;
+
+/** A build stops moving when it is merged or closed, or its checks have reached a verdict
+ * on an open pull request - a draft is still being written by the agent.
+ *
+ * `noChecksSince` carries when each build first reported no checks, so "no CI configured"
+ * can be told apart from "CI has not started yet". They look identical to the API. */
+function isSettled(build: Build, noChecksSince: Map<number, number>): boolean {
+  if (build.state === "merged" || build.state === "closed") return true;
+  if (build.draft) return false;
+  if (build.checks === "passing" || build.checks === "failing") return true;
+  if (build.checks !== "none") return false;
+  const since = noChecksSince.get(build.number);
+  return since !== undefined && Date.now() - since >= NO_CHECKS_GRACE_MS;
+}
 
 /** How long a gate decision stays undoable before it is sent.
  *
@@ -55,6 +80,8 @@ export interface PendingDecision {
   decision: DecisionRequest;
   /** Epoch ms at which this stops being undoable and is sent. */
   deadline: number;
+  /** Set once the undo window closes and the decision is in flight. */
+  committing?: boolean;
 }
 
 /** A decision this browser sent.
@@ -80,6 +107,7 @@ interface ProjectsState {
   // forth instead of a single overwritten artifact.
   conversationByProject: Record<string, ChatTurn[]>;
   signaturesByProject: Record<string, Signature[]>;
+  buildsByProject: Record<string, Builds>;
   loading: boolean;
   error: FriendlyError | null;
   failedRun: FailedRun | null;
@@ -98,6 +126,12 @@ interface ProjectsState {
   loadProjects: () => Promise<void>;
   loadArtifacts: (projectId: string) => Promise<void>;
   loadPending: (station: Station) => Promise<void>;
+  /** Reads the build pull requests once. `watchBuilds` is what keeps them fresh. */
+  loadBuilds: (projectId: string) => Promise<void>;
+  /** Polls while any build is still moving; resolves the moment they all settle. */
+  watchBuilds: (projectId: string) => () => void;
+  /** Fires one agent turn once every build has stopped moving. At most once per project. */
+  announceBuildsSettled: (projectId: string) => Promise<void>;
   decide: (projectId: string, station: Station, decision: DecisionRequest) => void;
   undoDecision: () => void;
   advanceProject: (projectId: string, agent: string, prompt: string) => Promise<void>;
@@ -112,6 +146,9 @@ interface ProjectsState {
 // persisted or trigger a re-render.
 let undoTimer: ReturnType<typeof setTimeout> | null = null;
 let runController: AbortController | null = null;
+// Projects whose builds have already been announced, so remounting the thread does not
+// send the same follow-up prompt twice.
+const announced = new Set<string>();
 
 async function guarded(set: (partial: Partial<ProjectsState>) => void, fn: () => Promise<void>) {
   set({ loading: true, error: null });
@@ -138,6 +175,7 @@ export const useProjectsStore = create<ProjectsState>()(
       recentProjects: [],
       conversationByProject: {},
       signaturesByProject: {},
+      buildsByProject: {},
       loading: false,
       error: null,
       failedRun: null,
@@ -194,6 +232,66 @@ export const useProjectsStore = create<ProjectsState>()(
           }));
         }),
 
+      // Deliberately not `guarded`: a poll that flips the global loading spinner every
+      // few seconds, or raises a toast because GitHub blipped, is worse than a stale card
+      loadBuilds: async (projectId) => {
+        try {
+          const builds = await api.listBuilds(projectId);
+          set((state) => ({ buildsByProject: { ...state.buildsByProject, [projectId]: builds } }));
+        } catch {
+          // leave whatever was last known on screen
+        }
+      },
+
+      watchBuilds: (projectId) => {
+        let stopped = false;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const noChecksSince = new Map<number, number>();
+        const tick = async () => {
+          await get().loadBuilds(projectId);
+          if (stopped) return;
+          const builds = get().buildsByProject[projectId];
+          for (const build of builds?.builds ?? []) {
+            if (build.checks === "none" && !build.draft) {
+              if (!noChecksSince.has(build.number)) noChecksSince.set(build.number, Date.now());
+            } else {
+              noChecksSince.delete(build.number);
+            }
+          }
+          if (!builds?.watching || builds.builds.every((b) => isSettled(b, noChecksSince))) {
+            void get().announceBuildsSettled(projectId);
+            return;
+          }
+          timer = setTimeout(() => void tick(), BUILD_POLL_MS);
+        };
+        void tick();
+        return () => {
+          stopped = true;
+          if (timer !== null) clearTimeout(timer);
+        };
+      },
+
+      // One agent turn, not a poll: the human should be told what happened and what to do
+      // next in the thread, in the station's own voice, rather than reading a status chip.
+      // Settledness is the caller's judgement - only it knows how long a build has been
+      // reporting no checks.
+      announceBuildsSettled: async (projectId) => {
+        const builds = get().buildsByProject[projectId];
+        const project = get().projects[projectId];
+        if (!builds?.builds.length || !project || get().runningProjectId) return;
+        if (announced.has(projectId)) return;
+        announced.add(projectId);
+        const summary = builds.builds
+          .map((b) => `#${b.number} ${b.state ?? "unknown"}/${b.checks ?? "unknown"}`)
+          .join(", ");
+        await get().advanceProject(
+          projectId,
+          project.station,
+          `The build pull requests have settled: ${summary}. Check them against the ` +
+            `blueprint's acceptance criteria and tell me what still needs a decision.`,
+        );
+      },
+
       loadPending: (station) =>
         guarded(set, async () => {
           const pending = await api.listPending(station);
@@ -214,46 +312,57 @@ export const useProjectsStore = create<ProjectsState>()(
           undoTimer = null;
           const pending = get().pendingDecision;
           if (!pending) return;
-          set({ pendingDecision: null });
+          // stays set until the project has actually moved on: clearing it here would
+          // put the station back at this gate for the length of the round trip, so the
+          // form the user just signed flashes back before the line advances
+          set({ pendingDecision: { ...pending, committing: true } });
           void guarded(set, async () => {
-            const project = await api.submitDecision(pending.projectId, pending.decision);
-            const signature: Signature = {
-              station: pending.station,
-              signer: pending.decision.signer,
-              approved: pending.decision.approved,
-              comment: pending.decision.comment,
-              at: new Date().toISOString(),
-            };
-            set((state) => ({
-              projects: { ...state.projects, [pending.projectId]: project },
-              signaturesByProject: {
-                ...state.signaturesByProject,
-                [pending.projectId]: [
-                  ...(state.signaturesByProject[pending.projectId] ?? []).filter(
-                    (s) => s.station !== pending.station,
-                  ),
-                  signature,
-                ],
-              },
-            }));
-            await get().loadArtifacts(pending.projectId);
-            for (const gate of GATES) void get().loadPending(gate);
+            try {
+              const project = await api.submitDecision(pending.projectId, pending.decision);
+              const signature: Signature = {
+                station: pending.station,
+                signer: pending.decision.signer,
+                approved: pending.decision.approved,
+                comment: pending.decision.comment,
+                at: new Date().toISOString(),
+              };
+              set((state) => ({
+                projects: { ...state.projects, [pending.projectId]: project },
+                signaturesByProject: {
+                  ...state.signaturesByProject,
+                  [pending.projectId]: [
+                    ...(state.signaturesByProject[pending.projectId] ?? []).filter(
+                      (s) => s.station !== pending.station,
+                    ),
+                    signature,
+                  ],
+                },
+                pendingDecision: null,
+              }));
+              await get().loadArtifacts(pending.projectId);
+              for (const gate of GATES) void get().loadPending(gate);
 
-            // "when a decision commits, the line visibly advances and the next agent
-            // takes the station" (docs/console-redesign.md) - the state machine does
-            // this on its own in production; this local-dev bypass has to do it too,
-            // rather than leaving the project sitting at the new station until someone
-            // happens to type into its composer. A rejection lands back on the agent
-            // whose artifact was under review (see prior_station on the backend), so
-            // it needs the same treatment - fed the reviewer's comment as its next
-            // prompt instead of a generic "may begin.", so the send-back reason
-            // actually reaches the LLM rather than only living in the audit trail.
-            if (AGENT_STATIONS.includes(project.station)) {
-              const label = AGENT_META[project.station]?.name ?? project.station;
-              const prompt = pending.decision.approved
-                ? `${label} may begin.`
-                : `Sent back: ${pending.decision.comment?.trim() || "no reason given"}`;
-              void get().advanceProject(pending.projectId, project.station, prompt);
+              // "when a decision commits, the line visibly advances and the next agent
+              // takes the station" (docs/console-redesign.md) - the state machine does
+              // this on its own in production; this local-dev bypass has to do it too,
+              // rather than leaving the project sitting at the new station until someone
+              // happens to type into its composer. A rejection lands back on the agent
+              // whose artifact was under review (see prior_station on the backend), so
+              // it needs the same treatment - fed the reviewer's comment as its next
+              // prompt instead of a generic "may begin.", so the send-back reason
+              // actually reaches the LLM rather than only living in the audit trail.
+              if (AGENT_STATIONS.includes(project.station)) {
+                const label = AGENT_META[project.station]?.name ?? project.station;
+                const prompt = pending.decision.approved
+                  ? `${label} may begin.`
+                  : `Sent back: ${pending.decision.comment?.trim() || "no reason given"}`;
+                void get().advanceProject(pending.projectId, project.station, prompt);
+              }
+            } catch (err) {
+              // the gate has to come back if the decision never landed, or the project
+              // is stuck behind a banner for a decision the backend never received
+              set({ pendingDecision: null });
+              throw err;
             }
           });
         }, UNDO_MS);
@@ -402,8 +511,10 @@ export const useProjectsStore = create<ProjectsState>()(
               role: "agent",
               agent,
               content: artifact.content,
-              // carried over from the streaming turn so the tool calls that produced
-              // this artifact stay visible instead of vanishing once it's done
+              // carried over from the streaming turn so the tool calls and the reasoning
+              // that produced this artifact stay readable instead of vanishing once it's
+              // done - the narrative often holds caveats the structured output can't
+              text: streamingTurn?.text,
               toolCalls: streamingTurn?.toolCalls,
               createdAt: artifact.created_at,
             };

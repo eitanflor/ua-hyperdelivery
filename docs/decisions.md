@@ -17,7 +17,456 @@ Template for new entries:
 
 ---
 
-## 2026-09-04 - Semantic search over historical FSDs: Bedrock Titan embeddings + a precomputed S3 index
+## 2026-09-05 - Prompt caching covers the system prompt and tools, not the artifacts
+
+- **Status**: Accepted.
+- **Context**: `agent_runtime.factory` clears `agent.messages` on every invocation, on
+  purpose - a shared `Agent` instance would otherwise carry one project's history into the
+  next. The cost is that the system prompt and the entire tool schema go over the wire
+  every single turn, and a station is invoked repeatedly inside one project: redrafting
+  after the gate reports gaps, again when its questions are answered, again when a build
+  settles. Distill's prompt is 1,378 words and Blueprint's 1,404 (~1,900 tokens), before
+  the tool schemas - and those are large by design, because a `@tool` docstring is the
+  prompt the model reads.
+- **Decision**: `CacheConfig(strategy="auto")` plus `cache_tools="default"` on
+  `BedrockModel`. "auto" maps to Anthropic caching for Claude/Anthropic model ids and to
+  no caching for anything else (verified in the installed SDK), so it is a request to
+  cache where caching exists rather than an assertion that it does. TTL is left at
+  Bedrock's default.
+- **Alternatives considered**: *`cache_prompt="default"`* - the obvious parameter, and
+  wrong: the SDK deprecates it and warns, because it only covers the system block.
+  *A longer `ttl="1h"`* - would catch a human who takes ten minutes to answer a question,
+  but a longer window costs more per cache write, and enough runs here are one-shot that
+  paying the premium on every cold turn is the worse trade. Revisit with real hit-rate
+  numbers. *A cache point after the predecessor artifacts in `_build_prompt`* - the
+  biggest prize, since Review re-sends the whole spec and blueprint as JSON on every turn
+  and both are frozen after G2. Deferred: a mid-message cache point means the prompt can
+  no longer be a plain string, so the `{"prompt": str}` contract between the console API
+  and the agent runtime would have to carry content blocks. Not worth it before measuring.
+  *A per-agent opt-out in the YAML* - rejected as speculative; nothing needs to turn it off.
+- **Consequences**: A cache write costs more than an uncached call, so a project that
+  runs each station exactly once and never redrafts pays slightly more. Showroom's prompt
+  is 355 words (~470 tokens), below the minimum cacheable prefix on its own - expected to
+  simply not cache rather than to error, but that is not yet verified against a live call.
+  Two tests assert `_cache_strategy`, an SDK private, because whether "auto" actually
+  resolves for our model ids is the only fact that matters and is otherwise invisible.
+
+---
+
+- **Status**: Accepted.
+- **Context**: Handing a delivery group to a coding agent produces a pull request that
+  takes minutes and then sits there. Nothing told the human it existed until the station
+  finished, and nothing told them when it went green - so "autopilot" meant "go and watch
+  GitHub yourself".
+- **Decision**: Review records what it opened (`ReviewReport.builds` plus `repository`),
+  the console API gets a read-only `GET /projects/{id}/builds` backed by a small GitHub
+  REST client, and the thread polls it every 15 seconds while any build is still moving.
+  When they all settle, the console sends one ordinary agent turn so the station reports
+  the outcome in its own voice. An unfinished check outranks a failed one, so a
+  half-finished run is never announced as broken, and an unreadable pull request is
+  reported as unknown rather than failed.
+- **Alternatives considered**: *Poll by re-invoking the agent* - it already has
+  `pull_request_read: get_check_runs`, so no new code at all. Rejected: a model call every
+  fifteen seconds to answer a yes/no question is absurdly expensive and fills the thread
+  with noise. *A GitHub webhook into a Lambda* - the production answer, and the only one
+  that survives the tab closing. Rejected for now under "do not build speculative
+  infrastructure": there is no deployed state machine driving this yet, and the browser is
+  where the human already is. *A server-side background poller in the console API* -
+  rejected for the same reason plus a worse one: it would poll for projects nobody is
+  looking at. *Show status but never speak* - rejected because the ask was explicitly that
+  the assistant say what to do next; a status chip is something you have to remember to
+  look at.
+- **Consequences**: Watching stops when the tab closes, and resumes on the first poll when
+  it reopens - the follow-up turn is fired at most once per project per session, guarded by
+  a module-level set, so a remount cannot re-send it. The GitHub token is now read by the
+  console API, not just by the agents, which widens what a compromised console process can
+  read; it stays read-only and scoped to pull requests. Without a token the endpoint still
+  returns the links, unwatched, because a link a human can click is worth more than a 404.
+  Revisit when the Step Functions path is live: a webhook then becomes both cheaper and
+  correct, and this browser poll becomes the local-dev fallback.
+
+---
+
+- **Status**: Accepted.
+- **Context**: Blueprint's units of work went to GitHub as one issue each, and Review
+  assigned Copilot to each issue separately. A coding agent session branches from one ref,
+  and nothing was passing one, so every session branched from the default branch. Run
+  against a real four-unit blueprint (widen a persisted schema, then write it, then read
+  it back), this produced four pull requests that each redefined the same Pydantic model
+  with a different field vocabulary - `attachment_id`/`filename` in one, `id`/`name` in
+  another. `git merge-tree` confirms every pair conflicts. Worse than the conflicts:
+  whichever merged first would make the others' persisted data unreadable. The dependency
+  order was in the artifact all along - `UnitOfWork.depends_on` exists and the G2 gate
+  validates it for cycles - and was simply dropped at the GitHub boundary.
+- **Decision**: Add `core.delivery.plan_delivery`, which groups units into the pull
+  requests that can actually be built independently: units that write a common file are
+  merged, groups that end up mutually dependent after that merge are merged again, and the
+  result comes back in build order. One group is one branch, one pull request, and the
+  issues it closes. Groups that merely depend on each other stay separate and chain
+  through `assign_copilot_to_issue`/`create_pull_request_with_copilot`'s `base_ref`
+  parameter, which starts a session from a predecessor's branch. Exposed as a shared
+  `plan_delivery` tool on both Blueprint (so it can see how many pull requests its
+  decomposition implies while there is still time to change it) and Review (which does the
+  hand-off).
+- **Alternatives considered**: *Wave model* - file everything, assign only the units with
+  no unmet dependency, and assign the next wave when the previous one merges. Rejected:
+  it needs a merge watcher (webhook or poller, neither of which exists) and, to be
+  autopilot, it needs the agent to merge - which AGENTS.md forbids outright, and that
+  prohibition is the product. *Reject the blueprint* when two units collide, forcing the
+  model to redecompose. Rejected: the decomposition was not wrong. Four units is the right
+  way to *review* that change; it is the wrong way to ship it, and the gate can compute the
+  difference instead of arguing with the model about it. *One issue with a checklist* -
+  simplest, and it does avoid the collision, but it throws away the per-unit traceability
+  to requirements and acceptance criteria that makes G2 reviewable. *Stacked pull requests
+  for everything* via `base_ref` - keeps per-unit review, but a unit that cannot be merged
+  and be useful on its own (widen a schema nothing writes yet) is not a shipping unit no
+  matter how it is branched, and stacking adds a timing dependency on the predecessor's
+  branch existing.
+- **Consequences**: The common case collapses to one pull request, which is honest: most
+  blueprints are one change seen from four angles. Grouping is only as good as each unit's
+  `files` list, so a unit that names a file it merely reads will over-group - the Blueprint
+  prompt says so, and the group's `files` are returned precisely so a human can audit the
+  grouping. A group failing halfway leaves one pull request that claims to close several
+  issues; the issues stay open until a human merges, and Review checks each unit's
+  acceptance criteria against the single diff before G3. The merge gate is untouched -
+  autopilot stops at "the pull request is open and CI is green", which is where a person
+  was always meant to take over. Not yet done: nothing re-runs Review when a build pull
+  request goes green, so a human still asks it to look.
+
+---
+
+- **Status**: Accepted.
+- **Context**: `EvidenceLink` was `requirement_id` plus a free-text citation, so every
+  citation looked equally strong. It stopped being true once two things landed: Distill
+  now reads historical FSDs from the reference bucket for grounding, and stakeholders now
+  answer questions in the console instead of submitting a document. A requirement traced
+  to "ADVA-2011's FSD" and one traced to "page 3 of the submitted spec" are not the same
+  claim, and the reviewer signing G1 had no way to tell them apart.
+- **Decision**: Add `EvidenceLink.source`, one of `source_document` (the document under
+  distillation), `stakeholder_answer` (someone answered in this conversation) or
+  `reference_material` (a past FSD or live schema consulted for context). The G1 gate
+  flags any requirement whose *only* evidence is reference material - that requirement was
+  inferred from another project rather than asked for here. A stakeholder answer is a real
+  citation and scores normally; it is weaker than a document, not absent.
+- **Alternatives considered**: *More granular sources* (separating Confluence from Jira
+  from S3, or live data from past FSDs) - rejected: they are all "the document we were
+  given" or "context we looked at", the distinction that matters is provenance rather than
+  transport, and four near-identical categories invites the model to pick noise. *Making
+  the field required*, matching the rest of `StructuredSpec` - rejected because specs
+  written before it exists would fail `model_validate`, be treated as an absent
+  predecessor, and hold their blueprints at G2 for no reason; it defaults to
+  `source_document`, which is what pre-existing evidence meant by definition.
+- **Consequences**: The gate cannot tell an explicit `source_document` from an omitted
+  one, so the default is a small hole the prompt has to hold shut - acceptable against
+  breaking every stored spec, and closable later by making the field required once no
+  in-flight project predates it. The check is deliberately narrow: only *sole* reliance on
+  reference material is flagged, since citing a past FSD alongside a real source is
+  exactly the grounding Distill was given that bucket for.
+
+---
+
+## 2026-09-04 - An intake turn is persisted but is not a document
+
+- **Status**: Accepted.
+- **Context**: With question cards in, Distill's first turn on a one-line request returns
+  an empty `StructuredSpec` scoring 0.0 with questions attached. That artifact was being
+  saved and then presented like any other: a card in the thread reading "0 requirements",
+  a tab in the inspector, a 0% completeness bar, and a chat reply claiming "I've got a
+  first draft going" followed by validator gaps no stakeholder can answer. The questions
+  themselves sat in the artifact panel, which has a close button - so a project could be
+  held at its station with the reason invisible.
+- **Decision**: Keep persisting the intake turn, but stop presenting it as a document.
+  A `hasContent` predicate over the artifact's own lists gates the thread card and the
+  inspector entry; the reply text has an intake branch; and questions move out of the
+  inspector to an interactive prompt above the composer, where picked options compose into
+  a single message paired with the questions they answer. The predicate is deliberately
+  "has content" rather than "has questions" - a spec at 0.6 with two open questions is a
+  real draft and still shows normally.
+- **Alternatives considered**: *Not persisting the intake turn at all* - the tidier store,
+  and the first instinct. Rejected because the artifact is the record of the turn: a page
+  refresh would lose a set of half-answered questions, and `_build_prompt`'s
+  previous-draft section would have nothing to feed back, so the next turn would redraft
+  from scratch. Losing work to a ⌘R is a worse failure than a zero-score row in DynamoDB.
+  *Having the agent skip structured output on an intake turn* - not possible:
+  `create_app` binds one output model per container and `agent_runtime.factory` errors if
+  `structured_output` is `None`, so every turn must return the station's shape. The choice
+  was only ever about persistence and presentation. *Leaving questions in the inspector* -
+  rejected on the close-button bug alone, and because a question is an action rather than
+  a document.
+- **Consequences**: The store keeps one zero-score entry per intake turn, including in the
+  version history that exists as an audit trail; intake turns are not audit-worthy, so if
+  that history gets noisy the fix is to skip *versioning* an artifact with no content
+  rather than to skip saving it. Answers are sent as plain text paired with their
+  questions, which the agent re-reads on the next turn - nothing records which requirement
+  came from an answered question rather than a source document, and at G1 sign-off that
+  provenance still matters.
+
+---
+
+## 2026-09-04 - The architecture diagram is hand-rolled SVG, not Mermaid
+
+- **Status**: Accepted.
+- **Context**: Blueprint's design became structured data (components, data entities,
+  integration points, unit-to-component edges), which makes it drawable. A reviewer at G2
+  can judge a picture far faster than a list. The obvious library for this is Mermaid.
+- **Decision**: Derive the component graph in the console as a pure function over the
+  stored artifact (`ui/console/src/lib/architectureGraph.ts`) and render it as plain SVG.
+  Layout is layered by longest-path depth, which is enough for the three-to-eight
+  components a real blueprint has; past twelve the view falls back to the list rather than
+  drawing something unreadable.
+- **Alternatives considered**: *Mermaid* - rejected on three counts. It renders from a
+  string DSL, so the structured artifact would be serialized into text purely to be parsed
+  back, losing type safety on the way; those strings contain model-generated component
+  names, and feeding LLM output through a DSL parser is a materially larger attack surface
+  than mapping typed fields onto elements React escapes for us (Mermaid ships DOMPurify for
+  exactly this reason); and it is ~600kB for one view, plus a dependency entry, plus
+  theming that never quite matches the console's own tokens. Its real advantage is
+  auto-layout, which a graph this small does not need. *Generating the diagram server-side*
+  - rejected for now as premature: the artifact already carries everything, and no consumer
+  outside the console wants it. If Showroom later needs the same picture for a demo deck,
+  the function moves to `core/` unchanged.
+- **Consequences**: No new frontend dependency. The diagram is deterministic - the same
+  artifact lays out identically every time, which matters when it is a view of a gated
+  document rather than a sketch. Edge routing is simple bezier curves with no collision
+  avoidance, so a dense graph can cross lines; the twelve-node ceiling is what keeps that
+  acceptable, and a real layout algorithm is the answer if blueprints get bigger.
+
+---
+
+## 2026-09-04 - Stations ask with question cards, and plan before they act
+
+- **Status**: Accepted.
+- **Context**: The elicitation Distill was specified to do - "it plans and asks before it
+  drafts, so gaps get closed by structured elicitation rather than by agent guesswork" -
+  had never been built. What existed was the gaps loop, which emits validator prose
+  (`requirement R1 has no business value (use case/ROI)`) written for a machine. Nobody
+  answers that. And nobody types a filled-in FSD into a chat box either: a real first
+  message is one sentence, from which the agent was expected to invent six requirements.
+  Separately, a long agent turn had nothing anchoring it to what it set out to do, which
+  is how a run ends up looking busy while drifting.
+- **Decision**: Two additions, both shared by all four stations rather than special-cased
+  for Distill. `CompletenessScore` gains `questions: list[OpenQuestion]`, so an agent that
+  cannot proceed asks in a form a stakeholder can answer, and the console renders an
+  intake turn (`score == 0` with questions) as cards rather than a 0% bar. `tools/planning.py`
+  adds `track_plan`, called first by every agent with the whole plan each time. The gate
+  computes `score` and `gaps` but only *bounds* `questions` - dropping duplicates and
+  malformed entries, capping at four, and flagging a turn that drafts nothing and asks
+  nothing - because what is worth asking a human is a judgement no validator can make.
+- **Alternatives considered**: *A separate Intake station or a second output model* -
+  rejected: `create_app` binds one output model per container, so it would mean a new
+  station, entrypoint, port, `Station` value, GSI behaviour, state machine branch and gate
+  rendering, and it would solve the problem only for Distill when Blueprint (scaffold
+  confirmation), Review (which repository?) and Showroom (live or recorded?) need the same
+  thing. Putting questions on the shared `CompletenessScore` costs one field and works
+  everywhere. *An `ask_user` tool* - rejected: a tool returns to the model within the same
+  turn and cannot block for a human, so the ask has to be part of the artifact. *Letting
+  the gate generate questions from gaps* - rejected: gaps are phrased for the machine, and
+  mechanically rewording them produces exactly the unanswerable questions this is meant to
+  avoid. *A stateful plan store keyed by session* - rejected: `agent.messages` is reset per
+  invocation on a shared agent instance, so a module-level plan would leak across projects
+  the same way conversation history would.
+- **Consequences**: The intake turn holds at its station through the existing
+  `_has_open_gaps` path, and answers return through `_build_prompt`'s previous-draft
+  section, so no new plumbing was needed. Blueprint's post-approval "shall I scaffold this
+  repository?" now has a mechanism waiting for it. The cap at four is a judgement call, not
+  a measurement - it exists because a wall of questions is how clarification UIs die, and
+  should be revisited with real usage. Nothing yet records *which* requirements came from
+  an answered question rather than from a source document; at G1 sign-off that provenance
+  difference matters, and `EvidenceLink` is the natural place for it.
+
+---
+
+## 2026-09-04 - Blueprint designs in structure, and reads the repo before it drafts
+
+- **Status**: Accepted.
+- **Context**: A live run produced a blueprint that called its two validators, passed
+  both, and moved on - no repository scan, no architecture worth the name. Three causes.
+  (1) `blueprint.yaml` ended with "Only touch GitHub when explicitly asked to", and every
+  repo instruction was conditional on the user asking, so with a prompt of "Coach may
+  begin" nothing fired - even though `GITHUB_PAT` was set and the tools were attached.
+  (2) Distill's prompt says "even when not explicitly asked to, always look for related
+  historical FSDs" and Review's says read-only lookups are "not a side effect requiring
+  explicit permission"; Blueprint had the mirror-image instruction and nobody reconciled
+  them. (3) The design was one free-text `architecture_summary`, and the G2 gate scored
+  traceability only - so a blueprint with perfect requirement coverage and a one-sentence
+  summary scored 1.0. The gate created pressure toward complete linkage and none toward
+  design depth.
+- **Decision**: Split GitHub posture by direction rather than by agent. Reads
+  (`search_repositories`, `get_repository_tree`, `search_code`, `get_file_contents`)
+  become proactive on every Blueprint run; writes (`create_repository`, `push_files`,
+  `issue_write`) still need an explicit request. Add the design to the artifact as
+  structure - `Component`, `DataEntity` (owned by a component, with typed `EntityField`s),
+  `IntegrationPoint`, and `UnitOfWork.component_ids` - and score it: components are
+  coverable units, a blueprint with units but no components is a gap, a unit that builds
+  no component is a gap, and every requirement the spec classified `integration` must have
+  an integration point covering it.
+- **Alternatives considered**: *Give Blueprint every GitHub tool including writes* -
+  rejected because Blueprint runs before G2, so scaffolding there creates a real,
+  irreversible resource before the human authorized the plan that justifies it; the
+  prohibition was protecting the gate, not being timid. *Move repository creation to
+  Review* - rejected outright: it makes Review an author, and a Review that scaffolds is
+  reviewing its own scaffold, which destroys the independence its coverage view depends
+  on. Scaffolding belongs to a post-G2 build step, derived deterministically from the
+  approved blueprint rather than improvised, so the created repo matches the signed plan
+  by construction. *Enforce a minimum length on `architecture_summary`* - rejected as a
+  bad proxy; structure is the honest forcing function, since a model can pad prose but
+  cannot fake a component graph that has to reconcile with units of work.
+- **Consequences**: The intent classification added at G1 finally has a downstream
+  consumer. A greenfield project still gets nothing from the repo scan on its first pass -
+  the repository does not exist yet - so design quality there rests entirely on the new
+  fields; the scan pays off on brownfield work and on later passes. Blueprints written
+  before this change have no components and will hold at G2 for a turn. Still open: the
+  scaffold emitter that would turn an approved blueprint into a real repository, and any
+  check that a delivered change matches the declared components, touchpoints or contracts.
+
+---
+
+## 2026-09-04 - The G2 artifact is a portable build contract, not a plan to be read alongside a chat
+
+- **Status**: Accepted.
+- **Context**: The intent is to hand Blueprint's output to *any* coding agent or plugin,
+  not just GitHub Copilot via the MCP hand-off. A unit of work was `id`, `title`,
+  `description`, `depends_on` plus the spec traceability edges - enough for a human
+  reading it next to the spec, not enough for an agent receiving it alone with no memory
+  of the conversation. Nothing told it which files to touch or what interface to expose,
+  so the actionable detail lived in prose the gate could not check.
+- **Decision**: Add `UnitOfWork.files` (`FileTouchpoint`: `path`, `change` of
+  add/modify/delete, `purpose`), `UnitOfWork.contract_ids`, and
+  `Blueprint.api_contracts` (`ApiContract`: `id`, `method`, `path`, `summary`,
+  `requirement_ids`, `request_schema`, `response_schema`). `core/validation/blueprint.py`
+  scores contracts as coverable units alongside requirements and acceptance criteria, and
+  checks what is now checkable: paths start with `/`, no two contracts share a
+  method+path, contract requirement ids resolve, units implement only declared contracts,
+  and every unit names at least one file with no duplicates.
+- **Alternatives considered**: *Embed a raw OpenAPI document* on the Blueprint - the most
+  faithful to "OpenAPI contracts", but validating it properly needs a parser dependency
+  (`openapi-spec-validator` or similar), and an unvalidated dict is just free text in a
+  costume. An endpoint list is machine-checkable today with Pydantic alone and OpenAPI can
+  be generated from it when something actually needs to consume one. *Predict the full
+  post-build directory tree* - rejected: it goes stale immediately on brownfield work,
+  where per-unit file touchpoints stay meaningful and are diffable against the eventual
+  change. *Build the Build station and wire Copilot to it first* - rejected for now
+  because it couples the line to one vendor's coding agent, which is the opposite of the
+  goal; making the artifact portable is what lets any agent consume it, and the station
+  can follow once there is a reason to automate the hand-off.
+- **Consequences**: `GET /projects/{id}/artifacts/blueprint` now returns everything an
+  external agent needs per unit, so the hand-off is a JSON read rather than an
+  integration. Blueprints written before this change have no `files` and will be held at
+  G2 for one more turn until units name their touchpoints - intended, since the whole
+  point is that a unit without them is not actionable. Projects with no HTTP surface are
+  unaffected: `api_contracts` stays empty and the denominator does not move. Still open:
+  nothing yet diffs the delivered change against the declared touchpoints or contracts,
+  which is the natural job of a Build or Review step once one exists.
+
+---
+
+## 2026-09-04 - Completeness is computed from the persisted artifact, not self-reported by the agent
+
+- **Status**: Accepted.
+- **Context**: Blueprint's chat looked convincing - it called `validate_units_of_work`
+  and `score_blueprint_completeness`, got `{"valid": true}` and `{"score": 1.0}`, and
+  declared itself ready for the G2 gate - but the result was structurally guaranteed.
+  Every `@tool` validator takes id lists as arguments, authored by the same model whose
+  draft they are meant to check, and nothing binds those arguments to the
+  `structured_output` that `agent_runtime/factory.py` actually persists. A cooperative
+  model can pass a self-consistent set of ids, get a clean bill of health, and emit
+  something else. Two scorers were worse than advisory: `score_review_completeness` and
+  `score_showroom_completeness` returned `1.0` for any non-empty input. Compounding it,
+  `UnitOfWork` had no field recording which requirement a unit addressed, so G2 coverage
+  was unverifiable in principle rather than merely unverified.
+- **Decision**: Split validation into two phases and invert who is trusted. The existing
+  tools stay as an in-loop self-correction affordance for the model mid-draft. A new
+  `core/validation/` package holds pure functions that take the real domain models -
+  `evaluate_spec`, `evaluate_blueprint`, `evaluate_review`, `evaluate_showroom`, behind
+  an `evaluate_artifact(agent, content, predecessors)` dispatcher -
+  and `api/routers/projects.py` replaces the artifact's `completeness` with that verdict
+  before `_has_open_gaps` decides whether the station advances. `UnitOfWork` gains
+  `requirement_ids` and `acceptance_criterion_ids` so coverage is read off the stored
+  artifact. Dependency-cycle detection moved to `core/validation/graph.py` and the
+  Blueprint tool now delegates to it, so the in-loop check and the gate cannot drift.
+  `AgentConfig.temperature` exists but is unset by default: `global.anthropic.claude-sonnet-5`
+  rejects the parameter outright (`ValidationException: \`temperature\` is deprecated for
+  this model`), so `build_agent` omits the argument entirely unless a config sets it.
+  Reproducibility for these agents therefore rests on the gate - an artifact is redrafted
+  until its computed gaps close - rather than on sampling controls the provider no longer
+  exposes.
+- **Alternatives considered**: *Rewrite the tools to take whole artifacts* - would make
+  the tool the single source of truth, but destroys the affordance of checking a
+  half-finished draft mid-turn, and still leaves the model free to emit something other
+  than what it validated. *Reject the invocation outright when validation fails* - too
+  brittle for an elicitation loop whose whole design is "hold at the station and ask the
+  human for what's missing"; a computed `gaps` list already produces that behavior.
+  *Make gaps out of things the agent cannot fix* (Showroom gapping on a Review blocker,
+  Review gapping on missing Copilot assignments when GitHub is unavailable) - rejected,
+  because a gap the agent cannot close holds the project at that station forever. Both
+  gates check only what the responsible agent can act on.
+- **Consequences**: A station now advances only when the artifact itself earns it, so
+  the G2/G3/G4 gates mean what they say. Predecessor artifacts written before a contract
+  changed no longer parse and are treated as absent, which surfaces as an explicit "no
+  approved spec was available" gap rather than a crash or a silent pass - existing
+  in-flight projects will need one more turn at the affected station. Two things
+  Blueprint's prompt asks for remain prompt-only and unverified: intent-aware sequencing
+  and keeping correlated rules' units connected. Neither is expressible today because
+  `GateCriterion` has no link back to a requirement, so a `RuleCorrelation` cannot be
+  traced to the units implementing it. Adding that edge is the prerequisite if these
+  should become real checks. Review still judges a deliverable it mostly cannot see -
+  the GitHub read-only path in `review.yaml` is the only real grounding it has - so G3
+  remains closer to a plan review than a code review until that is closed.
+
+---
+
+## 2026-09-04 - StructuredSpec gains business value, per-requirement acceptance criteria, rule correlations, and intent classification
+
+- **Status**: Accepted.
+- **Context**: Asked whether Distill's `StructuredSpec` already captured a
+  requirement's business justification (use case/ROI), testable acceptance criteria,
+  correlation between machine-readable rules, and an intent classification - the
+  kind of context Blueprint needs to plan technical units of work well, not just
+  requirement prose. It did not: `Requirement` was only `id` + `description`,
+  `GateCriterion` scores the spec's own G1 quality (not per-requirement done-ness),
+  and `MachineReadableRule` had no id to correlate against.
+- **Decision**: Add four new artifacts to `core/domain/spec.py` - `BusinessValue`
+  (`requirement_id`, `use_case`, `roi`), `AcceptanceCriterion` (`id`,
+  `requirement_id`, `description`), `RequirementIntent` (`requirement_id`, `intent`:
+  one of functional/non_functional/integration/reporting/compliance/data_migration),
+  and `RuleCorrelation` (`id`, `rule_ids`, `description`) - as new required top-level
+  lists on `StructuredSpec`, linked to requirements/rules by id rather than nested
+  onto `Requirement` directly, matching the existing `gate_criteria`/`evidence`
+  pattern instead of introducing a second shape. `MachineReadableRule` gained its own
+  `id` so a `RuleCorrelation` has something to reference. Distill's prompt now
+  extracts all four per requirement (EDM FSD's "User Story" section for `use_case`,
+  "Value Add"/"Success Criteria" for `roi` and acceptance criteria) and validates/
+  scores them via `tools/distill.py`. To keep each `@tool` function's argument count
+  at or under Pylint's default of 5 (`PLR0913`/`PLR0917`), the four
+  per-requirement id lists are passed as one `requirement_coverage: dict[str, list[str]]`
+  argument (keyed by field name) rather than four separate flat list parameters, and
+  rule-correlation validation is its own small tool, `validate_rule_correlations`.
+  Blueprint's prompt now reads intent to size/order units of work, folds acceptance
+  criteria into a unit's description as its definition of done, uses business value
+  to justify sequencing and write an intent-aware architecture summary, and keeps
+  correlated rules from being split across independently-landable units.
+- **Alternatives considered**:
+  - **Attach the new fields directly onto `Requirement`** (e.g.
+    `requirement.acceptance_criteria: list[str]`): rejected - breaks the existing
+    `gate_criteria`/`rules`/`evidence` pattern of separate linked lists, and the
+    `RequirementIntent`/`RuleCorrelation` split still wouldn't fit cleanly onto
+    `Requirement` (intent is 1:1 but rule correlation is many-rules-to-many).
+  - **A single `dict[str, Any]` payload per tool call** instead of the typed
+    `requirement_coverage` dict: rejected - loses concrete typing under pyright
+    strict and gives the LLM a vaguer schema to fill in than named list arguments.
+  - **`# noqa: PLR0913` on the wide tool functions**: rejected per AGENTS.md's stance
+    on weakening lint rules - restructuring the arguments was possible without an
+    exception, so that was preferred over suppressing the check.
+- **Consequences**: `StructuredSpec`, `validate_structured_spec`, and
+  `score_completeness` all changed shape - any external caller constructing a
+  `StructuredSpec` by hand (there are none outside `tests/unit/test_domain_contracts.py`
+  today) needs the four new required lists. `MachineReadableRule.id` is a new
+  required field Distill must assign, distinct from `criterion_id`. Revisit if
+  `RequirementIntent` needs more than the six seeded values, or if a fifth
+  per-requirement coverage category shows up - `requirement_coverage`'s key set is
+  the extension point, not a new positional parameter.
+
+---
 
 - **Status**: Accepted.
 - **Context**: Distill's `s3_list_reference_documents` only lets the LLM browse
@@ -142,6 +591,35 @@ Template for new entries:
   gate. Renamed the test that had encoded the old (buggy) behavior:
   `test_record_decision_rejected_stays_at_same_station` ->
   `test_record_decision_rejected_returns_to_the_reviewing_agent`.
+
+---
+
+## 2026-09-04 - Review's Copilot hand-off is automatic, not ask-gated
+
+- **Status**: Accepted. Amends "2026-09-03 - Consolidated the Handoff agent back into
+  Review" below - that entry's agent-consolidation decision still stands; only the
+  "only when explicitly asked" trigger condition changes here.
+- **Context**: explicit direction to make Review invoke the Copilot hand-off itself
+  rather than waiting for the user to ask for it in chat: "i want it to be in review
+  agent and the bot should invoke it."
+- **Decision**: `config/agents/review.yaml`'s system prompt now sends every
+  blocker/major finding to `assign_copilot_to_issue` automatically whenever GitHub
+  tools and a repository reference are available, as part of producing the
+  `ReviewReport` - no explicit ask required. `assignments` stays empty only when there
+  are no blocker/major findings or no GitHub/repo context. This does not bypass
+  AGENTS.md's "do not remove or bypass a human approval gate": the G3
+  `Station.REVIEW_APPROVAL` gate is unchanged and still reviews every assignment
+  (including any `assigned: false` failure) before the project can advance - the human
+  sign-off happens after hand-off, not instead of it.
+- **Alternatives considered**: Keeping the ask-gated trigger (rejected per the explicit
+  instruction above - it required the user to remember to ask Review for something
+  the pipeline should do by default once a finding exists).
+- **Consequences**: `tools/review.py::validate_copilot_assignments` and
+  `core/domain/review.py::ReviewReport.assignments`'s comments updated to describe the
+  new automatic trigger; no schema or tool-signature change. CHANGELOG.md's Review
+  Copilot hand-off entry amended in place to drop the now-superseded "only when
+  explicitly asked" - the append-only decisions log above (2026-09-03) is left as
+  written, since it accurately describes what was true at the time.
 
 ---
 

@@ -33,9 +33,15 @@ def _system_instructions(database: str | None, schema: str | None) -> str:
 def snowflake_query(question: str) -> str:
     """Ask Snowflake's Cortex Coding Agent to find and return Snowflake data.
 
-    Use this when the prompt references Snowflake data instead of raw FSD text - e.g.
-    "the MATERIAL_IMAGES table" or "materials with a spandex percentage over 5". Mine
-    the returned text for requirements the same way you would a raw document's prose.
+    Call this whenever the input *names* a Snowflake object - a table, view or schema -
+    not only when Snowflake is the input instead of a document. An FSD saying "pull the
+    tier definitions from the PROMO_TIER table" is a reason to go look: confirming the
+    object exists and learning its real columns grounds the spec and the data model that
+    follows it, and finding that it does not exist is a gap worth raising before anyone
+    plans against it.
+
+    Ask for what you need in plain language ("does PROMO_TIER exist, and what are its
+    columns?"), not for whole tables of rows. This is read-only.
     """
     settings = get_settings()
     pat = settings.snowflake_pat.get_secret_value() if settings.snowflake_pat else ""

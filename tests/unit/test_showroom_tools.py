@@ -18,13 +18,22 @@ def test_validate_talk_track_coverage_flags_missing_requirement() -> None:
 
 
 def test_score_showroom_completeness_flags_no_upstream_input() -> None:
-    result = score_showroom_completeness(requirement_ids=[])
+    result = score_showroom_completeness(requirement_ids=[], talk_track_requirement_ids=[])
 
     assert result["score"] == 0.0
     assert any("no spec that cleared Review" in gap for gap in result["gaps"])
 
 
-def test_score_showroom_completeness_scores_present_input_as_one() -> None:
-    result = score_showroom_completeness(requirement_ids=["r1"])
+def test_score_showroom_completeness_scores_partial_narration() -> None:
+    result = score_showroom_completeness(
+        requirement_ids=["r1", "r2"], talk_track_requirement_ids=["r1"]
+    )
+
+    assert result["score"] == 0.5
+    assert "requirement r2 has no talk track narration" in result["gaps"]
+
+
+def test_score_showroom_completeness_scores_full_narration_as_one() -> None:
+    result = score_showroom_completeness(requirement_ids=["r1"], talk_track_requirement_ids=["r1"])
 
     assert result == {"score": 1.0, "gaps": []}

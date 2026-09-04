@@ -64,3 +64,30 @@ class AdvanceRequest(BaseModel):
     """
 
     prompt: str | None = None
+
+
+class BuildResponse(BaseModel):
+    """One build pull request as the console sees it.
+
+    `state` and `checks` are `null` when GitHub could not be read, which is not the same
+    as a failure - the console says "unknown" rather than inventing a verdict.
+    """
+
+    group_id: str
+    number: int
+    url: str
+    title: str | None = None
+    unit_ids: list[str] = []
+    issue_numbers: list[int] = []
+    state: str | None = None
+    checks: str | None = None
+    draft: bool | None = None
+
+
+class BuildsResponse(BaseModel):
+    """Every build pull request Review handed to a coding agent, with live status."""
+
+    repository: str | None = None
+    builds: list[BuildResponse] = []
+    #: False when no token is configured - the console links out instead of polling.
+    watching: bool = False

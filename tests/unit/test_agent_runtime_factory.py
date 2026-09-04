@@ -76,6 +76,7 @@ class _StubAgent:
         self._error = error
         self.calls: list[str] = []
         self.hooks = _FakeHookRegistry()
+        self.messages: list[Any] = []
 
     async def stream_async(
         self, prompt: str, structured_output_model: type[BaseModel]
@@ -131,6 +132,18 @@ async def test_returns_the_validated_structured_output(invoke: Any, stub_agent: 
 
     assert events == [{"result": {"value": "ok"}}]
     assert stub_agent.calls == ["do the thing"]
+
+
+async def test_resets_the_shared_agent_s_message_history_before_each_invocation(
+    invoke: Any, stub_agent: _StubAgent
+) -> None:
+    # `agent` is one shared instance across every invocation this container ever
+    # handles - a prior call's (or a different project's) history must not leak in.
+    stub_agent.messages = ["leftover from an unrelated project"]
+
+    await _drain(invoke({"prompt": "do the thing"}, None))
+
+    assert stub_agent.messages == []
 
 
 @pytest.mark.parametrize("payload", [{}, {"prompt": ""}, {"prompt": "   "}, {"prompt": 7}])
