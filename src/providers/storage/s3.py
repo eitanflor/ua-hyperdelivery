@@ -5,6 +5,7 @@ an object key into text. The per-agent least-privilege wrapper lives in tools/do
 """
 
 import io
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import boto3
@@ -12,6 +13,12 @@ from pypdf import PdfReader
 
 if TYPE_CHECKING:  # boto3-stubs is a dev-only dependency
     from mypy_boto3_s3.client import S3Client
+
+
+@lru_cache
+def _default_client(region: str) -> "S3Client":
+    """One client per region, reused across calls instead of rebuilt on every request."""
+    return boto3.client("s3", region_name=region)
 
 
 def parse_document(key: str, body: bytes) -> str:
@@ -38,7 +45,7 @@ def get_document_text(
     .txt/.md are decoded as-is and .pdf is extracted via pypdf. Pass `s3_client` to
     inject a fake/stub client in tests.
     """
-    client = s3_client or boto3.client("s3", region_name=region)
+    client = s3_client or _default_client(region)
     body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
     return parse_document(key, body)
 
@@ -51,7 +58,7 @@ def list_document_keys(
     Paginated so callers don't have to think about `ContinuationToken`. Pass
     `s3_client` to inject a fake/stub client in tests.
     """
-    client = s3_client or boto3.client("s3", region_name=region)
+    client = s3_client or _default_client(region)
     keys: list[str] = []
     for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket, Prefix=prefix):
         keys.extend(key for obj in page.get("Contents", []) if (key := obj.get("Key")))

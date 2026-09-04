@@ -13,6 +13,7 @@
     ".github/skills/layers-*/**",
     ".github/skills/licenses/**",
     ".github/skills/minimalist-ui/**",
+    ".github/skills/ponytail/**",
     ".github/skills/redesign-existing-projects/**",
     "*.lock",
     "cdk.out/**",
@@ -75,6 +76,7 @@
     "conftest",
     "creds",
     "datetimez",
+    "dietrichgebert",
     "docstrings",
     "edma",
     "entra",
@@ -123,6 +125,7 @@
     "pids",
     "pitr",
     "pkce",
+    "ponytail",
     "precheck",
     "preconfigured",
     "pycache",
@@ -169,7 +172,8 @@
     "wcag",
     "webbrowser",
     "wordmark",
-    "xfail"
+    "xfail",
+    "yagni"
   ],
   "languageSettings": [
     {

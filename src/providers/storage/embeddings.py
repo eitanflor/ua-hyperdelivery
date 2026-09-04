@@ -6,6 +6,7 @@ least-privilege wrapper lives in tools/documents.py.
 """
 
 import json
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import boto3
@@ -21,6 +22,18 @@ DEFAULT_EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
 _MAX_INPUT_CHARS = 20000
 
 
+@lru_cache
+def _default_bedrock_client(region: str) -> "BedrockRuntimeClient":
+    """One client per region, reused across calls instead of rebuilt on every request."""
+    return boto3.client("bedrock-runtime", region_name=region)
+
+
+@lru_cache
+def _default_s3_client(region: str) -> "S3Client":
+    """One client per region, reused across calls instead of rebuilt on every request."""
+    return boto3.client("s3", region_name=region)
+
+
 def embed_text(
     text: str,
     region: str,
@@ -31,7 +44,7 @@ def embed_text(
 
     Pass `bedrock_client` to inject a fake/stub client in tests.
     """
-    client = bedrock_client or boto3.client("bedrock-runtime", region_name=region)
+    client = bedrock_client or _default_bedrock_client(region)
     response = client.invoke_model(
         modelId=model_id, body=json.dumps({"inputText": text[:_MAX_INPUT_CHARS]})
     )
@@ -57,7 +70,7 @@ def load_index(
     Returns `{}` if the index hasn't been built yet (scripts/build_fsd_index.py) rather
     than raising - an empty index means "no semantic search yet", not "no documents".
     """
-    client = s3_client or boto3.client("s3", region_name=region)
+    client = s3_client or _default_s3_client(region)
     try:
         body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
     except client.exceptions.NoSuchKey:
@@ -74,7 +87,7 @@ def save_index(
     s3_client: "S3Client | None" = None,
 ) -> None:
     """Write a `{document key: embedding}` index as JSON. Used by scripts/build_fsd_index.py."""
-    client = s3_client or boto3.client("s3", region_name=region)
+    client = s3_client or _default_s3_client(region)
     client.put_object(
         Bucket=bucket,
         Key=key,

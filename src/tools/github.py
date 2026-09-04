@@ -71,6 +71,10 @@ def blueprint_github_mcp_client() -> MCPClient | None:
 # GitHub tools - never a default side effect of producing a ReviewReport (AGENTS.md, "do
 # not remove or bypass a human approval gate"). create_pull_request_with_copilot is a
 # fallback path when assign_copilot_to_issue's coding-agent session fails to start.
+# Also read-only code/PR access so findings are grounded in the actual build, not just a
+# pasted description: get_file_contents/get_repository_tree/search_code to inspect code,
+# pull_request_read (method get_diff/get_files for the change, get_status/get_check_runs
+# for real CI health) - never write/merge.
 _REVIEW_GITHUB_TOOLS: list[str | re.Pattern[str]] = [
     "issue_read",
     "issue_write",
@@ -78,13 +82,17 @@ _REVIEW_GITHUB_TOOLS: list[str | re.Pattern[str]] = [
     "search_issues",
     "assign_copilot_to_issue",
     "create_pull_request_with_copilot",
+    "get_file_contents",
+    "get_repository_tree",
+    "search_code",
+    "pull_request_read",
 ]
 
-_REVIEW_GITHUB_TOOLSETS = "issues,copilot"
+_REVIEW_GITHUB_TOOLSETS = "repos,pull_requests,issues,copilot,git"
 
 
 def review_github_mcp_client() -> MCPClient | None:
-    """Copilot hand-off client for Review, or None when unconfigured.
+    """Code/PR-grounding and Copilot hand-off client for Review, or None when unconfigured.
 
     Reaches GitHub's official remote MCP server (see mcp_clients/github.py) - returns
     None when GITHUB_PAT is not configured.

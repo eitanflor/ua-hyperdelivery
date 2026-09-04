@@ -56,3 +56,14 @@ skill folder is excluded from the cspell gate.
 
 If someone needs live mode, install the upstream plugin rather than vendoring the scripts
 here.
+
+## ponytail
+
+- **Source**: <https://github.com/DietrichGebert/ponytail> at `2ed6c52c9d7e5e56942508591085fd45dea277d3`, from `skills/ponytail/SKILL.md`
+- **License**: MIT, (c) 2026 DietrichGebert - [licenses/ponytail.MIT.txt](licenses/ponytail.MIT.txt)
+- **Modifications**: none.
+
+A YAGNI/least-code ruleset: stop at the first rung that solves the problem (skip it,
+reuse existing code, stdlib, native platform feature, already-installed dependency, one
+line, only then custom code), never on trust-boundary validation, error handling,
+security or accessibility. Installed as [ponytail](ponytail/SKILL.md).

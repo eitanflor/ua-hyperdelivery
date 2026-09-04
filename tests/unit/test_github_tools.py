@@ -50,3 +50,13 @@ def test_review_github_mcp_client_returns_client_when_configured(
     client = github.review_github_mcp_client()
 
     assert isinstance(client, github.MCPClient)
+
+
+def test_review_github_tools_include_code_and_pr_status_grounding() -> None:
+    assert set(github._REVIEW_GITHUB_TOOLS) >= {
+        "get_file_contents",
+        "get_repository_tree",
+        "search_code",
+        "pull_request_read",
+    }
+    assert "git" in github._REVIEW_GITHUB_TOOLSETS.split(",")
