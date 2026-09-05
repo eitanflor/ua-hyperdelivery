@@ -326,6 +326,11 @@ def _sse(event: dict[str, Any]) -> str:
     return f"data: {json.dumps(event)}\n\n"
 
 
+# Relayed to the browser untouched - only `error` and `result` are acted on here. See
+# agent_runtime.factory for what each one carries.
+_RELAYED_EVENTS = ("chunk", "draft", "tool_call", "thinking", "usage")
+
+
 @router.post("/{project_id}/advance/stream")
 def advance_project_stream(
     project_id: str, request: Request, payload: AdvanceRequest | None = None
@@ -384,10 +389,9 @@ def advance_project_stream(
                 event = await run_sync(next_event, abandon_on_cancel=True)
                 if event is None:
                     break
-                if "chunk" in event:
-                    yield _sse({"chunk": event["chunk"]})
-                elif "tool_call" in event:
-                    yield _sse({"tool_call": event["tool_call"]})
+                relayed = next((key for key in _RELAYED_EVENTS if key in event), None)
+                if relayed is not None:
+                    yield _sse({relayed: event[relayed]})
                 elif "error" in event:
                     yield _sse({"error": event["error"]})
                     return

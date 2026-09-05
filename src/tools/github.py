@@ -68,9 +68,10 @@ def blueprint_github_mcp_client() -> MCPClient | None:
 # one from Blueprint's units of work, or a new one for a purely structural finding) and
 # assigns it to GitHub Copilot's coding agent - no repo creation, no PR authoring of its
 # own, no merge. Automatic for every blocker/major finding, not gated on being asked -
-# the G3 human sign-off gate (Station.REVIEW_APPROVAL) still reviews every assignment
-# before the project advances, so this does not bypass AGENTS.md's "do not remove or
-# bypass a human approval gate". create_pull_request_with_copilot builds the approved
+# the G3 human sign-off gate (Station.SHOWROOM_APPROVAL) sits between Review and Showroom
+# and reviews every assignment before the project advances, so this does not bypass
+# AGENTS.md's "do not remove or bypass a human approval gate". create_pull_request_with_copilot
+# builds the approved
 # blueprint: one call per delivery group (see core.delivery), passing the predecessor
 # group's head branch as base_ref so stacked work cannot collide - list_pull_requests is
 # how that branch is found, add_issue_comment is how the issue-to-PR trail is recorded.

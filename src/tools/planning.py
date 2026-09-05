@@ -16,13 +16,17 @@ _MIN_STEPS = 2
 
 @tool
 def track_plan(steps: dict[str, str]) -> dict[str, Any]:
-    """State - or restate - your plan for this turn before you act on it.
+    """State your plan for this turn, then mark steps done as you finish them.
 
-    Call this first, before any other tool, with the whole plan every time: a mapping of
-    each step's short title to its status, one of "pending", "in_progress" or "done", in
-    the order you intend to do them. Call it again after each step finishes, passing the
-    full updated mapping, so the plan visibly tracks the work rather than being written
-    once and abandoned.
+    Call this once before you act, with a mapping of each step's short title to its
+    status - one of "pending", "in_progress" or "done" - in the order you intend to do
+    them. Keep it to about five steps: this is the shape of the turn, not a checklist of
+    every call you will make.
+
+    After that, call it again only when a step has actually finished, in the same
+    response as your next real tool call. Every call restates the whole plan, and every
+    restatement is output you have to write - so re-declaring a plan you have not acted
+    on yet costs the run real time and tells nobody anything new.
 
     Keep exactly one step "in_progress" at a time, and give a real plan - a single step
     is not one. This is what stops a long turn drifting away from what it set out to do,

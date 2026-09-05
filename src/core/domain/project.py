@@ -19,11 +19,19 @@ class Station(StrEnum):
     BLUEPRINT = "blueprint"
     REVIEW_APPROVAL = "review_approval"
     REVIEW = "review"
+    SHOWROOM_APPROVAL = "showroom_approval"
     SHOWROOM = "showroom"
     DONE = "done"
 
 
-APPROVAL_STATIONS = {Station.BLUEPRINT_APPROVAL, Station.REVIEW_APPROVAL}
+# Each is named for the station it unlocks, not the one it signs off: BLUEPRINT_APPROVAL
+# clears Distill's spec so Blueprint may start, and SHOWROOM_APPROVAL clears Review's
+# grade sheet - including any work it handed to a coding agent - so Showroom may start.
+APPROVAL_STATIONS = {
+    Station.BLUEPRINT_APPROVAL,
+    Station.REVIEW_APPROVAL,
+    Station.SHOWROOM_APPROVAL,
+}
 AGENT_STATIONS = {Station.DISTILL, Station.BLUEPRINT, Station.REVIEW, Station.SHOWROOM}
 
 _LINE = list(Station)
@@ -69,7 +77,7 @@ class CompletenessScore(BaseModel):
 
     `score` and `gaps` are computed from the stored artifact and overwrite whatever the
     agent claimed (see core.validation); `questions` are the agent's own, since what is
-    worth asking a human is a judgement no validator can make.
+    worth asking a human is a judgment no validator can make.
     """
 
     score: float

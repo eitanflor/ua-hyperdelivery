@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { api } from "../api/client";
-import type { ToolCallEvent } from "../api/client";
+import type { ToolCallEvent, UsageEvent } from "../api/client";
 import { buildTranscript } from "../lib/transcript";
 import { describeError, type FriendlyError } from "../lib/errors";
 import { AGENT_META, AGENT_STATIONS } from "../lib/pipeline";
@@ -45,7 +45,7 @@ const UNDO_MS = 12_000;
  * does not rewrite the conversation map once per token. */
 const STREAM_FLUSH_MS = 80;
 
-const GATES = ["blueprint_approval", "review_approval"] as const;
+const GATES = ["blueprint_approval", "review_approval", "showroom_approval"] as const;
 
 export interface RecentProject {
   id: string;
@@ -62,8 +62,11 @@ export interface ChatTurn {
   agent: string;
   text?: string; // user turns, and the accumulating text of an in-progress agent turn
   content?: Record<string, unknown>; // finished agent turns
+  draft?: string; // the artifact's JSON as it is being written, streaming turns only
+  waitingSeconds?: number; // how long the model has been silent, streaming turns only
   streaming?: boolean; // true while an agent turn is still receiving chunks
   toolCalls?: ToolCallEvent[]; // tool calls made so far during a streaming turn
+  usage?: UsageEvent; // arrives once, at the end of an agent turn
   createdAt: string;
 }
 
@@ -273,7 +276,7 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // One agent turn, not a poll: the human should be told what happened and what to do
       // next in the thread, in the station's own voice, rather than reading a status chip.
-      // Settledness is the caller's judgement - only it knows how long a build has been
+      // Settledness is the caller's judgment - only it knows how long a build has been
       // reporting no checks.
       announceBuildsSettled: async (projectId) => {
         const builds = get().buildsByProject[projectId];
@@ -415,29 +418,41 @@ export const useProjectsStore = create<ProjectsState>()(
           // object reference, since each flush replaces the turn with a new object and
           // reference equality would break after the first one
           let pendingText = "";
+          let pendingDraft = "";
           let flushTimer: ReturnType<typeof setTimeout> | null = null;
           const flush = () => {
-            if (!pendingText) return;
+            if (!pendingText && !pendingDraft) return;
             const text = pendingText;
+            const draft = pendingDraft;
             pendingText = "";
+            pendingDraft = "";
             set((state) => {
               const turns = state.conversationByProject[projectId] ?? [];
               return {
                 conversationByProject: {
                   ...state.conversationByProject,
                   [projectId]: turns.map((t) =>
-                    t.id === streamingTurnId ? { ...t, text: (t.text ?? "") + text } : t,
+                    t.id === streamingTurnId
+                      ? { ...t, text: (t.text ?? "") + text, draft: (t.draft ?? "") + draft }
+                      : t,
                   ),
                 },
               };
             });
           };
-          const appendChunk = (chunk: string) => {
-            pendingText += chunk;
+          const scheduleFlush = () => {
             flushTimer ??= setTimeout(() => {
               flushTimer = null;
               flush();
             }, STREAM_FLUSH_MS);
+          };
+          const appendChunk = (chunk: string) => {
+            pendingText += chunk;
+            scheduleFlush();
+          };
+          const appendDraft = (draft: string) => {
+            pendingDraft += draft;
+            scheduleFlush();
           };
           // a running call becomes its own done call in place once it finishes - matched
           // by tool use id, so a retried call (same name, new id) gets its own row
@@ -464,6 +479,26 @@ export const useProjectsStore = create<ProjectsState>()(
                 },
               };
             });
+          // the model reports nothing at all while it works through a large context, so
+          // this is the only sign the turn is alive - guarded because it repeats on a
+          // timer and every distinct value is a re-render
+          let waitingSeconds: number | undefined;
+          const setWaiting = (seconds: number | undefined) => {
+            if (waitingSeconds === seconds) return;
+            waitingSeconds = seconds;
+            set((state) => {
+              const turns = state.conversationByProject[projectId] ?? [];
+              return {
+                conversationByProject: {
+                  ...state.conversationByProject,
+                  [projectId]: turns.map((t) =>
+                    t.id === streamingTurnId ? { ...t, waitingSeconds: seconds } : t,
+                  ),
+                },
+              };
+            });
+          };
+
           // undoes both turns pushed above so a failed send leaves nothing behind to
           // duplicate or confuse a retry (e.g. the composer reading stale "prior turns")
           const dropFailedTurns = () =>
@@ -479,14 +514,22 @@ export const useProjectsStore = create<ProjectsState>()(
 
           runController = new AbortController();
           let project: Project | null = null;
+          let usage: UsageEvent | undefined;
           try {
             for await (const event of api.advanceProject(
               projectId,
               transcript,
               runController.signal,
             )) {
+              if (event.thinking) {
+                setWaiting(event.thinking.seconds);
+                continue;
+              }
+              setWaiting(undefined);
               if (typeof event.chunk === "string") appendChunk(event.chunk);
+              else if (typeof event.draft === "string") appendDraft(event.draft);
               else if (event.tool_call) upsertToolCall(event.tool_call);
+              else if (event.usage) usage = event.usage;
               else if (typeof event.error === "string") throw new Error(event.error);
               else if (event.done && event.project) project = event.project;
             }
@@ -516,6 +559,7 @@ export const useProjectsStore = create<ProjectsState>()(
               // done - the narrative often holds caveats the structured output can't
               text: streamingTurn?.text,
               toolCalls: streamingTurn?.toolCalls,
+              usage,
               createdAt: artifact.created_at,
             };
             const withoutStreaming = turns.filter((t) => t.id !== streamingTurnId);

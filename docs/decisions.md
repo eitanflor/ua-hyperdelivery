@@ -17,6 +17,208 @@ Template for new entries:
 
 ---
 
+## 2026-09-05 - Review's hand-off gets the gate its own comments already claimed
+
+- **Status**: Accepted.
+- **Context**: Review files GitHub issues, assigns them to Copilot's coding agent and
+  opens pull requests - all automatically, "not gated on being asked". Two places said
+  that was safe because a human signed it off afterwards: `review.yaml` ("the human
+  sign-off gate at G3 still reviews every assignment made this way") and `tools/github.py`
+  ("the G3 human sign-off gate (`Station.REVIEW_APPROVAL`)"). Neither was true. The
+  `Station` enum had exactly two approval stations, and `REVIEW_APPROVAL` runs *before*
+  `REVIEW` - it cannot review assignments that do not exist yet. Every approval station is
+  named for the station it unlocks, not the one it signs off, and that offset is what let
+  the mistake read as correct. So the one station that takes irreversible action outside
+  the conversation was the only one with no gate after it.
+- **Decision**: Add `Station.SHOWROOM_APPROVAL` between `REVIEW` and `SHOWROOM` - Gate 3,
+  the grade sheet sign-off - following the existing naming convention, plus a
+  `WaitForShowroomApproval` task in the state machine and a third gate in the console.
+- **Alternatives considered**: Correcting the comments to admit there is no gate - honest,
+  but leaves an agent opening pull requests with no human between it and the demo, which
+  AGENTS.md forbids outright. Removing Review's automatic hand-off instead and requiring it
+  to be asked - rejected because the automatic behavior is deliberate and logged, and
+  because "ask before acting" is exactly the permission-flavoured gating AGENTS.md warns
+  causes silent skipping. Renaming the approval stations to say what they sign off rather
+  than what they unlock - a bigger, more disruptive rename that fixes the confusion but not
+  the missing gate.
+- **Consequences**: Every station that writes outside the conversation now has a human
+  after it. The line is eight stations, not seven, and anything that hard-codes the count
+  or the gate list has to change with it - `Station`, `APPROVAL_STATIONS`, the state
+  machine, `PIPELINE`/`STATION_META`, the rail, the store, and the needs-you count. A
+  project mid-flight when this deploys sits at a station that still exists, so no
+  migration is needed, but an execution already past `REVIEW` will not pause at the new
+  gate.
+
+---
+
+## 2026-09-05 - Agent prose renders through react-markdown, one renderer for every state
+
+- **Status**: Accepted. Supersedes the hand-rolled renderer in `ui/console/src/lib/markdown.tsx`.
+- **Context**: The console rendered agent prose with ~70 lines of hand-written parsing that
+  knew about bold, inline code, `- ` bullets and (latterly) headings. It was fine until the
+  reasoning narrative stopped being hidden behind a disclosure and became the message body:
+  `## What I did` shipped as literal text, ordered lists rendered as plain paragraphs, and
+  the next thing needed was links - Review hands off pull requests, so clickable URLs in
+  prose are a matter of time. Links, tables and fenced code are exactly the constructs
+  where a hand-rolled parser is subtly wrong.
+- **Decision**: `react-markdown` + `remark-gfm`, with a `components` map binding every
+  element to this console's tokens and type scale. One renderer for the streaming buffer
+  and the finished turn alike.
+- **Alternatives considered**: Keeping the hand-rolled parser and adding `<ol>` - cheap now,
+  but each new construct is another special case, and the parser silently mis-renders what
+  it does not know. `marked`/`markdown-it` - smaller, but they emit HTML strings, so
+  rendering model-generated text would mean `dangerouslySetInnerHTML` plus DOMPurify;
+  react-markdown builds React elements and cannot inject HTML at all. A split renderer -
+  simple parser while streaming, library once settled - rejected because the thread was
+  deliberately arranged so a finished turn does not re-lay-out relative to the streaming
+  one, and two renderers reintroduce exactly that, permanently, in two code paths.
+- **Consequences**: Links, ordered lists, tables, fenced code and nested lists render
+  correctly without further work, and the `components` map is the single place the design
+  system meets agent output. The bundle grew 250.7 -> 298.5 kB gzipped; it was already past
+  the 500 kB raw warning, so the answer to that is code-splitting the console, not
+  declining the dependency. Mid-stream, an unclosed code fence renders as a code block
+  until its closer arrives - accepted, and the same behavior every streaming chat UI has.
+  `img` is mapped to nothing on purpose: a station has no business pulling remote images
+  into the thread.
+
+---
+
+## 2026-09-05 - MCP tool calls are bounded by subclassing the client, not by waiting
+
+- **Status**: Accepted.
+- **Context**: A Blueprint turn that fanned out to eighteen concurrent `get_file_contents`
+  calls stopped dead and never produced an artifact. Nothing in the stack bounded it:
+  Strands builds every `MCPAgentTool` with `timeout=None`, opens its `ClientSession`
+  without a read timeout, and `mcp.shared.session` then calls `anyio.fail_after(None)` -
+  an unanswered request waits forever. Tool calls in a turn execute concurrently
+  (`ConcurrentToolExecutor`, no cap), so one straggler blocks the turn. Worse, `agent` is a
+  single instance shared by every invocation the container handles and Strands raises
+  `ConcurrencyException` on a second concurrent call - so one dropped response takes the
+  station down for *every* project until a restart. `MCPClient` exposes no timeout knob.
+- **Decision**: `mcp_clients/bounded.py` subclasses `MCPClient` and stamps a 60s timeout
+  onto each `MCPAgentTool` as `list_tools_sync` hands them over; both the GitHub and
+  Atlassian builders construct through it. `agent_runtime.factory` adds a 600s cap on the
+  whole turn as a second line of defense, covering our own `@tool` functions too.
+- **Alternatives considered**: Waiting for upstream to expose a timeout - the failure
+  bricks a station, so it needed fixing now. Calling `list_tools_sync` ourselves and
+  passing tools instead of the client - means owning the MCP session lifecycle that
+  Strands currently manages, for the same result. A stall timeout (no event for N seconds)
+  instead of a whole-turn cap - rejected because a long tool batch legitimately yields no
+  stream events, so it would fire on slow-but-working runs. Capping tool concurrency with
+  a custom `ToolExecutor` - speculative until bounded waits prove insufficient (AGENTS.md).
+- **Consequences**: A hung remote call now fails its tool instead of the station, and the
+  model gets a tool error it can react to. 60s is generous for a file read or issue lookup
+  and well under the console's own 300s read timeout, so a stuck tool surfaces as a failed
+  step rather than a dead connection; 600s for the turn is far above any legitimate run
+  (the Snowflake client alone allows 240s) and means "definitely broken". The subclass is
+  coupled to `list_tools_sync`'s signature - if Strands changes it, or adds a real timeout
+  parameter, delete this.
+
+---
+
+## 2026-09-05 - GitHub reads are scoped and slimmed in the prompt, not in a wrapper
+
+- **Status**: Accepted.
+- **Context**: Chasing where a Blueprint turn's six-figure token count comes from led to
+  the repository scan, which is not one tool but the agent's own sequence of
+  `search_repositories` -> `get_repository_tree` -> `search_code` -> N x
+  `get_file_contents`. Dumping the remote server's tool schemas rather than guessing at
+  them turned up three things the prompts never mentioned. `search_code` searches **all**
+  of GitHub unless the query carries `repo:owner/repo`. Its `fields` parameter defaults to
+  returning everything, and the schema itself says `text_matches` and `repository` are
+  "the largest per-result data" - a full repository object was riding on every hit.
+  `get_repository_tree` accepts a `path_filter`. And `get_file_contents` has no range
+  parameter at all: a file read is the whole file or nothing.
+- **Decision**: Say so in the two prompts. Scope every `search_code` with
+  `repo:owner/repo`, ask for only the `fields` in use, keep `perPage` small, reach for
+  `path_filter` on a large tree, and locate a file before reading it because there is no
+  way to read part of one. Worded as what helps rather than as what is allowed, per the
+  gate-by-direction rule in AGENTS.md.
+- **Alternatives considered**: Wrapping each MCP tool in a `@tool` that injects the
+  parameters, which is where policy belongs under the providers/tools split and cannot be
+  ignored by the model - rejected for now because it means hand-maintaining a wrapper per
+  tool against a schema we do not control, to enforce defaults the model can already read
+  in that same schema. Revisit if a run shows the prompt being ignored. Post-processing
+  results to strip fields - same cost, and it pays for the bytes before discarding them.
+- **Consequences**: The unscoped search was a correctness bug, not just a cost one, and it
+  is the fourth instance of the failure mode this repo keeps hitting: output that looks
+  right, grounded in the wrong thing, with nothing on the surface to show it. Clipping
+  `get_file_contents` results is now known to be the only lever left on file size, since
+  the API will not return part of a file - that is still open. Nothing here is enforced by
+  a test; the prompts are configuration, so a run is the only proof.
+
+---
+
+## 2026-09-05 - A silent model call reports how long it has been silent
+
+- **Status**: Accepted.
+- **Context**: A DEBUG log went quiet for a minute after
+  `strands.models.bedrock: got response from model`, which reads like the model answered
+  and something downstream hung. It is the opposite: `converse_stream()` returns as soon
+  as the response headers arrive, and the log line sits above the `for chunk in
+  response["stream"]` loop that pulls the actual generation. Strands logs nothing per
+  chunk, so a long prefill on a large context and a genuinely stalled connection produce
+  byte-identical output - and both look the same in the console, which shows a caret and
+  no other sign of life. That ambiguity is what stopped us diagnosing the earlier 123.6s
+  `ReadTimeoutError`, because 60s of dead air is both "Bedrock is slow" and "boto core is
+  about to give up".
+- **Decision**: Emit `{"thinking": {"seconds": float}}` every `_HEARTBEAT_SECONDS` (5)
+  that pass with no stream event, relayed by the console API and rendered next to the
+  working indicator. The wrapper polls a future kept alive across timeouts rather than
+  awaiting through `asyncio.wait_for`, which cancels what it waits on and would leave the
+  async generator unusable for the rest of the turn.
+- **Alternatives considered**: A server-side log line only - cheaper, and it answers the
+  question we actually had, but it leaves the person watching the console with the same
+  frozen screen. Reusing the hook-append-drain pattern that streams tool calls - rejected
+  on inspection: the drain runs when the *next* stream event arrives, and the whole
+  problem is that no event arrives, so a synchronous hook has nothing to hand a consumer
+  parked on `async for`. Raising `read_timeout` - refused without evidence, since it
+  changes the symptom and not the cause; this is the instrument that decides whether it
+  is warranted.
+- **Consequences**: The SSE contract gains `thinking`, additive like `draft` and `usage`,
+  and an unknown key is still ignored by every consumer. `create_app`'s entrypoint was
+  already at ruff's 50-statement ceiling, so the per-event fan-out moved into
+  `_model_events`, which now yields the agent's result alongside the console's events and
+  lets the caller lift it back out. As with `draft`, only the local-dev path carries this:
+  `orchestration/agent_invoker.py` keeps `result["result"]` and discards its siblings.
+
+---
+
+## 2026-09-05 - The artifact streams as raw draft JSON, not as parsed prose
+
+- **Status**: Accepted.
+- **Context**: A run looked frozen. A station showed a spinner for the whole generation
+  and then produced its document in one shot. The transport was never the problem - no
+  compression middleware, `iter_lines` on a streamed response, one `run_sync` hop per
+  event, `readSse` yielding per frame. The cause was upstream: Strands implements
+  `structured_output_model` as a forced call to a tool named after the output model, so
+  writing the FSD *is* a tool call, arriving as deltas that append to that call's `input`.
+  `factory.py` announced the first delta (the one carrying the tool use id) and dropped
+  the rest, which is correct for a real tool and silently discards the artifact.
+- **Decision**: Single that call out by name (`output_model.__name__`) and stream each
+  delta's unsent tail as a `draft` event, relayed verbatim by the console API. The console
+  renders it as a capped, auto-scrolling mono panel headed "Writing the scouting report",
+  hidden from assistive tech, replaced by the artifact card when the run finishes.
+- **Alternatives considered**: Extracting completed string fields from the partial JSON
+  with an incremental scanner, so prose streams and structure does not - better reading
+  experience, but a tolerant parser is real code to own and it still cannot show the
+  document's shape. Leaving the spinner and labelling it ("Writing the scouting report")
+  plus the new token counter - zero parsing and honest, but it shows progress rather than
+  work, and a four-minute Blueprint still reads as a stalled bar. Raw JSON was chosen
+  because it is the actual generation, needs no parser, and cannot drift from what the
+  model produced; it is developer-grade output on a surface whose users approve gates, so
+  revisit if the panel reads as noise rather than reassurance.
+- **Consequences**: The SSE contract gains `draft` and `usage`; both are additive, and an
+  unknown event key is ignored by every consumer, so nothing breaks by not knowing them.
+  `_ToolUseStream` now owns the whole current-tool-use translation, including the offset
+  restart when a rejected draft is rewritten under a fresh tool use id - a real case, since
+  a draft that fails validation starts over from an empty input. Only the local-dev path
+  carries these events: `orchestration/agent_invoker.py` returns `result["result"]` and
+  discards siblings, so the deployed Step Functions path shows neither until it is taught
+  to.
+
+---
+
 ## 2026-09-05 - Prompt caching covers the system prompt and tools, not the artifacts
 
 - **Status**: Accepted.
@@ -251,10 +453,10 @@ Template for new entries:
   adds `track_plan`, called first by every agent with the whole plan each time. The gate
   computes `score` and `gaps` but only *bounds* `questions` - dropping duplicates and
   malformed entries, capping at four, and flagging a turn that drafts nothing and asks
-  nothing - because what is worth asking a human is a judgement no validator can make.
+  nothing - because what is worth asking a human is a judgment no validator can make.
 - **Alternatives considered**: *A separate Intake station or a second output model* -
   rejected: `create_app` binds one output model per container, so it would mean a new
-  station, entrypoint, port, `Station` value, GSI behaviour, state machine branch and gate
+  station, entrypoint, port, `Station` value, GSI behavior, state machine branch and gate
   rendering, and it would solve the problem only for Distill when Blueprint (scaffold
   confirmation), Review (which repository?) and Showroom (live or recorded?) need the same
   thing. Putting questions on the shared `CompletenessScore` costs one field and works
@@ -268,7 +470,7 @@ Template for new entries:
 - **Consequences**: The intake turn holds at its station through the existing
   `_has_open_gaps` path, and answers return through `_build_prompt`'s previous-draft
   section, so no new plumbing was needed. Blueprint's post-approval "shall I scaffold this
-  repository?" now has a mechanism waiting for it. The cap at four is a judgement call, not
+  repository?" now has a mechanism waiting for it. The cap at four is a judgment call, not
   a measurement - it exists because a wall of questions is how clarification UIs die, and
   should be revisited with real usage. Nothing yet records *which* requirements came from
   an answered question rather than from a source document; at G1 sign-off that provenance

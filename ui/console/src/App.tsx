@@ -29,7 +29,8 @@ function Shell() {
 
   const needsYouCount =
     (pendingByStation.blueprint_approval?.length ?? 0) +
-    (pendingByStation.review_approval?.length ?? 0);
+    (pendingByStation.review_approval?.length ?? 0) +
+    (pendingByStation.showroom_approval?.length ?? 0);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -90,6 +91,3 @@ function App() {
 }
 
 export default App;
-
-
-

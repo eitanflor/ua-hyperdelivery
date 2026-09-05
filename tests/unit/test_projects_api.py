@@ -36,13 +36,13 @@ class _FakeLocalAgentClient:
         self,
         result: dict[str, Any] | None = None,
         results: list[dict[str, Any]] | None = None,
-        chunks: list[str] | None = None,
-        tool_calls: list[dict[str, Any]] | None = None,
+        events: list[dict[str, Any]] | None = None,
     ) -> None:
         self.result = result if result is not None else {"title": "FSD"}
         self._results = list(results) if results is not None else None
-        self._chunks = chunks if chunks is not None else []
-        self._tool_calls = tool_calls if tool_calls is not None else []
+        # yielded verbatim before the result, the way the real client relays whatever
+        # the agent's SSE stream sent
+        self._events = events if events is not None else []
         self.calls: list[tuple[str, str]] = []
         self.last_response = _FakeAgentResponse()
 
@@ -61,10 +61,7 @@ class _FakeLocalAgentClient:
         self.calls.append((agent, prompt))
         if on_response is not None:
             on_response(self.last_response)
-        for chunk in self._chunks:
-            yield {"chunk": chunk}
-        for tool_call in self._tool_calls:
-            yield {"tool_call": tool_call}
+        yield from self._events
         yield {"result": self._next_result()}
 
 
@@ -430,7 +427,9 @@ def _parse_sse(text: str) -> list[dict[str, Any]]:
 
 def test_advance_stream_yields_chunks_then_a_done_event(client: TestClient) -> None:
     _state(client).state_machine_client = None
-    fake_agent = _FakeLocalAgentClient(complete_spec_content(), chunks=["Analyzing", "..."])
+    fake_agent = _FakeLocalAgentClient(
+        complete_spec_content(), events=[{"chunk": "Analyzing"}, {"chunk": "..."}]
+    )
     _state(client).local_agent_client = fake_agent
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -470,7 +469,7 @@ def test_advance_stream_yields_tool_call_events(client: TestClient) -> None:
         "status": "done",
         "result": {"score": 1.0},
     }
-    fake_agent = _FakeLocalAgentClient({"title": "FSD"}, tool_calls=[tool_call])
+    fake_agent = _FakeLocalAgentClient({"title": "FSD"}, events=[{"tool_call": tool_call}])
     _state(client).local_agent_client = fake_agent
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -478,6 +477,33 @@ def test_advance_stream_yields_tool_call_events(client: TestClient) -> None:
 
     events = _parse_sse(resp.text)
     assert {"tool_call": tool_call} in events
+
+
+def test_advance_stream_forwards_the_artifact_draft(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient(
+        {"title": "FSD"}, events=[{"draft": '{"title"'}, {"draft": ': "FSD"}'}]
+    )
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    events = _parse_sse(resp.text)
+    assert {"draft": '{"title"'} in events
+    assert {"draft": ': "FSD"}'} in events
+
+
+def test_advance_stream_forwards_the_turn_s_token_usage(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    usage = {"input_tokens": 1200, "output_tokens": 340, "total_tokens": 1540}
+    fake_agent = _FakeLocalAgentClient({"title": "FSD"}, events=[{"usage": usage}])
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    assert {"usage": usage} in _parse_sse(resp.text)
 
 
 def test_advance_stream_stays_at_the_same_station_when_gaps_are_flagged(client: TestClient) -> None:

@@ -24,8 +24,13 @@ export UV_SYSTEM_CERTS=1
 ```
 
 Put that in your shell profile. `scripts/precheck.sh` sets it already. The `gitleaks`
-pre-commit hook downloads a release binary over HTTPS and may still fail on first install -
-if it does, `brew install gitleaks` and it will use the local binary instead.
+pre-commit hook uses the `gitleaks-system` variant, which runs a `gitleaks` binary from
+your `PATH` instead of building one with `go install` - that build needs
+`proxy.golang.org` and `ghcr.io`, both blocked by the corporate proxy. Install the binary
+with `brew install gitleaks` (falls back to `ghcr.io` for the bottle, which may also be
+blocked) or by downloading a release tarball directly from
+[github.com/gitleaks/gitleaks/releases](https://github.com/gitleaks/gitleaks/releases)
+(that domain isn't blocked) and putting the binary on your `PATH`, e.g. `~/.local/bin`.
 
 The same inspection breaks any HTTPS call Python makes with its bundled certificate store.
 That is why `api/auth.py` fetches Entra's JWKS through a `truststore` SSL context: the

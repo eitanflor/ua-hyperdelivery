@@ -27,10 +27,15 @@ repos:
 
   # Secret scanning is local-only by design: it runs here and in `make check`, not as a
   # CI job. Catch it before it is committed, not after it is pushed.
+  # Uses gitleaks-system (requires `gitleaks` on PATH) instead of the default `gitleaks`
+  # hook, which builds from source via `go install` and needs proxy.golang.org/ghcr.io -
+  # both blocked by the corporate Zscaler proxy. Install with `brew install gitleaks` or
+  # by grabbing a release binary from https://github.com/gitleaks/gitleaks/releases.
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
-      - id: gitleaks
+      - id: gitleaks-system
+        pass_filenames: false
 
   # Spelling, configured by cspell.json. Its `flagWords` list also enforces US English:
   # each entry fails with the American form as the suggested fix.

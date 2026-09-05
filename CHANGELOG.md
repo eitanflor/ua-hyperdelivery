@@ -10,6 +10,12 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- Gate 3, the grade sheet sign-off, between Film Room and Gameday. Review files issues,
+  assigns them to Copilot's coding agent and opens pull requests automatically, and two
+  comments justified that by pointing at a "G3 human sign-off gate" that did not exist -
+  the station they named, `REVIEW_APPROVAL`, runs *before* Review and so could never have
+  reviewed its output. The station taking the most irreversible action was the only one
+  with nothing after it. The line is now eight stations. See docs/decisions.md.
 - Bedrock prompt caching on the system prompt and the tool schema. Every invocation
   starts from an empty message list, so both were re-sent in full on every turn - and a
   station is invoked repeatedly within one project (redraft after a gap, answers to its
@@ -40,8 +46,96 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   and to Review, which does the hand-off. Review also gains `list_pull_requests` (to find
   a predecessor's branch) and `add_issue_comment` (to record which pull request covers
   which issue). Merging is still nobody's job but a human's.
+- The thread streams the artifact as it is written, and reports what the turn cost.
+  Strands delivers structured output as a forced call to a tool named after the output
+  model, so a station's document is produced as that tool's accumulating input rather
+  than as free text - and `agent_runtime.factory` announced that call once and discarded
+  every delta after it. The longest phase of every run therefore emitted a spinner and
+  nothing else, then the whole document at once. Each delta's unsent tail now goes out as
+  a `draft` event and renders live under the working agent. That tool's own "done" event
+  is dropped, since its result is a validation acknowledgement that only duplicated the
+  artifact card. `usage` carries the turn's input/output/total tokens, accumulated across
+  every model call the agent made rather than just the one that produced the artifact,
+  and shows beside the agent's name.
+- The plan is pinned above the composer instead of scrolling past inside the thread,
+  since it is the state of the run rather than something the agent said. It opens when a
+  turn starts and folds to a one-line summary when the turn ends or a question needs
+  answering first - at that point the question is the action and the plan is context.
+
+### Changed
+
+- Tool calls and the reasoning disclosure lost their frames: no border, no fill, no
+  "done" label, and a caret that only appears on hover. A trace of what the agent did
+  should not compete with the reply it sits under.
+- Agent prose renders through `react-markdown` instead of a hand-written parser, so links,
+  ordered lists, tables, fenced code and nested lists all work rather than arriving as
+  literal `##` and `1.`. A `components` map binds every element to the console's own
+  tokens and type scale, and `img` renders nothing - a station should not be pulling remote
+  images into the thread.
 
 ### Fixed
+
+- The Copilot hand-off spun forever in the thread. A tool call is announced as running
+  when its first `current_tool_use` delta arrives and only closed by the
+  `AfterToolCallEvent` hook, so a call that times out inside the MCP layer - which
+  `create_pull_request_with_copilot` reliably does - never closed. The console persists a
+  turn's tool calls, so the spinner outlived the turn that started it, and the run read as
+  hung when it had finished. Any call still open when the generator ends now gets a
+  `"status": "interrupted"` event, on the failure paths as well as the success one, and a
+  finished turn renders a leftover running chip as interrupted so older transcripts heal
+  too.
+- Review waited on Copilot instead of handing off to it. Its prompt told it to read check
+  runs before grading, which for a pull request Copilot had not started writing yet meant
+  polling out the rest of the turn. It now finishes once the pull requests are open and
+  says so; the console's own 15-second build poll sends it a fresh turn when they settle,
+  which is when the check runs are worth reading. The build board now names who is working
+  ("Copilot is writing the code"), says the wait is minutes and that the station picks the
+  thread back up, and links the issues each pull request closes.
+- A finished tool call sat in the thread as still running until the model spoke again.
+  Finished calls are drained on the next stream event, and a turn waiting on the model
+  produces no stream events at all - so during exactly the silence someone is staring at,
+  the trace showed stale spinners and the plan panel showed stale steps. The heartbeat
+  now drains before it reports the wait.
+- Five `track_plan` calls in a row before any real work. All four prompts said to call it
+  "as each one finishes", with nothing saying to call it once up front - so a run opened
+  with the agent restating a plan it had not acted on yet, five model round trips and
+  roughly seventeen seconds before its first real lookup. Each of those round trips
+  re-sends the whole conversation, so on a turn that reported 533k accumulated tokens they
+  were about a quarter of the bill. The instruction now says once, then only on a step
+  that actually finished - and to send that update in the same response as the next real
+  tool call. Strands executes every tool call in one response together
+  (`ConcurrentToolExecutor` takes a list), so a plan update that rides along with real
+  work costs nothing, while one sent alone costs a whole round trip.
+- Every tool call logged an OpenTelemetry `Failed to detach context` traceback. Strands
+  holds a span attached across the `yield`s in its tool loop, so the span is attached on
+  one step of its stream and detached on the next. The new heartbeat drove those steps
+  through `asyncio.ensure_future`, which copies the current context per task - so each
+  step ran under a different copy and the detach was rejected. All steps now share one
+  context. The stub agent in the unit tests holds a token across its own yields the same
+  way, so twelve tests fail if this regresses.
+- Blueprint and Review could ground themselves in a stranger's code. `search_code` runs
+  against every public repository on GitHub unless the query carries `repo:owner/repo`,
+  and neither prompt said so - a design or a review finding could be shaped by a file from
+  a repository nobody involved had ever seen, with nothing on the surface to show it. Both
+  prompts now scope the search, and both ask for only the result `fields` they use:
+  `text_matches` and `repository` are the bulk of every hit and were being carried on
+  every one of them. See docs/decisions.md.
+- A finished plan sat one step short of done. The agent's final step is writing the
+  artifact itself, so it never gets a turn in which to report that step complete, and the
+  last step spun forever on a run that had actually succeeded. A settled turn now closes
+  out whatever it left open.
+- Review would not build. Its prompt framed the turn as judging an existing build and
+  offered "review the plan alone and say so plainly" when there wasn't one - so on a
+  greenfield project, which the same prompt calls the normal case, it wrote a grade sheet
+  titled "No Build Provided to Review Yet" and stopped. Getting the approved blueprint
+  built is now stated as the first of its two jobs rather than a conditional aside fifty
+  lines further down, and "no build yet" routes to building it.
+- A station could wedge itself permanently. No MCP tool call had a timeout anywhere in the
+  stack - Strands builds every tool with `timeout=None` and its session inherits none - so
+  one unanswered request blocked its turn forever, and because the agent instance is shared
+  across invocations, every later run of that station failed too until the container
+  restarted. Observed on an eighteen-file fan-out. MCP tools now give up after 60s, and a
+  whole turn after 600s.
 
 - Review findings on #14. `score_completeness` counted duplicate requirement and gate
   criterion ids in its denominator while measuring coverage as a set, so a spec that
@@ -106,7 +200,7 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   spec means the line is broken upstream; a missing *build* is the normal state of a
   greenfield project that has only been planned. It now takes a `build_reference` and
   reports them separately, and `review.yaml` tells the agent to ask which the human wants
-  - a repository/PR to check, or an explicitly labelled review of the plan alone - rather
+  - a repository/PR to check, or an explicitly labeled review of the plan alone - rather
   than producing findings about code it was never shown.
 - Four Distill tools were written and unit-tested but never attached to the agent:
   `detect_fsd_template`, `score_template_coverage`, `extract_field_rules` and
@@ -157,7 +251,7 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   agents. Distill now opens with questions rather than inventing a spec from a one-line
   request - the plan doc's "it plans and asks before it drafts" - and the console renders
   an intake turn as question cards instead of a 0% scorecard. Unlike `score` and `gaps`,
-  which the gate computes and overwrites, questions are the agent's own judgement and are
+  which the gate computes and overwrites, questions are the agent's own judgment and are
   carried through - but bounded: duplicates dropped, malformed ones dropped, at most four
   per turn, and a turn that drafts nothing and asks nothing is itself a gap.
 - `tools/planning.py`: `track_plan`, the one tool every station shares. Each agent calls

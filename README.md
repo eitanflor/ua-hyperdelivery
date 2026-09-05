@@ -130,10 +130,10 @@ person holds on the arc from raw talent to gameday - **Scout** measures the brie
 **Coach** turns it into the work, **Ref** grades the build against it, **Host** sets up the
 walkthrough - each with its own face and identity color. The station is the place and the
 agent is the person working it, so the line reads `Combine -> Gate 1 -> Playbook -> Gate 2
--> Film Room -> Gameday`. The line itself is the primary navigation object in the top
-bar. The two approval gates are the loudest surface in the product: a gate shows the
-criteria being signed against, takes the signer from the Entra ID token rather than a typed
-name, and keeps every decision undoable for twelve seconds before it is sent. Light and
+-> Film Room -> Gate 3 -> Gameday`. The line itself is the primary navigation object in
+the top bar. The three approval gates are the loudest surface in the product: a gate shows
+the criteria being signed against, takes the signer from the Entra ID token rather than a
+typed name, and keeps every decision undoable for twelve seconds before it is sent. Light and
 dark themes ship from one semantic token layer. Signs in via MSAL against the same Entra ID
 app registration the API validates against. Talks to the API directly over `fetch`
 (`ui/console/src/api/client.ts`), not through `sdk/python`. The crew names are a display

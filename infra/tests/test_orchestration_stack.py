@@ -101,9 +101,17 @@ def test_approval_persist_can_publish_notifications() -> None:
 
 def test_approval_wait_states_use_lambda_wait_for_task_token() -> None:
     definition = _state_machine_definition(_template())
-    # DynamoDB service integrations don't support callback patterns - the two human
+    # DynamoDB service integrations don't support callback patterns - the three human
     # approval waits must go through Lambda's waitForTaskToken instead.
-    assert definition.count("lambda:invoke.waitForTaskToken") == 2
+    assert definition.count("lambda:invoke.waitForTaskToken") == 3
+
+
+def test_review_is_followed_by_a_human_gate_before_showroom() -> None:
+    # Review hands blocker findings to a coding agent and opens pull requests, so a person
+    # signs that off before the demo is built - see docs/decisions.md.
+    definition = _state_machine_definition(_template())
+    assert '"Review":{"Next":"WaitForShowroomApproval"' in definition
+    assert '"WaitForShowroomApproval":{"Next":"Showroom"' in definition
 
 
 def _state_machine_definition(template: Template) -> str:

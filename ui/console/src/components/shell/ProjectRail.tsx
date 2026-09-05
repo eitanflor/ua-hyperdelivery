@@ -15,7 +15,7 @@ import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { cn } from "../../lib/cn";
 
-const GATES: Station[] = ["blueprint_approval", "review_approval"];
+const GATES: Station[] = ["blueprint_approval", "review_approval", "showroom_approval"];
 
 interface Row {
   id: string;

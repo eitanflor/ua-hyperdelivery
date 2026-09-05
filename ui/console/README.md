@@ -22,7 +22,9 @@ still say `distill`, `blueprint`, `review`, `showroom`. Everything user-facing l
 | `review` | **Ref** | ST 03 · Film Room | Grade sheet |
 | `showroom` | **Host** | ST 04 · Gameday | Run of show |
 
-Gate 1 is the scouting report sign-off, Gate 2 the call sheet sign-off, and a finished
+Gate 1 is the scouting report sign-off, Gate 2 the call sheet sign-off, Gate 3 the grade
+sheet sign-off - which is also where the pull requests Ref handed to a coding agent get a
+person's approval before the demo is built - and a finished
 project is "off the line". Each agent has a face: one head shape with a different crest -
 a scout's tick, a coach's X on the board, tally marks on a grade sheet, a host's mic - so
 the four read as a family. The eyes blink only while that agent is working, so the motion
@@ -30,15 +32,22 @@ is a status indicator rather than decoration.
 
 ## What it does
 
-- **The line is the navigation.** The top bar carries all seven stations - four agents and
-  two gates - showing where the project is, what it cleared and what is left. The signed-in
+- **The line is the navigation.** The top bar carries all eight stations - four agents and
+  three gates - showing where the project is, what it cleared and what is left. The signed-in
   user sits top right with the theme switcher and sign-out.
 - **Projects grouped by what they need.** The left rail leads with **Needs you** (anything
   parked at a gate), then Active, then Done. `⌘K` opens a command palette; `⌘B` toggles
   the rail.
 - **A thread, split into stations.** One continuous conversation, streamed over SSE, but
-  each turn is stamped with the agent that produced it and each station gets a band. A run
-  can be stopped mid-stream and retried if it fails.
+  each turn is stamped with the agent that produced it and each station gets a band. The
+  artifact streams as it is written - raw JSON in a scrolling panel, because a station's
+  document is produced as tool input rather than prose - and each finished turn carries
+  the tokens it burned. A run can be stopped mid-stream and retried if it fails.
+- **The plan sits above the composer, not in the thread.** It is the state of the run
+  rather than something the agent said, so it stays put instead of scrolling away. It
+  opens when a turn starts and folds to one line when the turn ends or a question needs
+  answering first. A finished run's plan reads as complete: the agent's last step is
+  writing the artifact, so it never gets a turn in which to report that step done.
 - **Gates are the loudest surface.** A gate shows the criteria being signed against, the
   open completeness gaps, and the signer taken from the Entra ID token - not a typed name.
   Sending work back requires a reason. Every decision is undoable for twelve seconds
@@ -60,14 +69,26 @@ is what makes the light/dark flip a one-file change.
   agent faces in [src/components/agents/AgentFace.tsx](src/components/agents/AgentFace.tsx) -
   identity, not iconography. No Unicode glyphs standing in for icons.
 - **Type.** Geist + Geist Mono, self-hosted via `@fontsource-variable`. Fixed rem scale,
-  no fluid clamps. **12px is the floor**; mono carries IDs, timestamps and station numbers.
-  The `.stencil` class is the Under Armour lockup - italic, uppercase, heavy - and is for
-  station, gate and crew names only, never body copy or control labels.
+  no fluid clamps. **12px is the floor**; mono carries IDs, timestamps, tool names and
+  station numbers. The `.stencil` class is the Under Armour lockup - italic, uppercase,
+  heavy - and is for station, gate and crew names only, never body copy or control labels.
+- **Trace rows carry no chrome.** Tool calls and the reasoning disclosure are bare rows:
+  no border, no fill, no status label, and a caret that only appears on hover. A spinner
+  is the only thing that announces itself, because it is the only thing still happening.
+  A tool is named for what it does - "Read file", not `get_file_contents` - via
+  [src/lib/toolLabels.ts](src/lib/toolLabels.ts), because most of these tools belong to
+  GitHub's and Atlassian's MCP servers and cannot be renamed at the source. The wire name
+  stays in the expanded detail so a trace can still be matched against the code.
 - **The hazard stripe** (`.hazard`) appears exactly once, on the gate header, where "work
   stops here until a person signs" is the literal meaning.
 - **Color discipline.** UA red is reserved for primary actions, the current station, the
   gate and needs-you. The four agent hues are data: they may tint a mark, a station node
   or an artifact tab, and never appear on interactive chrome.
+- **Markdown.** Agent prose goes through `react-markdown` + `remark-gfm`, and every
+  element is bound to the token layer in [src/lib/markdown.tsx](src/lib/markdown.tsx) -
+  headings render as a heavier line, not a larger one, because a reply is one message and
+  the station bands are the page's real headings. One renderer for the streaming buffer and
+  the finished turn, so nothing re-lays-out when a run ends.
 - **Shape.** `rounded-sm` inputs and chips, `rounded-md` cards and panels, `rounded-full`
   avatars and pills. Nothing else.
 - **Motion.** `motion/react`, 150-250ms, state-carrying only. The one authored moment is
@@ -91,11 +112,10 @@ is what makes the light/dark flip a one-file change.
 
 ```bash
 pnpm install
-pnpm dev      # http://localhost:5173, proxies to the console API on :8090
+pnpm dev      # http://localhost:5173, calling the console API at VITE_API_BASE_URL
 pnpm build    # production build
 pnpm lint     # oxlint
 ```
 
 Needs a `.env` (see `.env.example`): `VITE_API_BASE_URL`, `VITE_ENTRA_TENANT_ID`,
 `VITE_ENTRA_CLIENT_ID` (same Entra ID app registration the backend validates against).
-

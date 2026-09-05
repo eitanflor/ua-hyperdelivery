@@ -1,72 +1,88 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "./cn";
 
-/** Inline **bold** and `code` - the only markdown agents actually produce mid-sentence. */
-function renderInline(text: string, keyPrefix: string): ReactNode[] {
-  const pattern = /\*\*(.+?)\*\*|`(.+?)`/g;
-  const nodes: ReactNode[] = [];
-  let last = 0;
-  let match: RegExpExecArray | null;
-  let i = 0;
-  while ((match = pattern.exec(text))) {
-    if (match.index > last) nodes.push(text.slice(last, match.index));
-    nodes.push(
-      match[1] !== undefined ? (
-        <strong key={`${keyPrefix}-${i}`} className="font-semibold text-fg">
-          {match[1]}
-        </strong>
-      ) : (
-        <code
-          key={`${keyPrefix}-${i}`}
-          className="rounded-sm bg-sunken px-1 py-0.5 font-mono text-2xs"
-        >
-          {match[2]}
-        </code>
-      ),
-    );
-    last = pattern.lastIndex;
-    i += 1;
-  }
-  if (last < text.length) nodes.push(text.slice(last));
-  return nodes;
+/**
+ * Every element markdown can produce, mapped onto this console's own scale and tokens.
+ *
+ * Nothing inherits browser defaults: an unstyled `<h1>` renders at 2rem inside a chat
+ * bubble and an unstyled `<table>` ignores the palette entirely. Headings are a heavier
+ * line rather than a step up in size, because a station's reply is one message, not a
+ * document with an outline - the station bands are the page's real headings.
+ */
+const COMPONENTS: Components = {
+  p: ({ children }) => <p className="mt-2 first:mt-0">{children}</p>,
+  h1: ({ children }) => <p className="mt-3 font-semibold text-fg first:mt-0">{children}</p>,
+  h2: ({ children }) => <p className="mt-3 font-semibold text-fg first:mt-0">{children}</p>,
+  h3: ({ children }) => <p className="mt-3 font-semibold text-fg first:mt-0">{children}</p>,
+  h4: ({ children }) => <p className="mt-3 font-semibold text-fg first:mt-0">{children}</p>,
+  h5: ({ children }) => <p className="mt-3 font-semibold text-fg first:mt-0">{children}</p>,
+  h6: ({ children }) => <p className="mt-3 font-semibold text-fg first:mt-0">{children}</p>,
+  ul: ({ children }) => <ul className="mt-2 list-disc space-y-0.5 pl-4 first:mt-0">{children}</ul>,
+  ol: ({ children }) => (
+    <ol className="mt-2 list-decimal space-y-0.5 pl-4 first:mt-0">{children}</ol>
+  ),
+  strong: ({ children }) => <strong className="font-semibold text-fg">{children}</strong>,
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      target="_blank"
+      // the text is model-generated, so never hand the opener a window reference
+      rel="noopener noreferrer"
+      className="text-accent-text underline underline-offset-2 hover:no-underline"
+    >
+      {children}
+    </a>
+  ),
+  code: InlineOrBlockCode,
+  pre: ({ children }) => (
+    <pre className="mt-2 overflow-x-auto rounded-sm bg-sunken p-2 first:mt-0">{children}</pre>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="mt-2 border-l border-line pl-3 text-fg-muted first:mt-0">
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="my-3 border-line-subtle" />,
+  table: ({ children }) => (
+    <div className="mt-2 overflow-x-auto first:mt-0">
+      <table className="w-full border-collapse text-2xs">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th className="border-b border-line px-2 py-1 text-left font-semibold text-fg">{children}</th>
+  ),
+  td: ({ children }) => (
+    <td className="border-b border-line-subtle px-2 py-1 align-top">{children}</td>
+  ),
+  // a station has no business rendering remote images into the thread
+  img: () => null,
+};
+
+/** An inline span keeps its chip; one inside a `<pre>` must not draw a second box. */
+function InlineOrBlockCode({ className, children }: ComponentProps<"code">): ReactNode {
+  const isBlock = typeof className === "string" && className.startsWith("language-");
+  return (
+    <code className={cn("font-mono text-2xs", !isBlock && "rounded-sm bg-sunken px-1 py-0.5")}>
+      {children}
+    </code>
+  );
 }
 
-/** Minimal markdown for agent replies: bold, inline code, "- " bullet lists, and blank-line
- * paragraph breaks - enough for the structured summaries agents produce, without a markdown
- * library. Renders best-effort mid-stream too, so a still-typing "**foo" is just literal
- * text until the closing "**" arrives. */
+/**
+ * Agent replies and reasoning, rendered as markdown.
+ *
+ * Also used mid-stream, where the buffer is a half-written document: unclosed emphasis
+ * stays literal, since remark will not pair it either, but an unclosed code fence does
+ * render as a code block until its closer arrives. That reflow is the accepted cost of
+ * having one renderer - a simpler second one for streaming would make every finished turn
+ * visibly re-lay-out the moment the run ends.
+ */
 export function Markdown({ text }: { text: string }) {
-  const blocks = text.split(/\n{2,}/);
   return (
-    <>
-      {blocks.map((block, blockIndex) => {
-        const lines = block.split("\n");
-        const items = lines.filter((line) => line.trim().length > 0);
-        const isList = items.length > 0 && items.every((line) => line.trim().startsWith("- "));
-
-        if (isList) {
-          return (
-            <ul key={blockIndex} className={cn("list-disc space-y-0.5 pl-4", blockIndex > 0 && "mt-2")}>
-              {items.map((line, itemIndex) => (
-                <li key={itemIndex}>
-                  {renderInline(line.trim().slice(2), `${blockIndex}-${itemIndex}`)}
-                </li>
-              ))}
-            </ul>
-          );
-        }
-
-        return (
-          <p key={blockIndex} className={blockIndex > 0 ? "mt-2" : undefined}>
-            {lines.map((line, lineIndex) => (
-              <span key={lineIndex}>
-                {lineIndex > 0 && <br />}
-                {renderInline(line, `${blockIndex}-${lineIndex}`)}
-              </span>
-            ))}
-          </p>
-        );
-      })}
-    </>
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTS}>
+      {text}
+    </ReactMarkdown>
   );
 }

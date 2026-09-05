@@ -9,8 +9,11 @@ class AgentConfig(BaseModel):
     name: str
     model_id: str
     system_prompt: str
-    # StructuredSpec/units-of-work output can be large (many requirements/criteria/rules) -
-    # the Bedrock/Strands default is too low for that, so every agent overrides it.
+    # Output is generated serially - measured at ~85 tokens/second - so this is a time
+    # budget as much as a size one. Raising it to 32768 let Distill grow from 11.5k to
+    # 16.2k output tokens on the same prompt and added 49s to the turn, which is why the
+    # default is back where it was. Blueprint overrides it in its YAML: reading eighteen
+    # files genuinely does produce an artifact that 8192 truncates mid-tool-use.
     max_tokens: int = 8192
     # Sent only when set: Bedrock rejects the parameter outright on newer Anthropic models
     # ("`temperature` is deprecated for this model"), so it cannot be defaulted here.

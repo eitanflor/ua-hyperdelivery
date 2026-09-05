@@ -15,6 +15,8 @@ import truststore
 from mcp.client.streamable_http import streamable_http_client
 from strands.tools.mcp import MCPClient, ToolFilters
 
+from mcp_clients.bounded import BoundedMCPClient
+
 _GITHUB_MCP_URL = "https://api.githubcopilot.com/mcp/"
 
 
@@ -44,7 +46,7 @@ def _truststore_http_client(headers: dict[str, str]) -> httpx.AsyncClient:
 def github_client(pat: str, toolsets: str, allowed_tools: list[str | re.Pattern[str]]) -> MCPClient:
     """Start a client against GitHub's remote MCP server exposing only `allowed_tools`."""
     headers = github_headers(pat, toolsets)
-    return MCPClient(
+    return BoundedMCPClient(
         lambda: streamable_http_client(
             url=_GITHUB_MCP_URL, http_client=_truststore_http_client(headers)
         ),

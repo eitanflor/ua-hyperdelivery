@@ -1,22 +1,21 @@
-import { useState } from "react";
-import {
-  ArrowSquareOutIcon,
-  CaretRightIcon,
-  CheckIcon,
-  CircleDashedIcon,
-  FileTextIcon,
-} from "@phosphor-icons/react";
-import type { ToolCallEvent } from "../../api/client";
+import { useEffect, useRef, useState } from "react";
+import { ArrowSquareOutIcon, CaretRightIcon, FileTextIcon } from "@phosphor-icons/react";
+import type { ToolCallEvent, UsageEvent } from "../../api/client";
 import { hasContent } from "../../api/artifacts";
 import { AGENT_META } from "../../lib/pipeline";
+import { withoutPlan } from "../../lib/plan";
+import { toolLabel } from "../../lib/toolLabels";
 import { artifactStats, composeReply } from "../../lib/formatArtifact";
 import { Markdown } from "../../lib/markdown";
 import { cn } from "../../lib/cn";
 import { AgentAvatar } from "./AgentAvatar";
 import { Spinner } from "../ui/Spinner";
+import { Tooltip } from "../ui/Tooltip";
 
-/** The shared planning tool (see src/tools/planning.py) - rendered as a plan, not a call. */
-const PLAN_TOOL = "track_plan";
+const compactTokens = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
 
 export function UserTurn({ text }: { text: string }) {
   return (
@@ -28,13 +27,44 @@ export function UserTurn({ text }: { text: string }) {
   );
 }
 
-function Attribution({ agent, state }: { agent: string; state?: "idle" | "working" | "done" }) {
+/** What the turn cost, in the same mono register as the station number beside it.
+ *
+ * Accumulated across every model call the agent made, so a turn that looped through six
+ * tool calls reads higher than the artifact alone would suggest - which is the point.
+ * The breakdown names cached tokens separately because they are most of the total and
+ * almost none of the cost: without them "8 in" against a six-figure total reads as a bug. */
+function TokenCount({ usage }: { usage: UsageEvent }) {
+  const cached = usage.cache_read_tokens + usage.cache_write_tokens;
+  const parts = [
+    `${usage.input_tokens.toLocaleString()} in`,
+    ...(cached > 0 ? [`${cached.toLocaleString()} cached`] : []),
+    `${usage.output_tokens.toLocaleString()} out`,
+  ];
+  return (
+    <Tooltip content={parts.join(" · ")}>
+      <span className="tabular cursor-default font-mono text-2xs text-fg-subtle">
+        {compactTokens.format(usage.total_tokens)} tok
+      </span>
+    </Tooltip>
+  );
+}
+
+function Attribution({
+  agent,
+  state,
+  usage,
+}: {
+  agent: string;
+  state?: "idle" | "working" | "done";
+  usage?: UsageEvent;
+}) {
   const meta = AGENT_META[agent];
   return (
     <div className="mb-1 flex items-center gap-2">
       <AgentAvatar agent={agent} state={state} />
       <span className="stencil text-2xs text-fg-muted">{meta?.name ?? agent}</span>
       {meta && <span className="tabular font-mono text-2xs text-fg-subtle">{meta.number}</span>}
+      {usage && <TokenCount usage={usage} />}
     </div>
   );
 }
@@ -79,29 +109,39 @@ export function AgentTurn({
   content,
   text,
   toolCalls,
+  usage,
   onViewArtifact,
 }: {
   agent: string;
   content: Record<string, unknown>;
   text?: string;
   toolCalls?: ToolCallEvent[];
+  usage?: UsageEvent;
   onViewArtifact: (agent: string) => void;
 }) {
-  const { plan, rest } = splitPlan(toolCalls);
+  // a finished turn has nothing left running, so a chip still in that state (an older
+  // transcript, a stream cut mid-call) would spin forever - nothing will ever update it
+  const toolRows = withoutPlan(toolCalls).map((call) =>
+    call.status === "running" ? { ...call, status: "interrupted" as const } : call,
+  );
   return (
     <div className="animate-rise">
-      <Attribution agent={agent} />
+      <Attribution agent={agent} usage={usage} />
       <div className="pl-9">
-        {(plan || text?.trim() || rest.length > 0) && (
-          <div className="mb-2 flex flex-col gap-1">
-            {plan && <PlanList steps={plan} />}
-            {text?.trim() && <ReasoningRow text={text} />}
-            {rest.map((toolCall) => (
-              <ToolCallRow key={toolCall.id} toolCall={toolCall} />
+        {toolRows.length > 0 && (
+          // one rule down the whole trace, so what the agent did reads as a margin note
+          // against what it said rather than as a stack of separate controls
+          <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
+            {groupToolCalls(toolRows).map((group) => (
+              <ToolCallGroup key={group[0]?.id} calls={group} />
             ))}
           </div>
         )}
         <div className="text-xs leading-relaxed text-fg">
+          {/* what the agent actually said, in the position and voice it streamed in - the
+              summary below is derived from the artifact and cannot mention what the agent
+              could not do (a table it had no access to, a source it fell back from) */}
+          {text?.trim() && <Markdown text={text} />}
           <Markdown text={composeReply(content)} />
         </div>
         {hasContent(content) && (
@@ -115,22 +155,25 @@ export function AgentTurn({
 export function StreamingTurn({
   agent,
   text,
+  draft,
+  waitingSeconds,
   toolCalls,
 }: {
   agent: string;
   text: string;
+  draft?: string;
+  waitingSeconds?: number;
   toolCalls: ToolCallEvent[];
 }) {
-  const { plan, rest } = splitPlan(toolCalls);
+  const toolRows = withoutPlan(toolCalls);
   return (
     <div className="animate-rise">
       <Attribution agent={agent} state="working" />
       <div className="pl-9">
-        {(plan || rest.length > 0) && (
-          <div className="mb-2 flex flex-col gap-1">
-            {plan && <PlanList steps={plan} />}
-            {rest.map((toolCall) => (
-              <ToolCallRow key={toolCall.id} toolCall={toolCall} />
+        {toolRows.length > 0 && (
+          <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
+            {groupToolCalls(toolRows).map((group) => (
+              <ToolCallGroup key={group[0]?.id} calls={group} />
             ))}
           </div>
         )}
@@ -143,7 +186,9 @@ export function StreamingTurn({
           className="text-xs leading-relaxed text-fg"
         >
           <Markdown text={text} />
-          {text ? (
+          {draft ? (
+            <DraftStream agent={agent} draft={draft} />
+          ) : text ? (
             <span className="ml-0.5 inline-block h-3.5 w-px animate-caret bg-accent align-middle" />
           ) : (
             <span className="flex items-center gap-1" aria-label="Working">
@@ -156,122 +201,168 @@ export function StreamingTurn({
               ))}
             </span>
           )}
+          {waitingSeconds !== undefined && (
+            <span className="ml-2 align-middle text-2xs tabular-nums text-fg-subtle">
+              thinking {Math.round(waitingSeconds)}s
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-/** The agent's plan, as a todo list that updates in place.
+/** The artifact as the agent writes it.
  *
- * `track_plan` is called once per step, so rendering each call as its own tool row buries
- * the actual work under near-identical entries. Only the latest call is the plan. */
-function PlanList({ steps }: { steps: [string, string][] }) {
-  return (
-    <ol className="flex flex-col gap-1 rounded-sm border border-line/60 bg-sunken/60 px-2 py-1.5">
-      {steps.map(([title, status]) => (
-        <li key={title} className="flex items-center gap-1.5 text-2xs">
-          {status === "done" ? (
-            <CheckIcon weight="bold" className="size-3 shrink-0 text-success" />
-          ) : status === "in_progress" ? (
-            <Spinner className="size-3 shrink-0 text-accent-text" />
-          ) : (
-            <CircleDashedIcon className="size-3 shrink-0 text-fg-subtle" />
-          )}
-          <span
-            className={cn(
-              status === "done" && "text-fg-subtle line-through",
-              status === "in_progress" && "text-fg",
-              status === "pending" && "text-fg-muted",
-            )}
-          >
-            {title}
-          </span>
-        </li>
-      ))}
-    </ol>
-  );
-}
+ * Raw tool input rather than prose - the station's output is produced as one forced tool
+ * call (see agent_runtime/factory.py), so this JSON *is* the generation. Shown so a long
+ * run reads as work in progress instead of a stalled spinner; the readable version is the
+ * artifact card that replaces it. Hidden from assistive tech: the live region above
+ * already announces the turn, and reading JSON aloud helps nobody. */
+function DraftStream({ agent, draft }: { agent: string; draft: string }) {
+  const ref = useRef<HTMLPreElement>(null);
 
-/** Splits the plan out of a turn's tool calls: the last `track_plan` result is the
- * current plan, and every earlier one is a superseded snapshot of it. */
-function splitPlan(toolCalls: ToolCallEvent[] | undefined): {
-  plan: [string, string][] | null;
-  rest: ToolCallEvent[];
-} {
-  const rest = (toolCalls ?? []).filter((tc) => tc.name !== PLAN_TOOL);
-  const latest = (toolCalls ?? []).filter((tc) => tc.name === PLAN_TOOL).at(-1);
-  const steps = (latest?.result as { steps?: unknown } | undefined)?.steps;
-  if (!steps || typeof steps !== "object" || Array.isArray(steps)) return { plan: null, rest };
-  const entries = Object.entries(steps).filter(
-    (entry): entry is [string, string] => typeof entry[1] === "string",
-  );
-  return { plan: entries.length > 0 ? entries : null, rest };
-}
-
-/** What the agent said while working, kept after the run finishes. The summary below
- * is derived from the artifact and can't mention what the agent couldn't do (a table it
- * had no access to, a source it fell back from), so the narrative stays reachable. */
-function ReasoningRow({ text }: { text: string }) {
-  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [draft]);
 
   return (
-    <div className="overflow-hidden rounded-sm border border-line/60 bg-sunken/60">
-      <button
-        type="button"
-        onClick={() => setExpanded((e) => !e)}
-        aria-expanded={expanded}
-        className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-2xs text-fg-muted transition-colors hover:text-fg"
+    <div aria-hidden="true" className="mt-2 overflow-hidden rounded-sm border border-line/60">
+      <div className="flex items-center gap-1.5 border-b border-line/60 bg-sunken/60 px-2 py-1">
+        <Spinner className="size-3 shrink-0 text-accent-text" />
+        <span className="text-2xs text-fg-muted">
+          Writing {(AGENT_META[agent]?.output ?? "the output").toLowerCase()}
+        </span>
+      </div>
+      <pre
+        ref={ref}
+        className="max-h-36 overflow-hidden font-mono text-2xs leading-relaxed whitespace-pre-wrap text-fg-subtle px-2 py-1.5"
       >
-        <CaretRightIcon
-          className={cn("size-3 shrink-0 transition-transform", expanded && "rotate-90")}
-        />
-        <span className="truncate">Reasoning</span>
-      </button>
-      {expanded && (
-        <div className="border-t border-line/60 px-2 py-1.5 text-2xs leading-relaxed text-fg-muted">
-          <Markdown text={text} />
-        </div>
-      )}
+        {draft}
+      </pre>
     </div>
   );
 }
 
-/** One tool call, live: greyed and unexpandable while running, then a minimized
- * "done" row a reader can open to see the raw result - visible without cluttering
- * the reply itself, which is what actually answers the request. */
-function ToolCallRow({ toolCall }: { toolCall: ToolCallEvent }) {
+/** The disclosure caret shared by the trace rows: absent until the row is hovered or
+ * open, so a column of them reads as a list rather than a stack of controls. */
+function TraceCaret({ expanded }: { expanded: boolean }) {
+  return (
+    <CaretRightIcon
+      className={cn(
+        "size-2.5 shrink-0 opacity-0 transition-all group-hover:opacity-100",
+        expanded && "rotate-90 opacity-100",
+      )}
+    />
+  );
+}
+
+/** The one argument worth showing beside a tool's name, so eighteen reads of the same
+ * tool list the files they touched instead of repeating the tool. Ordered by how well
+ * each key identifies a call; a tool whose arguments say nothing useful gets no label. */
+const LABEL_KEYS = ["path", "query", "branch", "ref", "title", "name"];
+
+function toolCallLabel(input: Record<string, unknown> | undefined): string | null {
+  for (const key of LABEL_KEYS) {
+    const value = input?.[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return null;
+}
+
+/** Consecutive calls to the same tool, so an eighteen-file fan-out reads as one step.
+ *
+ * Only consecutive runs collapse: a tool the agent comes back to later in the turn is a
+ * separate decision and deserves its own row. */
+function groupToolCalls(toolCalls: ToolCallEvent[]): ToolCallEvent[][] {
+  return toolCalls.reduce<ToolCallEvent[][]>((groups, call) => {
+    const last = groups.at(-1);
+    if (last?.[0]?.name === call.name) last.push(call);
+    else groups.push([call]);
+    return groups;
+  }, []);
+}
+
+/** A fan-out as a single counted row, expanding to the individual calls. */
+function ToolCallGroup({ calls }: { calls: ToolCallEvent[] }) {
   const [expanded, setExpanded] = useState(false);
-  const running = toolCall.status === "running";
+  const [first, ...rest] = calls;
+
+  if (!first) return null;
+  if (rest.length === 0) return <ToolCallRow toolCall={first} />;
+
+  const running = calls.some((call) => call.status === "running");
 
   return (
-    <div className="overflow-hidden rounded-sm border border-line/60 bg-sunken/60">
+    <div>
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
         disabled={running}
         aria-expanded={expanded}
         className={cn(
-          "flex w-full items-center gap-1.5 px-2 py-1 text-left text-2xs transition-colors",
+          "group flex w-full items-center gap-1.5 py-0.5 text-left text-2xs transition-colors",
           running ? "text-fg-subtle" : "text-fg-muted hover:text-fg",
         )}
       >
         {running ? (
-          <Spinner className="size-3 shrink-0 text-fg-subtle" />
+          <Spinner className="size-2.5 shrink-0 text-fg-subtle" />
         ) : (
-          <CaretRightIcon
-            className={cn("size-3 shrink-0 transition-transform", expanded && "rotate-90")}
-          />
+          <TraceCaret expanded={expanded} />
         )}
-        <span className="truncate font-mono">{toolCall.name}</span>
-        <span className="ml-auto shrink-0 text-2xs text-fg-subtle">
-          {running ? "running…" : "done"}
-        </span>
+        <span className="shrink-0">{toolLabel(first.name)}</span>
+        <span className="tabular shrink-0 font-mono text-fg-subtle">×{calls.length}</span>
+      </button>
+      {expanded && (
+        <div className="flex flex-col pl-4">
+          {calls.map((call) => (
+            <ToolCallRow key={call.id} toolCall={call} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** One tool call: a bare row, no frame and no status label - the name is the whole
+ * message, and a spinner is the only thing that needs to say "still going". Expands to
+ * the raw result, which is worth having but never worth the space by default. */
+function ToolCallRow({ toolCall }: { toolCall: ToolCallEvent }) {
+  const [expanded, setExpanded] = useState(false);
+  const running = toolCall.status === "running";
+  const interrupted = toolCall.status === "interrupted";
+  const label = toolCallLabel(toolCall.input);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        disabled={running}
+        aria-expanded={expanded}
+        className={cn(
+          "group flex w-full items-center gap-1.5 py-0.5 text-left text-2xs transition-colors",
+          running ? "text-fg-subtle" : "text-fg-muted hover:text-fg",
+        )}
+      >
+        {running ? (
+          <Spinner className="size-2.5 shrink-0 text-fg-subtle" />
+        ) : (
+          <TraceCaret expanded={expanded} />
+        )}
+        <span className="shrink-0">{toolLabel(toolCall.name)}</span>
+        {label && <span className="truncate font-mono text-fg-subtle">{label}</span>}
+        {interrupted && <span className="shrink-0 text-fg-subtle">no result</span>}
       </button>
       {expanded && !running && (
-        <pre className="overflow-x-auto border-t border-line/60 px-2 py-1.5 font-mono text-2xs text-fg-muted">
-          {JSON.stringify(toolCall.result ?? null, null, 2)}
-        </pre>
+        <div className="my-1 pl-4">
+          {/* the wire name, so a trace can still be matched against the code */}
+          <p className="font-mono text-2xs text-fg-subtle">{toolCall.name}</p>
+          <pre className="mt-1 overflow-x-auto font-mono text-2xs text-fg-subtle">
+            {JSON.stringify(toolCall.result ?? null, null, 2)}
+          </pre>
+        </div>
       )}
     </div>
   );

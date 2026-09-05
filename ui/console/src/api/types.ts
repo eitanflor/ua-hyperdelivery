@@ -4,12 +4,14 @@ export type Station =
   | "blueprint"
   | "review_approval"
   | "review"
+  | "showroom_approval"
   | "showroom"
   | "done";
 
 export const APPROVAL_STATIONS: ReadonlySet<Station> = new Set([
   "blueprint_approval",
   "review_approval",
+  "showroom_approval",
 ]);
 
 export interface Project {

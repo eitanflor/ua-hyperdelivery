@@ -11,6 +11,8 @@ from typing import cast
 from mcp import StdioServerParameters, stdio_client
 from strands.tools.mcp import MCPClient, ToolFilters
 
+from mcp_clients.bounded import BoundedMCPClient
+
 
 def confluence_env(base_url: str, email: str, api_token: str) -> dict[str, str]:
     """Build the environment the `mcp-atlassian` server needs to reach Confluence."""
@@ -45,7 +47,7 @@ def confluence_client(
     params = StdioServerParameters(
         command="uvx", args=["mcp-atlassian"], env=confluence_env(base_url, email, api_token)
     )
-    return MCPClient(lambda: stdio_client(params), tool_filters=_filters(allowed_tools))
+    return BoundedMCPClient(lambda: stdio_client(params), tool_filters=_filters(allowed_tools))
 
 
 def jira_client(
@@ -55,4 +57,4 @@ def jira_client(
     params = StdioServerParameters(
         command="uvx", args=["mcp-atlassian"], env=jira_env(base_url, email, api_token)
     )
-    return MCPClient(lambda: stdio_client(params), tool_filters=_filters(allowed_tools))
+    return BoundedMCPClient(lambda: stdio_client(params), tool_filters=_filters(allowed_tools))

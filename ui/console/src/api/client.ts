@@ -43,16 +43,39 @@ async function _errorMessage(resp: Response): Promise<string> {
 export interface ToolCallEvent {
   id: string;
   name: string;
-  status: "running" | "done";
+  /** `interrupted` is a call the turn ended without a result for - it is finished in the
+   * sense that nothing more is coming, which is what stops the spinner. */
+  status: "running" | "done" | "interrupted";
   result?: unknown;
+  /** The call's arguments, long strings clipped. Only on a finished call - while one is
+   * still streaming its input is a half-written JSON string. */
+  input?: Record<string, unknown>;
+}
+
+/** Tokens the whole turn burned, accumulated across every model call the agent made.
+ *
+ * `input_tokens` is the *uncached* input only - with prompt caching on, most of the
+ * prompt lands in the two cache counts instead, and only all five together add up. */
+export interface UsageEvent {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  total_tokens: number;
 }
 
 export interface AdvanceStreamEvent {
   chunk?: string;
+  /** The next slice of the artifact's JSON as the agent writes it - append, don't replace. */
+  draft?: string;
   error?: string;
   done?: true;
   project?: Project;
   tool_call?: ToolCallEvent;
+  /** Emitted on a timer while the agent is waiting on the model, which produces nothing
+   * observable until its first token. Its absence means events are flowing normally. */
+  thinking?: { seconds: number };
+  usage?: UsageEvent;
 }
 
 // Parses a `text/event-stream` body (`data: <json>\n\n` per event, per
@@ -149,4 +172,3 @@ export const api = {
     yield* readSse(resp);
   },
 };
-

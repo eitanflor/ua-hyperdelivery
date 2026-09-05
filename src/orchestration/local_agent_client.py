@@ -57,8 +57,10 @@ class LocalAgentClient:
         """Yields the agent's events as they arrive over its `/invocations` SSE response.
 
         See agent_runtime.factory: `{"chunk": str}` for each piece of streamed text,
-        `{"tool_call": {"id", "name", "status", "result"}}` for each tool call, followed
-        by exactly one of `{"result": dict}` or `{"error": str}`.
+        `{"draft": str}` for each slice of the artifact's JSON as it is written,
+        `{"tool_call": {"id", "name", "status", "result"}}` for each tool call, at most
+        one `{"usage": {...}}` with the turn's token counts, followed by exactly one of
+        `{"result": dict}` or `{"error": str}`.
 
         Pass `on_response` to receive the raw response as soon as it opens - the only
         way to interrupt the blocking read below from another thread (e.g. when the

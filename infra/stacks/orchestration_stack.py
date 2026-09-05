@@ -160,12 +160,14 @@ class OrchestrationStack(Stack):
             "WaitForBlueprintApproval", "blueprint_approval"
         )
         wait_review_approval = self._approval_wait("WaitForReviewApproval", "review_approval")
+        wait_showroom_approval = self._approval_wait("WaitForShowroomApproval", "showroom_approval")
 
         # A rejection fails the execution outright - no retry/resubmit loop yet (not asked
         # for by the plan; Showroom->Blueprint iteration is separate, later scope).
         rejected = sfn.Fail(self, "Rejected", cause="Approval rejected", error="Rejected")
         wait_blueprint_approval.add_catch(rejected, errors=["States.ALL"])
         wait_review_approval.add_catch(rejected, errors=["States.ALL"])
+        wait_showroom_approval.add_catch(rejected, errors=["States.ALL"])
 
         # Closes the loop with core.domain.project.Station.DONE - Showroom finishing is not
         # itself a DynamoDB write, so nothing else would ever advance the station past
@@ -192,6 +194,7 @@ class OrchestrationStack(Stack):
             .next(blueprint)
             .next(wait_review_approval)
             .next(review)
+            .next(wait_showroom_approval)
             .next(showroom)
             .next(mark_done)
         )

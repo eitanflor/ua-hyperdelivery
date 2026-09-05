@@ -2,9 +2,11 @@ import { useState } from "react";
 import { ArrowUpIcon, StopIcon } from "@phosphor-icons/react";
 import { useProjectsStore } from "../../store/useProjectsStore";
 import type { OpenQuestion } from "../../api/artifacts";
+import type { PlanStep } from "../../lib/plan";
 import { AGENT_META } from "../../lib/pipeline";
 import { Spinner } from "../ui/Spinner";
 import { cn } from "../../lib/cn";
+import { PlanPanel } from "./PlanPanel";
 import { QuestionPrompt } from "./QuestionPrompt";
 
 /** Composer for the station currently holding the project. */
@@ -12,10 +14,12 @@ export function Composer({
   projectId,
   agent,
   questions,
+  plan,
 }: {
   projectId: string;
   agent: string;
   questions: OpenQuestion[];
+  plan: PlanStep[] | null;
 }) {
   const [text, setText] = useState("");
   const advanceProject = useProjectsStore((s) => s.advanceProject);
@@ -37,6 +41,9 @@ export function Composer({
     // a fixed footer, not part of the scrolled thread - Thread.tsx renders this
     // outside the message list's own scroll region so it never moves as it streams.
     <div className="border-t border-line-subtle bg-canvas pt-3">
+      {plan && (
+        <PlanPanel steps={plan} running={running} questionsOpen={questions.length > 0} />
+      )}
       <QuestionPrompt
         questions={questions}
         disabled={running}

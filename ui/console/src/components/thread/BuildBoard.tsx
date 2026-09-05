@@ -40,7 +40,7 @@ function Status({ build }: { build: Build }) {
   return (
     <span className="flex items-center gap-1 text-2xs text-fg-muted">
       <Spinner className="size-3" />
-      {build.draft ? "agent still working" : "checks running"}
+      {build.draft ? "Copilot is writing the code" : "checks running"}
     </span>
   );
 }
@@ -77,29 +77,54 @@ export function BuildBoard({
 
       <ul className="mt-2.5 flex flex-col gap-1.5">
         {builds.map((build) => (
-          <li key={build.number}>
+          <li
+            key={build.number}
+            className="flex items-center gap-3 rounded-sm border border-line-subtle px-2.5 py-2 transition-colors hover:border-line hover:bg-sunken"
+          >
+            <span className="min-w-0 flex-1">
+              <a
+                href={build.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="block truncate text-xs text-fg"
+              >
+                <span className="tabular mr-1.5 font-mono text-2xs text-fg-subtle">
+                  #{build.number}
+                </span>
+                {build.title ?? build.group_id}
+              </a>
+              <span className="mt-0.5 flex items-center gap-2">
+                <Status build={build} />
+                {build.issue_numbers.length > 0 && (
+                  <span className="text-2xs text-fg-subtle">
+                    closes{" "}
+                    {build.issue_numbers.map((n, i) => (
+                      <span key={n}>
+                        {i > 0 && ", "}
+                        {repository ? (
+                          <a
+                            href={`https://github.com/${repository}/issues/${n}`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="font-mono hover:text-fg hover:underline"
+                          >
+                            #{n}
+                          </a>
+                        ) : (
+                          <span className="font-mono">#{n}</span>
+                        )}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </span>
+            </span>
             <a
               href={build.url}
               target="_blank"
               rel="noreferrer noopener"
-              className="flex items-center gap-3 rounded-sm border border-line-subtle px-2.5 py-2 transition-colors hover:border-line hover:bg-sunken"
+              aria-label={`Open pull request #${build.number} on GitHub`}
             >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs text-fg">
-                  <span className="tabular mr-1.5 font-mono text-2xs text-fg-subtle">
-                    #{build.number}
-                  </span>
-                  {build.title ?? build.group_id}
-                </span>
-                <span className="mt-0.5 flex items-center gap-2">
-                  <Status build={build} />
-                  {build.issue_numbers.length > 0 && (
-                    <span className="text-2xs text-fg-subtle">
-                      closes {build.issue_numbers.map((n) => `#${n}`).join(", ")}
-                    </span>
-                  )}
-                </span>
-              </span>
               <ArrowSquareOutIcon className="size-3.5 shrink-0 text-fg-subtle" />
             </a>
           </li>
@@ -108,7 +133,9 @@ export function BuildBoard({
 
       <p className={cn("mt-2 text-2xs", watching ? "text-fg-subtle" : "text-warning")}>
         {watching
-          ? "Updating on its own. Merging is yours - nothing here can merge."
+          ? "Updating on its own - Copilot takes a few minutes per pull request, and this " +
+            "station picks the thread back up once they settle. Merging is yours - nothing " +
+            "here can merge."
           : "No GitHub token on the console, so these are links only - open them to see status."}
       </p>
     </section>

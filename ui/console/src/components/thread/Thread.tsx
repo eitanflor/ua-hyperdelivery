@@ -4,6 +4,7 @@ import type { Artifact, Station } from "../../api/types";
 import { openQuestions } from "../../api/artifacts";
 import { useProjectsStore } from "../../store/useProjectsStore";
 import { AGENT_STATIONS, PIPELINE, STATION_META, stationIndex } from "../../lib/pipeline";
+import { planSteps } from "../../lib/plan";
 import { Button } from "../ui/Button";
 import { BuildBoard } from "./BuildBoard";
 import { Composer } from "./Composer";
@@ -51,12 +52,20 @@ export function Thread({
   // tab closes is caught by the first poll on the way back in
   useEffect(() => watchBuilds(projectId), [projectId, watchBuilds]);
 
-  const streamingText = conversation?.find((t) => t.streaming)?.text ?? "";
+  const streamingTurn = conversation?.find((t) => t.streaming);
 
-  // follow the conversation as it grows - without this the stream writes off-screen
+  // follow the conversation as it grows - without this the stream writes off-screen.
+  // Tool calls and the draft are tracked as well as the text: a station that goes
+  // straight to tools produces no text at all, so keying on that alone left every tool
+  // row below the fold, under a composer the plan had just made taller.
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [conversation?.length, streamingText]);
+  }, [
+    conversation?.length,
+    streamingTurn?.text,
+    streamingTurn?.toolCalls?.length,
+    streamingTurn?.draft?.length,
+  ]);
 
   if (!project) {
     return (
@@ -74,6 +83,12 @@ export function Thread({
   const pendingQuestions = activeAgent
     ? openQuestions(artifactByAgent.get(activeAgent)?.content ?? {})
     : [];
+  // the plan belongs to the turn in flight, or to the last one until the next starts -
+  // a finished turn's plan is settled, since a run that produced an artifact is done
+  const latestAgentTurn = conversation
+    ?.filter((t) => t.agent === activeAgent && t.role === "agent")
+    .at(-1);
+  const plan = planSteps(latestAgentTurn?.toolCalls, !latestAgentTurn?.streaming);
 
   return (
     // fixed-height column, not scrolled itself - the message list below owns its own
@@ -138,6 +153,8 @@ export function Thread({
                           key={turn.id}
                           agent={turn.agent}
                           text={turn.text ?? ""}
+                          draft={turn.draft}
+                          waitingSeconds={turn.waitingSeconds}
                           toolCalls={turn.toolCalls ?? []}
                         />
                       ) : (
@@ -147,6 +164,7 @@ export function Thread({
                           content={turn.content ?? {}}
                           text={turn.text}
                           toolCalls={turn.toolCalls}
+                          usage={turn.usage}
                           onViewArtifact={onViewArtifact}
                         />
                       ),
@@ -194,7 +212,12 @@ export function Thread({
 
       {activeAgent && (
         <div className="mx-auto w-full max-w-[46rem] px-6 pb-6">
-          <Composer projectId={projectId} agent={activeAgent} questions={pendingQuestions} />
+          <Composer
+            projectId={projectId}
+            agent={activeAgent}
+            questions={pendingQuestions}
+            plan={plan}
+          />
         </div>
       )}
     </div>

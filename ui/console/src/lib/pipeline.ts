@@ -7,6 +7,7 @@ export const PIPELINE: Station[] = [
   "blueprint",
   "review_approval",
   "review",
+  "showroom_approval",
   "showroom",
   "done",
 ];
@@ -89,7 +90,7 @@ export interface StationMeta {
   unlocks?: string;
 }
 
-/** One vocabulary for all seven stations. Nothing else may derive a user-facing label
+/** One vocabulary for all eight stations. Nothing else may derive a user-facing label
  * from the raw enum - that is how "G1", "blueprint approval" and "D" all ended up
  * naming the same thing. */
 export const STATION_META: Record<Station, StationMeta> = {
@@ -110,6 +111,13 @@ export const STATION_META: Record<Station, StationMeta> = {
     unlocks: "review",
   },
   review: { label: "Film Room", full: "Film Room", kind: "agent", agent: "review" },
+  showroom_approval: {
+    label: "Gate 3",
+    full: "Gate 3 · Grade sheet sign-off",
+    kind: "gate",
+    reviewing: "review",
+    unlocks: "showroom",
+  },
   showroom: { label: "Gameday", full: "Gameday", kind: "agent", agent: "showroom" },
   done: { label: "Shipped", full: "Off the line", kind: "done" },
 };
