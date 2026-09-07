@@ -6,16 +6,18 @@ absurd. No token means no watching - the console degrades to plain links.
 """
 
 import logging
+import ssl
 from typing import NamedTuple, Protocol, cast
 
 import httpx
+import truststore
 
 logger = logging.getLogger(__name__)
 
 _API_ROOT = "https://api.github.com"
 _TIMEOUT_SECONDS = 10.0
 _STATUS_ERROR_THRESHOLD = 400
-_FAILED_CONCLUSIONS = ("failure", "timed_out", "cancelled")
+_FAILED_CONCLUSIONS = ("failure", "timed_out", "canceled")
 
 
 class PullRequestState(NamedTuple):
@@ -67,7 +69,10 @@ def read_pull_request(
     """
     if client is not None:
         return _read(client, token, repository, number)
-    with httpx.Client(timeout=_TIMEOUT_SECONDS) as owned:
+    # OS trust store, not certifi: under corporate TLS inspection GitHub's cert is
+    # re-signed by a root only the system store knows. See CONTRIBUTING.md.
+    verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=verify) as owned:
         return _read(owned, token, repository, number)
 
 

@@ -19,6 +19,8 @@ from api.schemas.project import (
     BuildsResponse,
     CreateProjectRequest,
     DecisionRequest,
+    MergeBuildResponse,
+    PreviewResponse,
     ProjectResponse,
     RenameProjectRequest,
 )
@@ -26,8 +28,15 @@ from config.settings import get_settings
 from core.domain.project import AGENT_STATIONS, APPROVAL_STATIONS, Artifact, Project, Station
 from core.domain.review import ReviewReport
 from core.validation import evaluate_artifact
+from infrastructure.local_preview import (
+    PreviewTarget,
+    pull_default_branch,
+    start_preview,
+    stop_preview,
+)
 from infrastructure.repositories.project_repository import ProjectRepository
 from orchestration.project_namer import ProjectNamer, heuristic_name
+from providers.github.merge import resolve_and_merge
 from providers.github.pull_requests import read_pull_request
 
 logger = logging.getLogger(__name__)
@@ -42,6 +51,48 @@ def _to_response(project: Project) -> ProjectResponse:
         created_at=project.created_at.isoformat(),
         updated_at=project.updated_at.isoformat(),
     )
+
+
+def _get_review_report(repo: ProjectRepository, project_id: str) -> ReviewReport | None:
+    """Read and validate the Review artifact, or `None` if it is missing or stale-shaped."""
+    artifact = repo.get_artifact(project_id, Station.REVIEW.value)
+    if artifact is None:
+        return None
+    try:
+        return ReviewReport.model_validate(artifact.content)
+    except ValidationError:
+        # same rule as core.validation.artifacts: an artifact written before the contract
+        # gained a field is absent, not an error
+        logger.warning("stored review artifact does not match ReviewReport - no builds")
+        return None
+
+
+def _merge_all_builds_or_fail(repo: ProjectRepository, project_id: str) -> None:
+    """Auto-merge every build Review opened, before a G3 approval is allowed to complete.
+
+    Approving is the PM's only involvement in getting a build live - they are not
+    expected to fix a stuck branch by hand. A build that is merely behind its base is
+    brought up to date and merged with no one watching. A build with a real, unresolved
+    conflict fails the whole approval instead of recording one the demo can't actually
+    show: the audit trail must never claim success the state machine can't deliver.
+    """
+    report = _get_review_report(repo, project_id)
+    if report is None or report.repository is None or not report.builds:
+        return
+    token = get_settings().github_pat
+    if token is None:
+        return
+    secret = token.get_secret_value()
+    failures = [
+        f"PR #{build.number}: {result.message}"
+        for build in report.builds
+        if not (result := resolve_and_merge(secret, report.repository, build.number)).merged
+    ]
+    if failures:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY,
+            detail="approval blocked - could not merge every build: " + "; ".join(failures),
+        )
 
 
 def _artifact_to_response(artifact: Artifact) -> ArtifactResponse:
@@ -61,6 +112,10 @@ _PREDECESSOR_ARTIFACTS: dict[str, list[str]] = {
     Station.REVIEW.value: [Station.DISTILL.value, Station.BLUEPRINT.value],
     Station.SHOWROOM.value: [Station.DISTILL.value, Station.BLUEPRINT.value, Station.REVIEW.value],
 }
+
+# A build can be merged once Review has produced its report and the G3 gate has been
+# reached - not before (nothing to merge yet) and station never moves backwards past it.
+_MERGEABLE_STATIONS = {Station.SHOWROOM_APPROVAL, Station.SHOWROOM, Station.DONE}
 
 
 def _predecessor_contents(
@@ -232,15 +287,8 @@ def list_builds(project_id: str, request: Request) -> BuildsResponse:
     the human can click is still worth showing.
     """
     repo = request.app.state.project_repository
-    artifact = repo.get_artifact(project_id, Station.REVIEW.value)
-    if artifact is None:
-        return BuildsResponse()
-    try:
-        report = ReviewReport.model_validate(artifact.content)
-    except ValidationError:
-        # same rule as core.validation.artifacts: an artifact written before the contract
-        # gained a field is absent, not an error - and this one is polled every 15s
-        logger.warning("stored review artifact does not match ReviewReport - no builds")
+    report = _get_review_report(repo, project_id)
+    if report is None:
         return BuildsResponse()
     if not report.builds:
         return BuildsResponse(repository=report.repository)
@@ -268,6 +316,142 @@ def list_builds(project_id: str, request: Request) -> BuildsResponse:
             )
         )
     return BuildsResponse(repository=report.repository, builds=builds, watching=watching)
+
+
+@router.post("/{project_id}/builds/{number}/merge", response_model=MergeBuildResponse)
+def merge_build(
+    project_id: str, number: int, request: Request, background_tasks: BackgroundTasks
+) -> MergeBuildResponse:
+    """Merge one build pull request Review opened - a human action, not an agent one.
+
+    No agent tool can call this: `tools/github.py` deliberately excludes
+    `merge_pull_request` from every station's GitHub toolset (see AGENTS.md, "do not
+    remove or bypass a human approval gate"). This endpoint exists only for a human to
+    trigger explicitly from the console, at or after the G3 gate, and only for a pull
+    request Review itself already recorded against this project - never an arbitrary
+    number a caller supplies.
+    """
+    repo = request.app.state.project_repository
+    project = repo.get_project(project_id)
+    if project is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    if project.station not in _MERGEABLE_STATIONS:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail=f"project has not reached the G3 gate yet (at {project.station.value})",
+        )
+
+    report = _get_review_report(repo, project_id)
+    if report is None or report.repository is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="no review builds recorded yet")
+    if not any(build.number == number for build in report.builds):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="not a build of this project")
+
+    token = get_settings().github_pat
+    if token is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="GITHUB_PAT is not configured")
+
+    result = resolve_and_merge(token.get_secret_value(), report.repository, number)
+    if not result.merged:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail=result.message)
+    background_tasks.add_task(_auto_preview)
+    return MergeBuildResponse(
+        merged=True,
+        sha=result.sha,
+        message=result.message,
+        next_step=(
+            "the preview is starting automatically"
+            if get_settings().preview_checkout_path
+            else (
+                f"pull {report.repository}'s default branch locally, then run "
+                "`make preview` (or that repo's own preview script) in that checkout "
+                "to show the demo"
+            )
+        ),
+    )
+
+
+def _auto_preview() -> None:
+    """Best-effort: pull and start the local preview after a merge, no click required.
+
+    Silent no-op without `PREVIEW_CHECKOUT_PATH` configured, or if git/the script fails -
+    this rides on top of an already-completed merge and must never surface as an error on
+    a response that already told the human the merge itself succeeded.
+    """
+    settings = get_settings()
+    path = settings.preview_checkout_path
+    if path is None:
+        return
+    pulled = pull_default_branch(path)
+    if not pulled.ok:
+        logger.warning("auto-preview: could not pull %s: %s", path, pulled.message)
+        return
+    target = PreviewTarget(
+        path,
+        settings.preview_command,
+        settings.preview_backend_port,
+        settings.preview_frontend_port,
+    )
+    start_preview(target)
+
+
+@router.post("/{project_id}/preview", response_model=PreviewResponse)
+def preview_project(project_id: str, request: Request) -> PreviewResponse:
+    """Pull the merged default branch locally and start the target repo's own preview script.
+
+    A laptop-demo convenience: the console API and the checkout must be the same machine
+    (`PREVIEW_CHECKOUT_PATH`). A merge already triggers this in the background - this
+    endpoint is for re-running it by hand, e.g. after a later merge.
+    """
+    if request.app.state.project_repository.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+
+    settings = get_settings()
+    path = settings.preview_checkout_path
+    if path is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="PREVIEW_CHECKOUT_PATH is not configured"
+        )
+
+    pulled = pull_default_branch(path)
+    if not pulled.ok:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail=f"could not pull: {pulled.message}")
+
+    healthy = start_preview(
+        PreviewTarget(
+            path,
+            settings.preview_command,
+            settings.preview_backend_port,
+            settings.preview_frontend_port,
+        )
+    )
+    return PreviewResponse(
+        running=True,
+        backend_url=f"http://localhost:{settings.preview_backend_port}",
+        frontend_url=f"http://localhost:{settings.preview_frontend_port}",
+        message=(
+            "preview is live"
+            if healthy
+            else "started, but not responding yet - give it a few more seconds"
+        ),
+    )
+
+
+@router.post("/{project_id}/preview/stop", response_model=PreviewResponse)
+def stop_preview_project(project_id: str, request: Request) -> PreviewResponse:
+    """Free the preview's ports - safe to call even if nothing is running."""
+    if request.app.state.project_repository.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+
+    settings = get_settings()
+    path = settings.preview_checkout_path
+    if path is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="PREVIEW_CHECKOUT_PATH is not configured"
+        )
+
+    stop_preview(path, settings.preview_command)
+    return PreviewResponse(running=False, message="preview stopped")
 
 
 @router.post("/{project_id}/advance", response_model=ProjectResponse)
@@ -302,9 +486,13 @@ def advance_project(
     predecessors = _predecessor_contents(repo, project_id, agent)
     previous = repo.get_artifact(project_id, agent)
     prompt = _build_prompt(predecessors, previous.content if previous else None, prompt)
-    result = _scored(
-        request.app.state.local_agent_client.invoke(agent, prompt=prompt), agent, predecessors
-    )
+    raw_result = request.app.state.local_agent_client.invoke(agent, prompt=prompt)
+    if raw_result is None:
+        # a valid outcome, not a failure: the agent chose not to draft anything this
+        # turn (e.g. Distill only asked a clarifying question) - see LocalAgentClient.invoke.
+        # Nothing to save or gate on, so the project sits exactly where it was.
+        return _to_response(project)
+    result = _scored(raw_result, agent, predecessors)
     repo.save_artifact(project_id, agent, result)
 
     # A station only advances once its deterministic verdict has no open gaps - the
@@ -329,6 +517,64 @@ def _sse(event: dict[str, Any]) -> str:
 # Relayed to the browser untouched - only `error` and `result` are acted on here. See
 # agent_runtime.factory for what each one carries.
 _RELAYED_EVENTS = ("chunk", "draft", "tool_call", "thinking", "usage")
+
+# Tool calls that change real state on GitHub (a PR, a Copilot hand-off) rather than
+# just reading it - see `_partial_progress_content`, which is why these are worth
+# remembering even from a turn that never produced a finished artifact.
+_SIDE_EFFECT_TOOLS = ("create_pull_request_with_copilot", "assign_copilot_to_issue")
+
+
+def _is_finished_side_effect(event: dict[str, Any]) -> bool:
+    """Whether `event` is a `tool_call` "done" event for one of `_SIDE_EFFECT_TOOLS`.
+
+    Read-only tools (a file fetch, a search) aren't worth remembering past a failed
+    turn - only ones that changed real state on GitHub are.
+    """
+    call = event.get("tool_call")
+    return (
+        isinstance(call, dict)
+        and call.get("status") == "done"
+        and call.get("name") in _SIDE_EFFECT_TOOLS
+    )
+
+
+def _partial_progress_content(
+    previous: Artifact | None, side_effects: list[dict[str, Any]], error: str
+) -> dict[str, Any]:
+    """What to save when a turn fails after a `_SIDE_EFFECT_TOOLS` call already succeeded.
+
+    A turn can time out or error after `create_pull_request_with_copilot` already
+    succeeded on GitHub's side - without this, the next turn's grounding (see
+    `_build_prompt`) has no local record that happened, and a human reloading the
+    console mid-failure sees nothing at all. Layered on top of `previous`'s content
+    (if any) rather than replacing it, so a genuinely-valid earlier draft survives an
+    unrelated later failure.
+    """
+    return {
+        **(previous.content if previous else {}),
+        "tool_calls_before_failure": side_effects,
+        "last_turn_error": error,
+    }
+
+
+def _finish_turn(
+    repo: ProjectRepository,
+    agent: str,
+    project: Project,
+    predecessors: dict[str, dict[str, Any]],
+    result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Score and save a turn's finished draft, advancing the station if it's gap-free.
+
+    `result` is `None` when the agent chose not to draft anything this turn (e.g. a
+    clarifying question) - a valid outcome, not a failure, so the project just stays put.
+    """
+    if result is None:
+        return {"done": True, "project": _to_response(project).model_dump(mode="json")}
+    scored = _scored(result, agent, predecessors)
+    repo.save_artifact(project.id, agent, scored)
+    updated = project if _has_open_gaps(scored) else repo.advance_after_artifact(project.id, agent)
+    return {"done": True, "project": _to_response(updated).model_dump(mode="json")}
 
 
 @router.post("/{project_id}/advance/stream")
@@ -373,6 +619,10 @@ def advance_project_stream(
         # tool call it's mid-way through) just keeps running unseen after "Stop".
         held_response: list[Any] = []
         gen = local_agent_client.stream(agent, prompt, on_response=held_response.append)
+        # populated as `tool_call` "done" events for `_SIDE_EFFECT_TOOLS` are relayed below,
+        # so a failure partway through the turn still has something to persist - see
+        # `_partial_progress_content`.
+        side_effects: list[dict[str, Any]] = []
 
         def next_event() -> dict[str, Any] | None:
             # `None` (rather than raising StopIteration across the thread hop) keeps
@@ -392,29 +642,27 @@ def advance_project_stream(
                 relayed = next((key for key in _RELAYED_EVENTS if key in event), None)
                 if relayed is not None:
                     yield _sse({relayed: event[relayed]})
+                    if _is_finished_side_effect(event):
+                        side_effects.append(event["tool_call"])
                 elif "error" in event:
+                    if side_effects:
+                        content = _partial_progress_content(previous, side_effects, event["error"])
+                        repo.save_artifact(project_id, agent, content)
                     yield _sse({"error": event["error"]})
                     return
                 elif "result" in event:
                     result = event["result"]
 
-            if result is None:
-                yield _sse({"error": f"{agent} agent invocation ended without a result"})
-                return
-
-            result = _scored(result, agent, predecessors)
-            repo.save_artifact(project_id, agent, result)
-            if _has_open_gaps(result):
-                updated = project
-            else:
-                updated = repo.advance_after_artifact(project_id, agent)
-            yield _sse({"done": True, "project": _to_response(updated).model_dump(mode="json")})
+            yield _sse(_finish_turn(repo, agent, project, predecessors, result))
         except Exception as exc:
             # covers the agent stream itself *and* the save-artifact/advance-station
             # calls after it - those run after the HTTP response has already started
             # streaming, so an uncaught exception here would otherwise just kill the
             # connection (client sees a raw network error, not a clean {"error": ...}).
             logger.exception("advance_project_stream failed for %s/%s", project_id, agent)
+            if side_effects:
+                content = _partial_progress_content(previous, side_effects, str(exc))
+                repo.save_artifact(project_id, agent, content)
             yield _sse({"error": str(exc)})
         finally:
             if held_response:
@@ -424,11 +672,17 @@ def advance_project_stream(
 
 
 @router.post("/{project_id}/decisions", response_model=ProjectResponse)
-def submit_decision(project_id: str, payload: DecisionRequest, request: Request) -> ProjectResponse:
+def submit_decision(
+    project_id: str, payload: DecisionRequest, request: Request, background_tasks: BackgroundTasks
+) -> ProjectResponse:
     """Approve or reject the gate the project is held at, then release the execution.
 
+    An approval at the G3 gate (`SHOWROOM_APPROVAL`) also merges every build Review
+    opened before it completes - see `_merge_all_builds_or_fail` - and starts the local
+    preview in the background if one is configured, so nothing needs a click after this.
     The decision is written before the task token is released so the audit trail can
-    never lag the state machine.
+    never lag the state machine, and is not written at all if a build's merge fails, so
+    it can never claim an approval the demo cannot actually show.
     """
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
@@ -439,6 +693,10 @@ def submit_decision(project_id: str, payload: DecisionRequest, request: Request)
             status.HTTP_409_CONFLICT,
             detail=f"project is not awaiting approval (at {project.station.value})",
         )
+
+    if payload.approved and project.station == Station.SHOWROOM_APPROVAL:
+        _merge_all_builds_or_fail(repo, project_id)
+        background_tasks.add_task(_auto_preview)
 
     repo.record_decision(
         project_id=project_id,

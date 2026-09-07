@@ -15,9 +15,10 @@ Upstream exposes no parameter for this, so the narrowest seam is stamping the ti
 the tools on their way out. See docs/decisions.md.
 """
 
+from collections.abc import Callable
 from datetime import timedelta
 
-from strands.tools.mcp import MCPClient, ToolFilters
+from strands.tools.mcp import MCPClient, MCPTransport, ToolFilters
 from strands.tools.mcp.mcp_agent_tool import MCPAgentTool
 from strands.types.collections import PaginatedList
 
@@ -28,7 +29,25 @@ MCP_TOOL_TIMEOUT = timedelta(seconds=60)
 
 
 class BoundedMCPClient(MCPClient):
-    """`MCPClient` whose tools fail after `MCP_TOOL_TIMEOUT` instead of blocking forever."""
+    """`MCPClient` whose tools fail after a bounded wait instead of blocking forever.
+
+    Every tool gets `MCP_TOOL_TIMEOUT` unless `slow_tools` names it - GitHub's Copilot
+    hand-off does real setup work server-side (assigning the coding agent, branching)
+    before it answers, so 60s calibrated for a file read or an issue lookup abandons it
+    routinely even though the PR/issue it was creating still goes through - see
+    docs/decisions.md.
+    """
+
+    def __init__(
+        self,
+        transport_callable: Callable[[], MCPTransport] | None,
+        *,
+        tool_filters: ToolFilters | None = None,
+        slow_tools: dict[str, timedelta] | None = None,
+    ) -> None:
+        """Wrap `transport_callable`; `slow_tools` overrides `MCP_TOOL_TIMEOUT` by tool name."""
+        super().__init__(transport_callable, tool_filters=tool_filters)
+        self._slow_tools = slow_tools or {}
 
     def list_tools_sync(
         self,
@@ -39,5 +58,5 @@ class BoundedMCPClient(MCPClient):
         """Adapt the server's tools as usual, then bound each one's wait."""
         tools = super().list_tools_sync(pagination_token, prefix, tool_filters)
         for tool in tools:
-            tool.timeout = MCP_TOOL_TIMEOUT
+            tool.timeout = self._slow_tools.get(tool.tool_name, MCP_TOOL_TIMEOUT)
         return tools

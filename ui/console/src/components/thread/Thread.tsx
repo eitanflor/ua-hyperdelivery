@@ -4,7 +4,7 @@ import type { Artifact, Station } from "../../api/types";
 import { openQuestions } from "../../api/artifacts";
 import { useProjectsStore } from "../../store/useProjectsStore";
 import { AGENT_STATIONS, PIPELINE, STATION_META, stationIndex } from "../../lib/pipeline";
-import { planSteps } from "../../lib/plan";
+import { planSteps, questionsFromToolCalls } from "../../lib/plan";
 import { Button } from "../ui/Button";
 import { BuildBoard } from "./BuildBoard";
 import { Composer } from "./Composer";
@@ -80,15 +80,21 @@ export function Thread({
   const signatureFor = (station: Station) => signatures?.find((s) => s.station === station);
   // only an agent station (not a gate/"done") holds a live composer.
   const activeAgent = AGENT_STATIONS.includes(project.station) ? project.station : null;
-  const pendingQuestions = activeAgent
-    ? openQuestions(artifactByAgent.get(activeAgent)?.content ?? {})
-    : [];
   // the plan belongs to the turn in flight, or to the last one until the next starts -
   // a finished turn's plan is settled, since a run that produced an artifact is done
   const latestAgentTurn = conversation
     ?.filter((t) => t.agent === activeAgent && t.role === "agent")
     .at(-1);
   const plan = planSteps(latestAgentTurn?.toolCalls, !latestAgentTurn?.streaming);
+  // the latest turn's own `ask_clarifying_questions` call is the freshest source - it is
+  // the only one a questions-only turn (no draft, so no artifact update) ever has. Fall
+  // back to the persisted artifact's `completeness.questions` for a page reload, where
+  // the conversation's tool calls are not in memory yet.
+  const pendingQuestions = activeAgent
+    ? (questionsFromToolCalls(latestAgentTurn?.toolCalls).length > 0
+        ? questionsFromToolCalls(latestAgentTurn?.toolCalls)
+        : openQuestions(artifactByAgent.get(activeAgent)?.content ?? {}))
+    : [];
 
   return (
     // fixed-height column, not scrolled itself - the message list below owns its own
@@ -179,13 +185,19 @@ export function Thread({
                       />
                     )}
 
-                {isCurrent && builds && builds.builds.length > 0 && (
-                  <BuildBoard
-                    repository={builds.repository}
-                    builds={builds.builds}
-                    watching={builds.watching}
-                  />
-                )}
+                {/* stays up through Review's own gate, not just while Review is the
+                    current station - a human deciding G3 needs to see build state, not
+                    have it vanish the moment Review hands off */}
+                {(isCurrent || (station === "review" && project.station === "showroom_approval")) &&
+                  builds &&
+                  builds.builds.length > 0 && (
+                    <BuildBoard
+                      repository={builds.repository}
+                      builds={builds.builds}
+                      watching={builds.watching}
+                      reviewComplete={!isCurrent}
+                    />
+                  )}
 
                 {isCurrent && failedRun?.projectId === projectId && (
                   <div className="flex animate-rise items-center gap-3 rounded-md border border-danger/25 bg-danger-bg px-3.5 py-2.5">

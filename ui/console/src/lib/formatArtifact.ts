@@ -25,7 +25,7 @@ export function artifactStats(content: Record<string, unknown>): { label: string
 /** What the assistant "says" once a turn finishes - written in first person so the
  * chat reads like a reply, not a status readout for whichever agent happened to run.
  * The structured content itself lives in the artifact panel. */
-export function composeReply(content: Record<string, unknown>): string {
+export function composeReply(content: Record<string, unknown>, askedViaTool = 0): string {
   const title = typeof content.title === "string" ? content.title : undefined;
   const completeness = content.completeness as
     | { score?: number; gaps?: string[]; questions?: unknown[] }
@@ -33,9 +33,11 @@ export function composeReply(content: Record<string, unknown>): string {
 
   // An intake turn drafted nothing on purpose - claiming "a first draft" and listing the
   // validator's gaps would be both wrong and unanswerable. The questions themselves are
-  // rendered above the composer.
+  // rendered above the composer. `askedViaTool` covers a turn with no artifact at all
+  // (Distill's voluntary `ask_clarifying_questions` - see lib/plan.ts), where there is no
+  // `completeness` to read a count from.
   if (!hasAnyContent(content)) {
-    const asked = completeness?.questions?.length ?? 0;
+    const asked = completeness?.questions?.length ?? askedViaTool;
     return asked > 0
       ? `Before I draft anything I need to understand a few things — ${asked === 1 ? "there's a question" : `there are ${asked} questions`} below the thread.`
       : "I don't have enough to work from yet. Tell me what you're trying to build, or point me at an FSD, a Confluence page, or a Jira issue.";

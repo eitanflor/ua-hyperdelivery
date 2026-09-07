@@ -12,7 +12,9 @@ from api.auth import CurrentUser, get_current_user
 from api.main import create_app
 from core.domain.project import Station
 from fakes import FakeStateMachineClient, FakeTable, complete_spec_content, loaded
+from infrastructure.local_preview import PreviewTarget, PullResult
 from infrastructure.repositories.project_repository import ProjectRepository
+from providers.github.merge import MergeResult
 from providers.github.pull_requests import PullRequestState
 
 
@@ -520,16 +522,16 @@ def test_advance_stream_stays_at_the_same_station_when_gaps_are_flagged(client: 
     assert events[-1]["project"]["station"] == Station.DISTILL.value
 
 
+class _FailingAgentClient:
+    def stream(
+        self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
+    ) -> Iterator[dict[str, Any]]:
+        yield {"chunk": "Analyzing"}
+        yield {"error": "agent invocation failed"}
+
+
 def test_advance_stream_surfaces_agent_errors_as_an_sse_event(client: TestClient) -> None:
     _state(client).state_machine_client = None
-
-    class _FailingAgentClient:
-        def stream(
-            self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
-        ) -> Iterator[dict[str, Any]]:
-            yield {"chunk": "Analyzing"}
-            yield {"error": "agent invocation failed"}
-
     _state(client).local_agent_client = _FailingAgentClient()
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -537,6 +539,52 @@ def test_advance_stream_surfaces_agent_errors_as_an_sse_event(client: TestClient
 
     events = _parse_sse(resp.text)
     assert events == [{"chunk": "Analyzing"}, {"error": "agent invocation failed"}]
+
+
+def test_advance_stream_saves_a_completed_side_effect_from_a_turn_that_then_fails(
+    client: TestClient,
+) -> None:
+    # a real bug this caught live: create_pull_request_with_copilot succeeded on
+    # GitHub's side, but the turn then timed out before producing a result - leaving
+    # no local record that the PR/Copilot hand-off already happened.
+    _state(client).state_machine_client = None
+    pr_call = {
+        "id": "t1",
+        "name": "create_pull_request_with_copilot",
+        "status": "done",
+        "result": {"number": 4},
+    }
+
+    class _TimingOutAfterHandoff:
+        def stream(
+            self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
+        ) -> Iterator[dict[str, Any]]:
+            yield {"tool_call": pr_call}
+            yield {"error": "agent invocation timed out"}
+
+    _state(client).local_agent_client = _TimingOutAfterHandoff()
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance/stream")
+
+    events = _parse_sse(resp.text)
+    assert events[-1] == {"error": "agent invocation timed out"}
+    artifact = client.get(f"/projects/{created['id']}/artifacts/distill").json()
+    assert artifact["content"]["tool_calls_before_failure"] == [pr_call]
+    assert artifact["content"]["last_turn_error"] == "agent invocation timed out"
+
+
+def test_advance_stream_does_not_save_anything_when_no_side_effect_tool_ran(
+    client: TestClient,
+) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FailingAgentClient()
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    client.post(f"/projects/{created['id']}/advance/stream")
+
+    resp = client.get(f"/projects/{created['id']}/artifacts/distill")
+    assert resp.status_code == 404
 
 
 def test_advance_stream_surfaces_persistence_errors_as_an_sse_event(client: TestClient) -> None:
@@ -674,3 +722,343 @@ def _review_with_build() -> dict[str, Any]:
             }
         ],
     }
+
+
+def _at_showroom_approval(repo: ProjectRepository, project_id: str) -> None:
+    project = loaded(repo.get_project(project_id))
+    project.station = Station.SHOWROOM_APPROVAL
+    repo._table.put_item(Item=repo._state_item(project))
+
+
+def _merged_ok(_token: str, _repository: str, _number: int) -> MergeResult:
+    return MergeResult(merged=True, sha="abc123", message="merged")
+
+
+def _merge_not_mergeable(_token: str, _repository: str, _number: int) -> MergeResult:
+    return MergeResult(merged=False, sha=None, message="Pull Request is not mergeable")
+
+
+def _pulled_ok(_path: str) -> PullResult:
+    return PullResult(ok=True, message="already up to date")
+
+
+def _pulled_diverged(_path: str) -> PullResult:
+    return PullResult(ok=False, message="fatal: not possible to fast-forward")
+
+
+def _pulled_dirty(_path: str) -> PullResult:
+    return PullResult(ok=False, message="checkout is dirty")
+
+
+def _preview_healthy(_target: PreviewTarget) -> bool:
+    return True
+
+
+def _preview_noop_stop(_path: str, _command: str) -> None:
+    return None
+
+
+def test_merge_build_rejected_before_the_g3_gate(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+
+    resp = client.post(f"/projects/{created['id']}/builds/7/merge")
+
+    assert resp.status_code == 409
+
+
+def test_merge_build_rejected_for_a_number_review_never_recorded(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(github_pat=SecretStr("token")),
+    )
+
+    resp = client.post(f"/projects/{created['id']}/builds/999/merge")
+
+    assert resp.status_code == 404
+
+
+def test_merge_build_rejected_without_a_github_token(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings", lambda: SimpleNamespace(github_pat=None)
+    )
+
+    resp = client.post(f"/projects/{created['id']}/builds/7/merge")
+
+    assert resp.status_code == 409
+
+
+def test_merge_build_succeeds_and_returns_a_next_step(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(github_pat=SecretStr("token"), preview_checkout_path=None),
+    )
+    monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merged_ok)
+
+    resp = client.post(f"/projects/{created['id']}/builds/7/merge")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["merged"] is True
+    assert body["sha"] == "abc123"
+    assert "make preview" in body["next_step"]
+
+
+def test_merge_build_surfaces_a_github_failure(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(github_pat=SecretStr("token")),
+    )
+    monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merge_not_mergeable)
+
+    resp = client.post(f"/projects/{created['id']}/builds/7/merge")
+
+    assert resp.status_code == 502
+    assert resp.json()["detail"] == "Pull Request is not mergeable"
+
+
+def test_g3_approval_merges_every_recorded_build_before_completing(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(github_pat=SecretStr("token"), preview_checkout_path=None),
+    )
+    calls: list[int] = []
+
+    def _merge_and_record(_token: str, _repository: str, number: int) -> MergeResult:
+        calls.append(number)
+        return MergeResult(merged=True, sha="abc123", message="merged")
+
+    monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merge_and_record)
+
+    resp = client.post(
+        f"/projects/{created['id']}/decisions",
+        json={"approved": True, "signer": "rahul"},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["station"] == Station.SHOWROOM.value
+    assert calls == [7]
+
+
+def test_g3_approval_is_blocked_when_a_build_has_a_real_conflict(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(github_pat=SecretStr("token")),
+    )
+    monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merge_not_mergeable)
+
+    resp = client.post(
+        f"/projects/{created['id']}/decisions",
+        json={"approved": True, "signer": "rahul"},
+    )
+
+    assert resp.status_code == 502
+    assert "Pull Request is not mergeable" in resp.json()["detail"]
+    # the audit trail must not claim an approval the demo can't actually show
+    still_pending = loaded(repo.get_project(created["id"]))
+    assert still_pending.station == Station.SHOWROOM_APPROVAL
+
+
+def test_g3_approval_proceeds_normally_with_no_builds_recorded(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    _at_showroom_approval(repo, created["id"])
+
+    resp = client.post(
+        f"/projects/{created['id']}/decisions",
+        json={"approved": True, "signer": "rahul"},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["station"] == Station.SHOWROOM.value
+
+
+def test_preview_rejected_without_a_checkout_path_configured(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings", lambda: SimpleNamespace(preview_checkout_path=None)
+    )
+
+    resp = client.post(f"/projects/{created['id']}/preview")
+
+    assert resp.status_code == 409
+
+
+def test_preview_rejected_for_an_unknown_project(client: TestClient) -> None:
+    resp = client.post("/projects/does-not-exist/preview")
+
+    assert resp.status_code == 404
+
+
+def test_preview_starts_and_reports_urls_when_healthy(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(
+            preview_checkout_path="/some/checkout",
+            preview_command="./scripts/preview.sh",
+            preview_backend_port=8000,
+            preview_frontend_port=5183,
+        ),
+    )
+    monkeypatch.setattr("api.routers.projects.pull_default_branch", _pulled_ok)
+    monkeypatch.setattr("api.routers.projects.start_preview", _preview_healthy)
+
+    resp = client.post(f"/projects/{created['id']}/preview")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["running"] is True
+    assert body["backend_url"] == "http://localhost:8000"
+    assert body["frontend_url"] == "http://localhost:5183"
+
+
+def test_preview_surfaces_a_pull_failure(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(
+            preview_checkout_path="/some/checkout",
+            preview_command="./scripts/preview.sh",
+            preview_backend_port=8000,
+            preview_frontend_port=5183,
+        ),
+    )
+    monkeypatch.setattr("api.routers.projects.pull_default_branch", _pulled_diverged)
+
+    resp = client.post(f"/projects/{created['id']}/preview")
+
+    assert resp.status_code == 502
+
+
+def test_stop_preview_rejected_without_a_checkout_path_configured(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings", lambda: SimpleNamespace(preview_checkout_path=None)
+    )
+
+    resp = client.post(f"/projects/{created['id']}/preview/stop")
+
+    assert resp.status_code == 409
+
+
+def test_stop_preview_succeeds(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(
+            preview_checkout_path="/some/checkout", preview_command="./scripts/preview.sh"
+        ),
+    )
+    monkeypatch.setattr("api.routers.projects.stop_preview", _preview_noop_stop)
+
+    resp = client.post(f"/projects/{created['id']}/preview/stop")
+
+    assert resp.status_code == 200
+    assert resp.json()["running"] is False
+
+
+def test_merge_build_auto_starts_the_preview_when_configured(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(
+            github_pat=SecretStr("token"),
+            preview_checkout_path="/some/checkout",
+            preview_command="./scripts/preview.sh",
+            preview_backend_port=8000,
+            preview_frontend_port=5183,
+        ),
+    )
+    monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merged_ok)
+    monkeypatch.setattr("api.routers.projects.pull_default_branch", _pulled_ok)
+    started: list[PreviewTarget] = []
+
+    def _record_start(target: PreviewTarget) -> bool:
+        started.append(target)
+        return True
+
+    monkeypatch.setattr("api.routers.projects.start_preview", _record_start)
+
+    resp = client.post(f"/projects/{created['id']}/builds/7/merge")
+
+    assert resp.status_code == 200
+    assert "starting automatically" in resp.json()["next_step"]
+    assert len(started) == 1
+
+
+def test_merge_build_auto_preview_failure_does_not_fail_the_merge_response(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(
+            github_pat=SecretStr("token"),
+            preview_checkout_path="/some/checkout",
+            preview_command="./scripts/preview.sh",
+            preview_backend_port=8000,
+            preview_frontend_port=5183,
+        ),
+    )
+    monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merged_ok)
+    monkeypatch.setattr("api.routers.projects.pull_default_branch", _pulled_dirty)
+
+    resp = client.post(f"/projects/{created['id']}/builds/7/merge")
+
+    # the merge itself already succeeded - a broken local checkout is never this response's problem
+    assert resp.status_code == 200
+    assert resp.json()["merged"] is True

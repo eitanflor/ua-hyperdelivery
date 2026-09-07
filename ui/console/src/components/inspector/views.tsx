@@ -551,6 +551,9 @@ export function ReviewView({ content }: { content: Content }) {
                   {a.created_new_issue && (
                     <span className="text-2xs text-fg-subtle">new issue</span>
                   )}
+                  {a.pull_request_number != null && (
+                    <span className="text-2xs text-fg-subtle">commented on open PR</span>
+                  )}
                 </div>
                 {a.issue_url ? (
                   <a
@@ -563,6 +566,9 @@ export function ReviewView({ content }: { content: Content }) {
                   </a>
                 ) : (
                   <span className="tabular text-xs text-fg-muted">issue #{a.issue_number}</span>
+                )}
+                {a.pull_request_number != null && (
+                  <span className="ml-2 tabular text-xs text-fg-muted">PR #{a.pull_request_number}</span>
                 )}
                 {a.note && <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">{a.note}</p>}
               </li>

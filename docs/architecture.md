@@ -204,7 +204,7 @@ one ref and two units writing the same file would branch from the same base and 
 each other. It merges units that share a file into one group - one branch, one pull
 request, several issues closed - and returns the groups in build order, so a group that
 depends on another can start from that group's branch via `base_ref` (see
-docs/decisions.md). Merging remains a human action; nothing here can merge.
+docs/decisions.md). No agent tool can merge a pull request - see below.
 
 Review records each pull request it opens in `ReviewReport.builds`, and the console polls
 `GET /projects/{id}/builds` while any of them is still moving. That endpoint reads GitHub's
@@ -212,6 +212,34 @@ REST API directly (`providers/github/pull_requests.py`) rather than spending a m
 on "is it green yet", and reports an unreadable pull request as unknown rather than failed.
 When every build settles the console sends one follow-up turn, so the station reports the
 outcome in the thread.
+
+Merging is a human decision, not an agent one (`tools/github.py` grants no station
+`merge_pull_request`), but it does not require the human to know git. `providers/github/
+merge.py` is a write-path client - deliberately outside any agent's toolset - used two
+ways: `POST /projects/{id}/builds/{number}/merge` lets a human trigger one build's merge
+explicitly from the console, and approving at the G3 gate (`SHOWROOM_APPROVAL`) merges
+every recorded build automatically before the approval completes. Both paths call
+`resolve_and_merge`, which first takes the build's pull request out of draft (Copilot
+opens every PR as a draft and does not reliably flip it to ready itself, so this is done
+via GraphQL's `markPullRequestReadyForReview` - REST's "Update a pull request" has no
+field for it) and brings its branch up to date with its base (purely mechanical - no
+textual judgment) and only then merges: a build that was merely a draft or behind needs
+no one's attention, while a build with a real, unresolved conflict fails the merge -
+and, at the G3 gate, fails the whole approval rather than recording a decision the state
+machine can't actually deliver. Resolving a genuine conflict still needs a human (or a
+new Review turn) to look at the code; nothing here guesses at that.
+
+A successful merge can also start a local preview, entirely optionally
+(`infrastructure/local_preview.py`). This is a laptop-demo convenience, not the hosted
+"preview per pull request" `docs/hyperdelivery-plan.md`'s Phase 3 describes: it assumes
+the console API and a single checkout of the target repo share one machine, and shells
+out to whatever preview script that repo already has. Setting `PREVIEW_CHECKOUT_PATH`
+makes both merge paths above fire it as a background task after the merge succeeds -
+`git pull --ff-only` (never force, never touches a dirty tree) then the configured
+command, detached - and `POST /projects/{id}/preview` / `.../preview/stop` let a human
+trigger or stop it by hand. It is entirely best-effort: a failed pull or a script that
+never starts is logged and otherwise silent, never surfacing as an error on the
+merge/approval response that already told the human the merge itself succeeded.
 
 **A station asks rather than guesses.** `CompletenessScore.questions` carries up to four
 `OpenQuestion`s written for the person who requested the work, with concrete options where

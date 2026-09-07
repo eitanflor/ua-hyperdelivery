@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.domain.project import CompletenessScore
 
@@ -93,4 +93,8 @@ class StructuredSpec(BaseModel):
     acceptance_criteria: list[AcceptanceCriterion]
     business_value: list[BusinessValue]
     intents: list[RequirementIntent]
-    completeness: CompletenessScore
+    # Defaulted, not required: score and gaps are always recomputed server-side from the
+    # stored artifact (see core.validation.spec.evaluate_spec), so a model that omits this
+    # on a trivial turn shouldn't have to pay for a whole extra Bedrock round trip over a
+    # field whose only agent-owned part (questions) is meaningless to ask about anyway.
+    completeness: CompletenessScore = Field(default_factory=lambda: CompletenessScore(score=0.0))

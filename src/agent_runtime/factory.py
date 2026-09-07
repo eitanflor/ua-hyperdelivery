@@ -11,7 +11,12 @@ from typing import Any, NamedTuple, TypeVar
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from pydantic import BaseModel
 from strands import Agent
-from strands.hooks import AfterToolCallEvent
+from strands.hooks import (
+    AfterModelCallEvent,
+    AfterToolCallEvent,
+    BeforeModelCallEvent,
+    BeforeToolCallEvent,
+)
 from strands.types.exceptions import MaxTokensReachedException
 from strands.types.tools import ToolResult
 
@@ -70,21 +75,44 @@ def _tool_input_summary(tool_input: dict[str, Any] | None) -> dict[str, Any] | N
     }
 
 
+def _unwrap_single_param(tool_input: dict[str, Any] | None) -> dict[str, Any]:
+    """Unwrap a voluntary draft tool's single Pydantic-typed parameter.
+
+    Its Strands-generated schema always wraps it (e.g. `{"spec": {...}}`) - unlike the
+    Strands-forced path, whose `StructuredOutputTool` exposes the model's own fields
+    directly. Unwrap it the same way regardless of what that one parameter is called.
+    """
+    if tool_input and len(tool_input) == 1:
+        (only,) = tool_input.values()
+        if isinstance(only, dict):
+            return only
+    return tool_input or {}
+
+
 def _tool_result_payload(tool_result: ToolResult) -> object:
     """Best-effort decode of a tool's raw result for the console UI's tool-call panel.
 
     Every `@tool` function here returns a plain dict, which Strands wraps as a JSON
-    string in the first text content block - parse that back out, or fall back to the
-    raw text if it is not JSON.
+    string in a single text content block - parse that back out. An MCP tool (e.g.
+    GitHub's `get_file_contents`) can return several text blocks instead - a short
+    status message followed by the actual file content as a separate block - so every
+    text block is joined rather than stopping at the first, or the console panel would
+    show "successfully downloaded text file" and silently hide the file itself. The
+    model already sees every block regardless: this only feeds the UI's display.
     """
-    for block in tool_result.get("content", []):
-        text = block.get("text")
-        if isinstance(text, str):
-            try:
-                return json.loads(text)
-            except ValueError:
-                return text
-    return None
+    texts = [
+        text
+        for block in tool_result.get("content", [])
+        if isinstance(text := block.get("text"), str)
+    ]
+    if not texts:
+        return None
+    if len(texts) == 1:
+        try:
+            return json.loads(texts[0])
+        except ValueError:
+            return texts[0]
+    return "\n\n".join(texts)
 
 
 def _usage_payload(result: object) -> dict[str, int] | None:
@@ -127,6 +155,7 @@ class _ToolUseStream:
         self._started: dict[str, str] = {}
         self._draft_use_id: str | None = None
         self._drafted = 0
+        self._drafted_input: dict[str, Any] | None = None
 
     def events(self, current_tool_use: dict[str, Any]) -> list[dict[str, Any]]:
         """At most one event: the next slice of the artifact, or a tool call starting."""
@@ -149,6 +178,11 @@ class _ToolUseStream:
         while finished:
             call = finished.pop(0)
             if call.name == self._draft_tool_name:
+                # only reachable when structured output isn't Strands-forced - see
+                # `drafted_input` - a failed validation leaves this at whatever the last
+                # successful call set, which is correct: there is nothing newer to use
+                if call.result.get("status") == "success":
+                    self._drafted_input = _unwrap_single_param(call.tool_input)
                 continue
             # popped, not read: what stays behind is what `abandoned` has to close out
             announced = self._started.pop(call.tool_use_id, "")
@@ -163,6 +197,16 @@ class _ToolUseStream:
                 event["input"] = summary
             events.append({"tool_call": event})
         return events
+
+    def drafted_input(self) -> dict[str, Any] | None:
+        """The last successfully-validated draft call's raw input, if any.
+
+        Only meaningful when structured output is voluntary rather than Strands-forced.
+        The forced path reads `AgentResult.structured_output` instead and never touches
+        this; it only has a value once `drain_finished` has seen the draft tool's call
+        finish, so this is meaningless before the turn ends.
+        """
+        return self._drafted_input
 
     def abandoned(self) -> list[dict[str, Any]]:
         """One "interrupted" event per announced call whose result never arrived.
@@ -235,16 +279,18 @@ async def _with_heartbeat(
 async def _model_events(
     agent: Agent,
     prompt: str,
-    output_model: type[BaseModel],
+    structured_output_model: type[BaseModel] | None,
     tool_uses: _ToolUseStream,
     finished: list[_FinishedToolCall],
 ) -> AsyncGenerator[dict[str, Any], None]:
     """Everything the console should see while the agent works, ending with its result.
 
     The result is yielded rather than returned so one loop covers the whole turn; the
-    caller lifts it back out instead of forwarding it like the rest.
+    caller lifts it back out instead of forwarding it like the rest. `structured_output_model`
+    is `None` for a voluntary draft tool (see `create_app`'s `force_structured_output`) -
+    Strands then never forces the extra structured-output turn at all.
     """
-    stream = agent.stream_async(prompt, structured_output_model=output_model)
+    stream = agent.stream_async(prompt, structured_output_model=structured_output_model)
     idle_since = time.monotonic()
     async for event in _with_heartbeat(stream, _HEARTBEAT_SECONDS):
         if event is None:
@@ -302,13 +348,105 @@ def _record_finished_tool_calls(agent: Agent) -> list[_FinishedToolCall]:
     return finished
 
 
+def _record_call_timings(agent: Agent, logger: logging.Logger) -> None:
+    """Log how long each real Bedrock call and each tool call actually took.
+
+    Hooks fire at the real call boundary, before any of our own streaming/heartbeat
+    machinery sees an event for it - so this tells apart genuine Bedrock latency from
+    time lost in between, which `_with_heartbeat`'s 5s-resolution "thinking" counter
+    cannot. Tool calls run concurrently (`ConcurrentToolExecutor`), so their start times
+    are keyed by `toolUseId`; only one model call is ever in flight at a time per the
+    same serialization `_record_finished_tool_calls` relies on, so a single slot works.
+    """
+    model_call_started: list[float] = []
+    tool_call_started: dict[str, float] = {}
+
+    def _before_model(event: BeforeModelCallEvent) -> None:  # noqa: ARG001 - callback shape, not used
+        model_call_started.append(time.monotonic())
+
+    def _after_model(event: AfterModelCallEvent) -> None:  # noqa: ARG001 - callback shape, not used
+        if model_call_started:
+            logger.info("model call took %.1fs", time.monotonic() - model_call_started.pop())
+
+    def _before_tool(event: BeforeToolCallEvent) -> None:
+        tool_call_started[event.tool_use.get("toolUseId", "")] = time.monotonic()
+
+    def _after_tool_timing(event: AfterToolCallEvent) -> None:
+        started = tool_call_started.pop(event.tool_use.get("toolUseId", ""), None)
+        if started is not None:
+            elapsed = time.monotonic() - started
+            logger.info("tool call %s took %.1fs", event.tool_use.get("name", ""), elapsed)
+
+    agent.hooks.add_callback(BeforeModelCallEvent, _before_model)
+    agent.hooks.add_callback(AfterModelCallEvent, _after_model)
+    agent.hooks.add_callback(BeforeToolCallEvent, _before_tool)
+    agent.hooks.add_callback(AfterToolCallEvent, _after_tool_timing)
+
+
+def _closing_events(
+    result: object,
+    output_model: type[OutputT],
+    tool_uses: _ToolUseStream,
+    *,
+    force_structured_output: bool,
+    logger: logging.Logger,
+) -> list[dict[str, Any]]:
+    """The turn's remaining events once its model/tool loop has finished cleanly.
+
+    Handles both the Strands-forced and voluntary structured-output paths (see
+    `create_app`'s `force_structured_output`), so `agent_invocation` doesn't have to
+    branch on it directly. The last event is `{"result": dict}` unless the turn produced
+    no draft at all, which is only ever valid when structured output is voluntary - a
+    Strands-forced turn with nothing to show is a real failure, not a choice.
+    """
+    if result is None:
+        logger.error("agent invocation ended without a result")
+        return [{"error": "agent invocation ended without a result"}]
+    events: list[dict[str, Any]] = []
+    usage = _usage_payload(result)
+    if usage is not None:
+        logger.info("invocation used %s tokens", usage["total_tokens"])
+        events.append({"usage": usage})
+    if force_structured_output:
+        structured_output = getattr(result, "structured_output", None)
+        if structured_output is None:
+            logger.error("agent did not produce structured output")
+            events.append({"error": "agent did not produce structured output"})
+            return events
+        dumped = structured_output.model_dump()
+    else:
+        drafted = tool_uses.drafted_input()
+        if drafted is None:
+            # a valid outcome here, not a failure: the model chose not to draft this
+            # turn - a greeting, a clarifying question - so there is nothing to save
+            # as an artifact or gate on. See `LocalAgentClient.invoke`.
+            logger.info("invocation succeeded with no draft")
+            return events
+        dumped = output_model(**drafted).model_dump()
+    # DEBUG, not INFO - the result can contain full FSD/spec content (set
+    # LOG_LEVEL=DEBUG in .env to see it).
+    logger.debug("result: %s", dumped)
+    logger.info("invocation succeeded")
+    events.append({"result": dumped})
+    return events
+
+
 def create_app(
-    agent_name: str, output_model: type[OutputT], tools: list[Any] | None = None
+    agent_name: str,
+    output_model: type[OutputT],
+    tools: list[Any] | None = None,
+    *,
+    force_structured_output: bool = True,
 ) -> BedrockAgentCoreApp:
     """Wire a declaratively-configured Strands agent into the AgentCore Runtime contract.
 
     The agent's reply is validated against `output_model` instead of being returned as
-    free text, so every station hands the next one a checked artifact.
+    free text, so every station hands the next one a checked artifact - unless
+    `force_structured_output` is False, in which case `output_model` must instead be
+    registered as a normal tool in `tools` (see `tools.distill.submit_structured_spec`):
+    the model calls it only once it actually has something to draft, and a turn that
+    doesn't - a bare greeting, a clarifying question - ends with no `result` at all
+    rather than an empty artifact forced out of nothing.
     """
     settings = get_settings()
     configure_logging(settings.log_level)
@@ -318,6 +456,7 @@ def create_app(
     app = BedrockAgentCoreApp()
     logger = logging.getLogger(agent_name)
     finished_tool_calls = _record_finished_tool_calls(agent)
+    _record_call_timings(agent, logger)
 
     @app.entrypoint
     async def agent_invocation(  # pyright: ignore[reportUnusedFunction]  # registered by the decorator
@@ -336,9 +475,11 @@ def create_app(
         instead of being confused with the first), `{"thinking": {"seconds": float}}` every
         `_HEARTBEAT_SECONDS` that pass with nothing else to send, at most one
         `{"usage": {"input_tokens", "output_tokens", "cache_read_tokens",
-        "cache_write_tokens", "total_tokens"}}`, ending in exactly one `{"result": dict}`
-        or `{"error": str}`. See LocalAgentClient, which is the only current consumer, for
-        how these are read back out.
+        "cache_write_tokens", "total_tokens"}}`, ending in `{"result": dict}` or
+        `{"error": str}` - or, only when `force_structured_output` is False, nothing at
+        all, meaning the turn finished without the agent choosing to draft anything. See
+        LocalAgentClient, which is the only current consumer, for how these are read
+        back out.
         """
         session_id_var.set(getattr(context, "session_id", "-"))
         prompt = payload.get("prompt", "")
@@ -356,6 +497,7 @@ def create_app(
         logger.info("invocation started")
         result = None
         tool_uses = _ToolUseStream(output_model.__name__)
+        structured_output_model = output_model if force_structured_output else None
 
         error: str | None = None
         try:
@@ -363,7 +505,7 @@ def create_app(
             # this scale: the only reader is an SSE proxy that writes and comes straight back
             async with asyncio.timeout(_TURN_TIMEOUT_SECONDS):
                 async for event in _model_events(
-                    agent, prompt, output_model, tool_uses, finished_tool_calls
+                    agent, prompt, structured_output_model, tool_uses, finished_tool_calls
                 ):
                     if "result" in event:
                         result = event["result"]
@@ -386,19 +528,13 @@ def create_app(
         if error is not None:
             yield {"error": error}
             return
-        if result is None or result.structured_output is None:
-            logger.error("agent did not produce structured output")
-            yield {"error": "agent did not produce structured output"}
-            return
-        # DEBUG, not INFO - the result can contain full FSD/spec content (set
-        # LOG_LEVEL=DEBUG in .env to see it).
-        dumped = result.structured_output.model_dump()
-        logger.debug("result: %s", dumped)
-        usage = _usage_payload(result)
-        if usage is not None:
-            logger.info("invocation used %s tokens", usage["total_tokens"])
-            yield {"usage": usage}
-        logger.info("invocation succeeded")
-        yield {"result": dumped}
+        for closing_event in _closing_events(
+            result,
+            output_model,
+            tool_uses,
+            force_structured_output=force_structured_output,
+            logger=logger,
+        ):
+            yield closing_event
 
     return app

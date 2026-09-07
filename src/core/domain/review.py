@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.domain.project import CompletenessScore
 
@@ -33,6 +33,10 @@ class CopilotAssignment(BaseModel):
     created_new_issue: bool
     assigned: bool
     note: str | None = None
+    #: Set instead of a fresh `assign_copilot_to_issue` call when the issue already had an
+    #: open pull request - Copilot was asked to keep iterating on that PR via an
+    #: `@copilot`-mentioning comment rather than starting a second, colliding session.
+    pull_request_number: int | None = None
 
 
 class BuildPullRequest(BaseModel):
@@ -55,7 +59,9 @@ class ReviewReport(BaseModel):
     title: str
     findings: list[Finding]
     coverage: list[RequirementCoverage]
-    completeness: CompletenessScore
+    # Defaulted, not required: score and gaps are always recomputed server-side from the
+    # stored artifact (see core.validation.review.evaluate_review).
+    completeness: CompletenessScore = Field(default_factory=lambda: CompletenessScore(score=0.0))
     # Populated automatically for every blocker/major finding when GitHub tools and a
     # repository reference are available - empty otherwise, never invented.
     assignments: list[CopilotAssignment] = []

@@ -9,7 +9,7 @@ from core.domain.blueprint import Blueprint
 from tools.atlassian import jira_mcp_client
 from tools.blueprint import score_blueprint_completeness, validate_units_of_work
 from tools.delivery import plan_delivery
-from tools.github import blueprint_github_mcp_client
+from tools.github import blueprint_github_mcp_client, github_file_contents_batch_tool
 from tools.planning import track_plan
 
 _tools: list[Any] = [
@@ -22,6 +22,8 @@ if (_jira := jira_mcp_client()) is not None:
     _tools.append(_jira)
 if (_github := blueprint_github_mcp_client()) is not None:
     _tools.append(_github)
+if (_github_batch := github_file_contents_batch_tool()) is not None:
+    _tools.append(_github_batch)
 
 app = create_app(AgentName.BLUEPRINT, Blueprint, tools=_tools)
 

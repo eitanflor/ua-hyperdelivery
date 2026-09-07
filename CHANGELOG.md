@@ -10,6 +10,93 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- Review now asks Copilot to keep iterating on a finding's already-open pull request
+  instead of reassigning the issue. Before calling `assign_copilot_to_issue`, it checks
+  whether the finding's issue already has an open pull request; if so, it posts an
+  `@copilot`-mentioning `add_issue_comment` on that PR's own number instead, recorded via
+  `CopilotAssignment`'s new optional `pull_request_number` field. Avoids starting a
+  second, colliding coding-agent session on the same base branch. See docs/decisions.md.
+
+- A merge can now start a local preview automatically, with no human needing to pull or
+  run anything. Optional (`PREVIEW_CHECKOUT_PATH` and friends, unset by default): both
+  merge paths pull the target repo's default branch (`git pull --ff-only`) and start its
+  own preview script in the background after a successful merge
+  (`infrastructure/local_preview.py`), and `POST /projects/{id}/preview` /
+  `.../preview/stop` let a human trigger or stop it by hand. Single machine, single
+  checkout, single preview at a time - a laptop-demo convenience, not the hosted
+  "preview per pull request" `docs/hyperdelivery-plan.md`'s Phase 3 describes. See
+  docs/decisions.md.
+
+- Merging a build pull request no longer requires the human to touch git. A human can
+  explicitly merge one build from the console
+  (`POST /projects/{id}/builds/{number}/merge`), and approving at the G3 gate now merges
+  every build Review recorded automatically before the approval completes - bringing a
+  behind branch up to date first (`providers/github/merge.py`'s `resolve_and_merge`), and
+  failing the whole approval, with GitHub's own message, if a build has a real conflict
+  it cannot safely resolve. No agent tool gained merge access. See docs/decisions.md.
+
+- `resolve_and_merge` now also takes a build's pull request out of GitHub's draft state
+  first, via GraphQL's `markPullRequestReadyForReview` (REST's "Update a pull request"
+  has no field for this). Copilot-authored PRs are opened as drafts and do not reliably
+  flip themselves to ready, and GitHub refuses to merge a draft regardless of CI or
+  approval - so signing the G3 gate on one used to fail the whole approval with "Pull
+  Request is not mergeable" even though the code was correct. See docs/decisions.md.
+
+### Fixed
+
+- `resolve_and_merge`'s merge step used GitHub's synchronous `PUT .../pulls/{n}/merge`,
+  which GitHub refuses outright for a stacked pull request ("Merging stacked PRs via this
+  endpoint is not supported. Use the asynchronous merge endpoint instead.") - a live G3
+  approval failed closed on exactly that message for two stacked builds, even after the
+  TLS fix below let the call reach GitHub at all. `merge_pull_request` now always calls
+  `PUT .../pulls/{n}/merge-async` instead (GitHub's own docs: "required for stacked PRs,
+  but also supports unstacked PRs", picking whichever merge action is appropriate on its
+  own) and polls `GET .../merge-async/{uuid}` until GitHub reports the job merged or
+  failed, rather than detecting stacking itself. See docs/decisions.md.
+
+- `providers/github/merge.py` and `providers/github/pull_requests.py` built their
+  `httpx.Client` without `verify=truststore.SSLContext(...)`, unlike every other outbound
+  GitHub call in this repo - so under this network's TLS-inspecting proxy every one of
+  their calls failed `CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate`
+  (certifi's bundled CA list has no entry for the proxy's re-signed root; the OS trust
+  store does). A live G3 approval failed closed on it: "could not merge every build: PR
+  #21: could not reach GitHub; PR #22: could not reach GitHub" for both builds, every
+  time, and the build cards showed "status unavailable" - not a real conflict, and no
+  decision was recorded either time (by design), but it still meant re-signing by hand
+  and, before this fix, would have kept failing forever. Now both modules use the same
+  `truststore` pattern as `providers/github/files.py`/`api/auth.py`. Every GitHub call in
+  `resolve_and_merge` also now retries twice more, a fifth of a second apart, on a
+  dropped connection - genuinely transient blips still happen independently of this. See
+  docs/decisions.md.
+
+- The build pull request card (`BuildBoard`) said "Copilot is writing the code" for a
+  still-draft pull request even after Review had already finished assessing it and handed
+  off to the G3 gate - true to GitHub's `draft` flag (Copilot rarely flips it itself) but
+  misleading once the actual work is done and a human is the one being waited on. Now
+  reads "in draft · ready for your sign-off" once Review has handed off
+  (`reviewComplete` prop, `ui/console/src/components/thread/BuildBoard.tsx`).
+
+- The build pull request card (`BuildBoard`) used to disappear the instant Review handed
+  off, because it only rendered while `project.station` was still exactly `"review"` -
+  the same moment the console moves to the G3 gate to ask the human to sign off on that
+  handoff. Now stays up through `showroom_approval` too (`ui/console/src/components/
+  thread/Thread.tsx`), so build/Copilot status is visible for the decision it is meant to
+  inform, not gone by the time it's needed.
+
+- `get_file_contents_batch`, a new tool shared by Blueprint and Review, fetches several
+  files from a repo concurrently in one call. Strands does run every tool the model asks
+  for in one turn concurrently, but the model still has to request each single-file
+  `get_file_contents` call one at a time - so N files still cost N sequential model round
+  trips; this collapses a brownfield scan or PR-grounding read of several files down to
+  one round trip. Not an MCP tool - implemented as a direct GitHub REST client
+  (`providers/github/files.py`) since the remote MCP server has no batch equivalent.
+  Both agents' system prompts now prefer it once more than one path is known. See
+  docs/decisions.md.
+
+- Distill no longer performs broad external searches or an opening planning-tool round
+  when the input contains no explicit source identifier. This avoids unnecessary model
+  calls, remote Jira/Confluence fan-out, and oversized retrieval results.
+
 - Gate 3, the grade sheet sign-off, between Film Room and Gameday. Review files issues,
   assigns them to Copilot's coding agent and opens pull requests automatically, and two
   comments justified that by pointing at a "G3 human sign-off gate" that did not exist -
@@ -64,6 +151,24 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Changed
 
+- MCP tool results are clipped at 60,000 characters, with a note saying how much was
+  dropped and to ask for a narrower slice. Nothing between the server and the message
+  list capped a single read, so a repository tree or a code search over a large repo
+  answered with the whole thing - one tool call deciding how much of the context window
+  the rest of the turn gets. `BoundedMCPClient` already bounded tool calls in time; it
+  now bounds them in size.
+- Blueprint's `max_tokens` drops from 32,768 to 16,384. Output is generated serially at
+  ~85 tokens/second, so the ceiling is a time budget, and Distill grew 11.5k -> 16.2k
+  output tokens on an unchanged prompt purely from having its own raised - the ceiling
+  drives length as much as the need does. Truncation is not silent if 16,384 turns out
+  to be too low: `MaxTokensReachedException` already surfaces as its own error.
+- The prompt carries its own cache boundary. Bedrock places a cache point at the end of
+  the last user message, which put the predecessor artifacts inside a prefix rewritten on
+  every call - so a redraft wrote a new cache entry and never read one. The payload now
+  splits into `grounding` (settled upstream artifacts) and `prompt` (this turn's
+  instruction) with a cache point between them, and grounding JSON is serialized without
+  `indent=2`. Showroom carries three upstream artifacts and gains the most; Distill has no
+  predecessors and is unaffected. See docs/decisions.md.
 - Tool calls and the reasoning disclosure lost their frames: no border, no fill, no
   "done" label, and a caret that only appears on hover. A trace of what the agent did
   should not compete with the reply it sits under.
@@ -72,6 +177,18 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   literal `##` and `1.`. A `components` map binds every element to the console's own
   tokens and type scale, and `img` renders nothing - a station should not be pulling remote
   images into the thread.
+- Every agent's prompt now lets a turn with no real work - a bare greeting, a single reply
+  with nothing to draft, look up or ask - skip `track_plan` and respond directly. It was
+  unconditional, so a trivial turn paid for a full extra model round trip just to declare
+  a plan nobody needed. See docs/decisions.md.
+- `completeness` on every output contract (`StructuredSpec`, `Blueprint`, `ReviewReport`,
+  `DemoPackage`) now defaults instead of being required. `score` and `gaps` are always
+  recomputed server-side from the stored artifact and overwrite whatever the agent
+  claimed, so it was a required field the model's own value for was thrown away - and on
+  a trivial turn the model frequently omitted it anyway, which Strands' structured-output
+  tool treats as a validation failure and sends back for a full extra model call to fix.
+  Measured on Distill: a bare "hi" cost up to three model calls (two of them
+  `StructuredSpec` retries) before this change, two after. See docs/decisions.md.
 
 ### Fixed
 

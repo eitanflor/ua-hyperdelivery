@@ -3,7 +3,7 @@ import { ArrowSquareOutIcon, CaretRightIcon, FileTextIcon } from "@phosphor-icon
 import type { ToolCallEvent, UsageEvent } from "../../api/client";
 import { hasContent } from "../../api/artifacts";
 import { AGENT_META } from "../../lib/pipeline";
-import { withoutPlan } from "../../lib/plan";
+import { questionsFromToolCalls, withoutPlan } from "../../lib/plan";
 import { toolLabel } from "../../lib/toolLabels";
 import { artifactStats, composeReply } from "../../lib/formatArtifact";
 import { Markdown } from "../../lib/markdown";
@@ -124,6 +124,7 @@ export function AgentTurn({
   const toolRows = withoutPlan(toolCalls).map((call) =>
     call.status === "running" ? { ...call, status: "interrupted" as const } : call,
   );
+  const askedViaTool = questionsFromToolCalls(toolCalls).length;
   return (
     <div className="animate-rise">
       <Attribution agent={agent} usage={usage} />
@@ -142,7 +143,7 @@ export function AgentTurn({
               summary below is derived from the artifact and cannot mention what the agent
               could not do (a table it had no access to, a source it fell back from) */}
           {text?.trim() && <Markdown text={text} />}
-          <Markdown text={composeReply(content)} />
+          <Markdown text={composeReply(content, askedViaTool)} />
         </div>
         {hasContent(content) && (
           <ArtifactCard agent={agent} content={content} onOpen={() => onViewArtifact(agent)} />

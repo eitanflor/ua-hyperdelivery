@@ -82,10 +82,13 @@ class LocalAgentClient:
                 continue
             yield json.loads(line[len("data: ") :])
 
-    def invoke(self, agent: str, prompt: str) -> dict[str, Any]:
+    def invoke(self, agent: str, prompt: str) -> dict[str, Any] | None:
         """Drains `stream()` and returns just the final result.
 
-        For callers that don't need the incremental chunks.
+        For callers that don't need the incremental chunks. Returns `None` if the
+        stream ended cleanly without producing a result - a valid outcome for an agent
+        wired with `force_structured_output=False` (see agent_runtime.factory), meaning
+        the model chose not to draft anything this turn.
         """
         for event in self.stream(agent, prompt):
             if "error" in event:
@@ -93,5 +96,4 @@ class LocalAgentClient:
                 raise RuntimeError(msg)
             if "result" in event:
                 return event["result"]
-        msg = f"{agent} agent invocation ended without a result"
-        raise RuntimeError(msg)
+        return None

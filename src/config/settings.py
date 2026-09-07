@@ -61,6 +61,15 @@ class Settings(BaseSettings):
     # the frontend's VITE_ENTRA_TENANT_ID/VITE_ENTRA_CLIENT_ID.
     entra_tenant_id: str | None = None
     entra_client_id: str | None = None
+    # Local demo preview only - the console API and this checkout must be the same
+    # machine (see infrastructure/local_preview.py, docs/decisions.md). Unset means no
+    # preview automation: merging still succeeds, there is just no checkout to run a
+    # script in. Not the hosted "preview per pull request" docs/hyperdelivery-plan.md's
+    # Phase 3 describes - that is unbuilt.
+    preview_checkout_path: str | None = None
+    preview_command: str = "./scripts/preview.sh"
+    preview_backend_port: int = 8000
+    preview_frontend_port: int = 5183
 
 
 @lru_cache

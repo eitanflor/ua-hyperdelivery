@@ -8,10 +8,12 @@ from core.constants import AgentName
 from core.domain.spec import StructuredSpec
 from tools.atlassian import confluence_mcp_client, jira_read_mcp_client
 from tools.distill import (
+    ask_clarifying_questions,
     detect_fsd_template,
     extract_field_rules,
     score_completeness,
     score_template_coverage,
+    submit_structured_spec,
     validate_rule_correlations,
     validate_structured_spec,
 )
@@ -31,6 +33,8 @@ _tools: list[Any] = [
     validate_structured_spec,
     validate_rule_correlations,
     score_completeness,
+    submit_structured_spec,
+    ask_clarifying_questions,
 ]
 if (_confluence := confluence_mcp_client()) is not None:
     _tools.append(_confluence)
@@ -44,7 +48,7 @@ if (_s3_similar := s3_similarity_search_tool()) is not None:
     _tools.append(_s3_similar)
 _tools.extend(snowflake_tools())
 
-app = create_app(AgentName.DISTILL, StructuredSpec, tools=_tools)
+app = create_app(AgentName.DISTILL, StructuredSpec, tools=_tools, force_structured_output=False)
 
 if __name__ == "__main__":
     app.run(port=get_settings().port)

@@ -5,6 +5,8 @@ from typing import Any
 
 from strands import tool
 
+from core.domain.project import OpenQuestion
+from core.domain.spec import StructuredSpec
 from core.validation.spec import COVERAGE_GAP_PHRASES, COVERAGE_NOUNS
 
 # Two real UA FSD template families observed in the fsds/ reference bucket, keyed by the
@@ -276,3 +278,38 @@ def score_completeness(
     covered = sum(len(requirement_id_set) - len(ids) for ids in missing.values())
     covered += len(criteria_id_set) - len(missing_rules)
     return {"score": round(covered / total, 2), "gaps": gaps}
+
+
+@tool(name="StructuredSpec")
+def submit_structured_spec(spec: StructuredSpec) -> dict[str, Any]:
+    """Submit this turn's draft once you actually have real content for it.
+
+    Call this only when there is something worth drafting - do not call it on a turn
+    that is only a greeting or only open questions; use `ask_clarifying_questions`
+    instead, which costs far less than a validated spec draft. A validation error here
+    is not a dead end: fix the field it names and call this again in the same turn.
+    """
+    # Strands validates `spec` against this signature's type hint but then hands the
+    # function its `.model_dump()`-flattened dict, not the model instance the hint
+    # promises - re-validate rather than access attributes straight off the dict.
+    spec = StructuredSpec.model_validate(spec)
+    return {"status": "recorded", "title": spec.title}
+
+
+@tool
+def ask_clarifying_questions(questions: list[OpenQuestion]) -> dict[str, Any]:
+    """Ask the person up to four questions instead of drafting a spec this turn.
+
+    Call this - not `StructuredSpec` - when there is not yet enough to draft real
+    content: a bare greeting, a one-line idea with no detail, or a previous turn's
+    questions still unanswered. This shows the person a question card with no draft, no
+    score, and nothing saved as an artifact - it exists precisely so asking does not
+    require faking a spec first. Never re-ask something already answered - the
+    previous draft and the person's answers come back to you on the next turn. Write
+    each question for the person who asked for the work, not for an engineer, and give
+    `options` drawn from the real domain whenever you can plausibly guess them; leave
+    `options` empty when any list you invented would be worse than a free-text reply.
+    """
+    # See submit_structured_spec: `questions` arrives as `list[dict]` despite the type
+    # hint, so re-validate each one before relying on it having model methods/defaults.
+    return {"questions": [OpenQuestion.model_validate(q).model_dump() for q in questions]}

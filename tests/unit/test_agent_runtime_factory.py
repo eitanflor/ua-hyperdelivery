@@ -15,6 +15,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 from strands.types.exceptions import MaxTokensReachedException
+from strands.types.tools import ToolResult
 
 from agent_runtime import factory
 from core.constants import AgentName
@@ -149,6 +150,21 @@ def invoke(stub_agent: _StubAgent, monkeypatch: pytest.MonkeyPatch) -> Any:
     return captured["fn"]
 
 
+@pytest.fixture
+def voluntary_invoke(stub_agent: _StubAgent, monkeypatch: pytest.MonkeyPatch) -> Any:
+    """Same as `invoke`, but with `force_structured_output=False` - Distill's real mode."""
+    captured: dict[str, Any] = {}
+
+    class _StubApp:
+        def entrypoint(self, fn: Any) -> Any:
+            captured["fn"] = fn
+            return fn
+
+    monkeypatch.setattr(factory, "BedrockAgentCoreApp", _StubApp)
+    factory.create_app(AgentName.DISTILL, _Output, force_structured_output=False)
+    return captured["fn"]
+
+
 async def _drain(events: AsyncGenerator[dict[str, Any], None]) -> list[dict[str, Any]]:
     return [event async for event in events]
 
@@ -158,6 +174,35 @@ async def test_returns_the_validated_structured_output(invoke: Any, stub_agent: 
 
     assert events == [{"result": {"value": "ok"}}]
     assert stub_agent.calls == ["do the thing"]
+
+
+async def test_voluntary_draft_succeeds_without_forcing_structured_output(
+    voluntary_invoke: Any, stub_agent: _StubAgent
+) -> None:
+    # the model's own tool call wraps its one Pydantic-typed parameter, unlike the
+    # Strands-forced path where the fields arrive at the top level - see
+    # `factory._unwrap_single_param`
+    stub_agent._events = [  # pyright: ignore[reportPrivateUsage]  # arranging the stub's script
+        _after_tool_call("call-1", "_Output", {}, tool_input={"draft": {"value": "ok"}}),
+        {"result": _Result(None)},
+    ]
+
+    events = await _drain(voluntary_invoke({"prompt": "draft it"}, None))
+
+    assert {"result": {"value": "ok"}} in events
+
+
+async def test_voluntary_turn_with_no_draft_ends_cleanly(
+    voluntary_invoke: Any, stub_agent: _StubAgent
+) -> None:
+    # a bare greeting or a clarifying-question turn is a valid outcome, not a failure - it
+    # must not be reported as an error, nor forced to produce an empty artifact
+    stub_agent._events = [{"result": _Result(None)}]  # pyright: ignore[reportPrivateUsage]
+
+    events = await _drain(voluntary_invoke({"prompt": "hi"}, None))
+
+    assert not any("error" in event for event in events)
+    assert not any("result" in event for event in events)
 
 
 async def test_reports_that_it_is_waiting_while_the_model_produces_nothing(
@@ -614,3 +659,52 @@ async def test_session_id_from_context_reaches_the_log_filter(invoke: Any) -> No
     await _drain(invoke({"prompt": "do the thing"}, _Context()))
 
     assert factory.session_id_var.get() == "session-abc"
+
+
+def test_tool_result_payload_decodes_a_single_json_block() -> None:
+    result: ToolResult = {
+        "toolUseId": "t1",
+        "status": "success",
+        "content": [{"text": '{"ok": true}'}],
+    }
+
+    assert factory._tool_result_payload(result) == {"ok": True}  # pyright: ignore[reportPrivateUsage]
+
+
+def test_tool_result_payload_falls_back_to_raw_text_for_non_json() -> None:
+    result: ToolResult = {
+        "toolUseId": "t1",
+        "status": "success",
+        "content": [{"text": "plain text"}],
+    }
+
+    assert factory._tool_result_payload(result) == "plain text"  # pyright: ignore[reportPrivateUsage]
+
+
+def test_tool_result_payload_joins_every_block_instead_of_only_the_first() -> None:
+    # GitHub's get_file_contents returns a short status block followed by the file's
+    # own content as a second block - stopping at the first would hide the file itself
+    result: ToolResult = {
+        "toolUseId": "t1",
+        "status": "success",
+        "content": [
+            {"text": "successfully downloaded text file (SHA: abc123)"},
+            {"text": "def hello():\n    return 1\n"},
+        ],
+    }
+
+    payload = factory._tool_result_payload(result)  # pyright: ignore[reportPrivateUsage]
+
+    assert (
+        payload == "successfully downloaded text file (SHA: abc123)\n\ndef hello():\n    return 1\n"
+    )
+
+
+def test_tool_result_payload_is_none_with_no_text_blocks() -> None:
+    result: ToolResult = {
+        "toolUseId": "t1",
+        "status": "success",
+        "content": [{"image": {"format": "png", "source": {"bytes": b""}}}],
+    }
+
+    assert factory._tool_result_payload(result) is None  # pyright: ignore[reportPrivateUsage]

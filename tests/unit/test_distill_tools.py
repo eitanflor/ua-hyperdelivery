@@ -1,4 +1,21 @@
-from tools.distill import score_completeness, validate_rule_correlations, validate_structured_spec
+from core.domain.project import OpenQuestion
+from core.domain.spec import (
+    AcceptanceCriterion,
+    BusinessValue,
+    EvidenceLink,
+    GateCriterion,
+    MachineReadableRule,
+    Requirement,
+    RequirementIntent,
+    StructuredSpec,
+)
+from tools.distill import (
+    ask_clarifying_questions,
+    score_completeness,
+    submit_structured_spec,
+    validate_rule_correlations,
+    validate_structured_spec,
+)
 
 
 def test_score_completeness_scores_full_coverage_as_one() -> None:
@@ -153,3 +170,73 @@ def test_validate_rule_correlations_flags_unknown_rule_id() -> None:
 
     assert result["valid"] is False
     assert "rule correlation references unknown rule missing" in result["issues"]
+
+
+def test_submit_structured_spec_records_the_draft() -> None:
+    spec = StructuredSpec(
+        title="Order export",
+        requirements=[Requirement(id="R1", description="do R1")],
+        gate_criteria=[GateCriterion(id="G1", description="is testable")],
+        rules=[MachineReadableRule(id="M1", criterion_id="G1", rule="x must be set")],
+        rule_correlations=[],
+        evidence=[EvidenceLink(requirement_id="R1", evidence="page 1")],
+        acceptance_criteria=[
+            AcceptanceCriterion(id="A1", requirement_id="R1", description="works")
+        ],
+        business_value=[
+            BusinessValue(requirement_id="R1", use_case="analyst", roi="saves an hour")
+        ],
+        intents=[RequirementIntent(requirement_id="R1", intent="functional")],
+    )
+
+    result = submit_structured_spec(spec=spec)
+
+    assert result == {"status": "recorded", "title": "Order export"}
+
+
+def test_submit_structured_spec_accepts_the_plain_dict_strands_actually_sends() -> None:
+    # Strands validates `spec` against the StructuredSpec type hint but hands the
+    # function `validated.model_dump()`, not a StructuredSpec instance - a real turn
+    # only ever sees a dict here, never the model the signature promises.
+    spec = StructuredSpec(
+        title="Order export",
+        requirements=[Requirement(id="R1", description="do R1")],
+        gate_criteria=[GateCriterion(id="G1", description="is testable")],
+        rules=[MachineReadableRule(id="M1", criterion_id="G1", rule="x must be set")],
+        rule_correlations=[],
+        evidence=[EvidenceLink(requirement_id="R1", evidence="page 1")],
+        acceptance_criteria=[
+            AcceptanceCriterion(id="A1", requirement_id="R1", description="works")
+        ],
+        business_value=[
+            BusinessValue(requirement_id="R1", use_case="analyst", roi="saves an hour")
+        ],
+        intents=[RequirementIntent(requirement_id="R1", intent="functional")],
+    )
+
+    result = submit_structured_spec(spec=spec.model_dump())  # type: ignore[arg-type]
+
+    assert result == {"status": "recorded", "title": "Order export"}
+
+
+def test_ask_clarifying_questions_returns_the_asked_questions() -> None:
+    questions = [
+        OpenQuestion(id="Q1", question="Which system owns the export?"),
+        OpenQuestion(id="Q2", question="Real-time or batch?", options=["real-time", "batch"]),
+    ]
+
+    result = ask_clarifying_questions(questions=questions)
+
+    assert result == {"questions": [q.model_dump() for q in questions]}
+
+
+def test_ask_clarifying_questions_accepts_the_plain_dicts_strands_actually_sends() -> None:
+    # See test_submit_structured_spec_accepts_the_plain_dict_strands_actually_sends.
+    questions = [
+        OpenQuestion(id="Q1", question="Which system owns the export?"),
+        OpenQuestion(id="Q2", question="Real-time or batch?", options=["real-time", "batch"]),
+    ]
+
+    result = ask_clarifying_questions(questions=[q.model_dump() for q in questions])  # type: ignore[list-item]
+
+    assert result == {"questions": [q.model_dump() for q in questions]}

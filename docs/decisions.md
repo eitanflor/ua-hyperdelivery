@@ -17,6 +17,375 @@ Template for new entries:
 
 ---
 
+## 2026-09-08 - Findings against an already-open pull request get an `@copilot` PR comment, not a fresh issue assignment
+
+- **Status**: Accepted.
+- **Context**: Review resolves every blocker/major finding to a GitHub issue and calls
+  `assign_copilot_to_issue` on it, unconditionally - including for a `unit_id` whose
+  issue already has an open pull request from an earlier turn. GitHub's own coding agent
+  treats a fresh assignment as a new session from the issue's current base branch, which
+  is exactly the "two coding-agent sessions editing the same file" collision this file's
+  system prompt already warns against elsewhere (it has cost four unusable pull requests
+  once). GitHub's documented alternative - an `@copilot`-mentioning comment on the pull
+  request itself - keeps Copilot iterating on the same branch instead.
+- **Decision**: Before calling `assign_copilot_to_issue`, Review now checks
+  (`list_pull_requests`) whether the finding's issue already has an open pull request. If
+  so, it calls `add_issue_comment` on the PR's own number (pull requests and issues share
+  GitHub's numbering, so the same tool posts to either) with a comment starting
+  `@copilot` describing the finding, and records the assignment's new
+  `pull_request_number` field instead of reassigning the issue. `assign_copilot_to_issue`
+  is only called when no open pull request covers the issue yet. No new GitHub MCP tool
+  was needed - `add_issue_comment` was already in Review's allow-list for recording the
+  issue-to-PR trail.
+- **Alternatives considered**: Leaving the unconditional reassignment as-is and relying on
+  `plan_delivery`'s "check whether one already exists" guard - rejected, that guard only
+  covers building each delivery group once per turn, not a later turn's fresh findings
+  against a group whose pull request is still open. Adding a dedicated
+  `pull_request_review_write`-style tool - rejected, GitHub's issue-comment endpoint
+  already accepts a PR number, so no new tool or connector was needed.
+- **Consequences**: A G3 re-review that finds the same delivery group still wanting no
+  longer risks a second, colliding pull request - it lands as a comment Copilot picks up
+  on the branch already open. `CopilotAssignment.pull_request_number` is optional and
+  defaults to `None`, so existing stored `ReviewReport` artifacts and their `assigned`/
+  `issue_number` semantics are unchanged.
+
+---
+
+## 2026-09-08 - `merge_pull_request` always uses GitHub's `merge-async` endpoint
+
+- **Status**: Accepted.
+- **Context**: Once the `truststore` fix below let `merge.py` actually reach GitHub, a
+  live G3 approval failed closed with a different, genuine GitHub API error for two
+  stacked builds (PR #22 opened against PR #21's branch): "Merging stacked PRs via this
+  endpoint is not supported. Use the asynchronous merge endpoint instead." GitHub's own
+  REST docs confirm the synchronous `PUT .../pulls/{n}/merge` refuses any pull request
+  whose base is another open PR's branch, full stop - there is no request body or retry
+  that changes that verdict. The dedicated `PUT .../pulls/{n}/merge-async` endpoint is,
+  in GitHub's own words, "the required method for merging stacked PRs, but also supports
+  unstacked PRs", returning a job that is either settled immediately (200) or run in the
+  background (202/409, poll `GET .../merge-async/{uuid}` for the result).
+- **Decision**: `merge_pull_request`/`_merge` now always call `merge-async`, never the
+  synchronous endpoint, for every pull request - not just ones detected as stacked. A
+  `pending`/`enqueued` response is polled (one second apart, twenty attempts) until
+  GitHub reports `merged` or `failed`; the public `MergeResult` contract (`merged`,
+  `sha`, `message`) is unchanged, only `_merge`'s internals and the `_Client` protocol
+  (which gained a `get` method to support polling) changed.
+- **Alternatives considered**: Detecting a stacked PR first (e.g. checking whether
+  `base.ref` is another open PR's head) and only then switching endpoints was rejected -
+  it duplicates a check GitHub already does for free, and `merge_action: default` on
+  `merge-async` already "selects the most appropriate option" for both stacked and
+  unstacked PRs, so there is no unstacked case the async endpoint handles worse. Polling
+  indefinitely was rejected in favor of a bounded budget (twenty seconds) that reports a
+  clear "merge is still pending on GitHub" rather than hanging the request forever.
+- **Consequences**: A merge that settles in the background now takes up to ~20s longer in
+  the worst case (most complete on the first poll or immediately); if GitHub's background
+  merges start taking longer than that in practice, raise `_MERGE_POLL_ATTEMPTS` rather
+  than removing the ceiling.
+
+## 2026-09-08 - `providers/github/merge.py` and `pull_requests.py` use `truststore`, not certifi
+
+- **Status**: Accepted.
+- **Context**: A live G3 approval failed closed with "could not merge every build: PR
+  #21: could not reach GitHub; PR #22: could not reach GitHub" for both builds, every
+  single time - initially mistaken for a transient network blip (see the retry entry
+  below, added first and still worth keeping), but a direct repro with the same `httpx`
+  client the server uses returned the real error every time: `ConnectError [SSL:
+  CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer
+  certificate`. This network's TLS-inspecting proxy re-signs GitHub's certificate with a
+  root only the OS trust store knows - `curl` and every other GitHub call in this repo
+  (`api/auth.py`, `mcp_clients/github.py`, `providers/github/files.py`,
+  `providers/storage/snowflake.py`) already account for this with `truststore`; these two
+  modules were the two GitHub clients that never got that treatment.
+- **Decision**: Both modules now build their `httpx.Client` with
+  `verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)`, matching the existing pattern
+  exactly. Confirmed fixed by direct repro before and after.
+- **Alternatives considered**: None genuinely - this is copying an established, already-
+  decided pattern (see `truststore` entries in this log) to two modules that were missed
+  when it was introduced, not a new choice.
+- **Consequences**: Every GitHub call in this repo now goes through the OS trust store.
+  If a new GitHub (or other external HTTPS) client is added and hits
+  `CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate`, copy this pattern
+  before reaching for anything else - see CONTRIBUTING.md.
+
+## 2026-09-08 - Retry transient GitHub transport failures inside `merge.py`, not at the API layer
+
+- **Status**: Accepted.
+- **Context**: A live G3 approval failed closed with "could not merge every build: PR
+  #21: could not reach GitHub; PR #22: could not reach GitHub" for both builds in the same
+  request, while GitHub itself was reachable moments later - `httpx.HTTPError` (a dropped
+  connection through this network's TLS-inspecting proxy), not GitHub declining the merge.
+  `submit_decision` never records the decision when a merge fails, so no false approval
+  landed, but the human still had to notice and re-sign by hand.
+- **Decision**: Every GitHub call inside `providers/github/merge.py` (`_get`,
+  `_post_ready_mutation`, `_update_branch`, `_merge`) now retries up to twice more, a fifth
+  of a second apart, before its existing `except httpx.HTTPError` fallback runs. A real
+  4xx/5xx from GitHub is untouched by this - callers still check `response.status_code`
+  themselves and see it on the first attempt.
+- **Alternatives considered**: Retrying the whole `_merge_all_builds_or_fail` request at
+  the API layer (`api/routers/projects.py`) was rejected - it would re-attempt builds that
+  already merged successfully, not just the ones that hit a transport error. Exponential
+  backoff was rejected as unwarranted complexity for a proxy blip that clears in well
+  under a second; a small fixed number of quick retries was enough to fix the reported
+  failure without adding a real delay to the common, successful case.
+- **Consequences**: A merge now takes up to ~0.6s longer only when the network drops a
+  connection mid-call, not otherwise. If this keeps recurring rather than clearing in two
+  extra attempts, that points to a persistent proxy/network problem worth investigating
+  directly, not more retries.
+
+## 2026-09-07 - A Copilot-authored draft PR is taken out of draft before merging, not merged around
+
+- **Status**: Accepted.
+- **Context**: Approving at the G3 gate calls `resolve_and_merge` on every build Review
+  recorded (see the "Merging is a human-triggered console action" entry below), but a
+  live G3 approval failed closed on a build whose code was actually correct: GitHub's
+  Copilot coding agent opens every pull request as a draft and does not reliably flip it
+  to "ready for review" itself, and GitHub refuses to merge a draft regardless of CI
+  status or human approval - `merge_pull_request` surfaced that refusal as GitHub's own
+  405 message, correctly, but with no path forward short of a human leaving the console
+  to click "Ready for review" on GitHub by hand. REST's "Update a pull request" endpoint
+  has no `draft` field to flip (confirmed against GitHub's own REST reference: the body
+  only accepts `title`/`body`/`state`/`base`/`maintainer_can_modify` - `draft` is
+  create-only there); only GraphQL's `markPullRequestReadyForReview` mutation can, and it
+  needs the PR's GraphQL node id rather than its number, hence an extra read first.
+- **Decision**: Added `mark_ready_for_review` to `providers/github/merge.py` (GET the PR
+  for its `node_id` and draft flag, then POST the GraphQL mutation if it is still a
+  draft) and call it first inside `resolve_and_merge`, before `update_branch`. Treated as
+  the same category as `update_branch`: mechanical follow-through on a decision a human
+  already made, not a new judgment call - the G3 sign-off itself *is* the "this is ready"
+  judgment, Copilot's own draft flag is just stale bookkeeping underneath it. Best-effort
+  like `update_branch`: a PR that fails to convert (declined, unreadable, no node id)
+  falls through to the merge attempt unchanged, which then reports GitHub's genuine
+  verdict - never a merge claimed to succeed when GitHub actually still declined it.
+- **Alternatives considered**: A separate "convert to ready" button in the console, split
+  from merge - rejected as a second click for something the human has already decided by
+  signing the gate, and the G3 screen has no separate control surface for a single build
+  today. Requiring Copilot's own PR body/description to self-report readiness - rejected,
+  nothing in the coding agent's output reliably signals it, and inferring it from CI
+  status would conflate "draft" with "checks passing" (F2/F3 in a live Review report
+  showed these are independent: CI can be entirely not run on a draft PR whose diff is
+  already correct).
+- **Consequences**: A G3 approval can now succeed on a build Copilot left in draft,
+  provided the code is otherwise mergeable - closing the gap a live demo hit. Adds one
+  more GitHub call (a GET) to every merge attempt, harmless given the existing 10s
+  timeout and this path only running on an explicit human action. If GitHub ever adds
+  `draft` to the REST update-a-pull-request body, this can drop the GraphQL call.
+
+---
+
+## 2026-09-07 - BedrockModel's own 120s read timeout undercut the heartbeat mechanism built to tolerate it
+
+- **Status**: Accepted.
+- **Context**: A live Blueprint invocation crashed outright: `model call took 123.2s` then
+  `urllib3.exceptions.ReadTimeoutError` -> `EventLoopException`, ending the whole agent
+  invocation, not just one tool call. `strands.models.bedrock.BedrockModel` builds its own
+  `botocore.config.Config` with `read_timeout=DEFAULT_READ_TIMEOUT` (120s) whenever the
+  caller doesn't pass `boto_client_config` - `providers/agents/strands_factory.py` wasn't
+  passing one, so every agent (Blueprint, Review, Distill, Showroom) inherited that 120s
+  cap. `agent_runtime/factory.py` already has `_with_heartbeat`, built specifically so "a
+  slow prefill and a hung turn look identical from outside" doesn't matter - the console
+  is meant to tolerate a long silent model call. Botocore's own read timeout undercut that
+  design by killing the connection before the model ever got to respond, at a layer the
+  heartbeat mechanism has no visibility into or control over.
+- **Decision**: `strands_factory.py` now passes `boto_client_config=BotocoreConfig(
+  connect_timeout=10, read_timeout=None)` to every `BedrockModel`. Confirmed against the
+  installed botocore (1.43.78) that `read_timeout=None` really does disable it
+  (`httpsession.py` builds `urllib3.util.Timeout(connect=connect_timeout, read=None)` from
+  a config-supplied tuple, not a silent fallback to a default - that fallback path only
+  fires when the whole `timeout` argument is `None`, which a tuple never is). Same
+  reasoning as the GitHub MCP transport fix above: let the mechanism that's actually meant
+  to decide how long to wait (here, the heartbeat/console layer) be the only one that does,
+  instead of an implicit SDK default nobody chose. `connect_timeout` stays bounded so a
+  real failure to reach Bedrock still fails fast.
+- **Alternatives considered**: Raising `read_timeout` to a large finite number (e.g. 300s)
+  instead of `None` - rejected for the same reason as the httpx case: it would need to be
+  kept in sync with whatever the console/heartbeat layer's own tolerance is, which is
+  exactly the duplicated-source-of-truth this avoids. Retrying the turn on a timeout -
+  rejected: Strands' own event loop can't resume a partially-streamed model response, so a
+  retry would redo the whole turn's tool calls, not just the one that stalled.
+- **Consequences**: A genuinely slow model call (large context, extended thinking, a
+  Bedrock-side hiccup) now surfaces to the console as a longer wait via the existing
+  heartbeat/"thinking" events instead of a hard crash. Nothing now caps how long a single
+  model call can run except the console's own request lifecycle - if a truly hung call
+  (not just slow) needs its own ceiling later, it belongs at that layer, not silently
+  reintroduced here.
+
+## 2026-09-07 - The GitHub MCP transport had its own 5s timeout underneath BoundedMCPClient
+
+- **Status**: Accepted.
+- **Context**: The prompt-level fix below (treat a hand-off timeout as inconclusive) and
+  the `_SLOW_GITHUB_TOOLS` timeout tuning were built on the assumption that
+  `BoundedMCPClient`'s per-tool timeout (60s default, 90s for the hand-off tools) was the
+  only thing governing how long a GitHub MCP call waits. A manual, isolated call to
+  `assign_copilot_to_issue` (bypassing the agent loop, timed directly) proved that wrong:
+  it died in 5.1s with `httpx.ReadTimeout` -> `RuntimeError: Connection to the MCP server
+  was closed` - a hard kill of the whole MCP session, not a graceful single-tool failure.
+  `mcp_clients/github.py`'s `_truststore_http_client` built its `httpx.AsyncClient` with
+  no `timeout=` argument, so it silently inherited httpx's own default
+  (`httpx.Timeout(timeout=5.0)` - confirmed directly against the installed httpx 0.28.1).
+  That 5s transport-level timeout fired long before `BoundedMCPClient`'s tool-level
+  timeout ever got a chance to - which is why raising `_SLOW_GITHUB_TOOLS` from 45s to
+  90s to (previously) 240s never actually changed anything: the connection was already
+  gone before any of those numbers were reached. This is specific to GitHub's client -
+  `mcp_clients/atlassian.py` uses `stdio_client` (a local subprocess), not httpx, so it
+  was never exposed to this.
+- **Decision**: `_truststore_http_client` now passes an explicit `httpx.Timeout(connect=
+  10.0, read=None, write=10.0, pool=10.0)`. `read=None` hands the actual cutoff back to
+  `BoundedMCPClient`'s per-tool timeout, which is what the codebase already claims is the
+  single source of truth for how long to wait - this change only makes that true.
+  Connect/write/pool stay bounded at 10s so a genuine network failure (proxy down, DNS
+  failure) still fails fast instead of hanging. Verified live: the same manual call that
+  died at 5.1s before this change completed at 10.5s after it, with Copilot's PR already
+  linked in the response.
+- **Alternatives considered**: Setting `read` to a large finite number (e.g. 120s) instead
+  of `None` - rejected as needing to be kept in sync with whatever `_SLOW_GITHUB_TOOLS`'s
+  largest value is, which is exactly the kind of duplicated-source-of-truth this change is
+  trying to remove. Raising `_SLOW_GITHUB_TOOLS` further - already tried twice in the prior
+  entry below and confirmed above to be irrelevant, since the transport was the actual
+  limiting factor the whole time.
+- **Consequences**: The prior entry's prompt-level fix (timeout is inconclusive, verify
+  with `issue_read`/`list_pull_requests`) and the 90s `_SLOW_GITHUB_TOOLS` value are still
+  correct and still needed as a backstop for genuinely slow responses - this fix removes a
+  much more common failure (any response over 5s, which is nearly all of them for the
+  hand-off tools) that was masquerading as the same symptom. Worth checking whether other
+  httpx-based MCP or HTTP clients in this repo (if any are added later) get an explicit
+  timeout rather than inheriting httpx's default silently.
+
+## 2026-09-19 - A timed-out Copilot hand-off is a poll target, not a retry trigger
+
+- **Status**: Accepted.
+- **Context**: `create_pull_request_with_copilot` and `assign_copilot_to_issue` are
+  third-party GitHub MCP server tools whose own latency we do not control - they can take
+  well over the 240s per-tool timeout that was configured for them at the time
+  (`mcp_clients/github.py`'s `_SLOW_GITHUB_TOOLS`). Raising that number again does not fix
+  the class of problem: a synchronous tool call inside one model turn cannot be made to
+  reliably finish inside any fixed budget when the server it calls has open-ended latency,
+  and the prompt was previously treating a timeout on either tool as a real failure -
+  recording `assigned: false` or skipping a group's `builds` entry - even though the
+  request can still have succeeded on GitHub's side after our client gave up waiting on
+  the response (confirmed live: the console showed a hand-off tool call still "running"
+  well after Copilot had already opened the pull request on GitHub).
+- **Decision**: `review.yaml`'s system prompt now tells the model a timeout/connection
+  error from either tool is inconclusive, not a failure: before recording an assignment as
+  failed or a group as undelivered, it must check with `issue_read`/`list_pull_requests` -
+  the same read-only tools it already uses to detect a pull request a *prior* turn opened
+  - and only act on what that check finds. This mirrors the "kick off, then poll
+  separately" shape `providers/github/pull_requests.py` already uses for build status,
+  applied to the hand-off itself instead of only to what happens after it.
+- **Alternatives considered**: Raising the per-tool timeout further - rejected, treats the
+  symptom and still fails whenever GitHub's own latency exceeds whatever number is chosen.
+  MCP "task-augmented execution" (`strands.tools.mcp.mcp_tasks`, an experimental
+  2025-11-25 MCP spec feature that turns a slow call into create-task/poll/fetch-result) -
+  rejected for now: it requires the GitHub MCP server to declare support for it, which is
+  outside our control and unverified, so building on it would be speculative
+  infrastructure until we know the server actually offers it. A dedicated fire-and-forget
+  wrapper that never waits on these tools at all - rejected, an MCP tool call cannot return
+  control to the model without some tool result, so the model has to wait on *something*;
+  the fix is in what it does when that wait fails, not in avoiding the wait.
+- **Consequences**: A slow hand-off no longer forces the model to falsely report a failed
+  assignment or a missing pull request that actually exists - it costs one extra cheap read
+  call instead. Once a timeout stopped being treated as a failure, there was no reason left
+  to keep the console waiting up to 240s for one - `_SLOW_GITHUB_TOOLS` was cut to 90s in
+  the same change, so a slow hand-off now costs one shorter wait plus a cheap read instead
+  of a multi-minute spinner. If the GitHub MCP server later adds MCP Tasks support, revisit whether
+  `BoundedMCPClient` should opt into task-augmented execution for these two tools instead
+  of relying on the prompt-level check.
+
+## 2026-09-07 - A merge can start a local preview automatically, single-machine only
+
+- **Status**: Accepted.
+- **Context**: `merge_build`'s response told a human to "pull the repo locally, then run
+  `make preview`" - the same "PM shouldn't have to touch git/a terminal" problem the merge
+  decision above already solved for the merge itself, just one step further down the same
+  path. Building the real thing this implies - a hosted preview per pull request - is
+  already planned and explicitly out of scope for now (`docs/hyperdelivery-plan.md`'s
+  Phase 3 "Environments"); that is multi-project, needs real infrastructure, and nothing
+  today needs it yet.
+- **Decision**: Added `infrastructure/local_preview.py` - `pull_default_branch` (`git pull
+  --ff-only`, so a dirty or diverged checkout fails loudly instead of losing local work),
+  `start_preview` (launches the target repo's own preview command detached, then polls its
+  two ports), `stop_preview` (re-invokes that same command's own `stop` mode). New optional
+  settings (`PREVIEW_CHECKOUT_PATH` and friends) gate all of it off by default. Both merge
+  paths (`merge_build`, the G3 auto-merge in `submit_decision`) fire this as a
+  `BackgroundTasks` call after a successful merge; `POST /projects/{id}/preview` and
+  `.../preview/stop` let a human trigger or stop it by hand instead.
+- **Alternatives considered**: Building the real hosted-preview-per-PR feature now -
+  rejected, out of scope and no current need; explicitly not what this change is. Making
+  the auto-trigger synchronous with the merge response - rejected, since a slow or hung
+  preview script would then make the merge itself look like it failed, and a human clicking
+  merge does not need to wait on a demo server before seeing that the merge succeeded.
+- **Consequences**: Single checkout, single preview process, one machine running both the
+  console API and that checkout - no multi-project isolation, and a second project's merge
+  will just overwrite the first project's preview. Fine for the one-demo-at-a-time reality
+  today; revisit if two people ever need simultaneous previews.
+
+---
+
+## 2026-09-07 - Merging is a human-triggered console action, and a G3 approval merges everything for the human
+
+- **Status**: Accepted.
+- **Context**: No agent tool can call `merge_pull_request` (`tools/github.py`, AGENTS.md's
+  "do not remove or bypass a human approval gate"), so merging a build Review opened had
+  no path at all - the PM had to leave the console and use `git`/GitHub's UI by hand. That
+  is a reasonable ask of a PM who approves a G1/G2 spec, but not of one asked to update a
+  branch or read a conflict marker; "merging is a human decision" should mean the human
+  decides *whether*, not that they personally run the mechanics.
+- **Decision**: Added `providers/github/merge.py`, a write-path REST client kept out of
+  every agent's toolset by construction (no `@tool` anywhere imports it), with two calls:
+  `update_branch` (PUT .../update-branch - purely mechanical, no textual judgment) and
+  `merge_pull_request`, composed as `resolve_and_merge`. Exposed two ways: a human can
+  explicitly trigger one build's merge (`POST /projects/{id}/builds/{number}/merge`), and
+  approving at the G3 gate (`SHOWROOM_APPROVAL`) now calls `resolve_and_merge` on every
+  build `ReviewReport.builds` recorded before the approval is allowed to complete. If any
+  build has a real, unresolved conflict, the whole approval fails closed (502, GitHub's own
+  message, decision never recorded, task token never released) rather than recording an
+  approval the demo can't actually show.
+- **Alternatives considered**: Auto-handing a real conflict to Copilot the same way Review
+  hands off a blocker finding (`assign_copilot_to_issue`) - rejected for now. That tool's
+  argument schema is defined by GitHub's remote MCP server and discovered dynamically; the
+  only way to use it without a guess is a real agent turn, and triggering a full agent
+  invocation automatically from a merge failure (real model cost/latency, no human asking)
+  is a bigger architectural step than this change needed. A genuine conflict still fails
+  with GitHub's own message today; revisit this once there's a case that actually hits it.
+- **Consequences**: Common case (branch behind, no textual conflict) needs zero PM git
+  skill, at either trigger point. A real conflict still blocks the G3 gate and needs a
+  human (or a follow-up Review turn) to look at the code - this change does not and should
+  not pretend otherwise.
+
+---
+
+## 2026-09-07 - Batch file reads as a direct REST tool, not an MCP addition
+
+- **Status**: Accepted.
+- **Context**: Blueprint's brownfield impact analysis and Review's PR-grounding both read
+  several files per turn via the GitHub MCP server's single-file `get_file_contents`.
+  Strands does run every tool the model requests within a single turn concurrently by
+  default (`ConcurrentToolExecutor`, see `strands/agent/agent.py` and
+  `strands/tools/executors/concurrent.py`) and sends all of their results back in one
+  follow-up call - an earlier version of this entry claimed otherwise and was wrong.
+  The real cost is that this concurrency only fires when the model itself packs multiple
+  `toolUse` blocks into one response; it has no way to know up front how many files a task
+  needs, so it typically requests them one file at a time, and each single-file request is
+  its own sequential model round trip regardless of the executor. N files still cost close
+  to N Bedrock round trips in practice, just not for the reason first written down here.
+- **Decision**: Add `get_file_contents_batch` (`tools/github.py`), backed by a new direct
+  GitHub REST client (`providers/github/files.py`) that fetches every requested path
+  concurrently via a thread pool and returns them all in one tool response. Shared by
+  Blueprint and Review - both already hold equivalent single-file read access, so this
+  grants nothing new, only a cheaper way to exercise it. Both agents' prompts now prefer
+  it once more than one path is known.
+- **Alternatives considered**: Asking the GitHub MCP server for a batch tool - not ours to
+  add, and none of its exposed tools support it today. Parallelizing tool execution inside
+  Strands itself - out of scope, would mean forking/patching a third-party library the repo
+  doesn't own. Leaving it as repeated single-file calls and accepting the latency - rejected
+  because the fix was cheap and the cost was real and measured, not theoretical.
+- **Consequences**: One more code path that talks to GitHub outside the MCP server, so a
+  GitHub outage or rate limit now has two places to show up in logs, not one. A missing or
+  unreadable file returns an error per-path instead of failing the whole batch, matching
+  the MCP tool's per-call failure granularity. Revisit if GitHub's MCP server ever ships
+  its own batch read - this tool should be retired in favor of it rather than kept forever.
+
+---
+
 ## 2026-09-05 - Review's hand-off gets the gate its own comments already claimed
 
 - **Status**: Accepted.
@@ -160,7 +529,7 @@ Template for new entries:
   chunk, so a long prefill on a large context and a genuinely stalled connection produce
   byte-identical output - and both look the same in the console, which shows a caret and
   no other sign of life. That ambiguity is what stopped us diagnosing the earlier 123.6s
-  `ReadTimeoutError`, because 60s of dead air is both "Bedrock is slow" and "boto core is
+  `ReadTimeoutError`, because 60s of dead air is both "Bedrock is slow" and "botocore is
   about to give up".
 - **Decision**: Emit `{"thinking": {"seconds": float}}` every `_HEARTBEAT_SECONDS` (5)
   that pass with no stream event, relayed by the console API and rendered next to the
@@ -2355,3 +2724,86 @@ Template for new entries:
   connection logic harder to reuse for a future third agent.
 - **Consequences**: This split was directly reused as the template for the (non-MCP) S3
   integration - see the entry above.
+
+## 2026-09-07 - Skip `track_plan` on a turn with no real work
+
+- **Status**: Accepted
+- **Context**: All four agents were told to call `track_plan` "before anything else",
+  unconditionally. A bare greeting or single-line reply has no steps worth planning, but
+  still paid for a full extra model round trip: one call to emit the plan, then a second
+  call - only now able to read the cached system prompt - to actually respond. Observed
+  directly: a plain "hi" to Distill took roughly 10 seconds before any reply appeared,
+  matching two sequential Bedrock calls rather than one. This is separate from the
+  already-documented `max_tokens`/tokens-per-second ceiling (2026-08-26 entry above),
+  which governs a turn that does have real output to produce - this was pure fixed
+  overhead paid by every turn regardless of size.
+- **Decision**: Every agent's prompt now opens with a carve-out: if the turn is only a
+  greeting or a single reply with no drafting, lookup or questions to ask, respond
+  directly and skip `track_plan` - a plan is not worth a whole extra round trip for that.
+  The existing instruction (restate only on a finished step, ride along with the next
+  real tool call) is unchanged for any turn that does have real work.
+- **Alternatives considered**: *Make `track_plan` itself cheaper (e.g. accept a partial
+  update instead of the whole plan)* - investigated and rejected: the plan dict is tens
+  of tokens against an 8192-token budget, so shrinking it does not touch the observed
+  10-second floor, and making the tool stateful revisits the "module-level plan store"
+  alternative already rejected on 2026-08-26 (agent instances are shared across projects,
+  so any store the tool owns itself risks leaking one project's plan into another's).
+  *Skip `track_plan` based on message length client-side, before the model ever sees it*
+  - rejected: the model, not the caller, is in the best position to judge whether a turn
+  needs a plan (e.g. a short message can still name a Jira issue that needs real lookup).
+- **Consequences**: A trivial turn now costs one model round trip instead of two. No test
+  asserted `track_plan` is always the first tool call, so nothing needed updating; `make
+  check` is green. Revisit if the model starts skipping the plan on a turn that actually
+  had multiple steps - the carve-out is deliberately narrow ("no drafting, lookup or
+  questions to ask") to make that misuse easy to spot in a transcript.
+
+## 2026-09-07 - Default `completeness` instead of requiring it on every output contract
+
+- **Status**: Accepted
+- **Context**: With the `track_plan` fix above applied, a bare "hi" to Distill still cost
+  up to three sequential Bedrock model calls instead of one, adding a further 5-7 seconds.
+  Real per-call timing (a new Strands hook logging `BeforeModelCallEvent`/
+  `AfterModelCallEvent`, added to `agent_runtime/factory.py`) showed the second and third
+  calls were both attempts at the same forced `StructuredSpec` tool call. Strands'
+  `StructuredOutputTool.stream()` validates the model's draft against the Pydantic model
+  and, on a `ValidationError`, sends the error back to the model as a tool result rather
+  than failing outright - so a rejected draft costs one full extra model call to retry.
+  Isolating the actual error (via a targeted `DEBUG` override on just
+  `strands.tools.structured_output.structured_output_tool`, not the whole process - see
+  the security note below) showed the cause: `Field 'completeness': Field required`. The
+  model, especially on a trivial turn with nothing to score, regularly omits the
+  `completeness` field entirely. That field's own docstring
+  (`core.domain.project.CompletenessScore`) already says `score` and `gaps` are
+  recomputed server-side from the stored artifact and overwrite whatever the agent
+  claimed (`core/validation/{spec,blueprint,review,showroom}.py`) - only `questions`
+  actually survives from the agent's submission. So the field was required, but the
+  values it required were thrown away regardless.
+- **Decision**: `completeness` now defaults to `CompletenessScore(score=0.0)` on all four
+  output contracts (`StructuredSpec`, `Blueprint`, `ReviewReport`, `DemoPackage`), the
+  same way `EvidenceLink.source` is already defaulted rather than required. Verified live:
+  three consecutive "hi" requests after the change each took exactly two model calls, down
+  from as many as three before it.
+- **Alternatives considered**: *Tell the model more forcefully in the prompt to always
+  include `completeness`* - rejected: prompt instructions are advisory, not a validation
+  guarantee, and the field's own values are discarded server-side anyway, so there is
+  nothing left to insist on. *Make `completeness` optional (`| None`) instead of
+  defaulting it* - rejected: every downstream reader (`api.routers.projects`'s
+  `_has_open_gaps`, the console UI) already assumes a `CompletenessScore` is present;
+  defaulting keeps that contract intact while removing the retry cost, whereas `None`
+  would push a new null-check onto every reader for no benefit.
+- **Consequences**: A validation round trip caused purely by an over-eager required field
+  is gone; a genuine schema violation elsewhere in a draft still triggers Strands' retry
+  as intended. Four existing tests in `tests/unit/test_domain_contracts.py` asserted
+  omitting `completeness` raises `ValidationError`; they now assert it defaults instead,
+  which is the point of this change, not a regression.
+- **Security note on how the cause was found**: an earlier attempt at this used
+  `LOG_LEVEL=DEBUG` on the whole process, which also enables `botocore`'s HTTP debug
+  trace - that logged a live AWS SigV4 `Authorization` header and `X-Amz-Security-Token`
+  (temporary STS credentials) in full, which then surfaced in a local log file and,
+  briefly, in this session's own tooling output. The process was killed and the files
+  deleted immediately. The credentials were a short-lived STS session token, not a
+  long-lived key, which limits but does not eliminate the exposure. The safe method used
+  afterwards - setting `DEBUG` on only the specific `strands` logger that emits the
+  validation-failure message, leaving `botocore`/`boto3`/root at `INFO` - is now the
+  standing approach for this kind of investigation; whole-process `DEBUG` should not be
+  used again against a live Bedrock-calling process on this repo.

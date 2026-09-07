@@ -5,11 +5,15 @@ gate on top of it (see docs/architecture.md), same shape as `tools/atlassian.py`
 """
 
 import re
+from typing import Any
 
+from strands import tool
+from strands.tools.decorator import DecoratedFunctionTool
 from strands.tools.mcp import MCPClient
 
 from config.settings import get_settings
 from mcp_clients.github import github_client
+from providers.github.files import fetch_files
 
 # Blueprint scaffolds a project repo from the golden path template, inspects an existing
 # linked repo for brownfield impact analysis, and files one GitHub issue per unit of
@@ -112,3 +116,36 @@ def review_github_mcp_client() -> MCPClient | None:
         _REVIEW_GITHUB_TOOLSETS,
         _REVIEW_GITHUB_TOOLS,
     )
+
+
+# Not an MCP tool: although Strands can execute multiple tools concurrently when the model
+# requests them in one response, the model typically reads files one path at a time, and
+# each `get_file_contents` call costs another full model round trip. This batches known
+# paths into one tool call (and concurrent GitHub GETs), with no broader access than
+# `get_file_contents`. See docs/decisions.md.
+@tool
+def get_file_contents_batch(
+    owner: str, repo: str, paths: list[str], ref: str | None = None
+) -> dict[str, Any]:
+    """Fetch several files from one repo in a single call, instead of one call per file.
+
+    Prefer this over repeated `get_file_contents` calls whenever more than one path is
+    already known - each extra tool call costs a full extra model round trip, and this
+    fetches every path concurrently in one. Returns one entry per path under `files`,
+    each with either `content` or `error` set - a missing or unreadable file does not
+    fail the rest of the batch.
+    """
+    settings = get_settings()
+    if not settings.github_pat:
+        msg = "GITHUB_PAT must be configured to use get_file_contents_batch"
+        raise ValueError(msg)
+    results = fetch_files(settings.github_pat.get_secret_value(), f"{owner}/{repo}", paths, ref)
+    return {"files": [{"path": r.path, "content": r.content, "error": r.error} for r in results]}
+
+
+def github_file_contents_batch_tool() -> DecoratedFunctionTool[..., dict[str, Any]] | None:
+    """Return the batch file-read tool only when a PAT is configured, else None."""
+    settings = get_settings()
+    if not settings.github_pat:
+        return None
+    return get_file_contents_batch

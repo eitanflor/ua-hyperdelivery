@@ -1,6 +1,6 @@
 """G4 artifact: the demo package Showroom assembles once Review is clear."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.domain.project import CompletenessScore
 
@@ -26,4 +26,6 @@ class DemoPackage(BaseModel):
     summary: str
     demo_data: list[DemoDataSeed]
     talk_track: list[TalkTrackSection]
-    completeness: CompletenessScore
+    # Defaulted, not required: score and gaps are always recomputed server-side from the
+    # stored artifact (see core.validation.showroom.evaluate_showroom).
+    completeness: CompletenessScore = Field(default_factory=lambda: CompletenessScore(score=0.0))

@@ -450,7 +450,12 @@ export const useProjectsStore = create<ProjectsState>()(
             pendingText += chunk;
             scheduleFlush();
           };
+          // set once real draft content arrives - a voluntary-structured-output agent
+          // (see agent_runtime.factory's `force_structured_output`) may finish a turn
+          // having chosen not to draft anything at all, and that turn gets no artifact.
+          let drafted = false;
           const appendDraft = (draft: string) => {
+            if (draft) drafted = true;
             pendingDraft += draft;
             scheduleFlush();
           };
@@ -545,7 +550,7 @@ export const useProjectsStore = create<ProjectsState>()(
           if (flushTimer !== null) clearTimeout(flushTimer);
           flush();
 
-          const artifact = await api.getArtifact(projectId, agent);
+          const artifact = drafted ? await api.getArtifact(projectId, agent) : null;
           set((state) => {
             const turns = state.conversationByProject[projectId] ?? [];
             const streamingTurn = turns.find((t) => t.id === streamingTurnId);
@@ -553,14 +558,17 @@ export const useProjectsStore = create<ProjectsState>()(
               id: crypto.randomUUID(),
               role: "agent",
               agent,
-              content: artifact.content,
+              // undefined when the turn drafted nothing - it stays a plain conversational
+              // turn with no artifact card, same as any other intake turn (see
+              // `hasContent` in api/artifacts.ts).
+              content: artifact?.content,
               // carried over from the streaming turn so the tool calls and the reasoning
               // that produced this artifact stay readable instead of vanishing once it's
               // done - the narrative often holds caveats the structured output can't
               text: streamingTurn?.text,
               toolCalls: streamingTurn?.toolCalls,
               usage,
-              createdAt: artifact.created_at,
+              createdAt: artifact?.created_at ?? new Date().toISOString(),
             };
             const withoutStreaming = turns.filter((t) => t.id !== streamingTurnId);
             return {

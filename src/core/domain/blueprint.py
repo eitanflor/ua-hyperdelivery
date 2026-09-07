@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.domain.project import CompletenessScore
 
@@ -106,4 +106,6 @@ class Blueprint(BaseModel):
     # Empty for a project with no HTTP surface (a pipeline, a batch job) - absence is
     # not a gap, only a contract nothing implements is.
     api_contracts: list[ApiContract] = []
-    completeness: CompletenessScore
+    # Defaulted, not required: score and gaps are always recomputed server-side from the
+    # stored artifact (see core.validation.blueprint.evaluate_blueprint).
+    completeness: CompletenessScore = Field(default_factory=lambda: CompletenessScore(score=0.0))

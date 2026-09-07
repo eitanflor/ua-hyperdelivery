@@ -166,6 +166,7 @@ export interface CopilotAssignment {
   created_new_issue: boolean;
   assigned: boolean;
   note?: string | null;
+  pull_request_number?: number | null;
 }
 
 type Content = Record<string, unknown>;

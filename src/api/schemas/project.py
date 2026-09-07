@@ -91,3 +91,31 @@ class BuildsResponse(BaseModel):
     builds: list[BuildResponse] = []
     #: False when no token is configured - the console links out instead of polling.
     watching: bool = False
+
+
+class MergeBuildResponse(BaseModel):
+    """Body for `POST /projects/{id}/builds/{number}/merge`.
+
+    A human clicked merge - see `api.routers.projects.merge_build` for why this is never
+    something an agent can trigger itself.
+    """
+
+    merged: bool
+    sha: str | None = None
+    message: str
+    #: Advisory only - the console cannot reach into a human's local checkout to run it.
+    next_step: str
+
+
+class PreviewResponse(BaseModel):
+    """Body for `POST /projects/{id}/preview` and its `/stop` counterpart.
+
+    A laptop-demo convenience (`infrastructure/local_preview.py`) - `running=False` with
+    no error is a normal response when `PREVIEW_CHECKOUT_PATH` isn't configured, since a
+    project must still work end-to-end without this.
+    """
+
+    running: bool
+    backend_url: str | None = None
+    frontend_url: str | None = None
+    message: str
