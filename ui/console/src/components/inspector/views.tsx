@@ -95,12 +95,30 @@ function Row({ id, children }: { id?: string; children: React.ReactNode }) {
   );
 }
 
+const REQUIRED_SECTION_GAP_PREFIX = "missing required FSD section: ";
+
+function missingRequiredSections(content: Content, gaps: string[]): string[] {
+  const fromField = content.missing_required_sections;
+  if (Array.isArray(fromField) && fromField.every((section) => typeof section === "string")) {
+    return fromField;
+  }
+  return gaps
+    .filter((gap) => gap.startsWith(REQUIRED_SECTION_GAP_PREFIX))
+    .map((gap) => gap.slice(REQUIRED_SECTION_GAP_PREFIX.length));
+}
+
+function nonSectionGaps(gaps: string[]): string[] {
+  return gaps.filter((gap) => !gap.startsWith(REQUIRED_SECTION_GAP_PREFIX));
+}
+
 export function CompletenessMeter({ content }: { content: Content }) {
   const score = completeness(content);
   if (!score) return null;
   const pct = Math.round(score.score * 100);
   const tone = pct === 100 ? "text-success" : pct >= 75 ? "text-warning" : "text-danger";
   const bar = pct === 100 ? "bg-success" : pct >= 75 ? "bg-warning" : "bg-danger";
+  const missingSections = missingRequiredSections(content, score.gaps);
+  const otherGaps = nonSectionGaps(score.gaps);
 
   return (
     <div>
@@ -120,17 +138,15 @@ export function CompletenessMeter({ content }: { content: Content }) {
       >
         <div className={cn("h-full rounded-full transition-[width] duration-500", bar)} style={{ width: `${pct}%` }} />
       </div>
-      {score.gaps.length > 0 && (
-        <ul className="mt-3 flex flex-col gap-1">
-          {score.gaps.map((gap) => (
-            <li
-              key={gap}
-              className="rounded-sm border border-warning/25 bg-warning-bg px-2.5 py-1.5 text-2xs text-warning"
-            >
-              Still missing: {gap}
-            </li>
-          ))}
-        </ul>
+      {missingSections.length > 0 && (
+        <p className="mt-3 overflow-x-auto whitespace-nowrap rounded-sm border border-warning/25 bg-warning-bg px-2.5 py-1.5 text-2xs text-warning">
+          Missing required FSD sections: {missingSections.join(", ")}
+        </p>
+      )}
+      {otherGaps.length > 0 && (
+        <p className="mt-2 overflow-x-auto whitespace-nowrap rounded-sm border border-warning/25 bg-warning-bg px-2.5 py-1.5 text-2xs text-warning">
+          Other gaps: {otherGaps.join("; ")}
+        </p>
       )}
       {score.questions.length > 0 && (
         <p className="mt-3 rounded-sm border border-line bg-surface px-2.5 py-1.5 text-2xs text-fg-muted">

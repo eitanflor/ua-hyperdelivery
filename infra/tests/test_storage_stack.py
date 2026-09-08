@@ -55,7 +55,7 @@ def test_no_bucket_policy_without_an_agentcore_role_arn(monkeypatch: pytest.Monk
     template.resource_count_is("AWS::S3::BucketPolicy", 0)
 
 
-def test_bucket_policy_grants_the_agentcore_role_scoped_read(
+def test_bucket_policy_grants_the_agentcore_role_scoped_access(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("AGENTCORE_ROLE_ARN", "arn:aws:iam::123456789012:role/hyperdelivery-agent")
@@ -74,7 +74,22 @@ def test_bucket_policy_grants_the_agentcore_role_scoped_read(
                                         "AWS": "arn:aws:iam::123456789012:role/hyperdelivery-agent"
                                     },
                                 }
-                            )
+                            ),
+                            Match.object_like(
+                                {
+                                    "Action": "s3:PutObject",
+                                    "Resource": Match.object_like(
+                                        {
+                                            "Fn::Join": Match.array_with(
+                                                [Match.array_with(["/projects/*"])]
+                                            )
+                                        }
+                                    ),
+                                    "Principal": {
+                                        "AWS": "arn:aws:iam::123456789012:role/hyperdelivery-agent"
+                                    },
+                                }
+                            ),
                         ]
                     )
                 }

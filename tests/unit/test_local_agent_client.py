@@ -44,12 +44,12 @@ def test_invoke_posts_to_the_agents_local_port_and_returns_result() -> None:
     session = _FakeSession(_sse({"result": {"title": "FSD"}}))
     client = LocalAgentClient(session=session)
 
-    result = client.invoke("distill", "Project p1")
+    result = client.invoke("distill", "Project p1", project_id="p1")
 
     assert result == {"title": "FSD"}
     assert session.last_call is not None
     assert session.last_call["url"] == "http://localhost:8080/invocations"
-    assert session.last_call["json"] == {"prompt": "Project p1"}
+    assert session.last_call["json"] == {"prompt": "Project p1", "project_id": "p1"}
     assert session.last_call["stream"] is True
 
 

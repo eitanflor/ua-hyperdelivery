@@ -5,6 +5,9 @@ import logging
 import sys
 
 session_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("session_id", default="-")
+project_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "project_id", default=None
+)
 
 
 class SessionIdFilter(logging.Filter):

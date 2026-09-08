@@ -53,12 +53,16 @@ class _FakeLocalAgentClient:
             return self._results.pop(0) if self._results else self.result
         return self.result
 
-    def invoke(self, agent: str, prompt: str) -> dict[str, Any]:
+    def invoke(self, agent: str, prompt: str, project_id: str | None = None) -> dict[str, Any]:
         self.calls.append((agent, prompt))
         return self._next_result()
 
     def stream(
-        self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
+        self,
+        agent: str,
+        prompt: str,
+        project_id: str | None = None,
+        on_response: Callable[[Any], None] | None = None,
     ) -> Iterator[dict[str, Any]]:
         self.calls.append((agent, prompt))
         if on_response is not None:
@@ -379,6 +383,18 @@ def test_advance_stays_at_the_same_station_when_gaps_are_flagged(client: TestCli
     ]
 
 
+def test_advance_stays_at_the_same_station_when_score_is_incomplete(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient({"title": "FSD", "completeness": {"score": 0.0, "gaps": []}})
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance", json={"prompt": "a vague idea"})
+
+    assert resp.status_code == 200
+    assert resp.json()["station"] == Station.DISTILL.value
+
+
 def test_advance_supports_multiple_turns_until_gaps_are_resolved(client: TestClient) -> None:
     _state(client).state_machine_client = None
     incomplete = complete_spec_content()
@@ -522,9 +538,27 @@ def test_advance_stream_stays_at_the_same_station_when_gaps_are_flagged(client: 
     assert events[-1]["project"]["station"] == Station.DISTILL.value
 
 
+def test_advance_stream_stays_at_the_same_station_when_score_is_incomplete(
+    client: TestClient,
+) -> None:
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient({"title": "FSD", "completeness": {"score": 0.0, "gaps": []}})
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    events = _parse_sse(resp.text)
+    assert events[-1]["project"]["station"] == Station.DISTILL.value
+
+
 class _FailingAgentClient:
     def stream(
-        self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
+        self,
+        agent: str,
+        prompt: str,
+        project_id: str | None = None,
+        on_response: Callable[[Any], None] | None = None,
     ) -> Iterator[dict[str, Any]]:
         yield {"chunk": "Analyzing"}
         yield {"error": "agent invocation failed"}
@@ -557,7 +591,11 @@ def test_advance_stream_saves_a_completed_side_effect_from_a_turn_that_then_fail
 
     class _TimingOutAfterHandoff:
         def stream(
-            self, agent: str, prompt: str, on_response: Callable[[Any], None] | None = None
+            self,
+            agent: str,
+            prompt: str,
+            project_id: str | None = None,
+            on_response: Callable[[Any], None] | None = None,
         ) -> Iterator[dict[str, Any]]:
             yield {"tool_call": pr_call}
             yield {"error": "agent invocation timed out"}

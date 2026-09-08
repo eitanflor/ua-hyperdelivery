@@ -1,8 +1,8 @@
 """G1 artifact: the normalized, cited spec Distill produces from raw FSD input."""
 
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from core.domain.project import CompletenessScore
 
@@ -85,16 +85,49 @@ class StructuredSpec(BaseModel):
     """G1 output contract: a normalized FSD scored against gate criteria."""
 
     title: str
+    objective: str | None = None
+    scope: str | None = None
+    actors: list[str] | None = None
     requirements: list[Requirement]
+    business_rules: list[str] | None = None
+    data_requirements: list[str] | None = None
+    data_connectors: list[str] | None = None
+    snowflake_connectors: list[str] | None = None
+    workflows: list[str] | None = None
+    non_functional_requirements: list[str] | None = None
+    constraints: list[str] | None = None
+    open_questions: list[str] | None = None
+    missing_required_sections: list[str] = Field(default_factory=list)
     gate_criteria: list[GateCriterion]
     rules: list[MachineReadableRule]
     rule_correlations: list[RuleCorrelation]
     evidence: list[EvidenceLink]
-    acceptance_criteria: list[AcceptanceCriterion]
-    business_value: list[BusinessValue]
-    intents: list[RequirementIntent]
+    acceptance_criteria: list[AcceptanceCriterion] = Field(default_factory=list)
+    business_value: list[BusinessValue] = Field(default_factory=list)
+    intents: list[RequirementIntent] = Field(default_factory=list)
     # Defaulted, not required: score and gaps are always recomputed server-side from the
     # stored artifact (see core.validation.spec.evaluate_spec), so a model that omits this
     # on a trivial turn shouldn't have to pay for a whole extra Bedrock round trip over a
     # field whose only agent-owned part (questions) is meaningless to ask about anyway.
     completeness: CompletenessScore = Field(default_factory=lambda: CompletenessScore(score=0.0))
+
+    @model_validator(mode="after")
+    def record_missing_required_sections(self) -> Self:
+        """Surface omitted mandatory sections without rejecting an elicitation draft."""
+        section_values = {
+            "objective": self.objective,
+            "scope": self.scope,
+            "actors": self.actors,
+            "functional_requirements": self.requirements or None,
+            "business_rules": self.business_rules,
+            "data_requirements": self.data_requirements,
+            "data_connectors": self.data_connectors,
+            "snowflake_connectors": self.snowflake_connectors,
+            "workflows": self.workflows,
+            "non_functional_requirements": self.non_functional_requirements,
+            "open_questions": self.open_questions,
+        }
+        self.missing_required_sections = [
+            name for name, value in section_values.items() if value is None
+        ]
+        return self

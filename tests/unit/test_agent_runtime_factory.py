@@ -249,6 +249,22 @@ async def test_resets_the_shared_agent_s_message_history_before_each_invocation(
     assert stub_agent.messages == []
 
 
+async def test_project_context_is_scoped_to_the_invocation(
+    invoke: Any, stub_agent: _StubAgent
+) -> None:
+    async def reads_project_context(
+        prompt: str, structured_output_model: type[BaseModel]
+    ) -> AsyncIterator[dict[str, Any]]:
+        yield {"result": _Result(_Output(value=f"project::{factory.project_id_var.get()}"))}
+
+    stub_agent.stream_async = reads_project_context
+
+    events = await _drain(invoke({"prompt": "do the thing", "project_id": "project-123"}, None))
+
+    assert events == [{"result": {"value": "project::project-123"}}]
+    assert factory.project_id_var.get() is None
+
+
 @pytest.mark.parametrize("payload", [{}, {"prompt": ""}, {"prompt": "   "}, {"prompt": 7}])
 async def test_rejects_a_missing_or_blank_prompt(
     invoke: Any, stub_agent: _StubAgent, payload: dict[str, Any]

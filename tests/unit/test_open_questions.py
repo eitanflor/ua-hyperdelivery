@@ -43,7 +43,17 @@ def _complete_spec_content(questions: list[OpenQuestion]) -> dict[str, Any]:
     """A Distill artifact the gate scores at 1.0, that asked anyway."""
     spec = StructuredSpec(
         title="Promo tier validation",
+        objective="Validate promo tiers",
+        scope="Promo tier rules",
+        actors=["Merchandising analyst"],
         requirements=[Requirement(id="R1", description="do R1")],
+        business_rules=[],
+        data_requirements=[],
+        data_connectors=[],
+        snowflake_connectors=[],
+        workflows=[],
+        non_functional_requirements=[],
+        open_questions=[],
         gate_criteria=[GateCriterion(id="G1", description="is testable")],
         rules=[MachineReadableRule(id="M1", criterion_id="G1", rule="x must be set")],
         rule_correlations=[],

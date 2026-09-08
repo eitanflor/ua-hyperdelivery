@@ -5,7 +5,10 @@ an object key into text. The per-agent least-privilege wrapper lives in tools/do
 """
 
 import io
+import re
+from dataclasses import dataclass
 from functools import lru_cache
+from hashlib import sha256
 from typing import TYPE_CHECKING
 
 import boto3
@@ -13,6 +16,16 @@ from pypdf import PdfReader
 
 if TYPE_CHECKING:  # boto3-stubs is a dev-only dependency
     from mypy_boto3_s3.client import S3Client
+
+
+@dataclass(frozen=True)
+class NormalizedMarkdownArtifact:
+    """One normalized Distill input stored within its owning project."""
+
+    project_id: str
+    source_type: str
+    source_id: str
+    markdown: str
 
 
 @lru_cache
@@ -48,6 +61,39 @@ def get_document_text(
     client = s3_client or _default_client(region)
     body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
     return parse_document(key, body)
+
+
+def put_normalized_markdown(
+    bucket: str,
+    artifact: NormalizedMarkdownArtifact,
+    region: str,
+    s3_client: "S3Client | None" = None,
+) -> str:
+    """Store immutable Markdown under its project and return the generated key."""
+
+    def safe_segment(value: str) -> str:
+        return re.sub(r"[^A-Za-z0-9._/-]+", "-", value).strip("-/")
+
+    body = artifact.markdown.encode("utf-8")
+    digest = sha256(body).hexdigest()
+    key = (
+        f"projects/{safe_segment(artifact.project_id)}/normalized/distill/"
+        f"{safe_segment(artifact.source_type)}/{safe_segment(artifact.source_id)}/{digest}.md"
+    )
+    client = s3_client or _default_client(region)
+    client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=body,
+        ContentType="text/markdown; charset=utf-8",
+        Metadata={
+            "content-sha256": digest,
+            "project-id": artifact.project_id,
+            "source-type": artifact.source_type,
+        },
+        ServerSideEncryption="AES256",
+    )
+    return key
 
 
 def list_document_keys(

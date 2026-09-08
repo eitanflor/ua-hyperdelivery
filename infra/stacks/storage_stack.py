@@ -25,6 +25,8 @@ DOCUMENTS_PREFIX = "documents/"
 # Historical FSDs Distill's reference-document tooling reads - see
 # tools/documents.py's REFERENCE_PREFIX, the source of truth for this value.
 REFERENCE_PREFIX = "fsds/"
+# Per-project derived artifacts, including Distill's normalized Markdown inputs.
+PROJECTS_PREFIX = "projects/"
 
 
 class StorageStack(Stack):
@@ -98,5 +100,13 @@ class StorageStack(Stack):
                         self.documents_bucket.arn_for_objects(f"{DOCUMENTS_PREFIX}*"),
                         self.documents_bucket.arn_for_objects(f"{REFERENCE_PREFIX}*"),
                     ],
+                )
+            )
+            self.documents_bucket.add_to_resource_policy(
+                iam.PolicyStatement(
+                    sid="AllowAgentCoreWriteProjectArtifacts",
+                    principals=[iam.ArnPrincipal(agentcore_role_arn)],
+                    actions=["s3:PutObject"],
+                    resources=[self.documents_bucket.arn_for_objects(f"{PROJECTS_PREFIX}*")],
                 )
             )

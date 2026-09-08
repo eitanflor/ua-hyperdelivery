@@ -52,6 +52,7 @@ class LocalAgentClient:
         self,
         agent: str,
         prompt: str,
+        project_id: str | None = None,
         on_response: Callable[[Any], None] | None = None,
     ) -> Iterator[dict[str, Any]]:
         """Yields the agent's events as they arrive over its `/invocations` SSE response.
@@ -70,7 +71,7 @@ class LocalAgentClient:
         port = _AGENT_PORTS[agent]
         resp = self._session.post(
             f"{self._base_url}:{port}/invocations",
-            json={"prompt": prompt},
+            json={"prompt": prompt, "project_id": project_id},
             timeout=_READ_TIMEOUT_SECONDS,
             stream=True,
         )
@@ -82,7 +83,9 @@ class LocalAgentClient:
                 continue
             yield json.loads(line[len("data: ") :])
 
-    def invoke(self, agent: str, prompt: str) -> dict[str, Any] | None:
+    def invoke(
+        self, agent: str, prompt: str, project_id: str | None = None
+    ) -> dict[str, Any] | None:
         """Drains `stream()` and returns just the final result.
 
         For callers that don't need the incremental chunks. Returns `None` if the
@@ -90,7 +93,7 @@ class LocalAgentClient:
         wired with `force_structured_output=False` (see agent_runtime.factory), meaning
         the model chose not to draft anything this turn.
         """
-        for event in self.stream(agent, prompt):
+        for event in self.stream(agent, prompt, project_id=project_id):
             if "error" in event:
                 msg = f"{agent} agent invocation failed: {event['error']}"
                 raise RuntimeError(msg)

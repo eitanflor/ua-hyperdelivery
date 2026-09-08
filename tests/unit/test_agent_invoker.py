@@ -62,6 +62,7 @@ def test_invoke_resolves_runtime_by_name_and_returns_result(
     assert result == {"fsd": "..."}
     assert data_client.last_call["agentRuntimeArn"] == "arn:distill"
     assert data_client.last_call["runtimeSessionId"] == "p1".ljust(33, "0")
+    assert json.loads(data_client.last_call["payload"])["project_id"] == "p1"
 
 
 def test_invoke_raises_when_agent_returns_error(runtimes: list[dict[str, Any]]) -> None:

@@ -4,7 +4,7 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, cast
 
 from anyio.to_thread import run_sync
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
@@ -486,7 +486,9 @@ def advance_project(
     predecessors = _predecessor_contents(repo, project_id, agent)
     previous = repo.get_artifact(project_id, agent)
     prompt = _build_prompt(predecessors, previous.content if previous else None, prompt)
-    raw_result = request.app.state.local_agent_client.invoke(agent, prompt=prompt)
+    raw_result = request.app.state.local_agent_client.invoke(
+        agent, prompt=prompt, project_id=project_id
+    )
     if raw_result is None:
         # a valid outcome, not a failure: the agent chose not to draft anything this
         # turn (e.g. Distill only asked a clarifying question) - see LocalAgentClient.invoke.
@@ -497,17 +499,19 @@ def advance_project(
 
     # A station only advances once its deterministic verdict has no open gaps - the
     # agent's own opinion of its draft was overwritten in `_scored` above.
-    if _has_open_gaps(result):
+    if _is_incomplete(result):
         return _to_response(project)
     updated = repo.advance_after_artifact(project_id, agent)
     return _to_response(updated)
 
 
-def _has_open_gaps(result: dict[str, Any]) -> bool:
-    completeness = result.get("completeness")
-    if not isinstance(completeness, dict):
+def _is_incomplete(result: dict[str, Any]) -> bool:
+    raw_completeness = result.get("completeness")
+    if not isinstance(raw_completeness, dict):
         return False
-    return bool(completeness.get("gaps"))
+    completeness = cast("dict[str, Any]", raw_completeness)
+    score = completeness.get("score")
+    return bool(completeness.get("gaps")) or (isinstance(score, (int, float)) and score < 1.0)
 
 
 def _sse(event: dict[str, Any]) -> str:
@@ -573,7 +577,7 @@ def _finish_turn(
         return {"done": True, "project": _to_response(project).model_dump(mode="json")}
     scored = _scored(result, agent, predecessors)
     repo.save_artifact(project.id, agent, scored)
-    updated = project if _has_open_gaps(scored) else repo.advance_after_artifact(project.id, agent)
+    updated = project if _is_incomplete(scored) else repo.advance_after_artifact(project.id, agent)
     return {"done": True, "project": _to_response(updated).model_dump(mode="json")}
 
 
@@ -618,7 +622,9 @@ def advance_project_stream(
         # reading it in the worker thread - without this the agent invocation (and any
         # tool call it's mid-way through) just keeps running unseen after "Stop".
         held_response: list[Any] = []
-        gen = local_agent_client.stream(agent, prompt, on_response=held_response.append)
+        gen = local_agent_client.stream(
+            agent, prompt, project_id=project_id, on_response=held_response.append
+        )
         # populated as `tool_call` "done" events for `_SIDE_EFFECT_TOOLS` are relayed below,
         # so a failure partway through the turn still has something to persist - see
         # `_partial_progress_content`.

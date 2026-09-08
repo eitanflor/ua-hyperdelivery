@@ -54,7 +54,10 @@ def evaluate_spec(spec: StructuredSpec) -> CompletenessScore:
         "intent_requirement_ids": {i.requirement_id for i in spec.intents},
     }
 
-    gaps = duplicate_id_issues("requirement", requirement_ids)
+    gaps = [
+        f"missing required FSD section: {section}" for section in spec.missing_required_sections
+    ]
+    gaps += duplicate_id_issues("requirement", requirement_ids)
     gaps += duplicate_id_issues("gate criterion", criterion_ids)
     gaps += duplicate_id_issues("rule", rule_ids)
     gaps += [

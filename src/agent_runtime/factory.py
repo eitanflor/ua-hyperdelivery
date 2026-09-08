@@ -22,7 +22,7 @@ from strands.types.tools import ToolResult
 
 from config.loader import load_agent_config
 from config.settings import get_settings
-from infrastructure.observability.logging import configure_logging, session_id_var
+from infrastructure.observability.logging import configure_logging, project_id_var, session_id_var
 from infrastructure.observability.tracing import configure_tracing
 from providers.agents.strands_factory import build_agent
 
@@ -486,6 +486,11 @@ def create_app(
         if not isinstance(prompt, str) or not prompt.strip():
             yield {"error": "'prompt' must be a non-empty string"}
             return
+        project_id = payload.get("project_id")
+        if project_id is not None and not isinstance(project_id, str):
+            yield {"error": "'project_id' must be a string"}
+            return
+        project_token = project_id_var.set(project_id)
         # `agent` is one shared instance across every invocation this container ever
         # handles (built once, above), and _build_prompt already reconstructs full
         # grounding (predecessor artifacts + the latest message) on every call - so any
@@ -493,48 +498,51 @@ def create_app(
         # different project's data. Start every invocation from a clean slate instead of
         # letting Strands' default SlidingWindowConversationManager carry messages across
         # projects/sessions that have nothing to do with each other.
-        agent.messages = []
-        logger.info("invocation started")
-        result = None
-        tool_uses = _ToolUseStream(output_model.__name__)
-        structured_output_model = output_model if force_structured_output else None
-
-        error: str | None = None
         try:
-            # the clock covers the consumer's time between `yield`s too, which is fine at
-            # this scale: the only reader is an SSE proxy that writes and comes straight back
-            async with asyncio.timeout(_TURN_TIMEOUT_SECONDS):
-                async for event in _model_events(
-                    agent, prompt, structured_output_model, tool_uses, finished_tool_calls
-                ):
-                    if "result" in event:
-                        result = event["result"]
-                        continue
-                    yield event
-        except TimeoutError:
-            logger.exception("agent invocation timed out after %ss", _TURN_TIMEOUT_SECONDS)
-            error = "agent invocation timed out"
-        except MaxTokensReachedException:
-            # distinct from the generic failure below: the run worked, the artifact simply
-            # did not fit in `max_tokens`, and raising that for this agent is the fix
-            logger.exception("agent hit its output limit mid-artifact")
-            error = "the model ran out of output space before finishing the artifact"
-        except Exception:
-            logger.exception("agent invocation failed")
-            error = "agent invocation failed"
-        # whatever happened, nothing is still running once this generator is done
-        for abandoned in tool_uses.abandoned():
-            yield abandoned
-        if error is not None:
-            yield {"error": error}
-            return
-        for closing_event in _closing_events(
-            result,
-            output_model,
-            tool_uses,
-            force_structured_output=force_structured_output,
-            logger=logger,
-        ):
-            yield closing_event
+            agent.messages = []
+            logger.info("invocation started")
+            result = None
+            tool_uses = _ToolUseStream(output_model.__name__)
+            structured_output_model = output_model if force_structured_output else None
+
+            error: str | None = None
+            try:
+                # the clock covers the consumer's time between `yield`s too, which is fine at
+                # this scale: the only reader is an SSE proxy that writes and comes straight back
+                async with asyncio.timeout(_TURN_TIMEOUT_SECONDS):
+                    async for event in _model_events(
+                        agent, prompt, structured_output_model, tool_uses, finished_tool_calls
+                    ):
+                        if "result" in event:
+                            result = event["result"]
+                            continue
+                        yield event
+            except TimeoutError:
+                logger.exception("agent invocation timed out after %ss", _TURN_TIMEOUT_SECONDS)
+                error = "agent invocation timed out"
+            except MaxTokensReachedException:
+                # distinct from the generic failure below: the run worked, the artifact simply
+                # did not fit in `max_tokens`, and raising that for this agent is the fix
+                logger.exception("agent hit its output limit mid-artifact")
+                error = "the model ran out of output space before finishing the artifact"
+            except Exception:
+                logger.exception("agent invocation failed")
+                error = "agent invocation failed"
+            # whatever happened, nothing is still running once this generator is done
+            for abandoned in tool_uses.abandoned():
+                yield abandoned
+            if error is not None:
+                yield {"error": error}
+                return
+            for closing_event in _closing_events(
+                result,
+                output_model,
+                tool_uses,
+                force_structured_output=force_structured_output,
+                logger=logger,
+            ):
+                yield closing_event
+        finally:
+            project_id_var.reset(project_token)
 
     return app

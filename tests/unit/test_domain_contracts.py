@@ -2,7 +2,7 @@ from core.domain.blueprint import Blueprint, UnitOfWork
 from core.domain.project import CompletenessScore
 from core.domain.review import Finding, RequirementCoverage, ReviewReport
 from core.domain.showroom import DemoDataSeed, DemoPackage, TalkTrackSection
-from core.domain.spec import StructuredSpec
+from core.domain.spec import Requirement, StructuredSpec
 
 
 def test_structured_spec_defaults_completeness_score() -> None:
@@ -38,6 +38,46 @@ def test_structured_spec_accepts_minimal_valid_payload() -> None:
     )
 
     assert spec.completeness.score == 0.5
+
+
+def test_structured_spec_tracks_missing_required_sections() -> None:
+    spec = StructuredSpec(
+        title="t",
+        requirements=[],
+        gate_criteria=[],
+        rules=[],
+        rule_correlations=[],
+        evidence=[],
+        completeness=CompletenessScore(score=0.0, gaps=[]),
+    )
+
+    assert "functional_requirements" in spec.missing_required_sections
+    assert "acceptance_criteria" not in spec.missing_required_sections
+    assert "constraints" not in spec.missing_required_sections
+
+
+def test_structured_spec_accepts_all_required_sections_without_section_gaps() -> None:
+    spec = StructuredSpec(
+        title="t",
+        objective="Ship a feature",
+        scope="Backend only",
+        actors=["Developer"],
+        requirements=[Requirement(id="R1", description="Do the thing")],
+        business_rules=[],
+        data_requirements=[],
+        data_connectors=[],
+        snowflake_connectors=[],
+        workflows=[],
+        non_functional_requirements=[],
+        open_questions=[],
+        gate_criteria=[],
+        rules=[],
+        rule_correlations=[],
+        evidence=[],
+        completeness=CompletenessScore(score=1.0, gaps=[]),
+    )
+
+    assert spec.missing_required_sections == []
 
 
 def test_blueprint_accepts_units_of_work_with_dependencies() -> None:

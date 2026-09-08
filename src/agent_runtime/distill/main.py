@@ -17,6 +17,7 @@ from tools.distill import (
     validate_rule_correlations,
     validate_structured_spec,
 )
+from tools.distill_ingestion import get_local_document_text
 from tools.documents import (
     s3_document_tool,
     s3_reference_list_tool,
@@ -33,6 +34,7 @@ _tools: list[Any] = [
     validate_structured_spec,
     validate_rule_correlations,
     score_completeness,
+    get_local_document_text,
     submit_structured_spec,
     ask_clarifying_questions,
 ]

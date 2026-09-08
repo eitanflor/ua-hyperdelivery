@@ -6,8 +6,14 @@ from strands import tool
 from strands.tools.decorator import DecoratedFunctionTool
 
 from config.settings import get_settings
+from infrastructure.observability.logging import project_id_var
 from providers.storage.embeddings import cosine_similarity, embed_text, load_index
-from providers.storage.s3 import get_document_text, list_document_keys
+from providers.storage.s3 import (
+    NormalizedMarkdownArtifact,
+    get_document_text,
+    list_document_keys,
+    put_normalized_markdown,
+)
 
 # Historical FSDs uploaded for reference, one folder per subject-matter category -
 # see the `fsds/<category>/<ticket-id>-<slug>.pdf` key convention.
@@ -31,7 +37,14 @@ def s3_get_document_text(key: str) -> str:
     if not (settings.s3_bucket and settings.s3_region):
         msg = "S3_BUCKET and S3_REGION must be configured to use s3_get_document_text"
         raise ValueError(msg)
-    return get_document_text(settings.s3_bucket, key, settings.s3_region)
+    markdown = get_document_text(settings.s3_bucket, key, settings.s3_region)
+    if project_id := project_id_var.get():
+        put_normalized_markdown(
+            settings.s3_bucket,
+            NormalizedMarkdownArtifact(project_id, "s3", key, markdown),
+            settings.s3_region,
+        )
+    return markdown
 
 
 def s3_document_tool() -> DecoratedFunctionTool[..., str] | None:

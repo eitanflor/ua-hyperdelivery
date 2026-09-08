@@ -22,6 +22,31 @@ export function artifactStats(content: Record<string, unknown>): { label: string
   return candidates.filter((c) => c.value > 0).slice(0, 3);
 }
 
+const REQUIRED_SECTION_GAP_PREFIX = "missing required FSD section: ";
+
+function missingRequiredSections(content: Record<string, unknown>, gaps: string[]): string[] {
+  const fromField = content.missing_required_sections;
+  if (Array.isArray(fromField) && fromField.every((section) => typeof section === "string")) {
+    return fromField;
+  }
+  return gaps
+    .filter((gap) => gap.startsWith(REQUIRED_SECTION_GAP_PREFIX))
+    .map((gap) => gap.slice(REQUIRED_SECTION_GAP_PREFIX.length));
+}
+
+function formattedGaps(content: Record<string, unknown>, gaps: string[]): string {
+  const missingSections = missingRequiredSections(content, gaps);
+  const otherGaps = gaps.filter((gap) => !gap.startsWith(REQUIRED_SECTION_GAP_PREFIX));
+  return [
+    missingSections.length > 0
+      ? `Missing required FSD sections: ${missingSections.join(", ")}`
+      : null,
+    otherGaps.length > 0 ? `Other gaps: ${otherGaps.join("; ")}` : null,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("; ");
+}
+
 /** What the assistant "says" once a turn finishes - written in first person so the
  * chat reads like a reply, not a status readout for whichever agent happened to run.
  * The structured content itself lives in the artifact panel. */
@@ -45,10 +70,10 @@ export function composeReply(content: Record<string, unknown>, askedViaTool = 0)
 
   if (completeness) {
     if (completeness.gaps && completeness.gaps.length > 0) {
-      const gapLines = completeness.gaps.map((gap) => `- ${gap}`).join("\n");
+      const gapLine = formattedGaps(content, completeness.gaps);
       return (
         `I've got a first draft${title ? ` of "${title}"` : ""} going, but I still need a ` +
-        `bit more before it's complete:\n${gapLines}\n\nLet me know and I'll finish it up.`
+        `bit more before it's complete: ${gapLine}\n\nLet me know and I'll finish it up.`
       );
     }
     return `Done - "${title ?? "the spec"}" is complete and ready to move forward.`;

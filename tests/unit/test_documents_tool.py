@@ -2,6 +2,7 @@ from typing import Any
 
 import pytest
 
+from providers.storage.s3 import NormalizedMarkdownArtifact
 from tools import documents
 
 
@@ -40,6 +41,41 @@ def test_s3_get_document_text_uses_configured_bucket_and_region(
 
     assert documents.s3_get_document_text("fsd.txt") == "parsed text"
     assert calls["args"] == ("my-bucket", "fsd.txt", "us-east-1")
+
+
+def test_s3_get_document_text_archives_under_current_project(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(documents, "get_settings", lambda: _StubSettings())
+
+    def fake_get_document_text(_bucket: str, _key: str, _region: str) -> str:
+        return "# FSD\n"
+
+    archived: list[tuple[str, NormalizedMarkdownArtifact, str]] = []
+
+    def fake_put_normalized_markdown(
+        bucket: str, artifact: NormalizedMarkdownArtifact, region: str
+    ) -> None:
+        archived.append((bucket, artifact, region))
+
+    monkeypatch.setattr(documents, "get_document_text", fake_get_document_text)
+    monkeypatch.setattr(
+        documents,
+        "put_normalized_markdown",
+        fake_put_normalized_markdown,
+    )
+    token = documents.project_id_var.set("project-123")
+    try:
+        assert documents.s3_get_document_text("documents/input.md") == "# FSD\n"
+    finally:
+        documents.project_id_var.reset(token)
+
+    bucket, artifact, region = archived[0]
+    assert bucket == "my-bucket"
+    assert region == "us-east-1"
+    assert artifact.project_id == "project-123"
+    assert artifact.source_type == "s3"
+    assert artifact.source_id == "documents/input.md"
 
 
 def test_s3_reference_list_tool_returns_none_when_not_configured(

@@ -10,6 +10,10 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- Distill can ingest local files as normalized Markdown, archive normalized local/S3
+  inputs under `projects/<project-id>/normalized/distill/...` in the managed documents
+  bucket, and keep incomplete FSDs in Distill when mandatory sections or completeness
+  checks are missing.
 - Review now asks Copilot to keep iterating on a finding's already-open pull request
   instead of reassigning the issue. Before calling `assign_copilot_to_issue`, it checks
   whether the finding's issue already has an open pull request; if so, it posts an

@@ -21,10 +21,14 @@ class _StubS3Client:
     def __init__(self, data: bytes) -> None:
         self._data = data
         self.calls: list[tuple[str, str]] = []
+        self.put_calls: list[dict[str, Any]] = []
 
     def get_object(self, Bucket: str, Key: str) -> dict[str, Any]:
         self.calls.append((Bucket, Key))
         return {"Body": _StubBody(self._data)}
+
+    def put_object(self, **kwargs: Any) -> None:
+        self.put_calls.append(kwargs)
 
 
 def test_parse_document_decodes_txt_as_utf8() -> None:
@@ -54,6 +58,27 @@ def test_get_document_text_uses_injected_client_and_bucket() -> None:
 
     assert result == "raw fsd text"
     assert client.calls == [("my-bucket", "fsd.txt")]
+
+
+def test_put_normalized_markdown_uses_project_prefix_and_markdown_metadata() -> None:
+    client = _StubS3Client(b"")
+
+    key = s3.put_normalized_markdown(
+        "my-bucket",
+        s3.NormalizedMarkdownArtifact("project-123", "local", "input.docx", "# FSD\n"),
+        "us-east-1",
+        s3_client=cast("S3Client", client),
+    )
+
+    assert key.startswith("projects/project-123/normalized/distill/local/input.docx/")
+    assert key.endswith(".md")
+    call = client.put_calls[0]
+    assert call["Bucket"] == "my-bucket"
+    assert call["Key"] == key
+    assert call["ContentType"] == "text/markdown; charset=utf-8"
+    assert call["ServerSideEncryption"] == "AES256"
+    assert call["Metadata"]["project-id"] == "project-123"
+    assert call["Metadata"]["source-type"] == "local"
 
 
 class _StubPaginator:

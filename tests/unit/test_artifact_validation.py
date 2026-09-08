@@ -38,7 +38,17 @@ def _spec(requirement_ids: list[str] | None = None) -> StructuredSpec:
     requirement_ids = requirement_ids if requirement_ids is not None else ["R1"]
     return StructuredSpec(
         title="Spec",
+        objective="Ship the requested workflow",
+        scope="Backend and console flow",
+        actors=["Requester", "Reviewer"],
         requirements=[Requirement(id=rid, description=f"do {rid}") for rid in requirement_ids],
+        business_rules=[],
+        data_requirements=[],
+        data_connectors=[],
+        snowflake_connectors=[],
+        workflows=[],
+        non_functional_requirements=[],
+        open_questions=[],
         gate_criteria=[GateCriterion(id="G1", description="is testable")],
         rules=[MachineReadableRule(id="M1", criterion_id="G1", rule="x must be set")],
         rule_correlations=[],

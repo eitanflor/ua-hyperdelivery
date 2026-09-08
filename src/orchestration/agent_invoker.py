@@ -53,7 +53,7 @@ class AgentInvoker:
             agentRuntimeArn=runtime_arn,
             runtimeSessionId=session_id,
             contentType="application/json",
-            payload=json.dumps({"prompt": prompt}),
+            payload=json.dumps({"prompt": prompt, "project_id": project_id}),
         )
         body = response["response"].read()
         result = json.loads(body)
