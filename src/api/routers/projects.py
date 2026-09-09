@@ -7,7 +7,16 @@ from collections.abc import AsyncIterator
 from typing import Any, cast
 
 from anyio.to_thread import run_sync
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 
@@ -23,6 +32,7 @@ from api.schemas.project import (
     PreviewResponse,
     ProjectResponse,
     RenameProjectRequest,
+    UploadDocumentResponse,
 )
 from config.settings import get_settings
 from core.domain.project import AGENT_STATIONS, APPROVAL_STATIONS, Artifact, Project, Station
@@ -36,8 +46,10 @@ from infrastructure.local_preview import (
 )
 from infrastructure.repositories.project_repository import ProjectRepository
 from orchestration.project_namer import ProjectNamer, heuristic_name
+from providers.documents.parsing import SUPPORTED_EXTENSIONS
 from providers.github.merge import resolve_and_merge
 from providers.github.pull_requests import read_pull_request
+from providers.storage.s3 import UploadedDocument, put_uploaded_document
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(get_current_user)])
@@ -275,6 +287,64 @@ def get_artifact(project_id: str, agent: str, request: Request) -> ArtifactRespo
     if artifact is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="artifact not found")
     return _artifact_to_response(artifact)
+
+
+_UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+async def _read_within_limit(file: UploadFile, max_bytes: int) -> bytes:
+    """Read `file` into memory a chunk at a time, rejecting it as soon as it goes over.
+
+    A single `await file.read()` would buffer the whole body regardless of size, letting
+    one request hold an unbounded amount of worker memory - this stops as soon as the cap
+    is crossed instead of reading (and discarding) the rest of an oversized upload.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while chunk := await file.read(_UPLOAD_CHUNK_BYTES):
+        total += len(chunk)
+        if total > max_bytes:
+            detail = f"file exceeds the {max_bytes // (1024 * 1024)}MB upload limit"
+            raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, detail=detail)
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+@router.post("/{project_id}/documents", response_model=UploadDocumentResponse)
+async def upload_document(
+    project_id: str, request: Request, file: UploadFile = File(...)
+) -> UploadDocumentResponse:
+    """Store a browser-uploaded document in S3 and return its key.
+
+    The console never parses the file itself - a chat turn cites the returned `key` and
+    the current station's agent fetches and parses it via `s3_get_document_text`, same
+    as any other S3-resident document.
+    """
+    if request.app.state.project_repository.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+
+    filename = file.filename or ""
+    if not filename.lower().endswith(SUPPORTED_EXTENSIONS):
+        supported = ", ".join(SUPPORTED_EXTENSIONS)
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"unsupported file type for {filename}; expected one of: {supported}",
+        )
+
+    settings = get_settings()
+    if not (settings.s3_bucket and settings.s3_region):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="S3_BUCKET and S3_REGION are not configured"
+        )
+
+    data = await _read_within_limit(file, settings.max_upload_bytes)
+    key = await run_sync(
+        put_uploaded_document,
+        settings.s3_bucket,
+        UploadedDocument(project_id, filename, data),
+        settings.s3_region,
+    )
+    return UploadDocumentResponse(key=key, filename=filename)
 
 
 @router.get("/{project_id}/builds", response_model=BuildsResponse)

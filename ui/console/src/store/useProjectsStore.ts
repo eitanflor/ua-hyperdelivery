@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import type { ToolCallEvent, UsageEvent } from "../api/client";
 import { buildTranscript } from "../lib/transcript";
 import { describeError, type FriendlyError } from "../lib/errors";
+import { withAttachments, type Attachment } from "../lib/attachments";
 import { AGENT_META, AGENT_STATIONS } from "../lib/pipeline";
 import type { Artifact, Build, Builds, DecisionRequest, Project, Station } from "../api/types";
 
@@ -121,8 +122,10 @@ interface ProjectsState {
   createProject: (name: string) => Promise<Project>;
   // Creates a project straight from a message (no name typed in - see ProjectNamer on
   // the backend) and immediately sends that same message as Distill's first turn, so
-  // the landing-page chatbox behaves like one continuous action instead of two.
-  createProjectFromMessage: (message: string) => Promise<Project>;
+  // the landing-page chatbox behaves like one continuous action instead of two. Any
+  // files are uploaded once the project (and so its S3 prefix) exists, then cited in
+  // that first turn the same way an in-thread attachment is.
+  createProjectFromMessage: (message: string, files?: File[]) => Promise<Project>;
   loadProject: (projectId: string) => Promise<void>;
   // Backs the portfolio dashboard - every project, not just the ones this browser has
   // visited (unlike `recentProjects`, which is a local echo).
@@ -194,16 +197,30 @@ export const useProjectsStore = create<ProjectsState>()(
         return project;
       },
 
-      createProjectFromMessage: async (message) => {
+      createProjectFromMessage: async (message, files = []) => {
+        set({ error: null });
         const project = await api.createProject({ message });
         set((state) => ({
           projects: { ...state.projects, [project.id]: project },
           recentProjects: rememberRecent(state.recentProjects, project),
         }));
+        const attachments: Attachment[] = [];
+        for (const file of files) {
+          try {
+            attachments.push(await api.uploadDocument(project.id, file));
+          } catch (err) {
+            set({ error: describeError(err) });
+          }
+        }
+        // A failed attachment blocks the first turn the same way Landing.tsx already
+        // treats any error as a hard stop before navigating - sending the message
+        // anyway would silently drop the file the user was relying on, and leave a
+        // running project the caller never navigated to.
+        if (get().error) return project;
         // don't block on the first Distill turn - the caller navigates to the new
         // project's workspace as soon as it exists, and watches this happen live via
         // the same conversationByProject state the thread already reads
-        void get().advanceProject(project.id, "distill", message);
+        void get().advanceProject(project.id, "distill", withAttachments(message, attachments));
         return project;
       },
 

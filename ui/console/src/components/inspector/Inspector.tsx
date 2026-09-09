@@ -16,7 +16,7 @@ import {
   type IntegrationPoint,
   type UnitOfWork,
 } from "../../api/artifacts";
-import { AGENT_META } from "../../lib/pipeline";
+import { AGENT_META, AGENT_STATIONS } from "../../lib/pipeline";
 import { AgentFace } from "../agents/AgentFace";
 import { IconButton } from "../ui/IconButton";
 import { cn } from "../../lib/cn";
@@ -69,8 +69,15 @@ export function Inspector({
   const [tab, setTab] = useState<TabId>("content");
   const [expanded, setExpanded] = useState(false);
   // An intake turn is persisted but is not a document - it belongs above the composer as
-  // a question, not in here as something to review.
-  const documents = artifacts.filter((a) => hasContent(a.content));
+  // a question, not in here as something to review. Sorted by the station's place on the
+  // line rather than array order, which reflects whichever agent last wrote an artifact.
+  const documents = artifacts
+    .filter((a) => hasContent(a.content))
+    .sort(
+      (a, b) =>
+        (AGENT_STATIONS as string[]).indexOf(a.agent) -
+        (AGENT_STATIONS as string[]).indexOf(b.agent),
+    );
   const selected = documents.find((a) => a.agent === selectedAgent) ?? null;
   // Only a blueprint has an architecture to draw; switching stations must not strand the
   // panel on a tab that no longer exists.

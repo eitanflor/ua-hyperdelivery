@@ -49,8 +49,14 @@ export function Thread({
   const bottom = useRef<HTMLDivElement>(null);
 
   // polls only while this project's thread is on screen - a build that settles after the
-  // tab closes is caught by the first poll on the way back in
-  useEffect(() => watchBuilds(projectId), [projectId, watchBuilds]);
+  // tab closes is caught by the first poll on the way back in. Not once the project is
+  // off the line: `announceBuildsSettled` posts a follow-up turn for whatever station
+  // is current, and a `done` project has none left to advance - the state machine had
+  // already moved it there, so that late post 409s as "someone else moved this on".
+  useEffect(() => {
+    if (project?.station === "done") return;
+    return watchBuilds(projectId);
+  }, [projectId, project?.station, watchBuilds]);
 
   const streamingTurn = conversation?.find((t) => t.streaming);
 

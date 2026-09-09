@@ -6,6 +6,10 @@ set -m # job control: each `&` job gets its own process group, so cleanup can ki
        # whole group (uv/pnpm wrapper + the actual python/vite process it spawns) instead
        # of just the wrapper, which would otherwise leave orphaned listeners on these ports.
 script_dir="$(cd "$(dirname "$0")" && pwd)"
+
+# Corporate TLS inspection breaks uv's bundled certificate bundle - see CONTRIBUTING.md.
+export UV_SYSTEM_CERTS="${UV_SYSTEM_CERTS:-1}"
+
 "${script_dir}/ensure_aws_login.sh"
 repo_root="$(cd "${script_dir}/.." && pwd)" # absolute - the script cd's around below,
                                             # which would break relative-path resolution

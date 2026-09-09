@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MsalProvider } from "@azure/msal-react";
-import { BrowserRouter, Route, Routes, useMatch } from "react-router";
+import { BrowserRouter, Route, Routes, useLocation, useMatch } from "react-router";
 import { MotionConfig } from "motion/react";
 import { ProjectRail } from "./components/shell/ProjectRail";
 import { TopBar } from "./components/shell/TopBar";
@@ -21,6 +21,7 @@ const RAIL_BREAKPOINT = "(min-width: 1180px)";
 function Shell() {
   const match = useMatch("/projects/:projectId");
   const projectId = match?.params.projectId;
+  const location = useLocation();
   const project = useProjectsStore((s) => (projectId ? (s.projects[projectId] ?? null) : null));
   const pendingByStation = useProjectsStore((s) => s.pendingByStation);
 
@@ -31,6 +32,13 @@ function Shell() {
     (pendingByStation.blueprint_approval?.length ?? 0) +
     (pendingByStation.review_approval?.length ?? 0) +
     (pendingByStation.showroom_approval?.length ?? 0);
+
+  useEffect(() => {
+    // the landing page tags this navigation so the rail (open by default while there is
+    // nothing to browse yet) gets out of the way of the conversation it just started
+    if ((location.state as { justCreated?: boolean } | null)?.justCreated) setRailOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

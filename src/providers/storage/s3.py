@@ -4,15 +4,16 @@ Callers supply bucket/region; reusable by any Strands agent project that needs t
 an object key into text. The per-agent least-privilege wrapper lives in tools/documents.py.
 """
 
-import io
 import re
 from dataclasses import dataclass
 from functools import lru_cache
 from hashlib import sha256
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 import boto3
-from pypdf import PdfReader
+
+from providers.documents.parsing import parse_document_bytes
 
 if TYPE_CHECKING:  # boto3-stubs is a dev-only dependency
     from mypy_boto3_s3.client import S3Client
@@ -28,6 +29,15 @@ class NormalizedMarkdownArtifact:
     markdown: str
 
 
+@dataclass(frozen=True)
+class UploadedDocument:
+    """A browser-uploaded document's raw bytes, staged for `put_uploaded_document`."""
+
+    project_id: str
+    filename: str
+    data: bytes
+
+
 @lru_cache
 def _default_client(region: str) -> "S3Client":
     """One client per region, reused across calls instead of rebuilt on every request."""
@@ -36,31 +46,34 @@ def _default_client(region: str) -> "S3Client":
 
 def parse_document(key: str, body: bytes) -> str:
     """Decode a fetched object's bytes into text based on its key's extension."""
-    key_lc = key.lower()
-    if key_lc.endswith(".pdf"):
-        reader = PdfReader(io.BytesIO(body))
-        return "\n".join(page.extract_text() or "" for page in reader.pages)
-    if key_lc.endswith((".txt", ".md")):
-        try:
-            return body.decode("utf-8")
-        except UnicodeDecodeError as e:
-            msg = f"Unsupported encoding for {key}; expected UTF-8"
-            raise ValueError(msg) from e
-    msg = f"Unsupported document type for {key}; expected .txt, .md, or .pdf"
-    raise ValueError(msg)
+    return parse_document_bytes(key, body)
 
 
 def get_document_text(
     bucket: str, key: str, region: str, s3_client: "S3Client | None" = None
 ) -> str:
-    """Fetch an object from S3 and return its text content.
+    """Fetch an object from S3 and return its normalized text content.
 
-    .txt/.md are decoded as-is and .pdf is extracted via pypdf. Pass `s3_client` to
-    inject a fake/stub client in tests.
+    Supports the same formats as `providers.documents.parsing.SUPPORTED_EXTENSIONS`.
+    Pass `s3_client` to inject a fake/stub client in tests.
     """
     client = s3_client or _default_client(region)
     body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
     return parse_document(key, body)
+
+
+def _safe_segment(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._/-]+", "-", value).strip("-/")
+
+
+def _safe_filename(value: str) -> str:
+    """Strip path separators from a user-supplied filename before it goes into a key.
+
+    Unlike `_safe_segment` (trusted ids that are allowed to contain `/`), a filename
+    comes straight from the browser - `/` or `..` in it must not turn into extra key
+    segments under `uploads/`.
+    """
+    return re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-._")
 
 
 def put_normalized_markdown(
@@ -70,15 +83,11 @@ def put_normalized_markdown(
     s3_client: "S3Client | None" = None,
 ) -> str:
     """Store immutable Markdown under its project and return the generated key."""
-
-    def safe_segment(value: str) -> str:
-        return re.sub(r"[^A-Za-z0-9._/-]+", "-", value).strip("-/")
-
     body = artifact.markdown.encode("utf-8")
     digest = sha256(body).hexdigest()
     key = (
-        f"projects/{safe_segment(artifact.project_id)}/normalized/distill/"
-        f"{safe_segment(artifact.source_type)}/{safe_segment(artifact.source_id)}/{digest}.md"
+        f"projects/{_safe_segment(artifact.project_id)}/normalized/distill/"
+        f"{_safe_segment(artifact.source_type)}/{_safe_segment(artifact.source_id)}/{digest}.md"
     )
     client = s3_client or _default_client(region)
     client.put_object(
@@ -93,6 +102,24 @@ def put_normalized_markdown(
         },
         ServerSideEncryption="AES256",
     )
+    return key
+
+
+def put_uploaded_document(
+    bucket: str, document: UploadedDocument, region: str, s3_client: "S3Client | None" = None
+) -> str:
+    """Store a browser-uploaded document's raw bytes under its project and return the key.
+
+    Kept separate from `put_normalized_markdown`: this is the original file (whatever
+    Distill's `s3_get_document_text` will later fetch and parse), not its extracted text.
+    A random prefix on the filename avoids collisions between two uploads of the same name.
+    """
+    client = s3_client or _default_client(region)
+    key = (
+        f"projects/{_safe_segment(document.project_id)}/uploads/"
+        f"{uuid4().hex}-{_safe_filename(document.filename)}"
+    )
+    client.put_object(Bucket=bucket, Key=key, Body=document.data, ServerSideEncryption="AES256")
     return key
 
 

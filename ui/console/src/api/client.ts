@@ -141,6 +141,27 @@ export const api = {
   getArtifact: (projectId: string, agent: string) =>
     request<Artifact>(`/projects/${projectId}/artifacts/${agent}`),
 
+  // Stores the raw file in S3 and hands back its key - the console never parses it
+  // itself. `Content-Type` is deliberately left unset so the browser sets its own
+  // multipart boundary (see `request()`, which always sends application/json).
+  uploadDocument: async (
+    projectId: string,
+    file: File,
+  ): Promise<{ key: string; filename: string }> => {
+    const token = await getIdToken();
+    const body = new FormData();
+    body.append("file", file);
+    const resp = await fetch(`${API_BASE_URL}/projects/${projectId}/documents`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body,
+    });
+    if (!resp.ok) {
+      throw new ApiError(resp.status, await _errorMessage(resp));
+    }
+    return (await resp.json()) as { key: string; filename: string };
+  },
+
   listBuilds: (projectId: string) => request<Builds>(`/projects/${projectId}/builds`),
 
   submitDecision: (projectId: string, decision: DecisionRequest) =>

@@ -10,6 +10,14 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- The console can now upload a document (PDF/DOCX/PPTX/XLSX/PNG/JPEG) straight from the
+  chat composer's new attach button, and from the landing page's "what are we building"
+  box (uploaded once the project it names exists, then cited in Distill's first turn):
+  `POST /projects/{id}/documents` stores it in the documents bucket and the chat turn
+  cites its S3 key, which Distill already knows to fetch via `s3_get_document_text`.
+  That tool now parses every format the local-file ingestion tool does (previously
+  .txt/.md/.pdf only) - the format-specific parsing moved into a shared
+  `providers/documents/parsing.py`. See docs/decisions.md.
 - Distill can ingest local files as normalized Markdown, archive normalized local/S3
   inputs under `projects/<project-id>/normalized/distill/...` in the managed documents
   bucket, and keep incomplete FSDs in Distill when mandatory sections or completeness
@@ -46,7 +54,49 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   approval - so signing the G3 gate on one used to fail the whole approval with "Pull
   Request is not mergeable" even though the code was correct. See docs/decisions.md.
 
+- The Blueprint architecture diagram can now be expanded into a full dialog
+  (`ArchitectureDiagram`'s new expand button) - the same graph at a size that doesn't
+  depend on how wide the artifact panel happens to be.
+
 ### Fixed
+
+- The station's open questions (MCQ pills, previously a separate "Send N answers"
+  button above the composer) are now answered through the composer's own send instead
+  of a second one - picking an option only stages it, so a pick and typed text go out as
+  a single turn instead of two, and the composer's existing text/attachment rollback on
+  a failed turn now covers picks too. See docs/decisions.md.
+- The Inspector's artifact tabs were rendered in whichever order agents last wrote an
+  artifact, not the stations' order on the line - now sorted against `AGENT_STATIONS`.
+- The station's open questions had a "pick any that apply" hint sitting inline in the
+  same row as the option pills, with no border/background to tell it apart from them -
+  it read as an not clickable fourth option. Moved to its own line below the pills, and
+  marked `select-none` so a click there can no longer land as a text selection instead.
+  Also dropped the composer-adjacent "Pick an answer above, or type one below, then
+  send." footer line - redundant now that the composer directly below is doing exactly
+  that with its own placeholder text.
+- Opening a `done` (shipped) project's thread still started the build-settled poll,
+  which could post a stale "check the builds" follow-up turn for a station the project
+  had already left - the state machine had moved it on first, so that post 409ed and
+  surfaced as "This project moved on without you" while the human was just reviewing a
+  finished project's artifacts. `Thread` now skips `watchBuilds` once the station is
+  `done`.
+- The project rail no longer stays open once a project has been created from the
+  landing page's first message - `Landing` tags that navigation (`state: { justCreated }`)
+  and `Shell` collapses the rail on it, the same way it would if the user had collapsed
+  it by hand.
+- `POST /projects/{id}/documents` read an uploaded file's entire body into memory with
+  no size limit, risking high worker memory use on a large upload. It now reads in bounded
+  chunks and 413s once the read exceeds the new `MAX_UPLOAD_BYTES` setting (25MB default).
+- `put_uploaded_document` sanitized a browser-uploaded filename with the same
+  segment sanitizer used for trusted ids, which allowed `/` and `..` through. Filenames
+  now go through a dedicated `_safe_filename` that strips path separators.
+- `createProjectFromMessage` didn't clear a previous run's `error` before starting, and
+  still kicked off the first Distill turn even when an attachment upload failed -
+  inconsistent with the landing page's own "any error blocks navigation" rule, and could
+  leave a running project the user was never navigated to. It now clears `error` up
+  front and skips the first turn entirely when an upload fails.
+- Reverted an unrelated, ungrammatical sentence accidentally inserted into Review's
+  system prompt (`src/config/agents/review.yaml`).
 
 - `resolve_and_merge`'s merge step used GitHub's synchronous `PUT .../pulls/{n}/merge`,
   which GitHub refuses outright for a stacked pull request ("Merging stacked PRs via this

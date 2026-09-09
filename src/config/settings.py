@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     aws_region: str = "us-east-1"
     port: int = 8080
+    # Bounds `upload_document`'s in-memory read - large enough for a spec/deck, small
+    # enough that one request can't exhaust a worker's memory.
+    max_upload_bytes: int = 25_000_000
     atlassian_base_url: str | None = None
     atlassian_email: str | None = None
     atlassian_api_token: str | None = None

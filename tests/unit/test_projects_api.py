@@ -16,6 +16,7 @@ from infrastructure.local_preview import PreviewTarget, PullResult
 from infrastructure.repositories.project_repository import ProjectRepository
 from providers.github.merge import MergeResult
 from providers.github.pull_requests import PullRequestState
+from providers.storage.s3 import UploadedDocument
 
 
 def _state(client: TestClient) -> Any:
@@ -307,6 +308,91 @@ def test_list_artifacts_returns_all_agents_for_project(client: TestClient) -> No
 
     assert resp.status_code == 200
     assert {a["agent"] for a in resp.json()} == {"distill", "blueprint"}
+
+
+def test_upload_document_404s_for_an_unknown_project(client: TestClient) -> None:
+    resp = client.post(
+        "/projects/does-not-exist/documents",
+        files={"file": ("fsd.pdf", b"data", "application/pdf")},
+    )
+
+    assert resp.status_code == 404
+
+
+def test_upload_document_rejects_an_unsupported_extension(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(
+        f"/projects/{created['id']}/documents",
+        files={"file": ("archive.zip", b"data", "application/zip")},
+    )
+
+    assert resp.status_code == 415
+
+
+def test_upload_document_409s_without_s3_configured(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(s3_bucket=None, s3_region=None),
+    )
+
+    resp = client.post(
+        f"/projects/{created['id']}/documents",
+        files={"file": ("fsd.pdf", b"data", "application/pdf")},
+    )
+
+    assert resp.status_code == 409
+
+
+def test_upload_document_stores_the_file_and_returns_its_key(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(
+            s3_bucket="my-bucket", s3_region="us-east-1", max_upload_bytes=25_000_000
+        ),
+    )
+    calls: list[tuple[str, UploadedDocument, str]] = []
+
+    def fake_put_uploaded_document(bucket: str, document: UploadedDocument, region: str) -> str:
+        calls.append((bucket, document, region))
+        return f"projects/{document.project_id}/uploads/fixed-{document.filename}"
+
+    monkeypatch.setattr("api.routers.projects.put_uploaded_document", fake_put_uploaded_document)
+
+    resp = client.post(
+        f"/projects/{created['id']}/documents",
+        files={"file": ("fsd.pdf", b"raw pdf bytes", "application/pdf")},
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body == {"key": f"projects/{created['id']}/uploads/fixed-fsd.pdf", "filename": "fsd.pdf"}
+    assert calls == [
+        ("my-bucket", UploadedDocument(created["id"], "fsd.pdf", b"raw pdf bytes"), "us-east-1")
+    ]
+
+
+def test_upload_document_413s_when_the_file_exceeds_the_configured_limit(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(s3_bucket="my-bucket", s3_region="us-east-1", max_upload_bytes=10),
+    )
+
+    resp = client.post(
+        f"/projects/{created['id']}/documents",
+        files={"file": ("fsd.pdf", b"more than ten bytes of content", "application/pdf")},
+    )
+
+    assert resp.status_code == 413
 
 
 def test_advance_invokes_the_local_agent_and_moves_to_the_next_station(client: TestClient) -> None:

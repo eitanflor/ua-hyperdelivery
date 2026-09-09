@@ -55,6 +55,17 @@ class ArtifactResponse(BaseModel):
     created_at: str
 
 
+class UploadDocumentResponse(BaseModel):
+    """Body for `POST /projects/{id}/documents` after a browser upload lands in S3.
+
+    `key` is what a chat turn cites so the current station's agent can fetch and parse
+    it itself via `s3_get_document_text` - the console never parses the file.
+    """
+
+    key: str
+    filename: str
+
+
 class AdvanceRequest(BaseModel):
     """Body for `POST /projects/{id}/advance(/stream)`.
 

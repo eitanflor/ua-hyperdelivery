@@ -6,6 +6,9 @@ include .env
 export
 endif
 
+# Corporate TLS inspection breaks uv's bundled certificate bundle - see CONTRIBUTING.md.
+export UV_SYSTEM_CERTS ?= 1
+
 check-aws:
 	./scripts/ensure_aws_login.sh
 

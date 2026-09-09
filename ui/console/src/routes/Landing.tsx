@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowUpIcon } from "@phosphor-icons/react";
+import { ArrowUpIcon, PaperclipIcon, XIcon } from "@phosphor-icons/react";
 import { useProjectsStore } from "../store/useProjectsStore";
 import { AGENT_META, AGENT_STATIONS, STATION_META } from "../lib/pipeline";
+import { ACCEPTED_EXTENSIONS } from "../lib/attachments";
 import { AgentFace } from "../components/agents/AgentFace";
 import { Spinner } from "../components/ui/Spinner";
 
@@ -13,15 +14,32 @@ import { Spinner } from "../components/ui/Spinner";
 export function Landing() {
   const navigate = useNavigate();
   const [text, setText] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const createProjectFromMessage = useProjectsStore((s) => s.createProjectFromMessage);
   const loading = useProjectsStore((s) => s.loading);
 
   const send = async () => {
     const message = text.trim();
     if (!message || loading) return;
-    const project = await createProjectFromMessage(message);
-    if (!useProjectsStore.getState().error) void navigate(`/projects/${project.id}`);
+    const files = pendingFiles;
+    const project = await createProjectFromMessage(message, files);
+    if (useProjectsStore.getState().error) return;
+    setText("");
+    setPendingFiles([]);
+    void navigate(`/projects/${project.id}`, { state: { justCreated: true } });
   };
+
+  // Uploading needs the project's S3 prefix, which doesn't exist until send() creates
+  // the project - so a picked file just sits here as a chip until then.
+  const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) setPendingFiles((prev) => [...prev, file]);
+  };
+
+  const removePendingFile = (index: number) =>
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-8 px-6 py-16">
@@ -32,6 +50,27 @@ export function Landing() {
           takes it from there — stopping at two gates for a person to sign.
         </p>
       </div>
+
+      {pendingFiles.length > 0 && (
+        <div className="-mt-4 flex flex-wrap gap-1.5">
+          {pendingFiles.map((file, index) => (
+            <span
+              key={`${file.name}-${index}`}
+              className="flex items-center gap-1 rounded-full border border-line bg-surface px-2 py-1 text-2xs text-fg-subtle"
+            >
+              {file.name}
+              <button
+                type="button"
+                onClick={() => removePendingFile(index)}
+                aria-label={`Remove ${file.name}`}
+                className="rounded-full p-0.5 hover:bg-canvas"
+              >
+                <XIcon className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="relative rounded-md border border-line bg-surface transition-colors focus-within:border-accent">
         <label htmlFor="landing" className="sr-only">
@@ -51,13 +90,30 @@ export function Landing() {
             void send();
           }}
         />
-        <span className="pointer-events-none absolute bottom-3 left-4 text-2xs text-fg-subtle">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_EXTENSIONS}
+          className="sr-only"
+          onChange={onFileSelected}
+        />
+        <span className="pointer-events-none absolute bottom-3 left-4 flex items-center gap-2 text-2xs text-fg-subtle">
           {loading ? (
             <span className="flex items-center gap-1.5">
               <Spinner className="size-3" /> Naming it and starting Scout…
             </span>
           ) : (
-            "Enter to send, ⇧/⌘/Ctrl + Enter for a new line"
+            <>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Attach a document"
+                className="pointer-events-auto rounded p-0.5 text-fg-subtle transition-colors hover:text-fg"
+              >
+                <PaperclipIcon className="size-3.5" />
+              </button>
+              <span>Enter to send, ⇧/⌘/Ctrl + Enter for a new line</span>
+            </>
           )}
         </span>
         <button

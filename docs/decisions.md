@@ -17,6 +17,74 @@ Template for new entries:
 
 ---
 
+## 2026-09-09 - MCQ picks lift into the composer instead of a second send button
+
+- **Status**: Accepted
+- **Context**: `QuestionPrompt` (the station's open-questions card above the composer)
+  owned its own picked-answers state and its own "Send N answers" button, separate from
+  the composer's send. A pick and any typed free text therefore went out as two separate
+  turns, and it was ambiguous which box - the question card's pills or the composer's
+  textarea - a given answer belonged in.
+- **Decision**: `QuestionPrompt` became a fully controlled/presentational component
+  (`picked`, `onToggle` props, no internal state, no button). `Composer` now owns
+  `pickedAnswers`/`answeredIds`, composes the MCQ answer text via the existing
+  `composeAnswers` helper, and folds it into the same `send()`/`submit()` path already
+  used for typed text and attachments - one send button, one turn, whatever combination
+  of pick/text/attachment it carries. Rollback on a failed turn (already in place for
+  text and attachments) was extended to also restore picks.
+- **Alternatives considered**: Keeping two send affordance but disabling the composer's
+  while questions are open - rejected, since it doesn't resolve the real complaint (an
+  answer picked in one place and typed text in another still can't travel as one turn),
+  and it does not compose with a free-text-only question the composer already had to
+  handle.
+- **Consequences**: Any future "answer" needs a place for its state in `Composer`, not
+  in the smaller components under it - makes `Composer` more central but that trade
+  keeps one send button, one turn, and one place to reason about a failed-send rollback.
+
+---
+
+## 2026-09-09 - Document upload is a browser-to-S3 endpoint, not a browser-picked local path
+
+- **Status**: Accepted
+- **Context**: Distill's `get_local_document_text` (2026-09-04) only reads a path off the
+  disk the agent process runs on - true in local dev, where console-api and the agent
+  share a machine, but a browser `<input type="file">` never exposes a picked file's
+  absolute disk path (removed from the File API everywhere except Electron), so the
+  console had no way to let a person attach a PDF/PPT/DOCX from the browser. Separately,
+  `providers/storage/s3.py`'s `parse_document` only handled `.txt/.md/.pdf`, while the
+  local-file parser already handled `.docx/.pptx/.xlsx/.png/.jpg/.jpeg` too.
+- **Decision**: Moved the format-specific extraction out of `providers/documents/local.py`
+  into a new byte-based `providers/documents/parsing.py` (`parse_document_bytes`), shared
+  by both the local-file path and `providers/storage/s3.py`'s `parse_document` - S3 now
+  parses every format the local tool does. Added `POST /projects/{id}/documents`
+  (multipart upload, `UploadFile`), which stores the raw bytes via a new
+  `put_uploaded_document`/`UploadedDocument` in the existing documents bucket under
+  `projects/<id>/uploads/<uuid>-<filename>` and returns the key. The console's Composer
+  got an attach button that uploads on selection and cites `"Attached: ... (S3 key: ...)"`
+  in the next chat turn - Distill's prompt already calls `s3_get_document_text` on any S3
+  key it's given, so no agent-side prompt change was needed. Added `python-multipart` as
+  an explicit dependency (FastAPI's `File`/`UploadFile` need it for multipart parsing;
+  it was previously only a transitive dependency via `mcp`/`streamlit`).
+- **Alternatives considered**: Wiring the picker straight to `get_local_document_text` -
+  rejected, it's not implementable (no browser API exposes the absolute path). A separate
+  parse-on-upload endpoint that returns extracted Markdown immediately - rejected to keep
+  parsing where it already lives, as a tool call the agent makes on its own turn, matching
+  the existing S3/local split rather than adding a third code path for turning bytes into
+  text.
+- **Consequences**: `providers/documents/local.py` is now a thin wrapper (path -> bytes ->
+  shared parser -> sidecar write); any new document format only needs to be taught once.
+  Uploaded originals accumulate under `uploads/` with no lifecycle rule yet - revisit if
+  the documents bucket needs a retention/cleanup policy. The landing page's "what are we
+  building" box got the same attach button, but a picked file there is only held in
+  memory as a pending chip - there's no project (and so no S3 prefix) to upload it to
+  until `send()` creates one. `createProjectFromMessage` now takes an optional `File[]`,
+  uploads them right after `api.createProject` returns and before the first Distill turn
+  is sent, and composes the message with `lib/attachments.withAttachments` (extracted
+  from `Composer.tsx` so both call sites share it). An upload failure here sets the same
+  `error` the landing page already checks before navigating, so a bad attachment blocks
+  the first turn rather than silently dropping it - same as any other `createProject`
+  failure.
+
 ## 2026-09-08 - Findings against an already-open pull request get an `@copilot` PR comment, not a fresh issue assignment
 
 - **Status**: Accepted.

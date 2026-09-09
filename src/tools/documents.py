@@ -28,10 +28,11 @@ _MIN_SEGMENTS_WITH_CATEGORY = 3
 
 @tool
 def s3_get_document_text(key: str) -> str:
-    """Fetch and parse a document (.txt/.md/.pdf) from the configured S3 bucket by key.
+    """Fetch and parse a document from the configured S3 bucket by key.
 
-    Call this for any S3 key you are given or find, whether it is the document to work
-    from or one you turned up while looking for related material.
+    Supports .txt, .md, .pdf, .docx, .pptx, .xlsx, .png, .jpg and .jpeg. Call this for
+    any S3 key you are given or find, whether it is the document to work from or one
+    you turned up while looking for related material.
     """
     settings = get_settings()
     if not (settings.s3_bucket and settings.s3_region):
