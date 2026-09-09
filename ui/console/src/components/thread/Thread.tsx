@@ -5,6 +5,7 @@ import { openQuestions } from "../../api/artifacts";
 import { useProjectsStore } from "../../store/useProjectsStore";
 import { AGENT_STATIONS, PIPELINE, STATION_META, stationIndex } from "../../lib/pipeline";
 import { planSteps, questionsFromToolCalls } from "../../lib/plan";
+import { cn } from "../../lib/cn";
 import { Button } from "../ui/Button";
 import { BuildBoard } from "./BuildBoard";
 import { Composer } from "./Composer";
@@ -33,15 +34,21 @@ function Skeleton() {
 
 export function Thread({
   projectId,
+  artifactsOpen,
   onViewArtifact,
 }: {
   projectId: string;
+  /** Whether the artifacts panel is open - the reading column's comfortable-measure cap
+   * only makes sense at full page width; with the panel already narrowing the space, the
+   * same cap left large unused gutters flanking the column instead of using the room. */
+  artifactsOpen: boolean;
   onViewArtifact: (agent: string) => void;
 }) {
   const project = useProjectsStore((s) => s.projects[projectId]);
   const artifacts = useProjectsStore((s) => s.artifactsByProject[projectId] ?? NO_ARTIFACTS);
   const conversation = useProjectsStore((s) => s.conversationByProject[projectId]);
   const signatures = useProjectsStore((s) => s.signaturesByProject[projectId]);
+  const viewMode = useProjectsStore((s) => s.viewMode);
   const failedRun = useProjectsStore((s) => s.failedRun);
   const retryFailedRun = useProjectsStore((s) => s.retryFailedRun);
   const builds = useProjectsStore((s) => s.buildsByProject[projectId]);
@@ -107,7 +114,16 @@ export function Thread({
     // scroll region so the composer footer stays put instead of riding the content down.
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-5 px-6 py-6">
+        <div
+          className={cn(
+            "mx-auto flex w-full flex-col gap-5 px-6 py-6",
+            // closed, the column is comfortable-measure and centered on the whole
+            // viewport; open, the panel is already taking its own half of the screen,
+            // so this side should just fill its half rather than cap to the same
+            // narrower measure and leave a second, redundant gutter next to the panel
+            artifactsOpen ? "max-w-none" : "max-w-[46rem]",
+          )}
+        >
           {PIPELINE.map((station) => {
             const meta = STATION_META[station];
             const index = stationIndex(station);
@@ -168,6 +184,7 @@ export function Thread({
                           draft={turn.draft}
                           waitingSeconds={turn.waitingSeconds}
                           toolCalls={turn.toolCalls ?? []}
+                          viewMode={viewMode}
                         />
                       ) : (
                         <AgentTurn
@@ -178,6 +195,7 @@ export function Thread({
                           toolCalls={turn.toolCalls}
                           usage={turn.usage}
                           onViewArtifact={onViewArtifact}
+                          viewMode={viewMode}
                         />
                       ),
                     )
@@ -188,6 +206,7 @@ export function Thread({
                         agent={artifact.agent}
                         content={artifact.content}
                         onViewArtifact={onViewArtifact}
+                        viewMode={viewMode}
                       />
                     )}
 

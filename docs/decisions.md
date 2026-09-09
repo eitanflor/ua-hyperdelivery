@@ -17,6 +17,36 @@ Template for new entries:
 
 ---
 
+## 2026-09-09 - PM/Developer view is a rendering toggle, not a second summarization pass
+
+- **Status**: Accepted
+- **Context**: asked for a role toggle that shows "only relevant stuff" to a PM while
+  Developer keeps showing everything. The thread already synthesizes a plain-English
+  reply for every turn (`composeReply` in `lib/formatArtifact.ts`) alongside the agent's
+  raw streamed text and its full tool-call trace, and the inspector already offers a
+  literal `JSON.stringify` "JSON" tab next to the structured content/design views - none
+  of that is summarization work waiting to be built, it's existing detail that Developer
+  mode already shows in full.
+- **Decision**: added `viewMode: "developer" | "pm"` to `useProjectsStore` (global,
+  persisted, default `"developer"` - a display preference, not project state) with a
+  toggle in `TopBar`. PM mode hides the tool-call trace and the raw agent `text` in
+  `Turns.tsx` (keeping only `composeReply`'s summary and the artifact card) and hides the
+  inspector's raw-JSON tab (`Inspector.tsx`), falling back to the `content` tab if it was
+  active when the mode flips. Nothing else changes: the structured artifact views
+  (`views.tsx`), the architecture diagram, and the gate/approval UI are identical in both
+  modes.
+- **Alternatives considered**: a second parallel render tree per artifact type keyed off
+  role, so every future field addition would need an explicit PM-visibility decision -
+  rejected as ongoing maintenance cost with no current need; "Detailed/Summary" naming to
+  stay inside the app's sports-factory vocabulary (Scout/Coach/Ref/Host) - rejected for
+  this control specifically, since it's a meta/settings toggle about how the operator
+  reads the console rather than part of the delivery metaphor, so plain "Developer/PM"
+  reads clearer here.
+- **Consequences**: adding a new kind of debug-only detail (another trace type, another
+  raw-dump view) means remembering to gate it on `viewMode` too - nothing enforces that
+  today beyond code review. If PM users end up wanting to drill into the trace
+  occasionally, add a per-turn "Show details" disclosure rather than a global mode flip.
+
 ## 2026-09-09 - MCQ picks lift into the composer instead of a second send button
 
 - **Status**: Accepted

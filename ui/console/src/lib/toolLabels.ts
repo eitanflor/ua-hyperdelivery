@@ -50,8 +50,7 @@ const OVERRIDES: Record<string, string> = {
  * What to call a tool in the thread.
  *
  * Unknown tools are humanized rather than dropped through raw, so a tool added to an MCP
- * server tomorrow still reads as words. The raw name stays available in the expanded
- * detail, so the trace can still be matched against the code.
+ * server tomorrow still reads as words - the raw wire name is never shown to the user.
  */
 export function toolLabel(name: string): string {
   const override = OVERRIDES[name];

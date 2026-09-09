@@ -1,10 +1,50 @@
 import { CommandIcon, MagnifyingGlassIcon, SidebarSimpleIcon, SquaresFourIcon } from "@phosphor-icons/react";
 import { useNavigate } from "react-router";
 import type { Project } from "../../api/types";
+import { useProjectsStore, type ViewMode } from "../../store/useProjectsStore";
 import { LineIndicator } from "./LineIndicator";
 import { UserMenu } from "./UserMenu";
 import { IconButton } from "../ui/IconButton";
 import { Badge } from "../ui/Badge";
+import { cn } from "../../lib/cn";
+
+const VIEW_MODES: { value: ViewMode; label: string }[] = [
+  { value: "developer", label: "Developer" },
+  { value: "pm", label: "PM" },
+];
+
+/** Developer sees the full trace behind every turn; PM sees only the synthesized reply
+ * and the structured artifact - same data, less of the how. Global, not per-project: it
+ * is how this person reads the console, not something about the work itself. */
+function ViewModeToggle() {
+  const viewMode = useProjectsStore((s) => s.viewMode);
+  const setViewMode = useProjectsStore((s) => s.setViewMode);
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Detail level"
+      className="hidden items-center rounded-sm border border-line p-0.5 sm:flex"
+    >
+      {VIEW_MODES.map(({ value, label }) => (
+        <button
+          key={value}
+          type="button"
+          role="radio"
+          aria-checked={viewMode === value}
+          onClick={() => setViewMode(value)}
+          className={cn(
+            "rounded-[3px] px-2 py-1 text-2xs font-medium transition-colors",
+            viewMode === value
+              ? "bg-sunken text-fg"
+              : "text-fg-subtle hover:text-fg-muted",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 /** 56px of chrome that never changes shape: what this is, where the work is, who you
  * are. Everything else in the app scrolls; this does not. */
@@ -67,6 +107,8 @@ export function TopBar({
           {needsYouCount} need{needsYouCount === 1 ? "s" : ""} you
         </Badge>
       )}
+
+      <ViewModeToggle />
 
       <IconButton
         label="Project portfolio"

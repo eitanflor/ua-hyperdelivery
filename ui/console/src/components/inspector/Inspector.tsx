@@ -20,6 +20,7 @@ import { AGENT_META, AGENT_STATIONS } from "../../lib/pipeline";
 import { AgentFace } from "../agents/AgentFace";
 import { IconButton } from "../ui/IconButton";
 import { cn } from "../../lib/cn";
+import { useProjectsStore } from "../../store/useProjectsStore";
 import { ArchitectureDiagram } from "./ArchitectureDiagram";
 import { BlueprintView, DemoView, GenericView, ReviewView, SpecView } from "./views";
 
@@ -68,6 +69,7 @@ export function Inspector({
 }) {
   const [tab, setTab] = useState<TabId>("content");
   const [expanded, setExpanded] = useState(false);
+  const viewMode = useProjectsStore((s) => s.viewMode);
   // An intake turn is persisted but is not a document - it belongs above the composer as
   // a question, not in here as something to review. Sorted by the station's place on the
   // line rather than array order, which reflects whichever agent last wrote an artifact.
@@ -82,7 +84,9 @@ export function Inspector({
   // Only a blueprint has an architecture to draw; switching stations must not strand the
   // panel on a tab that no longer exists.
   const hasDesign = selected !== null && artifactKind(selected.agent) === "blueprint";
-  const activeTab: TabId = tab === "design" && !hasDesign ? "content" : tab;
+  const showRaw = viewMode === "developer";
+  const activeTab: TabId =
+    (tab === "design" && !hasDesign) || (tab === "raw" && !showRaw) ? "content" : tab;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -95,15 +99,19 @@ export function Inspector({
   const tabs: { id: TabId; label: string }[] = [
     ...(hasDesign ? [{ id: "design" as const, label: "Design" }] : []),
     { id: "content", label: "Requirements" },
-    { id: "raw", label: "JSON" },
+    // raw JSON is debug detail, not something a PM reading for the outcome needs
+    ...(showRaw ? [{ id: "raw" as const, label: "JSON" }] : []),
   ];
 
   return (
     <aside
       aria-label="Artifacts"
       className={cn(
-        "flex shrink-0 flex-col border-l border-line-subtle bg-canvas transition-[width] duration-200",
-        expanded ? "w-[min(48rem,55vw)]" : "w-[22rem] 2xl:w-[26rem]",
+        "flex min-w-0 flex-col border-l border-line-subtle bg-canvas transition-[flex-basis,width] duration-200",
+        // half the screen by default - a fixed rem width left a wide viewport with a
+        // narrow reading column on one side and a big idle gutter on the other, which
+        // read as a layout bug rather than the comfortable-measure choice it was
+        expanded ? "w-[min(64rem,70vw)] shrink-0" : "min-w-[20rem] flex-1",
       )}
     >
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line-subtle px-3">
@@ -196,7 +204,7 @@ export function Inspector({
 
               {activeTab === "design" && <DesignBody artifact={selected} />}
               {activeTab === "content" && <ContentBody artifact={selected} />}
-              {activeTab === "raw" && <GenericView content={selected.content} />}
+              {activeTab === "raw" && showRaw && <GenericView content={selected.content} />}
             </div>
           )}
         </>

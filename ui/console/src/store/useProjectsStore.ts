@@ -53,6 +53,13 @@ export interface RecentProject {
   name: string;
 }
 
+/** "developer" shows the full trace (tool calls, raw agent text, raw JSON) - the
+ * default, since that is who has driven this console so far. "pm" hides that debug
+ * detail and shows only the synthesized reply and the structured artifact view, for
+ * someone who wants the outcome, not how the agent got there. A display preference, not
+ * project state, so it lives outside any per-project data and persists across projects. */
+export type ViewMode = "developer" | "pm";
+
 export interface ChatTurn {
   // stable identity for matching a turn across updates (e.g. a flush replacing it with
   // a new object each time) - object references break the moment a turn is recreated
@@ -118,6 +125,7 @@ interface ProjectsState {
   pendingDecision: PendingDecision | null;
   /** Set while an agent run is in flight, so the UI can offer a stop. */
   runningProjectId: string | null;
+  viewMode: ViewMode;
 
   createProject: (name: string) => Promise<Project>;
   // Creates a project straight from a message (no name typed in - see ProjectNamer on
@@ -146,6 +154,7 @@ interface ProjectsState {
   deleteProject: (projectId: string) => Promise<void>;
   renameProject: (projectId: string, name: string) => Promise<void>;
   clearError: () => void;
+  setViewMode: (mode: ViewMode) => void;
 }
 
 // Kept outside the store: neither is state the UI renders, and neither should ever be
@@ -187,6 +196,7 @@ export const useProjectsStore = create<ProjectsState>()(
       failedRun: null,
       pendingDecision: null,
       runningProjectId: null,
+      viewMode: "developer",
 
       createProject: async (name) => {
         const project = await api.createProject({ name });
@@ -654,6 +664,7 @@ export const useProjectsStore = create<ProjectsState>()(
         }),
 
       clearError: () => set({ error: null }),
+      setViewMode: (viewMode) => set({ viewMode }),
     }),
     {
       name: "hyperdelivery-console",
@@ -661,6 +672,7 @@ export const useProjectsStore = create<ProjectsState>()(
         recentProjects: state.recentProjects,
         conversationByProject: state.conversationByProject,
         signaturesByProject: state.signaturesByProject,
+        viewMode: state.viewMode,
       }),
     },
   ),

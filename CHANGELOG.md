@@ -10,6 +10,12 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- A Developer/PM toggle in the top bar (`useProjectsStore`'s persisted `viewMode`).
+  Developer (default) is unchanged; PM hides the tool-call trace and raw streamed agent
+  text in the thread and hides the raw-JSON tab in the artifact inspector, showing only
+  the synthesized reply, the artifact card, and the structured content/design views. No
+  new summarization - reuses `composeReply`/`artifactStats`, which already ran for every
+  turn. See docs/decisions.md.
 - The console can now upload a document (PDF/DOCX/PPTX/XLSX/PNG/JPEG) straight from the
   chat composer's new attach button, and from the landing page's "what are we building"
   box (uploaded once the project it names exists, then cited in Distill's first turn):
@@ -60,6 +66,26 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Fixed
 
+- The collapsed artifacts panel's reopen control showed both an icon and the label
+  "Artifacts" - now icon-only (`IconButton`, matching every other panel toggle in the
+  shell), with the label moved to `aria-label`/`title` instead of visible text.
+- A tool call's expanded detail repeated the raw wire name (`s3_list_reference_documents`)
+  right below the row that already names the tool in words (`toolLabel`) - an
+  implementation detail with no reason to reach the user. Dropped; `toolLabel` is now the
+  only name shown anywhere in the trace.
+- The artifacts panel was a fixed rem width regardless of viewport size, so widening the
+  chat column's reading measure to fill the extra room (previous fix) still left a big,
+  unused gutter on a wide screen once the panel's own fixed width was reached - looked
+  like a layout bug. The panel now takes `flex-1` by default, giving chat and artifacts a
+  real 50/50 split of the available width; its own expand toggle still grows it further,
+  and the chat column now fills whatever width that leaves it instead of capping short.
+- A tool call's expanded result was always `JSON.stringify`-ed, even for the several
+  tools (document ingestion, Snowflake queries) that return a plain markdown/text
+  string - which turned every newline into a literal `\n`, printing the whole document
+  as one unreadable line. String results now render through the same `Markdown`
+  component the chat text uses; structured (dict/list) results still render as JSON,
+  since that's what they are. Both are now height-capped with scroll instead of able to
+  stretch the trace to the length of whatever the tool returned.
 - The station's open questions (MCQ pills, previously a separate "Send N answers"
   button above the composer) are now answered through the composer's own send instead
   of a second one - picking an option only stages it, so a pick and typed text go out as

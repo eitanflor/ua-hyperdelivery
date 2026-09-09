@@ -8,6 +8,7 @@ import { toolLabel } from "../../lib/toolLabels";
 import { artifactStats, composeReply } from "../../lib/formatArtifact";
 import { Markdown } from "../../lib/markdown";
 import { cn } from "../../lib/cn";
+import type { ViewMode } from "../../store/useProjectsStore";
 import { AgentAvatar } from "./AgentAvatar";
 import { Spinner } from "../ui/Spinner";
 import { Tooltip } from "../ui/Tooltip";
@@ -110,6 +111,7 @@ export function AgentTurn({
   text,
   toolCalls,
   usage,
+  viewMode = "developer",
   onViewArtifact,
 }: {
   agent: string;
@@ -117,6 +119,7 @@ export function AgentTurn({
   text?: string;
   toolCalls?: ToolCallEvent[];
   usage?: UsageEvent;
+  viewMode?: ViewMode;
   onViewArtifact: (agent: string) => void;
 }) {
   // a finished turn has nothing left running, so a chip still in that state (an older
@@ -125,11 +128,14 @@ export function AgentTurn({
     call.status === "running" ? { ...call, status: "interrupted" as const } : call,
   );
   const askedViaTool = questionsFromToolCalls(toolCalls).length;
+  const isPm = viewMode === "pm";
   return (
     <div className="animate-rise">
       <Attribution agent={agent} usage={usage} />
       <div className="pl-9">
-        {toolRows.length > 0 && (
+        {/* the tool-call trace is how the agent got there, not what it found - a PM
+            reading for the outcome does not need every lookup it took along the way */}
+        {!isPm && toolRows.length > 0 && (
           // one rule down the whole trace, so what the agent did reads as a margin note
           // against what it said rather than as a stack of separate controls
           <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
@@ -142,7 +148,7 @@ export function AgentTurn({
           {/* what the agent actually said, in the position and voice it streamed in - the
               summary below is derived from the artifact and cannot mention what the agent
               could not do (a table it had no access to, a source it fell back from) */}
-          {text?.trim() && <Markdown text={text} />}
+          {!isPm && text?.trim() && <Markdown text={text} />}
           <Markdown text={composeReply(content, askedViaTool)} />
         </div>
         {hasContent(content) && (
@@ -159,19 +165,22 @@ export function StreamingTurn({
   draft,
   waitingSeconds,
   toolCalls,
+  viewMode = "developer",
 }: {
   agent: string;
   text: string;
   draft?: string;
   waitingSeconds?: number;
   toolCalls: ToolCallEvent[];
+  viewMode?: ViewMode;
 }) {
   const toolRows = withoutPlan(toolCalls);
+  const isPm = viewMode === "pm";
   return (
     <div className="animate-rise">
       <Attribution agent={agent} state="working" />
       <div className="pl-9">
-        {toolRows.length > 0 && (
+        {!isPm && toolRows.length > 0 && (
           <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
             {groupToolCalls(toolRows).map((group) => (
               <ToolCallGroup key={group[0]?.id} calls={group} />
@@ -358,13 +367,31 @@ function ToolCallRow({ toolCall }: { toolCall: ToolCallEvent }) {
       </button>
       {expanded && !running && (
         <div className="my-1 pl-4">
-          {/* the wire name, so a trace can still be matched against the code */}
-          <p className="font-mono text-2xs text-fg-subtle">{toolCall.name}</p>
-          <pre className="mt-1 overflow-x-auto font-mono text-2xs text-fg-subtle">
-            {JSON.stringify(toolCall.result ?? null, null, 2)}
-          </pre>
+          <ToolCallResult result={toolCall.result} />
         </div>
       )}
     </div>
+  );
+}
+
+/** A tool's raw result, in whichever form actually reads: several tools (document
+ * ingestion, Snowflake queries) return a long markdown/plain-text string, and
+ * `JSON.stringify`-ing that turns every newline into a literal `\n`, producing one
+ * unreadable line instead of the document it is. Structured results (the common case -
+ * most tools return a dict) have no such text to preserve, so JSON stays JSON for them. */
+function ToolCallResult({ result }: { result?: unknown }) {
+  if (typeof result === "string") {
+    return result.trim() ? (
+      <div className="mt-1 max-h-64 overflow-y-auto rounded-sm bg-sunken p-2 text-2xs">
+        <Markdown text={result} />
+      </div>
+    ) : (
+      <p className="mt-1 font-mono text-2xs text-fg-subtle">(empty)</p>
+    );
+  }
+  return (
+    <pre className="mt-1 max-h-64 overflow-auto rounded-sm bg-sunken p-2 font-mono text-2xs text-fg-subtle">
+      {JSON.stringify(result ?? null, null, 2)}
+    </pre>
   );
 }

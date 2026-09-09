@@ -5,7 +5,7 @@ import { useProjectsStore } from "../store/useProjectsStore";
 import type { Artifact } from "../api/types";
 import { Thread } from "../components/thread/Thread";
 import { Inspector } from "../components/inspector/Inspector";
-import { Button } from "../components/ui/Button";
+import { IconButton } from "../components/ui/IconButton";
 
 const NO_ARTIFACTS: Artifact[] = [];
 
@@ -48,7 +48,7 @@ export function Workspace() {
           panels are open on a 13" laptop. Thread owns its own scroll region so the
           composer footer can stay fixed to the bottom instead of scrolling with it. */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <Thread projectId={projectId} onViewArtifact={openArtifact} />
+        <Thread projectId={projectId} artifactsOpen={open} onViewArtifact={openArtifact} />
       </div>
 
       {open ? (
@@ -61,14 +61,12 @@ export function Workspace() {
       ) : (
         artifacts.length > 0 && (
           <div className="shrink-0 border-l border-line-subtle p-2">
-            <Button
-              variant="ghost"
-              size="sm"
+            <IconButton
+              label="Show artifacts"
               icon={<SidebarSimpleIcon className="size-3.5 scale-x-[-1]" />}
+              size="sm"
               onClick={() => setOpen(true)}
-            >
-              <span className="sr-only">Show </span>Artifacts
-            </Button>
+            />
           </div>
         )
       )}
