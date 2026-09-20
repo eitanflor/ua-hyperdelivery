@@ -17,7 +17,367 @@ Template for new entries:
 
 ---
 
-## 2026-09-09 - PM/Developer view is a rendering toggle, not a second summarization pass
+## 2026-09-18 - Keep AWS infrastructure checks out of the fast local gate
+
+- **Status**: Accepted
+- **Context**: CDK infrastructure validation makes the default local gate too slow for
+  frequent application-code feedback.
+- **Decision**: `make check` skips the infrastructure gate, `make check-full` includes it,
+  and CI always runs it.
+- **Alternatives considered**: Keeping exact local/CI parity was rejected because it made
+  routine checks unnecessarily slow.
+- **Consequences**: Application checks complete faster; infrastructure changes require
+  `make check-full`, while CI remains the backstop for every change.
+
+## 2026-09-18 - Request-scoped agents and native async tool streaming
+
+- **Status**: Accepted
+- **Context**: Strands agents carry mutable request state and reject overlapping calls;
+  synchronous Snowflake requests also hid intermediate Cortex output.
+- **Decision**: Build one agent and hook set per invocation. Implement `snowflake_query`
+  as an async-generator tool and map native Strands tool progress onto the existing
+  `tool_call` stream.
+- **Alternatives considered**: A shared-agent lock would serialize users; a custom event
+  queue would duplicate Strands' streaming support.
+- **Consequences**: Concurrent requests are isolated and Snowflake progress uses the
+  existing local SSE and deployed WebSocket contracts.
+
+## 2026-09-18 - AgentCore reads context through a DynamoDB resource policy
+
+- **Status**: Accepted
+- **Context**: The deployment identity cannot modify AgentCore's external execution role.
+- **Decision**: When `AGENTCORE_ROLE_ARN` is configured, the storage stack adds a table
+  resource policy granting that role only `dynamodb:GetItem`.
+- **Alternatives considered**: Identity-policy changes are unavailable; broader table
+  access is unnecessary.
+- **Consequences**: Storage and runtime deployments must use the same role ARN. New table
+  operations require explicit grants.
+
+## 2026-09-18 - Authenticated WebSocket streaming for deployed turns
+
+- **Status**: Accepted
+- **Context**: Deployed turns need progressive events, but browser WebSockets cannot send
+  the console API's bearer header and a turn can start before its watcher is registered.
+- **Decision**: Use API Gateway WebSockets with one-time, 60-second project tickets. Keep
+  one buffered connection per visible project, await registration before creating or
+  answering a turn, and broadcast AgentCore SSE events to the invocation's initial
+  watcher set. Poll DynamoDB when streaming is unavailable or interrupted.
+- **Alternatives considered**: Faster polling loses progressive output; bearer tokens in
+  URLs or subprotocols expose long-lived credentials; AppSync adds unnecessary surface.
+- **Consequences**: The console gains live deployed updates and replay-resistant
+  subscriptions. Connections are pruned on HTTP 410 or after a two-hour TTL.
+
+## 2026-09-17 - Hosted console configuration comes from deployment inputs
+
+- **Status**: Accepted
+- **Context**: The deployed API needs the hosted UI origin and Entra identifiers at synth
+  time; a frontend development file is not a deployment contract.
+- **Decision**: Pass the CloudFront URL and Entra tenant/client IDs into
+  `ConsoleApiStack` from `infra/app.py` process environment.
+- **Alternatives considered**: Reading `ui/console/.env` would couple deployment to a
+  gitignored local-development file.
+- **Consequences**: CDK deployment requires both Entra values and configures CORS for the
+  hosted and local console origins.
+
+---
+
+## 2026-09-17 - AgentCore runtimes share one scoped execution role
+
+- **Status**: Accepted
+- **Context**: The existing role policy already covers every `hyperdelivery_*` runtime.
+- **Decision**: Deploy all four station runtimes with the same externally managed role.
+- **Alternatives considered**: Per-agent roles add IAM objects without narrowing the
+  existing runtime-scoped policy.
+- **Consequences**: All stations run through AgentCore in `dev`; tool permissions remain
+  constrained by each station's configured tool set.
+
+---
+
+## 2026-09-17 - Distill uses a task-token elicitation loop
+
+- **Status**: Accepted
+- **Context**: Distill may need human answers before it can produce a valid specification.
+- **Decision**: Reuse the approval gates' `WAIT_FOR_TASK_TOKEN` pattern. Persist the
+  pending question and prior message, accept answers through `/projects/{id}/answer`, and
+  loop until Distill returns a draft.
+- **Alternatives considered**: Forcing an immediate draft removes a human decision;
+  moving deployed chat outside Step Functions splits orchestration ownership.
+- **Consequences**: Deployed Distill supports multiple question rounds. The loop has no
+  fixed round limit and relies on the conversation converging.
+
+---
+
+## 2026-09-17 - Console UI hosted on S3 + CloudFront, no custom domain
+
+- **Status**: Accepted
+- **Context**: The Vite SPA needs an HTTPS origin for Entra redirect URIs.
+- **Decision**: Host the build in a private S3 bucket behind CloudFront Origin Access
+  Control, using the distribution domain and SPA error rewrites.
+- **Alternatives considered**: A custom domain adds Route53 and ACM with no current need;
+  direct S3 website hosting does not provide HTTPS.
+- **Consequences**: UI assets are replaceable and use destroy-on-removal. The CloudFront
+  URL must be registered manually as an Entra SPA redirect URI.
+
+---
+
+## 2026-09-17 - `ENVIRONMENT` is authoritative for local vs. real orchestration, not `STATE_MACHINE_ARN`'s presence
+
+- **Status**: Accepted
+- **Context**: `api/main.py` decided whether to wire up the real Step Functions path or
+  fall back to `LocalAgentClient` purely on whether `STATE_MACHINE_ARN` happened to be
+  set - an implicit, easy-to-miss control flow. `Settings.environment` already existed
+  (`local`/`dev`/`prod`, matching `infra/app.py`'s CDK `-c env=` context) but was dead:
+  read nowhere. A misconfigured `dev`/`prod` deploy with a missing ARN would have
+  silently fallen back to the local-only path rather than failing loudly.
+- **Decision**: Added `core.constants.Environment` (`StrEnum`: `LOCAL`/`DEV`/`PROD`),
+  typed `Settings.environment` as it. `api/main.py` now branches on
+  `settings.environment` explicitly: `LOCAL` always uses `LocalAgentClient` (even if an
+  ARN happens to be set); `DEV`/`PROD` always require `STATE_MACHINE_ARN` and raise
+  `RuntimeError` at startup if it's missing, rather than silently falling back.
+- **Alternatives considered**: Leaving the ARN-presence check as the only signal -
+  rejected, since it makes `ENVIRONMENT` a documented-but-unused field and hides a real
+  misconfiguration (missing ARN in a real deploy) behind a working-looking local path
+  instead of a startup failure.
+- **Consequences**: Any new environment-gated behavior in the console API should branch
+  on `settings.environment`/`core.constants.Environment`, not a secondary signal's mere
+  presence. `prod` remains unused by any deployed CDK stack today - `infra/app.py` still
+  only deploys `dev`.
+
+
+- **Status**: Accepted
+- **Context**: `ConsoleApiFunction` shipped with `lambda_.Code.from_asset(str(_SRC_DIR),
+  exclude=[...])` and no dependency bundling at all (a known gap from
+  `.github/instructions/infra.instructions.md`, ADVA-3015) - every invocation failed with
+  `No module named 'mangum'`. Fixing it needed a way to install the real project
+  dependencies into the deployed asset without hand-maintaining a second dependency list
+  next to the root `pyproject.toml`/`uv.lock`.
+- **Decision**: `console_api_stack.py` now runs `uv export --frozen --no-dev --no-hashes`
+  at synth time to turn `uv.lock` into a pip-compatible `requirements-lambda.txt`, then
+  uses `aws_cdk.BundlingOptions` with the `public.ecr.aws/sam/build-python3.11` image to
+  `pip install --only-binary=:all: --platform manylinux2014_x86_64 --python-version 3.11
+  --implementation cp --abi cp311 -r requirements-lambda.txt -t /asset-output`. The
+  explicit `--platform`/`--python-version`/`--implementation`/`--abi` flags pin the
+  installed wheels to Lambda's default x86_64 runtime regardless of the host machine's own
+  architecture - without them, building on an Apple Silicon dev machine installs arm64
+  wheels (e.g. `pydantic_core`) that fail to import at runtime, since Docker on Apple
+  Silicon runs the (multi-arch) build image natively as arm64. `--only-binary=:all:` also
+  avoids sdist builds entirely, which the corporate TLS-inspecting proxy has been observed
+  to corrupt mid-download for large packages (`pillow`'s sdist failed a pip hash check
+  twice in a row); the exported requirements file additionally rewrites `pillow==<pinned>`
+  to `pillow<12.3` since no manylinux wheel exists yet for 12.3.0. `providers/agents` (not
+  all of `providers/`) is the only excluded subpackage now, since `api/routers/projects.py`
+  imports `providers.documents`/`providers.github`/`providers.storage` directly and the
+  original blanket `providers` exclude would have 500'd the upload/PR-merge endpoints.
+- **Alternatives considered**: `aws_lambda_python_alpha.PythonFunction` handles the
+  install-and-bundle step itself, but it's an alpha-versioned CDK module and the repo's IaC
+  layer is already provisional (may move to Terraform) - adding an alpha dependency on top
+  of that felt like the wrong kind of cleverness to have to port later. A separate Lambda
+  layer for dependencies was rejected for the same reason `infra.instructions.md` already
+  avoids CDK-specific cleverness: no immediate size problem (154MB unzipped, well under the
+  250MB limit) to justify the extra moving part.
+- **Consequences**: Every CDK test that calls `Template.from_stack()` on `ConsoleApiStack`
+  now triggers a full Docker bundling run (~85s for the whole `infra/tests/` suite,
+  confirmed empirically) - acceptable for now, but worth revisiting (e.g. a
+  bundling-skip flag for unit tests) if the suite's runtime becomes a real friction point.
+  If the Lambda's dependency footprint grows past a comfortable margin under 250MB, split
+  `pyproject.toml`'s single dependency list into an "api" extras group so the bundled
+  requirements aren't also carrying agent-only packages (strands-agents, pytesseract,
+  python-docx/pptx) the console API never imports.
+
+## 2026-09-14 - `requests` moved from `dev` dependency group to `[project.dependencies]`
+
+- **Status**: Accepted
+- **Context**: `orchestration/local_agent_client.py` imports `requests` and is production
+  code - `api/main.py` imports `LocalAgentClient` unconditionally and instantiates it at
+  app startup. `requests` was only declared in the root `pyproject.toml`'s `dev`
+  dependency group (added there for test/local-dev use), so `uv export --no-dev` never
+  included it, and the newly-bundled console API Lambda failed with `No module named
+  'requests'` even after the mangum/platform bundling fixes above.
+- **Decision**: Moved `requests>=2.32` into `[project.dependencies]`; left
+  `types-requests` in `dev` since it's stub-only.
+- **Alternatives considered**: Making `LocalAgentClient`'s import lazy/optional (only
+  needed until real AgentCore runtimes are deployed for every station) was considered, but
+  it's genuinely used in the current request path (`routers/projects.py`'s
+  `advance_project`/stream endpoints), not a dev-only fallback - the dependency
+  classification was simply wrong, not the import structure.
+- **Consequences**: Once every station has a real AgentCore runtime and
+  `LocalAgentClient` is retired, `requests` should be re-evaluated for removal entirely
+  (not just moved back to `dev`).
+
+
+- **Status**: Accepted
+- **Context**: The 2026-09-09 Developer/PM toggle only gated the tool-call trace, raw
+  agent text, and the inspector's raw-JSON tab - the structured content view itself
+  (`SpecView`/`BlueprintView`/`DemoView` in `ui/console/src/components/inspector/views.tsx`)
+  rendered identically in both modes. Several sections in that structured view are still
+  implementation detail a PM doesn't need to read to judge the outcome: Scout's
+  machine-readable gate rules and their correlations are how G1 scores automatically, not
+  something a PM signs off on by reading; Coach's components/data model/integration
+  points are the build's internal shape, with "Units of work" being the PR-sized slices a
+  developer tracks; Host's talk track and seed data are demo-delivery mechanics, not the
+  outcome itself.
+- **Decision**: `SpecView`, `BlueprintView` and `DemoView` now take the same `viewMode`
+  already threaded through `Inspector.tsx`'s `ContentBody`, and gate one `<Section>` each
+  behind `viewMode === "developer"`: Scout's "Machine-readable rules" and "Rule
+  correlations"; Coach's "Components", "Data model", "Integration points" and "Units of
+  work"; Host's "Talk track" and "Seed data". `ReviewView` (Ref) is untouched - its
+  findings/assignments are the PM-relevant outcome for that station, not detail to hide.
+- **Alternatives considered**: gating whole stations' content behind PM mode instead of
+  per-section - rejected, since e.g. Coach's own architecture summary and Scout's
+  requirements list are exactly what a PM does want to read; only the sections that are
+  either machine bookkeeping or build-mechanics detail are gated.
+- **Consequences**: adding a new section to any of these three views means deciding its
+  PM-visibility explicitly, same caveat as the original toggle - nothing enforces this
+  beyond code review.
+
+## 2026-09-12 - Global standing context, inlined short and fetched on demand long
+
+- **Status**: Accepted (revised 2026-09 to be global rather than per-project - see
+  addendum below)
+- **Context**: There was no way to record standing facts - an existing repo, a
+  database, a design system, a coding convention - anywhere the agents would read them;
+  a collaborator had to retype them into chat every session. Separately, inlining
+  arbitrarily long free text into every station's every prompt turn (including retries)
+  would burn a slice of every agent's context budget on text most turns never need.
+- **Decision**: A single global `GlobalContext` item (`core/domain/context.py`, stored at
+  `pk=GLOBAL, sk=CONTEXT` in the same DynamoDB table via `ContextRepository`) holds one
+  system-wide standing note - `context: str`, `updated_by`, `updated_at`, stamped from
+  the caller's validated Entra ID identity, never a client-supplied name - exposed via
+  `GET`/`PATCH /context`. Both local and deployed invocations use
+  `core.prompting.context_section` to prepend it. The field is deliberately unstructured free text rather than a
+  rigid schema - a repo, a database, a design system and a convention don't share a shape
+  worth forcing. `context_section` inlines context outright when it's
+  short (<=500 chars); past that it shows only a preview plus a pointer to call
+  `get_context`, a new `@tool` (`tools/context.py`) that fetches the full text from
+  DynamoDB directly, mirroring `s3_get_document_text`'s on-demand-fetch shape for
+  documents. Registered in every station's tool list (distill, blueprint, review,
+  showroom) since context can matter at any station. The console exposes it as its own
+  global route (`/context`, linked from a top bar icon button, always visible) rather
+  than folding it into the artifact inspector, since it isn't a station's output.
+- **Alternatives considered**: Per-user, per-session, or per-project context - all
+  rejected: it is meant to read the same for everyone across every project, like a
+  system prompt, not scoped to any one unit of work. A structured schema (repo URL
+  field, database field, etc.) - rejected because the set of things worth recording
+  varies too much to fix in advance; free text degrades gracefully as that set grows.
+  Always inlining the full context on every turn - rejected once context could run to a
+  full page: correct but wasteful, especially across retries within one station.
+- **Consequences**: A short context note (the common case) needs no extra round trip -
+  it's just there. A long one costs one extra tool call the first time an agent actually
+  needs it, and nothing when it doesn't. The 500-character inline threshold is a starting
+  guess, not a measured number - revisit it if agents are found needlessly fetching short
+  notes or missing content from a preview that should have been longer.
+- **Addendum (global, not per-project)**: The original decision scoped context to a
+  single `Project`. Before any multi-collaborator/multi-session work landed, it became
+  clear the note being recorded (repo, database, design system, conventions) rarely
+  varies per project - it is closer to a system prompt than project state. `Project`'s
+  `context`/`context_updated_by`/`context_updated_at` fields, `ProjectRepository.set_context`
+  and `PATCH /projects/{id}/context` were removed in favor of the single global item and
+  `/context` route described above; `get_project_context` was renamed `get_context`
+  accordingly. Revisit if per-project overrides turn out to be needed after all.
+
+
+- **Status**: Accepted
+- **Context**: `Station.next_station(SHOWROOM)` is `DONE` - unlike Distill/Blueprint/Review,
+  whose next station is a human approval gate, Showroom has no checkpoint of its own
+  between "the deterministic score says gap-free" and "the project is marked shipped".
+  Both local-dev endpoints (`/advance`, `/advance/stream`) and the production Step
+  Functions definition (`orchestration_stack.py`'s `mark_done` state, chained
+  unconditionally after `showroom`) advance the instant `_is_incomplete`/the agent task
+  returns, with no human confirmation that the run of show is actually ready to demo.
+- **Decision**: `_advances(agent, result)` in `api/routers/projects.py` now always
+  returns `False` for Showroom regardless of its own completeness - the station holds,
+  and the composer stays live for as many turns as it takes. A new `_finish_if_requested`
+  check runs before invoking the agent at all: if the current station is Showroom and the
+  user's literal message (case/whitespace-insensitive) is "project completed", it calls
+  `repo.advance_after_artifact` directly, skipping the agent entirely, and 409s if
+  Showroom hasn't produced a gap-free artifact yet. This is local-dev-only for now - the
+  CDK state machine's `mark_done` still chains unconditionally after `showroom`; bringing
+  it in line needs a Step Functions Choice/wait-for-token state, tracked separately since
+  it's a bigger infra change than this session's scope.
+- **Alternatives considered**: A "Ship it" button next to the composer - rejected for
+  consistency with the rest of the console's convention (chat-driven, not button-driven)
+  and because a typed phrase needs no new UI at all, only a backend check.
+- **Consequences**: The demo can now run Showroom for multiple turns (re-recording a talk
+  track, asking Host to adjust the narration) without a stray complete draft silently
+  shipping the project. Production Step Functions still auto-ships after Showroom's one
+  task - a real (non-local-dev) run does not yet get this same checkpoint.
+
+## 2026-09-10 - The console now calls `/preview` itself once a project is done
+
+- **Status**: Accepted
+- **Context**: `POST /projects/{id}/preview` and the merge/G3-triggered `_auto_preview`
+  background task already existed on the backend, but nothing in `ui/console` ever
+  called either - a demo that finished a full run showed no hyperlink anywhere, and the
+  background task is fire-and-forget with no result surfaced even when it succeeds.
+  `PREVIEW_CHECKOUT_PATH` is already a hardcoded, single-machine, single-checkout
+  convenience (see the 2026-09-09 entry below); the missing piece was purely on the
+  frontend.
+- **Decision**: Added `startPreview`/`stopPreview` to the API client and a
+  `previewByProject` store slice with a `startPreview` action, mirroring `loadBuilds`'s
+  best-effort (non-`guarded`) pattern - a failure (no checkout configured, or the
+  checkout's own script errors) is a normal outcome, not a toast. `Thread.tsx` calls it
+  once a project reaches `done`, and the "Off the line" banner renders the returned
+  `backend_url`/`frontend_url` as clickable links when `running` is true.
+- **Alternatives considered**: A manual "Start preview" button - rejected for the demo
+  use case: the whole point is a human doesn't have to click anything after signing G3.
+- **Consequences**: Calls `/preview` again on every `done` project view/remount (cheap
+  and idempotent - the backend just checks if the ports are already open). If this ever
+  needs to run against something other than one hardcoded local checkout, this is the
+  place a real "preview per project" model replaces the hardcoding.
+
+---
+
+- **Status**: Accepted
+- **Context**: The 8192 default (2026-08-26 entry above) was already a deliberate
+  revert for Distill specifically - raising it to 32768 once added ~49s to a turn for
+  little gain on a light prompt. A real e2e run grounded in Snowflake/S3 lookups (a
+  29s `snowflake_query`, two S3 tool calls, then an 87.2s final model call) still hit
+  `MaxTokensReachedException` mid-artifact - the heavier grounding this agent now does
+  routinely produces artifacts the 8192 default can't fit, not just the occasional
+  large document.
+- **Decision**: `config/agents/distill.yaml` now sets `max_tokens: 32768`, same as
+  `blueprint.yaml`, accepting the added latency in exchange for fewer truncated turns.
+- **Alternatives considered**: Rely on the console's existing Retry action (it already
+  surfaces `MaxTokensReachedException` as a distinct, retryable error) - rejected as the
+  steady-state fix, since a retry restarts from a clean `agent.messages = []` rather than
+  resuming, so a genuinely large artifact would keep truncating on every attempt.
+- **Consequences**: Every Distill turn now costs more wall-clock time on the model call,
+  matching Blueprint's existing tradeoff. Revisit if 32768 also proves insufficient, or
+  if the added latency turns out to matter more than the truncation rate in practice.
+
+---
+
+## 2026-09-09 - Tests never read the real `.env` file
+
+- **Status**: Accepted
+- **Context**: wiring up the laptop-demo preview (`PREVIEW_CHECKOUT_PATH` in the real,
+  gitignored `.env`) made `test_g3_approval_proceeds_normally_with_no_builds_recorded`
+  spawn a real `./scripts/preview.sh` subprocess and fail on an not reaped-process
+  `ResourceWarning` - that test never mocked `get_settings`, so it silently picked up
+  whatever the developer running the suite happened to have configured locally. AGENTS.md
+  already requires "no network, no real AWS" for the suite; a `Settings` field that reads
+  an optional local convenience value out of a real file on disk is a hole in that
+  guarantee for every future field, not just this one.
+- **Decision**: `tests/conftest.py`'s autouse `_reset_settings_cache` fixture now also
+  monkeypatches `Settings.model_config["env_file"]` to `None` for the duration of every
+  test, so `Settings()` only ever sees explicit `os.environ`/`monkeypatch.setenv` values,
+  never the repo's `.env`. Blanking the file alone wasn't sufficient though - pydantic
+  settings reads real OS environment variables too, and those take precedence over the
+  file, so the fixture also does `monkeypatch.delenv("PREVIEW_CHECKOUT_PATH", raising=False)`
+  to strip the one variable known to have real side effects (spawning a subprocess) if a
+  developer's shell has it exported (e.g. via `make dev-all`'s `include .env; export`).
+  Tests that need a specific value still set it themselves (`monkeypatch.setenv` or a
+  `SimpleNamespace` override of `get_settings`), same as before.
+- **Alternatives considered**: patching the one failing test to stub
+  `preview_checkout_path=None` like its neighbors - fixes this symptom but leaves every
+  other untouched field exposed to the same class of flake for the next developer who
+  sets a local-only value in their own `.env`.
+- **Consequences**: any test that genuinely wants the real `.env.example` defaults would
+  need to load them explicitly now - none currently do. Revisit if a test legitimately
+  needs to exercise real `.env` parsing (e.g. a docs-consistency check), by scoping the
+  override to that one test instead of removing the fixture-wide guard.
+
+
 
 - **Status**: Accepted
 - **Context**: asked for a role toggle that shows "only relevant stuff" to a PM while
@@ -1556,6 +1916,10 @@ Template for new entries:
   sentinel; and the default httpx timeout (5s) is nowhere near enough because sandbox
   provisioning plus tool calls routinely take 30s+, so the client now sets an explicit
   120s timeout.
+- **Deployment**: `scripts/deploy_agent.sh` forwards these configured values to the
+  Distill AgentCore runtime through its environment variables. Account and PAT are an
+  atomic pair: deployment fails when only one is set, while omitting both deliberately
+  leaves the optional tool detached.
 - **Alternatives considered**: Kept the hand-built SQL tool (rejected by explicit user
   directive - the maintenance cost of hand-rolled discovery/pagination/error-handling for
   every future data need outweighs the reduced attack surface, given the Cortex Agent's

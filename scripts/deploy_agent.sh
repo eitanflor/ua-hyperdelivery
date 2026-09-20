@@ -32,22 +32,53 @@ existing_arn="$(aws bedrock-agentcore-control list-agent-runtimes --region "$reg
 	--output text 2>/dev/null || true)"
 
 artifact="{\"containerConfiguration\":{\"containerUri\":\"${ecr_uri}:latest\"}}"
+environment_variables=""
+
+if [[ "$agent" == "distill" ]]; then
+	if [[ -n "${SNOWFLAKE_ACCOUNT:-}" && -z "${SNOWFLAKE_PAT:-}" ]] \
+		|| [[ -z "${SNOWFLAKE_ACCOUNT:-}" && -n "${SNOWFLAKE_PAT:-}" ]]; then
+		echo "SNOWFLAKE_ACCOUNT and SNOWFLAKE_PAT must be set together." >&2
+		exit 1
+	fi
+	if [[ -n "${SNOWFLAKE_ACCOUNT:-}" ]]; then
+		environment_variables="$(python3 -c 'import json, os; print(json.dumps({key: os.environ[key] for key in ("SNOWFLAKE_ACCOUNT", "SNOWFLAKE_PAT", "SNOWFLAKE_DATABASE", "SNOWFLAKE_SCHEMA") if os.environ.get(key)}))')"
+	fi
+fi
+
+update_runtime() {
+	local runtime_id="$1"
+	local args=(
+		--agent-runtime-id "$runtime_id"
+		--agent-runtime-artifact "$artifact"
+		--role-arn "$AGENTCORE_ROLE_ARN"
+		--network-configuration '{"networkMode":"PUBLIC"}'
+		--region "$region"
+	)
+	if [[ -n "$environment_variables" ]]; then
+		args+=(--environment-variables "$environment_variables")
+	fi
+	aws bedrock-agentcore-control update-agent-runtime "${args[@]}"
+}
+
+create_runtime() {
+	local args=(
+		--agent-runtime-name "$runtime_name"
+		--agent-runtime-artifact "$artifact"
+		--role-arn "$AGENTCORE_ROLE_ARN"
+		--network-configuration '{"networkMode":"PUBLIC"}'
+		--region "$region"
+	)
+	if [[ -n "$environment_variables" ]]; then
+		args+=(--environment-variables "$environment_variables")
+	fi
+	aws bedrock-agentcore-control create-agent-runtime "${args[@]}"
+}
 
 if [[ -n "$existing_arn" && "$existing_arn" != "None" ]]; then
 	agent_runtime_id="${existing_arn##*/}"
 	echo "Updating existing agent runtime ${existing_arn}..."
-	aws bedrock-agentcore-control update-agent-runtime \
-		--agent-runtime-id "$agent_runtime_id" \
-		--agent-runtime-artifact "$artifact" \
-		--role-arn "$AGENTCORE_ROLE_ARN" \
-		--network-configuration '{"networkMode":"PUBLIC"}' \
-		--region "$region"
+	update_runtime "$agent_runtime_id"
 else
 	echo "Creating new agent runtime ${runtime_name}..."
-	aws bedrock-agentcore-control create-agent-runtime \
-		--agent-runtime-name "$runtime_name" \
-		--agent-runtime-artifact "$artifact" \
-		--role-arn "$AGENTCORE_ROLE_ARN" \
-		--network-configuration '{"networkMode":"PUBLIC"}' \
-		--region "$region"
+	create_runtime
 fi

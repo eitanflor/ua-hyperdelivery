@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
-# Red light / green light gate. Runs every check CI runs, in the same order, so a green
-# run here means a green run there. CI invokes this same script (--ci) rather than
-# repeating the steps, so the two can never drift.
+# Red light / green light gate. CI invokes this script with --ci, which also runs the
+# slower AWS infrastructure checks skipped by the default local gate.
 #
-#   ./scripts/precheck.sh          # check everything, report, exit non-zero on failure
+#   ./scripts/precheck.sh          # fast local checks, report, exit non-zero on failure
+#   ./scripts/precheck.sh --infra  # include AWS infrastructure checks
 #   ./scripts/precheck.sh --fix    # auto-fix what can be auto-fixed first, then check
-#   ./scripts/precheck.sh --ci     # non-interactive: no color, no fix
+#   ./scripts/precheck.sh --ci     # non-interactive full gate used by CI
 set -uo pipefail
 
 cd "$(dirname "$0")/.."
 
 FIX=0
 CI=0
+RUN_INFRA=0
 for arg in "$@"; do
   case "$arg" in
     --fix) FIX=1 ;;
-    --ci) CI=1 ;;
+    --infra) RUN_INFRA=1 ;;
+    --ci) CI=1; RUN_INFRA=1 ;;
     -h | --help)
       sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
@@ -76,8 +78,12 @@ run_gate "types" uv run pyright --level error
 run_gate "tests" uv run pytest -q
 
 # infra/ is a separate uv project with its own lockfile and CDK dependencies.
-run_gate "infra" bash -c \
-  'cd infra && uv run ruff check . && uv run pyright --level error && uv run pytest -q'
+if [[ $RUN_INFRA -eq 1 ]]; then
+  run_gate "infra" bash -c \
+    'cd infra && uv run ruff check . && uv run pyright --level error && uv run pytest -q'
+else
+  skip_gate "infra" "run make check-full"
+fi
 
 # Secret scanning is a pre-commit hook, not a CI job - run it here when available so a
 # local full check matches what the hook would have caught.

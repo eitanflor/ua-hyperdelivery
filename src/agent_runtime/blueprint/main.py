@@ -8,12 +8,14 @@ from core.constants import AgentName
 from core.domain.blueprint import Blueprint
 from tools.atlassian import jira_mcp_client
 from tools.blueprint import score_blueprint_completeness, validate_units_of_work
+from tools.context import get_context
 from tools.delivery import plan_delivery
 from tools.github import blueprint_github_mcp_client, github_file_contents_batch_tool
 from tools.planning import track_plan
 
 _tools: list[Any] = [
     track_plan,
+    get_context,
     validate_units_of_work,
     plan_delivery,
     score_blueprint_completeness,

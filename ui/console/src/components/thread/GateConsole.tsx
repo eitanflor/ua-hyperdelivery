@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowUUpLeftIcon, LockSimpleIcon, SealCheckIcon, WarningIcon } from "@phosphor-icons/react";
-import type { Artifact, Project } from "../../api/types";
+import type { Artifact, Builds, Project } from "../../api/types";
 import { completeness, list, type GateCriterion } from "../../api/artifacts";
 import { AGENT_META, STATION_META } from "../../lib/pipeline";
 import { useProjectsStore } from "../../store/useProjectsStore";
@@ -27,7 +27,15 @@ function Countdown({ deadline }: { deadline: number }) {
  * than a typed string, sending back requires a reason, and every decision is undoable
  * for a few seconds before it is dispatched.
  */
-export function GateConsole({ project, artifacts }: { project: Project; artifacts: Artifact[] }) {
+export function GateConsole({
+  project,
+  artifacts,
+  builds,
+}: {
+  project: Project;
+  artifacts: Artifact[];
+  builds?: Builds;
+}) {
   const meta = STATION_META[project.station];
   const reviewingAgent = meta.reviewing ? AGENT_META[meta.reviewing] : undefined;
   const unlocksAgent = meta.unlocks ? AGENT_META[meta.unlocks] : undefined;
@@ -35,6 +43,12 @@ export function GateConsole({ project, artifacts }: { project: Project; artifact
 
   const criteria = artifact ? list<GateCriterion>(artifact.content, "gate_criteria") : [];
   const gaps = artifact ? (completeness(artifact.content)?.gaps ?? []) : [];
+  // `draft` alone isn't the signal: it stays true until merge regardless of progress
+  // (see BuildBoard's Status). Copilot leaves "[WIP]" on the title until it's actually
+  // done, so that's what still blocks a human sign-off. Merged/closed builds never do.
+  const openWipBuilds = (builds?.builds ?? []).filter(
+    (b) => b.state !== "merged" && b.state !== "closed" && /^\s*\[wip\]/i.test(b.title ?? ""),
+  );
 
   const user = useCurrentUser();
   const decide = useProjectsStore((s) => s.decide);
@@ -88,7 +102,8 @@ export function GateConsole({ project, artifacts }: { project: Project; artifact
   }
 
   const allAcknowledged = criteria.every((c) => acknowledged.includes(c.id));
-  const canSign = user !== null && allAcknowledged;
+  const buildsLoaded = project.station !== "showroom_approval" || builds !== undefined;
+  const canSign = user !== null && allAcknowledged && buildsLoaded && openWipBuilds.length === 0;
   const canSendBack = user !== null && comment.trim().length > 0;
 
   const submit = (approved: boolean) => {
@@ -231,6 +246,14 @@ export function GateConsole({ project, artifacts }: { project: Project; artifact
             </>
           )}
         </div>
+
+        {openWipBuilds.length > 0 && !sendingBack && (
+          <p className="text-2xs text-fg-subtle">
+            {openWipBuilds.length === 1 ? "1 pull request is" : `${openWipBuilds.length} pull requests are`}{" "}
+            still marked [WIP] - wait for Copilot to finish before signing. You can send it
+            back without waiting.
+          </p>
+        )}
 
         {!allAcknowledged && !sendingBack && criteria.length > 0 && (
           <p className="text-2xs text-fg-subtle">

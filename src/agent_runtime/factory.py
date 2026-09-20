@@ -6,7 +6,7 @@ import json
 import logging
 import time
 from collections.abc import AsyncGenerator, AsyncIterator
-from typing import Any, NamedTuple, TypeVar
+from typing import Any, NamedTuple, TypeVar, cast
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from pydantic import BaseModel
@@ -116,10 +116,10 @@ def _tool_result_payload(tool_result: ToolResult) -> object:
 
 
 def _usage_payload(result: object) -> dict[str, int] | None:
-    """Token counts for the whole invocation, or `None` if the provider reported none.
+    """Token counts for this invocation, or `None` if the provider reported none.
 
-    Strands accumulates these across every model call the event loop made, so this is
-    what the turn cost - not what the single call that produced the artifact cost.
+    `EventLoopMetrics.accumulated_usage` sums every model call made by the request-scoped
+    `Agent`, so it represents the full turn even when tools trigger additional model calls.
 
     All five fields travel, because with prompt caching on `inputTokens` counts only the
     *uncached* part: a turn whose whole prefix hit the cache reports single-digit input
@@ -197,6 +197,33 @@ class _ToolUseStream:
                 event["input"] = summary
             events.append({"tool_call": event})
         return events
+
+    def progress_events(self, event: dict[str, Any]) -> list[dict[str, Any]]:
+        """Expose a native Strands tool-stream event as a running tool update."""
+        streamed = event.get("tool_stream_event")
+        if not isinstance(streamed, dict):
+            return []
+        streamed_event = cast(dict[str, Any], streamed)
+        tool_use = streamed_event.get("tool_use")
+        result = streamed_event.get("data")
+        if not isinstance(tool_use, dict) or not isinstance(result, str):
+            return []
+        typed_tool_use = cast(dict[str, Any], tool_use)
+        tool_use_id = typed_tool_use.get("toolUseId")
+        tool_name = typed_tool_use.get("name")
+        if not isinstance(tool_use_id, str) or not isinstance(tool_name, str):
+            return []
+        self._started[tool_use_id] = tool_name
+        return [
+            {
+                "tool_call": {
+                    "id": tool_use_id,
+                    "name": tool_name,
+                    "status": "running",
+                    "result": result,
+                }
+            }
+        ]
 
     def drafted_input(self) -> dict[str, Any] | None:
         """The last successfully-validated draft call's raw input, if any.
@@ -311,6 +338,8 @@ async def _model_events(
             yield {"chunk": event["data"]}
         for tool_use_event in tool_uses.events(event.get("current_tool_use") or {}):
             yield tool_use_event
+        for progress_event in tool_uses.progress_events(event):
+            yield progress_event
         if "result" in event:
             yield {"result": event["result"]}
     # a tool call can finish after the last model-stream event we see but before the loop
@@ -325,11 +354,8 @@ def _record_finished_tool_calls(agent: Agent) -> list[_FinishedToolCall]:
     Strands never yields a tool's result from `stream_async` itself - `ToolResultEvent`
     opts out of the callback stream it iterates (`is_callback_event` is False), so the
     `current_tool_use` deltas can only ever announce a call starting, never finishing.
-    This hook is the only place the result is observable. Registered once against the
-    agent rather than per invocation: Strands serializes invocations one at a time per
-    agent instance (a second concurrent call raises `ConcurrencyException`), so a plain
-    list shared by the hook and the request handler is safe without per-request
-    registration - and there is no `remove_callback` to undo one anyway.
+    This hook is the only place the result is observable. Each invocation owns its agent
+    and this list, so concurrent requests cannot consume one another's completions.
     """
     finished: list[_FinishedToolCall] = []
 
@@ -356,7 +382,7 @@ def _record_call_timings(agent: Agent, logger: logging.Logger) -> None:
     time lost in between, which `_with_heartbeat`'s 5s-resolution "thinking" counter
     cannot. Tool calls run concurrently (`ConcurrentToolExecutor`), so their start times
     are keyed by `toolUseId`; only one model call is ever in flight at a time per the
-    same serialization `_record_finished_tool_calls` relies on, so a single slot works.
+    same agent invocation, so a single slot works.
     """
     model_call_started: list[float] = []
     tool_call_started: dict[str, float] = {}
@@ -452,11 +478,9 @@ def create_app(
     configure_logging(settings.log_level)
     configure_tracing()
 
-    agent = build_agent(load_agent_config(agent_name), region_name=settings.aws_region, tools=tools)
+    config = load_agent_config(agent_name)
     app = BedrockAgentCoreApp()
     logger = logging.getLogger(agent_name)
-    finished_tool_calls = _record_finished_tool_calls(agent)
-    _record_call_timings(agent, logger)
 
     @app.entrypoint
     async def agent_invocation(  # pyright: ignore[reportUnusedFunction]  # registered by the decorator
@@ -491,15 +515,11 @@ def create_app(
             yield {"error": "'project_id' must be a string"}
             return
         project_token = project_id_var.set(project_id)
-        # `agent` is one shared instance across every invocation this container ever
-        # handles (built once, above), and _build_prompt already reconstructs full
-        # grounding (predecessor artifacts + the latest message) on every call - so any
-        # history Strands accumulated on a prior call is both stale and, worse, a
-        # different project's data. Start every invocation from a clean slate instead of
-        # letting Strands' default SlidingWindowConversationManager carry messages across
-        # projects/sessions that have nothing to do with each other.
         try:
-            agent.messages = []
+            # Request-scoped agents isolate history, metrics, hooks, and concurrent calls.
+            agent = build_agent(config, region_name=settings.aws_region, tools=tools)
+            finished_tool_calls = _record_finished_tool_calls(agent)
+            _record_call_timings(agent, logger)
             logger.info("invocation started")
             result = None
             tool_uses = _ToolUseStream(output_model.__name__)
@@ -521,14 +541,11 @@ def create_app(
                 logger.exception("agent invocation timed out after %ss", _TURN_TIMEOUT_SECONDS)
                 error = "agent invocation timed out"
             except MaxTokensReachedException:
-                # distinct from the generic failure below: the run worked, the artifact simply
-                # did not fit in `max_tokens`, and raising that for this agent is the fix
                 logger.exception("agent hit its output limit mid-artifact")
                 error = "the model ran out of output space before finishing the artifact"
             except Exception:
                 logger.exception("agent invocation failed")
                 error = "agent invocation failed"
-            # whatever happened, nothing is still running once this generator is done
             for abandoned in tool_uses.abandoned():
                 yield abandoned
             if error is not None:

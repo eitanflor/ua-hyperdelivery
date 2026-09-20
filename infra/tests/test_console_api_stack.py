@@ -2,6 +2,7 @@ import aws_cdk as cdk
 from aws_cdk.assertions import Match, Template
 
 from stacks.console_api_stack import ConsoleApiStack
+from stacks.orchestration_stack import OrchestrationStack
 from stacks.storage_stack import StorageStack
 
 
@@ -9,8 +10,20 @@ def _template() -> Template:
     app = cdk.App()
     env = cdk.Environment(region="us-east-1")
     storage = StorageStack(app, "TestStorageStack", "test", env=env)
+    orchestration = OrchestrationStack(
+        app, "TestOrchestrationStack", project_table=storage.project_table, env=env
+    )
     stack = ConsoleApiStack(
-        app, "TestStack", env_name="test", project_table=storage.project_table, env=env
+        app,
+        "TestStack",
+        env_name="test",
+        project_table=storage.project_table,
+        connections_table=orchestration.connections_table,
+        state_machine=orchestration.state_machine,
+        console_ui_url="https://d111111abcdef8.cloudfront.net",
+        entra_tenant_id="test-tenant-id",
+        entra_client_id="test-client-id",
+        env=env,
     )
     return Template.from_stack(stack)
 
@@ -41,6 +54,42 @@ def test_lambda_has_dynamodb_permissions_scoped_to_project_table() -> None:
                                 }
                             )
                         ]
+                    )
+                }
+            )
+        },
+    )
+
+
+def test_lambda_has_state_machine_arn_and_start_execution_permission() -> None:
+    template = _template()
+    template.has_resource_properties(
+        "AWS::Lambda::Function",
+        {
+            "Environment": Match.object_like(
+                {"Variables": Match.object_like({"STATE_MACHINE_ARN": Match.any_value()})}
+            )
+        },
+    )
+
+
+def test_lambda_has_connections_table_configuration() -> None:
+    template = _template()
+    template.has_resource_properties(
+        "AWS::Lambda::Function",
+        {
+            "Environment": Match.object_like(
+                {"Variables": Match.object_like({"CONNECTIONS_TABLE": Match.any_value()})}
+            )
+        },
+    )
+    template.has_resource_properties(
+        "AWS::IAM::Policy",
+        {
+            "PolicyDocument": Match.object_like(
+                {
+                    "Statement": Match.array_with(
+                        [Match.object_like({"Action": "states:StartExecution"})]
                     )
                 }
             )

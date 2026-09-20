@@ -1,5 +1,5 @@
 .PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-stop dev-console dev-console-ui test lint \
-	format typecheck coverage check check-fix hooks check-aws ui deploy build-fsd-index
+	format typecheck coverage check check-full check-fix hooks check-aws deploy build-fsd-index
 
 ifneq (,$(wildcard .env))
 include .env
@@ -38,9 +38,6 @@ dev-console: check-aws
 dev-console-ui:
 	cd ui/console && pnpm dev
 
-ui:
-	uv run streamlit run ui/streamlit_app.py
-
 deploy: check-aws
 	./scripts/deploy_agent.sh $(AGENT)
 
@@ -67,9 +64,12 @@ coverage:
 	uv run pytest -q --cov-report=html
 	@uv run python -c "import pathlib, webbrowser; p = pathlib.Path('htmlcov/index.html').resolve(); print(p); webbrowser.open(p.as_uri())"
 
-# The gate. Runs the same checks as CI, in the same order - see scripts/precheck.sh.
+# The fast local gate. CI additionally runs the slower AWS infrastructure checks.
 check:
 	./scripts/precheck.sh
+
+check-full:
+	./scripts/precheck.sh --infra
 
 check-fix:
 	./scripts/precheck.sh --fix

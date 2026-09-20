@@ -8,14 +8,86 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ## [Unreleased]
 
+### Changed
+
+- The default `make check` skips slow AWS infrastructure validation; `make check-full`
+  runs it explicitly, and CI continues to run the full gate.
+
+### Fixed
+
+- WebSocket broadcasting no longer constructs an AWS management client when no console
+  connection is watching the project.
+- AgentCore invocations now isolate request state and stream Snowflake tool progress over
+  non-blocking HTTP.
+- Deployed SSE responses are consumed incrementally for live WebSocket updates.
+- Distill deployments receive configured Snowflake settings.
+- AgentCore runtimes receive scoped read access to global context.
+- Deployed turns buffer early frames and wait for persisted Distill state before accepting
+  another answer; connection queries now paginate.
+- Local and deployed turns use the same standing-context formatter and authoritative
+  completeness evaluator before artifacts are persisted.
+- G3 approval now waits for build status and rejects open `[WIP]` pull requests in both
+  the console and API before attempting a merge.
+- Distill questions survive reloads, deployed socket/poll races cancel their losing
+  watcher, and context save errors remain visible without discarding the draft.
+- Project creation now rejects duplicate caller-supplied IDs instead of overwriting state.
+
+### Removed
+
+- Removed the obsolete Streamlit agent test harness and its development dependency; the
+  React console is the supported human interface.
+
 ### Added
 
+- Deployed turns stream through authenticated, one-time-ticket WebSocket subscriptions,
+  with deterministic connection registration and polling fallback.
+- `ProjectResponse.orchestration_mode` lets the console select local SSE or deployed Step
+  Functions behavior.
+- CDK configures the hosted console origin and required Entra settings on the console API.
+- Blueprint, Review and Showroom are now deployed as real Bedrock AgentCore Runtimes
+  (`hyperdelivery_blueprint`/`_review`/`_showroom`, us-east-1), alongside the already-live
+  `hyperdelivery_distill`, using the existing `hyperdelivery-agentcore-execution` IAM
+  role. The Step Functions/console-API orchestration stacks were already deployed in
+  `dev` - this closes the gap so all four stations of the line run for real, not just
+  locally. See docs/decisions.md.
+- Fixed three bugs that had never surfaced because no Step Functions execution had ever
+  actually run: `agent_invoker`'s Lambda was missing `pydantic` (unbundled package), its
+  IAM policy granted the wrong action name for `ListAgentRuntimes`, and it decoded
+  AgentCore Runtime's SSE response as a single JSON document. Threaded the real project
+  brief and each station's predecessor artifacts into the state machine's prompts,
+  replacing the `"Project {id}"` placeholder. See docs/decisions.md.
+- Distill can now ask clarifying questions inside the real (non-local) Step Functions
+  path, not just locally: a new `WaitForDistillAnswer` wait/loop (mirroring the approval
+  gates' `WAIT_FOR_TASK_TOKEN` pattern) and `POST /projects/{id}/answer` let a human
+  answer, folding the exchange into Distill's next turn instead of failing the execution.
+  Verified live end-to-end, including a run needing two rounds of questions before
+  Distill drafted a real `StructuredSpec` and reached the `blueprint_approval` gate. See
+  docs/decisions.md.
+- The console UI is now hosted in AWS (`ConsoleUiStack`: private S3 + CloudFront, no
+  custom domain - `https://d2rl9sl66w9a5f.cloudfront.net` in `dev`), instead of only
+  running via local `pnpm dev`. See docs/decisions.md - the deployed URL still needs
+  adding as an Entra ID app registration redirect URI by hand before sign-in works there.
+- There is now a single, global standing `context` (repo, database, design system,
+  conventions) - like a system prompt, not scoped to any one project - set via
+  `PATCH /context`, editable from a new `/context` page (linked from a top bar icon
+  button, always visible). Short context is inlined straight into every station's
+  prompt; long context is only previewed there, with a new `get_context` tool (added
+  to every agent) fetching the rest on demand, so a page-long note isn't resent in
+  full on every turn and retry. See docs/decisions.md.
+- The console now calls `POST /projects/{id}/preview` itself once a project reaches
+  `done`, and the "Off the line" banner shows the returned backend/frontend URLs as
+  clickable links - previously the backend could start the local demo preview
+  automatically but nothing surfaced a hyperlink anywhere in the UI. See
+  docs/decisions.md.
 - A Developer/PM toggle in the top bar (`useProjectsStore`'s persisted `viewMode`).
   Developer (default) is unchanged; PM hides the tool-call trace and raw streamed agent
   text in the thread and hides the raw-JSON tab in the artifact inspector, showing only
   the synthesized reply, the artifact card, and the structured content/design views. No
   new summarization - reuses `composeReply`/`artifactStats`, which already ran for every
-  turn. See docs/decisions.md.
+  turn. PM mode also hides the build-detail sections within each station's own artifact
+  view: Scout's "Machine-readable rules" and "Rule correlations", Coach's "Components",
+  "Data model", "Integration points" and "Units of work", and Host's "Talk track" and
+  "Seed data" (`ui/console/src/components/inspector/views.tsx`). See docs/decisions.md.
 - The console can now upload a document (PDF/DOCX/PPTX/XLSX/PNG/JPEG) straight from the
   chat composer's new attach button, and from the landing page's "what are we building"
   box (uploaded once the project it names exists, then cited in Distill's first turn):
@@ -64,8 +136,106 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   (`ArchitectureDiagram`'s new expand button) - the same graph at a size that doesn't
   depend on how wide the artifact panel happens to be.
 
+### Removed
+
+- Deleted `notebooks/distill_agent_tools.ipynb`, an unreferenced exploratory scratch
+  notebook that had been exempted from `make check` entirely rather than fixed. See
+  docs/decisions.md.
+
 ### Fixed
 
+- The `cspell` pre-commit hook now restates `--no-must-find-files` in its `args`
+  (`.pre-commit-config.yaml`) - without it, staging a file deletion made every commit
+  fail `cspell` with exit code 1 and no error output at all. See docs/decisions.md.
+- The console API now decides its orchestration path (real Step Functions vs. local
+  dev's `LocalAgentClient`) from the new `core.constants.Environment` enum
+  (`local`/`dev`/`prod`, backing `Settings.environment`) instead of implicitly from
+  whether `STATE_MACHINE_ARN` happened to be set. `dev`/`prod` now fail fast at startup
+  with a clear error if `STATE_MACHINE_ARN` is missing, instead of silently falling back
+  to the local-only path. See docs/decisions.md.
+- `ConsoleApiFunction` (the console API Lambda) now has real dependency bundling
+  (`infra/stacks/console_api_stack.py`'s `BundlingOptions`, exporting `uv.lock` to a
+  pip-installable `requirements-lambda.txt` at synth time) - previously it shipped with
+  no third-party packages at all and failed every invocation with `No module named
+  'mangum'`. Bundling pins `--platform manylinux2014_x86_64 --python-version 3.11
+  --implementation cp --abi cp311` so wheels resolve correctly regardless of the host
+  machine's architecture (an Apple Silicon host otherwise produces arm64 wheels, e.g.
+  `pydantic_core`, that fail to import on Lambda's x86_64 runtime). `providers/agents`
+  (not all of `providers/`) is now the only excluded subpackage, since
+  `api/routers/projects.py` imports `providers.documents`/`providers.github`/
+  `providers.storage` directly. `requests` moved from the `dev` dependency group to
+  `[project.dependencies]` in the root `pyproject.toml`, since
+  `orchestration/local_agent_client.py` is production code that `api/main.py` imports
+  and instantiates unconditionally. See docs/decisions.md.
+- `STATE_MACHINE_ARN` was never wired into the console API Lambda's environment, so
+  `create_project` could never actually start the Step Functions execution.
+  `ConsoleApiStack` now takes the orchestration stack's `state_machine` and grants
+  `states:StartExecution`/task-response permissions.
+- The token/duration usage reported for a turn (`agent_invocation`'s `usage_payload`)
+  was every turn the container had ever served summed together, not that turn's own
+  cost - Strands' `EventLoopMetrics.accumulated_usage` accumulates across the whole
+  life of the `Agent` object, and `agent` is one shared instance reused for every
+  invocation. A late "hey" on a long-running dev server could report hundreds of
+  thousands of tokens for a two-line reply with no tool calls. `agent_invocation` now
+  replaces `agent.event_loop_metrics` with a fresh `EventLoopMetrics()` alongside the
+  existing `agent.messages = []` reset, so usage reflects only the current turn.
+- The console's persisted store (`hyperdelivery-console` in localStorage) could throw
+  `QuotaExceededError` out of an unrelated `set()` call (e.g. a mid-stream token flush)
+  once enough conversation history built up - `conversationByProject` was persisted in
+  full, including per-turn `toolCalls` (whose `result` can be a whole fetched document
+  or query result set) and every project ever visited, not just the 30 most recent.
+  Persisted turns now drop large generic tool results and the mid-stream-only fields
+  (`draft`/`waitingSeconds`/`streaming`) while retaining Distill's question call, and
+  `conversationByProject`/`signaturesByProject` are
+  trimmed to `recentProjects` before writing. `useProjectsStore.ts`'s storage adapter
+  also now evicts the oldest recent project's history and retries on a quota error
+  instead of throwing, as a fallback for conversations that still don't fit.
+
+### Changed
+
+- Every stand-alone narrative field across the artifact inspector now renders as
+  Markdown instead of a plain string - gate criteria and rule correlation descriptions
+  (`SpecView`), component/data-entity/integration-point/unit descriptions and API
+  contract summaries (`BlueprintView`), finding descriptions and Copilot assignment
+  notes (`ReviewView`), and talk-track narration and demo seed descriptions
+  (`DemoView`), alongside the `architecture_summary`/`summary` fields already converted
+  above. Each agent's prompt now says so, with a `**bold**`/short-bullet-list nudge for
+  the fields long enough to benefit - short structured fields (a requirement's
+  description, business value, evidence citations, acceptance criteria) are left as
+  plain text since they sit inline next to badges that Markdown's block-level output
+  would not align.
+- PM mode also hides the spec's "Gate criteria" section in the artifact inspector
+  (`SpecView`, `ui/console/src/components/inspector/views.tsx`) - a PM already sees the
+  same gate criteria in `GateConsole` at sign-off, so repeating them in the artifact
+  panel was developer-only detail, same as the sections already gated there.
+- The synthesized chat reply (`composeReply` in `lib/formatArtifact.ts`) no longer
+  repeats a not-yet-complete artifact's raw validator gap text (unit/requirement/
+  contract ids) in the thread - it now just says how many things are still open and
+  points at the artifact panel, which already renders each gap in full. Applies to
+  every agent's turn, not just Distill's.
+- A project no longer ships itself the instant Showroom's own deterministic score is
+  gap-free - unlike Distill/Blueprint/Review, Showroom's next station is DONE (shipped)
+  rather than a human approval gate, so it needs an explicit "project completed" message
+  instead. The composer stays live at Showroom for as many turns as it takes; typing
+  that exact phrase (case/whitespace-insensitive) advances to DONE without invoking the
+  agent again, and 409s if Showroom hasn't produced a gap-free run of show yet. See
+  docs/decisions.md.
+
+### Fixed
+
+- Distill's `max_tokens` override bumped to 32768 (`config/agents/distill.yaml`, same
+  as Blueprint) - a real run grounded in Snowflake/S3 lookups still truncated
+  mid-artifact with `MaxTokensReachedException` at the shared 8192 default. See
+  docs/decisions.md.
+- The laptop-demo preview's health check (`_HEALTH_TIMEOUT_SECONDS`) was 15s, too short
+  once the target repo's own preview script started syncing dependencies (`git pull`,
+  `uv sync`, `npm install`) before opening a port - a cold sync alone can take longer
+  than that. Bumped to 90s per port.
+- A test that never mocked `get_settings` (`test_g3_approval_proceeds_normally_...`)
+  could spawn a real preview subprocess and fail on an not reaped-process
+  `ResourceWarning` if the developer running the suite had `PREVIEW_CHECKOUT_PATH` set
+  locally, in the file or in the shell. `tests/conftest.py`'s autouse fixture now blanks
+  both. See docs/decisions.md.
 - The collapsed artifacts panel's reopen control showed both an icon and the label
   "Artifacts" - now icon-only (`IconButton`, matching every other panel toggle in the
   shell), with the label moved to `aria-label`/`title` instead of visible text.

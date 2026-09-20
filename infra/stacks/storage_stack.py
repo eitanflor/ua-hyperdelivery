@@ -91,6 +91,20 @@ class StorageStack(Stack):
         # grants read access without needing IAM write access at all.
         agentcore_role_arn = os.environ.get("AGENTCORE_ROLE_ARN")
         if agentcore_role_arn:
+            project_table_arn = self.format_arn(
+                service="dynamodb",
+                resource="table",
+                resource_name=resource_name(env_name, "projects"),
+            )
+            self.project_table.add_to_resource_policy(
+                iam.PolicyStatement(
+                    sid="AllowAgentCoreReadContext",
+                    principals=[iam.ArnPrincipal(agentcore_role_arn)],
+                    actions=["dynamodb:GetItem"],
+                    resources=[project_table_arn],
+                    conditions={"ForAllValues:StringEquals": {"dynamodb:LeadingKeys": ["GLOBAL"]}},
+                )
+            )
             self.documents_bucket.add_to_resource_policy(
                 iam.PolicyStatement(
                     sid="AllowAgentCoreReadDocuments",

@@ -1,11 +1,12 @@
 """Local-dev-only substitute for the Step Functions/AgentCore Runtime orchestration path.
 
 That real path (agent_invoker.py, a Lambda calling AgentCore Runtime) requires both the
-state machine and the AgentCore runtimes to be deployed - both blocked on IAM (see
-docs/decisions.md). This client instead talks straight to an agent's local dev HTTP
-server (`make dev-distill` etc., ports per the Makefile) so the console UI has something
-real to demo against without any AWS deploy. Never used in production - the console API
-only wires this in when `state_machine_arn` is unset.
+state machine and the AgentCore runtimes to be deployed. This client instead talks
+straight to an agent's local dev HTTP server (`make dev-distill` etc., ports per the
+Makefile) so the console UI has something real to demo against without any AWS deploy.
+Never used in production - `api/main.py` only routes to this when `ENVIRONMENT=local`
+(see `core.constants.Environment`, docs/decisions.md); DEV/PROD always use the real
+Step Functions path instead.
 """
 
 import json

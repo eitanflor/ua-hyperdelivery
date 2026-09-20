@@ -10,10 +10,10 @@ class AgentConfig(BaseModel):
     model_id: str
     system_prompt: str
     # Output is generated serially - measured at ~85 tokens/second - so this is a time
-    # budget as much as a size one. Raising it to 32768 let Distill grow from 11.5k to
-    # 16.2k output tokens on the same prompt and added 49s to the turn, which is why the
-    # default is back where it was. Blueprint overrides it in its YAML: reading eighteen
-    # files genuinely does produce an artifact that 8192 truncates mid-tool-use.
+    # budget as much as a size one. Raising it to 32768 once added ~49s to a Distill turn
+    # for little gain on a light prompt, so the default stayed conservative - but a turn
+    # grounded in real Snowflake/S3 lookups can still truncate mid-artifact at 8192
+    # (MaxTokensReachedException), so distill.yaml now overrides it too, same as blueprint.
     max_tokens: int = 8192
     # Sent only when set: Bedrock rejects the parameter outright on newer Anthropic models
     # ("`temperature` is deprecated for this model"), so it cannot be defaulted here.

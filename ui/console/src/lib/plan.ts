@@ -6,7 +6,7 @@ export const PLAN_TOOL = "track_plan";
 
 /** Distill's voluntary question tool (see src/tools/distill.py) - shown as a question
  * card, not a call, and never as an artifact: asking never requires a StructuredSpec. */
-const QUESTIONS_TOOL = "ask_clarifying_questions";
+export const QUESTIONS_TOOL = "ask_clarifying_questions";
 
 export interface PlanStep {
   title: string;

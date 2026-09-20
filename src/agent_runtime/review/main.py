@@ -6,6 +6,7 @@ from agent_runtime.factory import create_app
 from config.settings import get_settings
 from core.constants import AgentName
 from core.domain.review import ReviewReport
+from tools.context import get_context
 from tools.delivery import plan_delivery
 from tools.github import github_file_contents_batch_tool, review_github_mcp_client
 from tools.planning import track_plan
@@ -17,6 +18,7 @@ from tools.review import (
 
 _tools: list[Any] = [
     track_plan,
+    get_context,
     validate_review_report,
     score_review_completeness,
     validate_copilot_assignments,

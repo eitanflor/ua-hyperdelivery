@@ -20,22 +20,22 @@ import { AGENT_META, AGENT_STATIONS } from "../../lib/pipeline";
 import { AgentFace } from "../agents/AgentFace";
 import { IconButton } from "../ui/IconButton";
 import { cn } from "../../lib/cn";
-import { useProjectsStore } from "../../store/useProjectsStore";
+import { useProjectsStore, type ViewMode } from "../../store/useProjectsStore";
 import { ArchitectureDiagram } from "./ArchitectureDiagram";
 import { BlueprintView, DemoView, GenericView, ReviewView, SpecView } from "./views";
 
 type TabId = "design" | "content" | "raw";
 
-function ContentBody({ artifact }: { artifact: Artifact }) {
+function ContentBody({ artifact, viewMode }: { artifact: Artifact; viewMode: ViewMode }) {
   switch (artifactKind(artifact.agent)) {
     case "spec":
-      return <SpecView content={artifact.content} />;
+      return <SpecView content={artifact.content} viewMode={viewMode} />;
     case "blueprint":
-      return <BlueprintView content={artifact.content} />;
+      return <BlueprintView content={artifact.content} viewMode={viewMode} />;
     case "review":
       return <ReviewView content={artifact.content} />;
     case "demo":
-      return <DemoView content={artifact.content} />;
+      return <DemoView content={artifact.content} viewMode={viewMode} />;
     default:
       return <GenericView content={artifact.content} />;
   }
@@ -203,7 +203,7 @@ export function Inspector({
               </div>
 
               {activeTab === "design" && <DesignBody artifact={selected} />}
-              {activeTab === "content" && <ContentBody artifact={selected} />}
+              {activeTab === "content" && <ContentBody artifact={selected} viewMode={viewMode} />}
               {activeTab === "raw" && showRaw && <GenericView content={selected.content} />}
             </div>
           )}

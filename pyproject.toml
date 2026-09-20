@@ -35,6 +35,10 @@ dependencies = [
     # opentelemetry-api/-instrumentation come in via bedrock-agentcore, but without the SDK
     # its tracing hook silently no-ops against a ProxyTracerProvider.
     "opentelemetry-sdk>=1.27",
+    # orchestration/local_agent_client.py is production code (api/main.py imports and
+    # instantiates it unconditionally) - not dev/test-only, despite living next to the
+    # local-dev agent-invocation path.
+    "requests>=2.32",
 ]
 
 [dependency-groups]
@@ -45,8 +49,6 @@ dev = [
     "ruff>=0.5",
     "pyright>=1.1.380",
     "pre-commit>=3.8",
-    "streamlit>=1.38",
-    "requests>=2.32",
     # starlette >=1.6 prefers httpx2 in its TestClient and deprecation-warns on httpx.
     # The runtime httpx dependency above is unrelated - it backs sdk/python/client.py.
     "httpx2>=2.0",
@@ -124,7 +126,7 @@ reportUnusedFunction = "none"
 src = ["src", "tests"]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["cdk.out", "notebooks"]
+extend-exclude = ["cdk.out"]
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -190,6 +192,7 @@ ban-relative-imports = "all"
 # B008 guards against.
 "src/api/auth.py" = ["B008"]
 "src/api/routers/projects.py" = ["B008"]
+"src/api/routers/context.py" = ["B008"]
 # Test doubles mirror third-party call shapes (boto3's PascalCase kwargs, httpx handlers),
 # so PEP 8 naming and unused-argument rules would make them less faithful, not more.
 "tests/**/*.py" = [
@@ -208,4 +211,3 @@ ban-relative-imports = "all"
     "S107",
     "SLF001",  # tests may reach into private helpers
 ]
-"ui/**/*.py" = ["D1"] # streamlit script, not an importable module

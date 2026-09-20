@@ -7,6 +7,8 @@ an over-permissive mock.
 
 from typing import Any
 
+from botocore.exceptions import ClientError
+
 from core.domain.project import Project
 
 
@@ -70,8 +72,19 @@ class FakeTable:
         self.items: dict[tuple[str, str], dict[str, Any]] = {}
         self.update_calls: list[dict[str, Any]] = []
 
-    def put_item(self, Item: dict[str, Any]) -> None:
-        self.items[(Item["pk"], Item["sk"])] = Item
+    def put_item(self, Item: dict[str, Any], ConditionExpression: str | None = None) -> None:
+        key = (Item["pk"], Item["sk"])
+        if ConditionExpression == "attribute_not_exists(pk)" and key in self.items:
+            raise ClientError(
+                {
+                    "Error": {
+                        "Code": "ConditionalCheckFailedException",
+                        "Message": "The conditional request failed",
+                    }
+                },
+                "PutItem",
+            )
+        self.items[key] = Item
 
     def get_item(self, Key: dict[str, Any]) -> dict[str, Any]:
         item = self.items.get((Key["pk"], Key["sk"]))
@@ -140,10 +153,10 @@ class FakeStateMachineClient:
     def __init__(self) -> None:
         self.calls: list[tuple[str, tuple[Any, ...]]] = []
 
-    def start_execution(self, project_id: str) -> None:
-        self.calls.append(("start_execution", (project_id,)))
+    def start_execution(self, project_id: str, message: str = "") -> None:
+        self.calls.append(("start_execution", (project_id, message)))
 
-    def send_task_success(self, task_token: str, output: dict[str, Any]) -> None:
+    def send_task_success(self, task_token: str, output: dict[str, Any] | str) -> None:
         self.calls.append(("send_task_success", (task_token, output)))
 
     def send_task_failure(self, task_token: str, error: str) -> None:

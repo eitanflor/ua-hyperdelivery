@@ -53,6 +53,47 @@ def test_no_bucket_policy_without_an_agentcore_role_arn(monkeypatch: pytest.Monk
     monkeypatch.delenv("AGENTCORE_ROLE_ARN", raising=False)
     template = _template()
     template.resource_count_is("AWS::S3::BucketPolicy", 0)
+    template.has_resource_properties("AWS::DynamoDB::Table", {"ResourcePolicy": Match.absent()})
+
+
+def test_table_policy_grants_the_agentcore_role_context_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AGENTCORE_ROLE_ARN", "arn:aws:iam::123456789012:role/hyperdelivery-agent")
+    template = _template()
+    template.has_resource_properties(
+        "AWS::DynamoDB::Table",
+        {
+            "ResourcePolicy": Match.object_like(
+                {
+                    "PolicyDocument": Match.object_like(
+                        {
+                            "Statement": Match.array_with(
+                                [
+                                    Match.object_like(
+                                        {
+                                            "Action": "dynamodb:GetItem",
+                                            "Principal": {
+                                                "AWS": (
+                                                    "arn:aws:iam::123456789012:role/"
+                                                    "hyperdelivery-agent"
+                                                )
+                                            },
+                                            "Condition": {
+                                                "ForAllValues:StringEquals": {
+                                                    "dynamodb:LeadingKeys": ["GLOBAL"]
+                                                }
+                                            },
+                                        }
+                                    )
+                                ]
+                            )
+                        }
+                    )
+                }
+            )
+        },
+    )
 
 
 def test_bucket_policy_grants_the_agentcore_role_scoped_access(

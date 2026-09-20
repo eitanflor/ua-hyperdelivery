@@ -2,6 +2,14 @@ FROM --platform=linux/arm64 ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 
 WORKDIR /app
 
+# Optional corporate TLS-inspection CAs (e.g. Zscaler). certs/*.crt is gitignored, so this
+# is empty on networks that don't intercept TLS; update-ca-certificates ignores non-cert files.
+COPY certs/ /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+# SSL_CERT_FILE works on every uv version, unlike UV_NATIVE_TLS (deprecated) /
+# UV_SYSTEM_CERTS (needs uv >= 0.11; base image ships 0.9.x).
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 

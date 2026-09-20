@@ -62,6 +62,7 @@ def test_start_preview_reports_healthy_once_ports_open() -> None:
         PreviewTarget("/some/checkout", "./scripts/preview.sh", 8000, 5183),
         popen=popen,
         port_open=lambda _port: True,
+        port_listening=lambda _port: False,
     )
 
     assert healthy is True
@@ -73,6 +74,7 @@ def test_start_preview_reports_unhealthy_when_ports_never_open() -> None:
         PreviewTarget("/some/checkout", "./scripts/preview.sh", 8000, 5183),
         popen=lambda *_a, **_k: object(),
         port_open=lambda _port: False,
+        port_listening=lambda _port: False,
     )
 
     assert healthy is False
@@ -86,9 +88,28 @@ def test_start_preview_survives_a_command_that_cannot_launch() -> None:
         PreviewTarget("/some/checkout", "./scripts/preview.sh", 8000, 5183),
         popen=popen,
         port_open=lambda _port: True,
+        port_listening=lambda _port: False,
     )
 
     assert healthy is False
+
+
+def test_start_preview_does_not_launch_when_both_ports_are_already_open() -> None:
+    launched: list[tuple[Any, ...]] = []
+
+    def popen(*args: Any, **kwargs: Any) -> object:
+        launched.append((args, kwargs))
+        return object()
+
+    healthy = start_preview(
+        PreviewTarget("/some/checkout", "./scripts/preview.sh", 8000, 5183),
+        popen=popen,
+        port_open=lambda _port: True,
+        port_listening=lambda _port: True,
+    )
+
+    assert healthy is True
+    assert launched == []
 
 
 def test_stop_preview_calls_the_scripts_own_stop_mode() -> None:

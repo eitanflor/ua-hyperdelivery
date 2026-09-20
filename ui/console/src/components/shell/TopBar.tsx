@@ -1,4 +1,4 @@
-import { CommandIcon, MagnifyingGlassIcon, SidebarSimpleIcon, SquaresFourIcon } from "@phosphor-icons/react";
+import { CommandIcon, FileTextIcon, MagnifyingGlassIcon, SidebarSimpleIcon, SquaresFourIcon } from "@phosphor-icons/react";
 import { useNavigate } from "react-router";
 import type { Project } from "../../api/types";
 import { useProjectsStore, type ViewMode } from "../../store/useProjectsStore";
@@ -109,6 +109,13 @@ export function TopBar({
       )}
 
       <ViewModeToggle />
+
+      <IconButton
+        label="Context"
+        icon={<FileTextIcon className="size-4" />}
+        size="sm"
+        onClick={() => navigate("/context")}
+      />
 
       <IconButton
         label="Project portfolio"

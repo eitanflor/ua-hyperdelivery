@@ -22,34 +22,14 @@ export function artifactStats(content: Record<string, unknown>): { label: string
   return candidates.filter((c) => c.value > 0).slice(0, 3);
 }
 
-const REQUIRED_SECTION_GAP_PREFIX = "missing required FSD section: ";
-
-function missingRequiredSections(content: Record<string, unknown>, gaps: string[]): string[] {
-  const fromField = content.missing_required_sections;
-  if (Array.isArray(fromField) && fromField.every((section) => typeof section === "string")) {
-    return fromField;
-  }
-  return gaps
-    .filter((gap) => gap.startsWith(REQUIRED_SECTION_GAP_PREFIX))
-    .map((gap) => gap.slice(REQUIRED_SECTION_GAP_PREFIX.length));
-}
-
-function formattedGaps(content: Record<string, unknown>, gaps: string[]): string {
-  const missingSections = missingRequiredSections(content, gaps);
-  const otherGaps = gaps.filter((gap) => !gap.startsWith(REQUIRED_SECTION_GAP_PREFIX));
-  return [
-    missingSections.length > 0
-      ? `Missing required FSD sections: ${missingSections.join(", ")}`
-      : null,
-    otherGaps.length > 0 ? `Other gaps: ${otherGaps.join("; ")}` : null,
-  ]
-    .filter((line): line is string => line !== null)
-    .join("; ");
-}
+const plural = (n: number, noun: string, pluralNoun = `${noun}s`) => `${n} ${n === 1 ? noun : pluralNoun}`;
 
 /** What the assistant "says" once a turn finishes - written in first person so the
  * chat reads like a reply, not a status readout for whichever agent happened to run.
- * The structured content itself lives in the artifact panel. */
+ * Stays a plain-English gist for a business reader - the validator's own gap wording
+ * (unit ids, requirement ids, contract ids) is dev detail that already renders in full
+ * in the artifact panel, so repeating it here would be the same information twice, once
+ * in plain English and once in jargon. */
 export function composeReply(content: Record<string, unknown>, askedViaTool = 0): string {
   const title = typeof content.title === "string" ? content.title : undefined;
   const completeness = content.completeness as
@@ -69,11 +49,12 @@ export function composeReply(content: Record<string, unknown>, askedViaTool = 0)
   }
 
   if (completeness) {
-    if (completeness.gaps && completeness.gaps.length > 0) {
-      const gapLine = formattedGaps(content, completeness.gaps);
+    const gapCount = completeness.gaps?.length ?? 0;
+    if (gapCount > 0) {
       return (
-        `I've got a first draft${title ? ` of "${title}"` : ""} going, but I still need a ` +
-        `bit more before it's complete: ${gapLine}\n\nLet me know and I'll finish it up.`
+        `I've got a first draft${title ? ` of "${title}"` : ""} going, but it's not complete yet - ` +
+        `${plural(gapCount, "thing", "things")} still ${gapCount === 1 ? "needs" : "need"} answering. ` +
+        `Open the document to see what's outstanding, and let me know so I can finish it.`
       );
     }
     return `Done - "${title ?? "the spec"}" is complete and ready to move forward.`;
@@ -83,14 +64,16 @@ export function composeReply(content: Record<string, unknown>, askedViaTool = 0)
   // single turn - a short highlight instead of raw field counts
   const highlights: string[] = [];
   if (Array.isArray(content.units_of_work)) {
-    highlights.push(`${content.units_of_work.length} unit(s) of work`);
+    highlights.push(plural(content.units_of_work.length, "unit of work", "units of work"));
   }
-  if (Array.isArray(content.findings)) highlights.push(`${content.findings.length} finding(s)`);
+  if (Array.isArray(content.findings)) {
+    highlights.push(plural(content.findings.length, "finding"));
+  }
   if (Array.isArray(content.coverage)) {
-    highlights.push(`${content.coverage.length} requirement(s) covered`);
+    highlights.push(`${plural(content.coverage.length, "requirement")} covered`);
   }
   if (Array.isArray(content.talk_track)) {
-    highlights.push(`${content.talk_track.length} talk-track section(s)`);
+    highlights.push(plural(content.talk_track.length, "talk-track section"));
   }
   const suffix = highlights.length > 0 ? ` (${highlights.join(", ")})` : "";
   return `Done - "${title ?? "this"}"${suffix} is ready.`;

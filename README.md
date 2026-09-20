@@ -26,7 +26,6 @@ src/
 └── sdk/python/       # client for the console API
 
 infra/                # AWS CDK: state machine, projects table, notifications, console API
-ui/                   # Streamlit harness for poking an agent by hand
 ui/console/           # React + Vite console UI - the real client for the console API (see its README)
 tests/unit/
 ```
@@ -75,11 +74,12 @@ curl -X POST http://localhost:8080/invocations \
 ## Testing
 
 ```bash
-make check      # the gate: format, lint, types, tests, infra, secrets
-make check-fix  # same, but auto-fixes the mechanical failures first
+make check       # fast gate: format, lint, types, tests, secrets
+make check-full  # fast gate plus AWS infrastructure checks
+make check-fix   # fast gate, but auto-fixes mechanical failures first
 ```
 
-CI runs the same script ([scripts/precheck.sh](scripts/precheck.sh)), so green locally
+CI runs the same script with its full mode ([scripts/precheck.sh](scripts/precheck.sh)), so
 means green in CI. Individual gates: `make format`, `make lint`, `make typecheck`,
 `make test`.
 
@@ -94,10 +94,17 @@ make deploy AGENT=distill    # or blueprint / review / showroom
 an `hyperdelivery-<agent>` ECR repo (creating it if needed), and calls
 `create-agent-runtime`/`update-agent-runtime` (whichever applies) with the ARM64 image and
 `AGENTCORE_ROLE_ARN`. The role must already exist with AgentCore Runtime's trust policy and
-permissions - see AWS's
+base runtime permissions. Deploy the storage stack with the same `AGENTCORE_ROLE_ARN`; its
+resource policies grant the runtime scoped access to global context and project documents
+without modifying the externally managed role. See AWS's
 [IAM Permissions for AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-permissions.html)
 guide. For the underlying manual steps (ECR, `create_agent_runtime`), see
 [Get started without the AgentCore CLI](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/getting-started-custom.html).
+
+`make deploy AGENT=distill` also forwards configured `SNOWFLAKE_ACCOUNT`,
+`SNOWFLAKE_PAT`, `SNOWFLAKE_DATABASE`, and `SNOWFLAKE_SCHEMA` values from `.env` to the
+Distill runtime. The account and PAT must be set together; without both, the optional
+`snowflake_query` tool is not attached.
 
 
 ## Status
@@ -113,19 +120,30 @@ Blueprint has a Jira issue-lifecycle MCP tool (generic client builders in
 `ATLASSIAN_*` env vars). Review and Showroom have no external tools yet - they take their
 input entirely from the prompt.
 
-**Phase 2 - console and orchestration.** A FastAPI console API (`src/api/`) creates
-projects, records gate decisions, and streams agent turns over SSE, against a
-single-table DynamoDB projection (`infrastructure/repositories/`). Every route is gated
-behind Entra ID (Azure AD) sign-in (`api/auth.py` - validates the bearer ID token against
-Entra's JWKS; `sdk/python/` does not carry credentials and is not yet updated for this).
-A Step Functions state machine sequences the line with `WAIT_FOR_TASK_TOKEN` holds at
-each human approval (`infra/stacks/`, `orchestration/`) - this part is scaffolded but not
-deployed (blocked on IAM, and the Lambda code assets still have no dependency bundling,
-TODO ADVA-3015); until `STATE_MACHINE_ARN` is set the console API falls back to
-DynamoDB-only writes with no execution to start or resume.
+**Phase 2 - console and orchestration (deployed to `dev`).** A FastAPI console API
+(`src/api/`) creates projects, records gate decisions, and streams agent turns over SSE,
+against a single-table DynamoDB projection (`infrastructure/repositories/`). Every route
+is gated behind Entra ID (Azure AD) sign-in (`api/auth.py` - validates the bearer ID
+token against Entra's JWKS; `sdk/python/` does not carry credentials and is not yet
+updated for this). A Step Functions state machine (`hyperdelivery-project-line`,
+us-east-1) sequences the line with `WAIT_FOR_TASK_TOKEN` holds at each human approval
+(`infra/stacks/`, `orchestration/`) - `HyperdeliveryDevOrchestrationStack`,
+`HyperdeliveryDevConsoleApiStack` and `HyperdeliveryDevStorageStack` are all live, and
+the console API Lambda has `STATE_MACHINE_ARN` set, so the real execution path runs
+rather than the DynamoDB-only local fallback. All four AgentCore Runtimes
+(`hyperdelivery_distill`/`_blueprint`/`_review`/`_showroom`) are deployed and `READY` in
+us-east-1, sharing the `hyperdelivery-agentcore-execution` IAM role - see
+`scripts/deploy_agent.sh` and docs/decisions.md. Verified live end-to-end: a real project
+brief runs through Distill (looping on `WaitForDistillAnswer`/`POST /projects/{id}/answer`
+whenever it asks a clarifying question instead of drafting, the same way the local console
+chat does) through to a real `StructuredSpec` and the `blueprint_approval` gate. The
+Lambda code assets are now Docker-bundled (`infra/stacks/lambda_bundling.py`, ADVA-3015
+resolved for `agent_invoker`/`persist_approval`/`persist_question`).
 
 **The console UI (`ui/console/`).** A React + Vite + TypeScript app is the real client
-for the console API. The four agents are presented as a crew, each named for the job a
+for the console API, hosted in AWS on `ConsoleUiStack` (private S3 + CloudFront, no
+custom domain yet) alongside running locally via `pnpm dev`. The four agents are
+presented as a crew, each named for the job a
 person holds on the arc from raw talent to gameday - **Scout** measures the brief,
 **Coach** turns it into the work, **Ref** grades the build against it, **Host** sets up the
 walkthrough - each with its own face and identity color. The station is the place and the
@@ -142,5 +160,6 @@ layer only - the wire ids stay `distill`, `blueprint`, `review`, `showroom`. See
 [docs/console-redesign.md](docs/console-redesign.md).
 
 **Not started.** AgentCore Memory, Gateway and Identity; the Bedrock Knowledge Base; and
-the M365, GitHub and Snowflake integrations. Add those as real use cases demand them, not
-speculatively.
+the M365 integration. Distill's Snowflake Cortex integration and Blueprint/Review's
+GitHub integration are already implemented. Add the remaining integrations as real use
+cases demand them, not speculatively.

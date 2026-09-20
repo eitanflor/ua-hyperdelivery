@@ -7,15 +7,13 @@ from config.settings import get_settings
 from core.constants import AgentName
 from core.domain.spec import StructuredSpec
 from tools.atlassian import confluence_mcp_client, jira_read_mcp_client
+from tools.context import get_context
 from tools.distill import (
     ask_clarifying_questions,
     detect_fsd_template,
     extract_field_rules,
-    score_completeness,
     score_template_coverage,
     submit_structured_spec,
-    validate_rule_correlations,
-    validate_structured_spec,
 )
 from tools.distill_ingestion import get_local_document_text
 from tools.documents import (
@@ -28,12 +26,10 @@ from tools.snowflake import snowflake_tools
 
 _tools: list[Any] = [
     track_plan,
+    get_context,
     detect_fsd_template,
     score_template_coverage,
     extract_field_rules,
-    validate_structured_spec,
-    validate_rule_correlations,
-    score_completeness,
     get_local_document_text,
     submit_structured_spec,
     ask_clarifying_questions,

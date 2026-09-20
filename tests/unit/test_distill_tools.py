@@ -1,3 +1,6 @@
+import pytest
+from strands import Agent
+
 from core.domain.project import OpenQuestion
 from core.domain.spec import (
     AcceptanceCriterion,
@@ -11,11 +14,61 @@ from core.domain.spec import (
 )
 from tools.distill import (
     ask_clarifying_questions,
+    extract_field_rules,
     score_completeness,
     submit_structured_spec,
     validate_rule_correlations,
     validate_structured_spec,
 )
+
+
+def _agent_with_prior_detect_fsd_template_call(text: str) -> Agent:
+    agent = Agent()
+    agent.messages = [
+        {
+            "content": [
+                {
+                    "toolUse": {
+                        "toolUseId": "t1",
+                        "name": "detect_fsd_template",
+                        "input": {"text": text},
+                    }
+                }
+            ]
+        }
+    ]
+    return agent
+
+
+def test_extract_field_rules_reuses_text_from_a_prior_detect_fsd_template_call() -> None:
+    # the model already retyped the FSD body once to call detect_fsd_template - it should
+    # not have to retype it again just to call this tool on the same document
+    agent = _agent_with_prior_detect_fsd_template_call(
+        "Effective Date - should be the MM-DD-YYYY date format"
+    )
+
+    result = extract_field_rules(agent=agent)
+
+    assert result == [
+        {"field": "Effective Date", "rule": "Effective Date must match date format MM-DD-YYYY"}
+    ]
+
+
+def test_extract_field_rules_raises_without_text_or_a_prior_detect_fsd_template_call() -> None:
+    agent = Agent()
+    agent.messages = []
+
+    with pytest.raises(ValueError, match="no `text` given"):
+        extract_field_rules(agent=agent)
+
+
+def test_extract_field_rules_still_accepts_an_explicit_text_argument() -> None:
+    agent = Agent()
+    agent.messages = []
+
+    result = extract_field_rules(text="POS Promo - should never exceed 1", agent=agent)
+
+    assert result == [{"field": "POS Promo", "rule": "POS Promo must not exceed 1"}]
 
 
 def test_score_completeness_scores_full_coverage_as_one() -> None:

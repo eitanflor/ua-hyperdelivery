@@ -41,11 +41,12 @@ that is this - use the same context rather than disabling verification.
 ## The gate
 
 ```bash
-make check       # format, lint, types, tests, infra, secrets, spelling
-make check-fix   # auto-fix the mechanical failures, then check
+make check       # format, lint, types, tests, secrets, spelling
+make check-full  # include the slower AWS infrastructure checks
+make check-fix   # auto-fix the mechanical failures, then run the fast gate
 ```
 
-This is [scripts/precheck.sh](scripts/precheck.sh), and CI runs the same script. Green
+This is [scripts/precheck.sh](scripts/precheck.sh), and CI runs its full mode. Green
 locally means green in CI. **If you add a check to CI, add it to that script instead.**
 
 Individual gates, when you want a faster loop:

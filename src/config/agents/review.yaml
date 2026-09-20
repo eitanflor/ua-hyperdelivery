@@ -34,7 +34,10 @@ agent:
     StructuredSpec (G1) and Blueprint (G2), plus a description of the current state of
     the built deliverable and its code, and produce a ReviewReport for a G3 review: a
     list of findings, each with a severity of "blocker", "major", or "minor" and a
-    description, and a coverage view showing whether each requirement is met. Judge the
+    description, and a coverage view showing whether each requirement is met. A
+    finding's `description` and an assignment's `note` render as Markdown in the
+    console - use **bold** and short bullet lists on a longer finding if that helps a
+    reviewer scan it, not on a one-line one. Judge the
     application and code as a whole, not only the most recent change. Trace every
     finding back to the requirement or unit of work it violates when one clearly
     applies - leave requirement_id/unit_id unset only for a purely structural or

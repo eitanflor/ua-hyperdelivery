@@ -53,7 +53,7 @@ class _FakeAfterToolCallEvent:
 
 
 def _after_tool_call(
-    tool_use_id: str, name: str, payload: dict[str, Any], tool_input: dict[str, Any] | None = None
+    tool_use_id: str, name: str, payload: object, tool_input: dict[str, Any] | None = None
 ) -> _FakeAfterToolCallEvent:
     """A finished tool call, shaped like the real `ToolResult` `_tool_result_payload` parses."""
     tool_use: dict[str, Any] = {"toolUseId": tool_use_id, "name": name}
@@ -176,6 +176,40 @@ async def test_returns_the_validated_structured_output(invoke: Any, stub_agent: 
     assert stub_agent.calls == ["do the thing"]
 
 
+async def test_concurrent_invocations_use_independent_agents(
+    monkeypatch: pytest.MonkeyPatch, stub_agent: _StubAgent
+) -> None:
+    other_agent = _StubAgent(events=[{"result": _Result(_Output(value="other"))}])
+    agents = iter([stub_agent, other_agent])
+
+    def fake_build_agent(
+        config: AgentConfig, region_name: str, tools: list[Any] | None
+    ) -> _StubAgent:
+        return next(agents)
+
+    monkeypatch.setattr(factory, "build_agent", fake_build_agent)
+    captured: dict[str, Any] = {}
+
+    class _StubApp:
+        def entrypoint(self, fn: Any) -> Any:
+            captured["fn"] = fn
+            return fn
+
+    monkeypatch.setattr(factory, "BedrockAgentCoreApp", _StubApp)
+    factory.create_app(AgentName.DISTILL, _Output)
+    invocation = captured["fn"]
+
+    first, second = await asyncio.gather(
+        _drain(invocation({"prompt": "first"}, None)),
+        _drain(invocation({"prompt": "second"}, None)),
+    )
+
+    assert first == [{"result": {"value": "ok"}}]
+    assert second == [{"result": {"value": "other"}}]
+    assert stub_agent.calls == ["first"]
+    assert other_agent.calls == ["second"]
+
+
 async def test_voluntary_draft_succeeds_without_forcing_structured_output(
     voluntary_invoke: Any, stub_agent: _StubAgent
 ) -> None:
@@ -235,18 +269,6 @@ async def test_announces_a_tool_that_finished_while_the_model_was_silent(
 
     announced = next(i for i, event in enumerate(events) if "tool_call" in event)
     assert any(i > announced for i, event in enumerate(events) if "thinking" in event)
-
-
-async def test_resets_the_shared_agent_s_message_history_before_each_invocation(
-    invoke: Any, stub_agent: _StubAgent
-) -> None:
-    # `agent` is one shared instance across every invocation this container ever
-    # handles - a prior call's (or a different project's) history must not leak in.
-    stub_agent.messages = ["leftover from an unrelated project"]
-
-    await _drain(invoke({"prompt": "do the thing"}, None))
-
-    assert stub_agent.messages == []
 
 
 async def test_project_context_is_scoped_to_the_invocation(
@@ -412,6 +434,54 @@ async def test_announces_each_tool_once_when_no_free_text_is_produced(
                 "name": "score_completeness",
                 "status": "done",
                 "result": {"score": 1.0, "gaps": []},
+            }
+        },
+        {"result": {"value": "ok"}},
+    ]
+
+
+async def test_streams_partial_tool_results_under_the_original_call_id(
+    monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
+) -> None:
+    tool_use = {"toolUseId": "t1", "name": "snowflake_query"}
+    monkeypatch.setattr(
+        stub_agent,
+        "_events",
+        [
+            {"current_tool_use": tool_use},
+            {"tool_stream_event": {"tool_use": tool_use, "data": "first block"}},
+            {"tool_stream_event": {"tool_use": tool_use, "data": "first block\nsecond block"}},
+            _after_tool_call("t1", "snowflake_query", "first block\nsecond block"),
+            {"result": _Result(_Output(value="ok"))},
+        ],
+    )
+
+    events = await _drain(invoke({"prompt": "query Snowflake"}, None))
+
+    assert events == [
+        {"tool_call": {"id": "t1", "name": "snowflake_query", "status": "running"}},
+        {
+            "tool_call": {
+                "id": "t1",
+                "name": "snowflake_query",
+                "status": "running",
+                "result": "first block",
+            }
+        },
+        {
+            "tool_call": {
+                "id": "t1",
+                "name": "snowflake_query",
+                "status": "running",
+                "result": "first block\nsecond block",
+            }
+        },
+        {
+            "tool_call": {
+                "id": "t1",
+                "name": "snowflake_query",
+                "status": "done",
+                "result": "first block\nsecond block",
             }
         },
         {"result": {"value": "ok"}},

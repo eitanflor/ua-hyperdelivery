@@ -22,13 +22,14 @@ SDK all shipped. Stale docs are worse than absent ones, because people trust the
 uv sync --all-groups
 cp .env.example .env
 make hooks        # install pre-commit hooks, once
-make check        # the gate: format, lint, types, tests, infra, secrets, spelling
-make check-fix    # same, but auto-fixes the mechanical failures first
+make check        # fast local gate: format, lint, types, tests, secrets, spelling
+make check-full   # local gate plus the slower AWS infrastructure checks
+make check-fix    # fast gate, but auto-fixes the mechanical failures first
 ```
 
-`make check` runs [scripts/precheck.sh](scripts/precheck.sh), which is exactly what CI
-runs. If it is green locally it is green in CI. Do not add a check to CI without adding it
-to that script.
+`make check` runs the fast path in [scripts/precheck.sh](scripts/precheck.sh). CI runs the
+same script with `--ci`, which adds the AWS infrastructure gate; use `make check-full`
+before infrastructure changes. Do not add a check to CI without adding it to that script.
 
 Behind a TLS-inspecting corporate proxy, `uv` needs `UV_SYSTEM_CERTS=1` - see
 [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -60,10 +61,7 @@ builder. Do not collapse these two layers.
 
 **Imports are absolute from the `src/` root** (`from core.domain.project import Project`),
 because `src/` is on the path via `pythonpath`, not installed as a package. Relative
-imports are banned by lint. This also means `ui/` cannot import from `src/` - `streamlit
-run` does not put `src/` on the path - so the Streamlit harness deliberately duplicates a
-small amount of config. If that duplication grows, that is the signal to make `src/` a real
-installable package.
+imports are banned by lint.
 
 ## Conventions
 

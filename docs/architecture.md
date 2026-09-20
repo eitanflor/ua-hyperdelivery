@@ -3,14 +3,13 @@
 ## High-level
 
 Four independently-deployed agents, one per delivery gate, each running as its own
-AgentCore Runtime container. A client (Streamlit tester locally, or a future
-orchestrator/control plane) calls one agent at a time through the AgentCore Runtime HTTP
-contract; nothing here calls another agent directly today - handoff between gates is
-manual (a human moves the artifact from one gate to the next).
+AgentCore Runtime container. The Step Functions control plane calls one agent at a time
+through the AgentCore Runtime HTTP contract, with the console providing the human surface
+for each gated handoff.
 
 ```mermaid
 flowchart LR
-    client["Client\n(curl / Streamlit tester)"]
+    client["Console / Step Functions"]
 
     subgraph G1["Distill (G1)"]
         distill["Strands Agent\nFSD -> StructuredSpec"]
@@ -27,6 +26,7 @@ flowchart LR
 
     bedrock[("Amazon Bedrock\n(Claude)")]
     s3[("S3\nhyperdelivery-<env>-documents-<account>")]
+    snowflake[("Snowflake Cortex Agent")]
     atlassian[("Atlassian Cloud\nConfluence + Jira")]
     github[("GitHub\n(remote MCP server)")]
 
@@ -41,6 +41,7 @@ flowchart LR
     showroom --> bedrock
 
     distill -->|"s3_get_document_text, s3_list_reference_documents,\ns3_find_similar_reference_documents"| s3
+    distill -->|"snowflake_query (read-only)"| snowflake
     distill -->|"confluence_* (read-only)"| atlassian
     blueprint -->|"jira_* (issue lifecycle)"| atlassian
     blueprint -->|"repo scaffold + issues (no merge/delete)"| github
@@ -51,15 +52,20 @@ flowchart LR
     review -.->|"human clears gate"| showroom
 ```
 
-Strands owns each agent's own tool-use loop; there is no shared agent registry.
+Strands owns each agent's own tool-use loop; there is no shared agent registry. Each
+AgentCore invocation constructs a request-scoped Strands agent because one `Agent`
+instance rejects concurrent calls and carries mutable conversation, metrics, and hook
+state. Streaming tools yield native Strands tool events, which the runtime maps onto the
+same `tool_call` SSE contract as tool start and completion so local SSE and deployed
+WebSocket clients see progressive results without a separate transport. Snowflake uses
+`httpx.AsyncClient.stream`, so long Cortex waits do not occupy worker threads.
 
-## The control plane (Phase 2 - scaffolded, not deployed)
+## The control plane (Phase 2 - deployed in dev)
 
 Alongside the agents, a control plane sequences the line and holds it at each human
-approval. It is written and tested but not yet deployed: that is blocked on IAM, and the
-Lambda code assets still have no dependency bundling (TODO ADVA-3015). Until
-`STATE_MACHINE_ARN` is set, the console API falls back to DynamoDB-only writes with no
-execution to start or resume.
+approval. The dev environment runs the console API, Step Functions workflow, AgentCore
+runtimes, and a WebSocket API for live turn events. Local mode remains available when
+`STATE_MACHINE_ARN` is unset and uses the console API's SSE endpoint instead.
 
 Every resource - the state machine, the DynamoDB table, the S3 bucket, Bedrock/AgentCore
 Runtime - lives in a single region, `us-east-1` (the prior `ap-southeast-2`/`us-east-1`
@@ -80,7 +86,13 @@ flowchart LR
         auth["api/auth.py\nvalidates the bearer ID token\nagainst Entra's JWKS"]
         routes["api/routers/projects.py"]
         repo["infrastructure/repositories/\nProjectRepository"]
+        tickets["ConnectionsRepository\none-time stream tickets"]
         sfnclient["infrastructure/messaging/\nStateMachineClient"]
+    end
+
+    subgraph ws["API Gateway WebSocket"]
+        connect["$connect\nconsumes one-time ticket"]
+        connections[("connections table\nproject -> live connection IDs")]
     end
 
     subgraph orch["Step Functions (us-east-1)"]
@@ -97,9 +109,12 @@ flowchart LR
     ui <-->|"sign-in redirect"| entra
     ui -->|"fetch, Authorization: Bearer <ID token>"| auth --> routes
     routes --> repo --> ddb
+    routes -->|"mint 60s one-time ticket"| tickets --> connections
+    ui -->|"project ID + ticket"| connect --> connections
     routes -->|"start / send_task_success / send_task_failure"| sfnclient --> line
 
     line -->|"Task"| invoker --> agents
+    invoker -->|"stream chunks / tools / done"| connections --> ui
     line -->|"WAIT_FOR_TASK_TOKEN"| persist
     persist --> ddb
     persist --> sns --> human
@@ -110,6 +125,9 @@ Every `/projects/*` route is gated by `Depends(get_current_user)` at the router 
 frontend and backend share one Entra ID app registration (SPA platform type, no client
 secret, PKCE) - the frontend sends its ID token, the backend validates its signature,
 audience and issuer against Entra's JWKS rather than trusting a client-claimed identity.
+WebSocket handshakes use a separate one-time ticket because browser WebSockets cannot set
+that bearer header: an authenticated project route writes a random 60-second ticket, and
+the `$connect` Lambda atomically consumes it before registering the connection.
 `sdk/python/` predates this and does not yet attach a token - it is not a currently-used
 path for the console UI, which talks to the API directly over `fetch`.
 
@@ -189,14 +207,25 @@ flowchart TD
 
 | Agent | Deterministic validator tool | External tools | Output model |
 |---|---|---|---|
-| Distill | `track_plan`, `detect_fsd_template`, `score_template_coverage`, `extract_field_rules`, `validate_structured_spec`, `validate_rule_correlations`, `score_completeness` | `s3_get_document_text`, `s3_list_reference_documents`, `s3_find_similar_reference_documents` (semantic search over historical FSDs, see docs/decisions.md), Confluence MCP (read-only) | `StructuredSpec` |
-| Blueprint | `track_plan`, `validate_units_of_work`, `plan_delivery`, `score_blueprint_completeness` | Jira MCP (issue lifecycle), GitHub MCP (repo scaffold/brownfield-read + issues/PRs, no merge/delete/Copilot) | `Blueprint` |
-| Review | `track_plan`, `validate_review_report`, `validate_copilot_assignments`, `plan_delivery` | GitHub MCP (issues + `assign_copilot_to_issue`/`create_pull_request_with_copilot`, no repo/merge) | `ReviewReport` |
-| Showroom | `track_plan`, `validate_talk_track_coverage` | none | `DemoPackage` |
+| Distill | `track_plan`, `get_context`, `detect_fsd_template`, `score_template_coverage`, `extract_field_rules`, `submit_structured_spec`, `ask_clarifying_questions` | Local files; S3 document/reference retrieval; Confluence and Jira MCP (read-only); Snowflake (read-only) | `StructuredSpec` |
+| Blueprint | `track_plan`, `get_context`, `validate_units_of_work`, `plan_delivery`, `score_blueprint_completeness` | Jira MCP (issue lifecycle), GitHub MCP (repo scaffold/brownfield-read + issues/PRs, no merge/delete/Copilot) | `Blueprint` |
+| Review | `track_plan`, `get_context`, `validate_review_report`, `validate_copilot_assignments`, `plan_delivery` | GitHub MCP (issues + `assign_copilot_to_issue`/`create_pull_request_with_copilot`, no repo/merge) | `ReviewReport` |
+| Showroom | `track_plan`, `get_context`, `validate_talk_track_coverage` | none | `DemoPackage` |
+
+Agent validator tools are advisory. Both local and deployed entrypoints overwrite reported
+completeness with `core.validation.evaluate_artifact` before persistence or gate progression.
 
 `track_plan` is shared by every station: called first with the steps the agent intends to
 take and again as each finishes, it keeps a long turn from drifting and shows the human
 what is actually happening. It is stateless - the whole plan is passed on every call.
+
+`get_context` is also shared by every station. It reads a single global, system-wide
+standing note (repo, database, design system, conventions - see docs/decisions.md),
+stored via `ContextRepository` and edited from the console's `/context` page - not
+scoped to any one project. `_build_prompt` inlines it directly when short but only
+previews it above a length threshold, and this tool fetches the full text on demand -
+the same on-demand shape as `s3_get_document_text` for an uploaded document, so a
+page-long note isn't resent in full on every turn.
 
 `plan_delivery` is shared by Blueprint and Review. A unit of work is a unit of *review*;
 the unit of *shipping* is a delivery group, because a coding-agent session branches from

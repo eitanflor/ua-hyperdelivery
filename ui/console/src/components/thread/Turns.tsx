@@ -28,18 +28,38 @@ export function UserTurn({ text }: { text: string }) {
   );
 }
 
+/** "12s", "1m 04s" - never sub-second precision, nobody signing off on a gate cares. */
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}m ${seconds.toString().padStart(2, "0")}s` : `${seconds}s`;
+}
+
 /** What the turn cost, in the same mono register as the station number beside it.
  *
  * Accumulated across every model call the agent made, so a turn that looped through six
  * tool calls reads higher than the artifact alone would suggest - which is the point.
  * The breakdown names cached tokens separately because they are most of the total and
- * almost none of the cost: without them "8 in" against a six-figure total reads as a bug. */
-function TokenCount({ usage }: { usage: UsageEvent }) {
+ * almost none of the cost: without them "8 in" against a six-figure total reads as a bug.
+ * The tooltip also carries what the thread itself has no room for: how long the turn
+ * took and which model produced it. */
+function TokenCount({
+  usage,
+  durationMs,
+  model,
+}: {
+  usage: UsageEvent;
+  durationMs?: number;
+  model?: string;
+}) {
   const cached = usage.cache_read_tokens + usage.cache_write_tokens;
   const parts = [
     `${usage.input_tokens.toLocaleString()} in`,
     ...(cached > 0 ? [`${cached.toLocaleString()} cached`] : []),
     `${usage.output_tokens.toLocaleString()} out`,
+    ...(durationMs !== undefined ? [formatDuration(durationMs)] : []),
+    ...(model ? [model] : []),
   ];
   return (
     <Tooltip content={parts.join(" · ")}>
@@ -54,10 +74,12 @@ function Attribution({
   agent,
   state,
   usage,
+  durationMs,
 }: {
   agent: string;
   state?: "idle" | "working" | "done";
   usage?: UsageEvent;
+  durationMs?: number;
 }) {
   const meta = AGENT_META[agent];
   return (
@@ -65,7 +87,7 @@ function Attribution({
       <AgentAvatar agent={agent} state={state} />
       <span className="stencil text-2xs text-fg-muted">{meta?.name ?? agent}</span>
       {meta && <span className="tabular font-mono text-2xs text-fg-subtle">{meta.number}</span>}
-      {usage && <TokenCount usage={usage} />}
+      {usage && <TokenCount usage={usage} durationMs={durationMs} model={meta?.model} />}
     </div>
   );
 }
@@ -111,6 +133,7 @@ export function AgentTurn({
   text,
   toolCalls,
   usage,
+  durationMs,
   viewMode = "developer",
   onViewArtifact,
 }: {
@@ -119,6 +142,7 @@ export function AgentTurn({
   text?: string;
   toolCalls?: ToolCallEvent[];
   usage?: UsageEvent;
+  durationMs?: number;
   viewMode?: ViewMode;
   onViewArtifact: (agent: string) => void;
 }) {
@@ -131,7 +155,7 @@ export function AgentTurn({
   const isPm = viewMode === "pm";
   return (
     <div className="animate-rise">
-      <Attribution agent={agent} usage={usage} />
+      <Attribution agent={agent} usage={usage} durationMs={durationMs} />
       <div className="pl-9">
         {/* the tool-call trace is how the agent got there, not what it found - a PM
             reading for the outcome does not need every lookup it took along the way */}
@@ -335,14 +359,16 @@ function ToolCallGroup({ calls }: { calls: ToolCallEvent[] }) {
   );
 }
 
-/** One tool call: a bare row, no frame and no status label - the name is the whole
- * message, and a spinner is the only thing that needs to say "still going". Expands to
- * the raw result, which is worth having but never worth the space by default. */
+/** Render a compact, expandable tool call row. */
 function ToolCallRow({ toolCall }: { toolCall: ToolCallEvent }) {
   const [expanded, setExpanded] = useState(false);
   const running = toolCall.status === "running";
   const interrupted = toolCall.status === "interrupted";
   const label = toolCallLabel(toolCall.input);
+
+  useEffect(() => {
+    if (running && toolCall.result !== undefined) setExpanded(true);
+  }, [running, toolCall.result]);
 
   return (
     <div>
@@ -365,7 +391,7 @@ function ToolCallRow({ toolCall }: { toolCall: ToolCallEvent }) {
         {label && <span className="truncate font-mono text-fg-subtle">{label}</span>}
         {interrupted && <span className="shrink-0 text-fg-subtle">no result</span>}
       </button>
-      {expanded && !running && (
+      {expanded && (
         <div className="my-1 pl-4">
           <ToolCallResult result={toolCall.result} />
         </div>

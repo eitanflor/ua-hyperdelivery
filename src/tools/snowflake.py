@@ -7,12 +7,13 @@ them to narrow the agent to one schema (faster, safer); leave them unset and it 
 the whole account on its own, which is the point of using the Cortex Agent at all.
 """
 
+from collections.abc import AsyncGenerator
 from typing import Any
 
 from strands import tool
 
 from config.settings import get_settings
-from providers.storage.snowflake import SnowflakeCredentials, run_agent
+from providers.storage.snowflake import SnowflakeCredentials, stream_agent
 
 _BASE_INSTRUCTIONS = (
     "You are a read-only data-discovery assistant for Snowflake. When asked a question, "
@@ -30,7 +31,7 @@ def _system_instructions(database: str | None, schema: str | None) -> str:
 
 
 @tool
-def snowflake_query(question: str) -> str:
+async def snowflake_query(question: str) -> AsyncGenerator[str, None]:
     """Ask Snowflake's Cortex Coding Agent to find and return Snowflake data.
 
     Call this whenever the input *names* a Snowflake object - a table, view or schema -
@@ -53,7 +54,12 @@ def snowflake_query(question: str) -> str:
     system_instructions = _system_instructions(
         settings.snowflake_database, settings.snowflake_schema
     )
-    return run_agent(creds, question, system_instructions)
+    result = ""
+    async for block in stream_agent(creds, question, system_instructions):
+        result += block
+        yield result
+    if not result:
+        yield result
 
 
 def snowflake_tools() -> list[Any]:

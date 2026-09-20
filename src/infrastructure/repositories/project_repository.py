@@ -4,6 +4,7 @@ import json
 from typing import TYPE_CHECKING, Any
 
 import boto3
+from botocore.exceptions import ClientError
 
 from core.domain.project import (
     APPROVAL_STATIONS,
@@ -33,6 +34,10 @@ if TYPE_CHECKING:  # boto3-stubs is a dev-only dependency
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 
 
+class ProjectAlreadyExistsError(ValueError):
+    """Raised when a project creation would replace existing state."""
+
+
 class ProjectRepository:
     """DynamoDB-backed project state + decision audit trail.
 
@@ -59,7 +64,16 @@ class ProjectRepository:
         project = Project(
             id=project_id, name=name, station=Station.DISTILL, created_at=now, updated_at=now
         )
-        self._table.put_item(Item=self._state_item(project))
+        try:
+            self._table.put_item(
+                Item=self._state_item(project),
+                ConditionExpression="attribute_not_exists(pk)",
+            )
+        except ClientError as err:
+            if err.response.get("Error", {}).get("Code") != "ConditionalCheckFailedException":
+                raise
+            msg = f"project {project_id!r} already exists"
+            raise ProjectAlreadyExistsError(msg) from err
         return project
 
     def get_project(self, project_id: str) -> Project | None:
@@ -129,6 +143,13 @@ class ProjectRepository:
         project.task_token = None
         self._table.put_item(Item=self._state_item(project))
         return decision
+
+    def clear_pending_question(self, project_id: str) -> None:
+        """Release Distill's elicitation wait once the console API has resumed it."""
+        self._table.update_item(
+            Key={"pk": project_pk(project_id), "sk": STATE_SK},
+            UpdateExpression="REMOVE task_token, pending_question, gsi1pk, gsi1sk",
+        )
 
     def save_artifact(self, project_id: str, agent: str, content: dict[str, Any]) -> Artifact:
         """Persist an agent's structured output as a new version, and update the latest alias.
@@ -291,6 +312,9 @@ class ProjectRepository:
             name=item["name"],
             station=Station(item["station"]),
             task_token=item.get("task_token"),
+            pending_question=json.loads(item["pending_question"])
+            if item.get("pending_question")
+            else None,
             created_at=item["created_at"],
             updated_at=item["updated_at"],
         )

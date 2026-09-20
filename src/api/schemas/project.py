@@ -4,7 +4,7 @@ Separate from `core.domain.project` on purpose: the API contract can stay stable
 the domain model changes, and timestamps cross the wire as ISO strings.
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -21,6 +21,11 @@ class CreateProjectRequest(BaseModel):
 
     name: str | None = None
     message: str | None = None
+    # Lets a caller open a WebSocket connection for this project (and wait for it to
+    # actually connect) before the execution that will broadcast over it even starts -
+    # otherwise the two race, see docs/decisions.md. Server-generated when omitted, so
+    # existing callers (SDK, local mode) are unaffected.
+    id: str | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -29,6 +34,12 @@ class ProjectResponse(BaseModel):
     id: str
     name: str
     station: Station
+    # Set while Distill is waiting on an answer instead of drafting - see
+    # orchestration.persist_question. None the rest of the time.
+    pending_question: dict[str, Any] | None = None
+    # Tells the console UI which turn-advancing path to use - see
+    # api.routers.projects._orchestration_mode.
+    orchestration_mode: Literal["local", "deployed"]
     created_at: str
     updated_at: str
 
@@ -39,6 +50,18 @@ class DecisionRequest(BaseModel):
     approved: bool
     signer: str
     comment: str | None = None
+
+
+class AnswerRequest(BaseModel):
+    """Body for `POST /projects/{id}/answer`, resuming Distill's elicitation wait."""
+
+    answer: str
+
+
+class StreamTicketResponse(BaseModel):
+    """A short-lived, one-time credential for opening a project's WebSocket."""
+
+    ticket: str
 
 
 class RenameProjectRequest(BaseModel):

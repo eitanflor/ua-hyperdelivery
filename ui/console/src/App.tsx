@@ -10,6 +10,7 @@ import { TooltipProvider } from "./components/ui/Tooltip";
 import { Landing } from "./routes/Landing";
 import { Portfolio } from "./routes/Portfolio";
 import { Workspace } from "./routes/Workspace";
+import { Context } from "./routes/Context";
 import { useProjectsStore } from "./store/useProjectsStore";
 import { AuthGate } from "./auth/AuthGate";
 import { msalInstance } from "./auth/msalConfig";
@@ -71,6 +72,7 @@ function Shell() {
             <Route path="/" element={<Landing />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/projects/:projectId" element={<Workspace />} />
+            <Route path="/context" element={<Context />} />
             <Route path="*" element={<Landing />} />
           </Routes>
         </main>

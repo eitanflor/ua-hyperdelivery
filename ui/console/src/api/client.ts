@@ -1,8 +1,17 @@
-import type { Artifact, Builds, DecisionRequest, Project, Station } from "./types";
+import type { Artifact, Builds, DecisionRequest, GlobalContext, PreviewResponse, Project, Station } from "./types";
 import { getIdToken } from "../auth/idToken";
 
 const API_BASE_URL: string =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8090";
+
+// Unset in local dev (no deployed WebSocket API) - `openProjectStream` returns null in
+// that case and callers fall back to polling. See infra/stacks/orchestration_stack.py's
+// ConsoleWebSocketApi for the deployed side of this.
+const WEBSOCKET_URL: string | undefined = import.meta.env.VITE_WEBSOCKET_URL;
+
+// Bounds how long `openProjectStream` waits for the handshake to complete before giving
+// up and letting the caller fall back to polling.
+const WS_OPEN_TIMEOUT_MS = 5_000;
 
 export class ApiError extends Error {
   status: number;
@@ -104,8 +113,10 @@ async function* readSse(resp: Response): AsyncGenerator<AdvanceStreamEvent> {
 export const api = {
   // Either a name, or a message to generate one from (see the backend's ProjectNamer,
   // Claude Haiku) - the console UI's landing-page chatbox creates a project straight
-  // from a message with no name typed in.
-  createProject: (payload: { name?: string; message?: string }) =>
+  // from a message with no name typed in. `id`, if given, becomes the project's id
+  // instead of one generated server-side - see `createProjectFromMessage`, which opens
+  // this project's WebSocket connection before this call even exists.
+  createProject: (payload: { name?: string; message?: string; id?: string }) =>
     request<Project>("/projects", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -119,6 +130,14 @@ export const api = {
     request<Project>(`/projects/${projectId}`, {
       method: "PATCH",
       body: JSON.stringify({ name }),
+    }),
+
+  getContext: () => request<GlobalContext>("/context"),
+
+  setContext: (context: string) =>
+    request<GlobalContext>("/context", {
+      method: "PATCH",
+      body: JSON.stringify({ context }),
     }),
 
   deleteProject: async (projectId: string): Promise<void> => {
@@ -164,10 +183,27 @@ export const api = {
 
   listBuilds: (projectId: string) => request<Builds>(`/projects/${projectId}/builds`),
 
+  // Idempotent: safe to call again once already running, or when the backend has no
+  // PREVIEW_CHECKOUT_PATH configured - both come back as a normal (non-error) response.
+  startPreview: (projectId: string) =>
+    request<PreviewResponse>(`/projects/${projectId}/preview`, { method: "POST" }),
+
+  stopPreview: (projectId: string) =>
+    request<PreviewResponse>(`/projects/${projectId}/preview/stop`, { method: "POST" }),
+
   submitDecision: (projectId: string, decision: DecisionRequest) =>
     request<Project>(`/projects/${projectId}/decisions`, {
       method: "POST",
       body: JSON.stringify(decision),
+    }),
+
+  // Deployed-mode counterpart of the local advanceProject stream: answers Distill's
+  // pending_question via the state machine's task token instead of invoking an agent
+  // directly. 409s if no state machine is configured (see the backend's answer_question).
+  answerQuestion: (projectId: string, answer: string) =>
+    request<Project>(`/projects/${projectId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({ answer }),
     }),
 
   // Local-dev-only: invokes the current station's agent directly (no deployed Step
@@ -191,5 +227,47 @@ export const api = {
       throw new ApiError(resp.status, detail || resp.statusText);
     }
     yield* readSse(resp);
+  },
+
+  // The deployed-mode counterpart of the SSE stream above: the console API has no live
+  // connection to the state machine, so `agent_invoker` pushes each event straight to
+  // this WebSocket instead (see ConsoleWebSocketApi). Resolves only once the socket is
+  // actually open, not as soon as it's constructed - API Gateway's `$connect` route runs
+  // synchronously as part of the handshake, so an open socket is proof `agent_invoker`'s
+  // connections table already has this connection's row, and the caller can trigger the
+  // turn right after without racing it (no backend-side retry needed for that race).
+  // Resolves `null` if no WebSocket API is configured for this build, or if the handshake
+  // errors or doesn't complete within `WS_OPEN_TIMEOUT_MS`, so a caller can fall back to
+  // polling either way.
+  openProjectStream: async (projectId: string): Promise<WebSocket | null> => {
+    if (!WEBSOCKET_URL) return null;
+    const { ticket } = await request<{ ticket: string }>(`/projects/${projectId}/stream-ticket`, {
+      method: "POST",
+    });
+    const query = new URLSearchParams({ project_id: projectId, ticket });
+    const ws = new WebSocket(`${WEBSOCKET_URL}?${query}`);
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        cleanup();
+        ws.close();
+        resolve(null);
+      }, WS_OPEN_TIMEOUT_MS);
+      const cleanup = () => {
+        clearTimeout(timeout);
+        ws.removeEventListener("open", onOpen);
+        ws.removeEventListener("error", onError);
+      };
+      const onOpen = () => {
+        cleanup();
+        resolve(ws);
+      };
+      const onError = () => {
+        cleanup();
+        ws.close();
+        resolve(null);
+      };
+      ws.addEventListener("open", onOpen);
+      ws.addEventListener("error", onError);
+    });
   },
 };

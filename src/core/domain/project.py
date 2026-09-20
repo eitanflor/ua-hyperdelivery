@@ -96,6 +96,9 @@ class Project(BaseModel):
     name: str
     station: Station
     task_token: str | None = None  # set while paused at a waitForTaskToken approval
+    # Set while Distill is paused on `ask_clarifying_questions` instead of drafting - see
+    # orchestration.persist_question. `{"status": "questions"|"chat", ..., "prior_message"}`.
+    pending_question: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
 

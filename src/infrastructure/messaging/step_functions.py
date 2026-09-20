@@ -24,16 +24,28 @@ class StateMachineClient:
         self._state_machine_arn = state_machine_arn
         self._client = sfn_client or boto3.client("stepfunctions", region_name=region)
 
-    def start_execution(self, project_id: str) -> None:
-        """Kick off the line for a newly created project."""
+    def start_execution(self, project_id: str, message: str = "") -> None:
+        """Kick off the line for a newly created project.
+
+        `message` is the project's own brief (`CreateProjectRequest.message`) - without
+        it, Distill's task in the state machine has nothing but the project id to draft
+        from (see docs/decisions.md, "placeholder prompts").
+        """
         self._client.start_execution(
             stateMachineArn=self._state_machine_arn,
             name=project_id,
-            input=json.dumps({"project_id": project_id}),
+            input=json.dumps({"project_id": project_id, "message": message}),
         )
 
-    def send_task_success(self, task_token: str, output: dict[str, Any]) -> None:
-        """Release a paused approval wait so the execution advances."""
+    def send_task_success(self, task_token: str, output: dict[str, Any] | str) -> None:
+        """Release a paused wait so the execution advances.
+
+        `output` becomes the task's own result at whatever `result_path` the waiting
+        state used - a bare `str` (Distill's elicitation wait, `result_path="$.message"`)
+        must NOT be wrapped in a dict, or ASL's string formatting downstream stringifies
+        the wrapper object itself (`{message=...}`) instead of the text inside it - see
+        docs/decisions.md.
+        """
         self._client.send_task_success(taskToken=task_token, output=json.dumps(output))
 
     def send_task_failure(self, task_token: str, error: str) -> None:

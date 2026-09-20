@@ -12,6 +12,9 @@ ALL_PROJECTS_GSI2PK = "PROJECT"  # constant partition value - every STATE item c
 STATE_SK = "STATE"
 ARTIFACT_PREFIX = "ARTIFACT#"  # latest-only items; distinct from ARTIFACT_VERSION# below
 
+GLOBAL_PK = "GLOBAL"  # partition for system-wide, not-per-project items
+CONTEXT_SK = "CONTEXT"
+
 
 def project_pk(project_id: str) -> str:
     """Partition key for every item belonging to one project."""

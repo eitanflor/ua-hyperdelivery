@@ -11,6 +11,7 @@ import logging
 import shlex
 import socket
 import subprocess
+import threading
 import time
 from collections.abc import Callable
 from typing import NamedTuple, Protocol
@@ -19,8 +20,11 @@ logger = logging.getLogger(__name__)
 
 _PULL_TIMEOUT_SECONDS = 30.0
 _STOP_TIMEOUT_SECONDS = 30.0
-_HEALTH_TIMEOUT_SECONDS = 15.0
+# Generous: the target repo's preview script syncs dependencies before it opens a port,
+# and a cold `uv sync`/`npm install` can take longer than the servers themselves do to boot.
+_HEALTH_TIMEOUT_SECONDS = 90.0
 _HEALTH_POLL_SECONDS = 0.5
+_PREVIEW_LOCK = threading.Lock()
 
 
 class _CompletedProcess(Protocol):
@@ -82,10 +86,16 @@ def _port_open(port: int) -> bool:
     return False
 
 
+def _port_listening(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        return sock.connect_ex(("localhost", port)) == 0
+
+
 def start_preview(
     target: PreviewTarget,
     popen: _Popen = subprocess.Popen,
     port_open: _PortCheck = _port_open,
+    port_listening: _PortCheck = _port_listening,
 ) -> bool:
     """Start the target repo's preview script, detached, and wait for its ports to open.
 
@@ -94,18 +104,21 @@ def start_preview(
     no handle to stop it later. `stop_preview` re-invokes the script's own `stop` mode,
     which is what actually knows how to free the ports.
     """
-    try:
-        popen(
-            shlex.split(target.command),
-            cwd=target.path,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
-        )
-    except OSError:
-        logger.warning("could not start preview command %r in %s", target.command, target.path)
-        return False
-    return port_open(target.backend_port) and port_open(target.frontend_port)
+    with _PREVIEW_LOCK:
+        if port_listening(target.backend_port) and port_listening(target.frontend_port):
+            return True
+        try:
+            popen(
+                shlex.split(target.command),
+                cwd=target.path,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError:
+            logger.warning("could not start preview command %r in %s", target.command, target.path)
+            return False
+        return port_open(target.backend_port) and port_open(target.frontend_port)
 
 
 def stop_preview(path: str, command: str, run: _Runner = subprocess.run) -> None:

@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import { ArrowClockwiseIcon, ConfettiIcon } from "@phosphor-icons/react";
 import type { Artifact, Station } from "../../api/types";
 import { openQuestions } from "../../api/artifacts";
-import { useProjectsStore } from "../../store/useProjectsStore";
+import {
+  closeProjectSocket,
+  ensureProjectSocket,
+  useProjectsStore,
+} from "../../store/useProjectsStore";
 import { AGENT_STATIONS, PIPELINE, STATION_META, stationIndex } from "../../lib/pipeline";
 import { planSteps, questionsFromToolCalls } from "../../lib/plan";
 import { cn } from "../../lib/cn";
@@ -53,7 +57,20 @@ export function Thread({
   const retryFailedRun = useProjectsStore((s) => s.retryFailedRun);
   const builds = useProjectsStore((s) => s.buildsByProject[projectId]);
   const watchBuilds = useProjectsStore((s) => s.watchBuilds);
+  const preview = useProjectsStore((s) => s.previewByProject[projectId]);
+  const startPreview = useProjectsStore((s) => s.startPreview);
   const bottom = useRef<HTMLDivElement>(null);
+
+  // One connection for as long as this project's thread is on screen, not one per turn
+  // (see `ensureProjectSocket`) - a no-op in local mode/builds with no WebSocket API
+  // configured, since `api.openProjectStream` resolves `null` there. Adopts the
+  // connection `createProjectFromMessage` already started opening for a brand-new
+  // project rather than opening a second one.
+  useEffect(() => {
+    if (project?.orchestration_mode !== "deployed") return;
+    void ensureProjectSocket(projectId);
+    return () => closeProjectSocket(projectId);
+  }, [projectId, project?.orchestration_mode]);
 
   // polls only while this project's thread is on screen - a build that settles after the
   // tab closes is caught by the first poll on the way back in. Not once the project is
@@ -64,6 +81,13 @@ export function Thread({
     if (project?.station === "done") return;
     return watchBuilds(projectId);
   }, [projectId, project?.station, watchBuilds]);
+
+  // No click required: the backend already starts this on the G3 approval/merge path,
+  // but that's a fire-and-forget background task with nowhere to report success - this
+  // is the same idempotent call, made once the console can actually show the result.
+  useEffect(() => {
+    if (project?.station === "done") void startPreview(projectId);
+  }, [projectId, project?.station, startPreview]);
 
   const streamingTurn = conversation?.find((t) => t.streaming);
 
@@ -141,6 +165,37 @@ export function Thread({
                       Four stations cleared, both gates signed. The run of show is in the
                       artifacts panel.
                     </p>
+                    {preview && (
+                      <p className="mt-1.5 text-2xs text-fg-subtle">
+                        {preview.message}
+                        {preview.running && preview.frontend_url && (
+                          <>
+                            {" "}
+                            <a
+                              href={preview.frontend_url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="font-medium text-success underline hover:no-underline"
+                            >
+                              Open frontend
+                            </a>
+                          </>
+                        )}
+                        {preview.running && preview.backend_url && (
+                          <>
+                            {" · "}
+                            <a
+                              href={preview.backend_url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="font-medium text-success underline hover:no-underline"
+                            >
+                              Backend
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : null;
@@ -148,7 +203,9 @@ export function Thread({
 
             if (meta.kind === "gate") {
               if (project.station === station) {
-                return <GateConsole key={station} project={project} artifacts={artifacts} />;
+                return (
+                  <GateConsole key={station} project={project} artifacts={artifacts} builds={builds} />
+                );
               }
               if (index < currentIdx) {
                 return (
@@ -194,6 +251,7 @@ export function Thread({
                           text={turn.text}
                           toolCalls={turn.toolCalls}
                           usage={turn.usage}
+                          durationMs={turn.durationMs}
                           onViewArtifact={onViewArtifact}
                           viewMode={viewMode}
                         />

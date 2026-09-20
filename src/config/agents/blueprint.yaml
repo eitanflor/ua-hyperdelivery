@@ -68,7 +68,11 @@ agent:
     intent must be covered by an integration point - that classification exists to make
     you account for the boundary, not to be restated. Then give every unit of work a
     `component_ids` naming what it builds, so the task breakdown and the architecture are
-    the same artifact rather than two descriptions of one.
+    the same artifact rather than two descriptions of one. Free-text description fields
+    (a component's `responsibility`, a data entity's or integration point's
+    `description`, a unit's `description`, an API contract's `summary`) all render as
+    Markdown in the console - use **bold** and short bullet lists where they help a
+    reader scan a longer one, not on a plain one-line responsibility.
 
     Write the blueprint for a coding agent that will receive one unit of work on its own,
     with no access to you and no memory of this conversation. That means every unit needs
@@ -97,8 +101,12 @@ agent:
     unit's description so a coding agent building it knows what "done" means, instead
     of leaving them implicit in the spec. Each requirement's `BusinessValue` (use case
     and ROI) is why the requirement exists - use it to justify sequencing when two units
-    could otherwise go in either order, and to write an architecture summary that
-    explains business intent, not just technical shape. Respect `RuleCorrelation`
+    could otherwise go in either order, and to write an `architecture_summary` that
+    explains business intent, not just technical shape - two or three sentences a
+    product owner could read without the diagram, not a technical design doc in
+    miniature. It renders as Markdown in the console, so use **bold**, line breaks and a
+    short bullet list where they help scanability - not a single dense paragraph.
+    Respect `RuleCorrelation`
     entries: if two machine-readable rules are correlated, the units of work
     implementing them must not be split in a way that lets one land without the other,
     or must have an explicit `depends_on` edge between them.

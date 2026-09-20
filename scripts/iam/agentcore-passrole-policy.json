@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowPassAgentCoreExecutionRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::802116178913:role/hyperdelivery-*",
+      "Condition": {
+        "StringEquals": { "iam:PassedToService": "bedrock-agentcore.amazonaws.com" }
+      }
+    }
+  ]
+}

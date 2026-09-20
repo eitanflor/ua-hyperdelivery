@@ -63,8 +63,6 @@ export function QuestionPrompt({
                       );
                     })}
                   </div>
-                  {/* its own line, not inside the pill row - inline it read as a fourth,
-                      not clickable pill, and one user's mouse selected it trying to pick it */}
                   {question.multi_select && (
                     <p className="mt-1 text-2xs text-fg-subtle italic select-none">
                       Pick any that apply.

@@ -1,6 +1,8 @@
 import { CheckIcon, XIcon } from "@phosphor-icons/react";
 import { Badge } from "../ui/Badge";
 import { cn } from "../../lib/cn";
+import { Markdown } from "../../lib/markdown";
+import type { ViewMode } from "../../store/useProjectsStore";
 import {
   completeness,
   isSeverity,
@@ -159,7 +161,7 @@ export function CompletenessMeter({ content }: { content: Content }) {
   );
 }
 
-export function SpecView({ content }: { content: Content }) {
+export function SpecView({ content, viewMode }: { content: Content; viewMode: ViewMode }) {
   const requirements = list<Requirement>(content, "requirements");
   const criteria = list<GateCriterion>(content, "gate_criteria");
   const rules = list<MachineRule>(content, "rules");
@@ -187,12 +189,14 @@ export function SpecView({ content }: { content: Content }) {
     <div className="flex flex-col gap-5">
       <CompletenessMeter content={content} />
 
-      {criteria.length > 0 && (
+      {/* PM already sees gate criteria in GateConsole at sign-off - repeating them here
+          is developer-only detail, same as the sections below */}
+      {criteria.length > 0 && viewMode === "developer" && (
         <Section title="Gate criteria" count={criteria.length}>
           <ul className="divide-y divide-line-subtle">
             {criteria.map((c) => (
               <Row key={c.id} id={c.id}>
-                {c.description}
+                <Markdown text={c.description} />
               </Row>
             ))}
           </ul>
@@ -260,7 +264,7 @@ export function SpecView({ content }: { content: Content }) {
         </Section>
       )}
 
-      {rules.length > 0 && (
+      {rules.length > 0 && viewMode === "developer" && (
         <Section title="Machine-readable rules" count={rules.length}>
           <ul className="divide-y divide-line-subtle">
             {rules.map((rule) => (
@@ -272,12 +276,14 @@ export function SpecView({ content }: { content: Content }) {
         </Section>
       )}
 
-      {correlations.length > 0 && (
+      {correlations.length > 0 && viewMode === "developer" && (
         <Section title="Rule correlations" count={correlations.length}>
           <ul className="flex flex-col gap-2">
             {correlations.map((corr) => (
               <li key={corr.id} className="rounded-sm border border-line-subtle bg-surface p-3">
-                <p className="text-2xs leading-relaxed text-fg">{corr.description}</p>
+                <div className="text-2xs leading-relaxed text-fg">
+                  <Markdown text={corr.description} />
+                </div>
                 <p className="mt-1.5 flex flex-wrap gap-1">
                   {corr.rule_ids.map((ruleId) => (
                     <code
@@ -299,7 +305,7 @@ export function SpecView({ content }: { content: Content }) {
 }
 
 
-export function BlueprintView({ content }: { content: Content }) {
+export function BlueprintView({ content, viewMode }: { content: Content; viewMode: ViewMode }) {
   const units = list<UnitOfWork>(content, "units_of_work");
   const contracts = list<ApiContract>(content, "api_contracts");
   const components = list<Component>(content, "components");
@@ -313,26 +319,28 @@ export function BlueprintView({ content }: { content: Content }) {
     <div className="flex flex-col gap-5">
       {summary && (
         <Section title="Architecture">
-          <p className="text-xs leading-relaxed text-fg">{summary}</p>
+          <div className="text-xs leading-relaxed text-fg">
+            <Markdown text={summary} />
+          </div>
         </Section>
       )}
 
-      {components.length > 0 && (
+      {components.length > 0 && viewMode === "developer" && (
         <Section title="Components" count={components.length}>
           <ul className="flex flex-col gap-2">
             {components.map((component) => (
               <li key={component.id} className="rounded-sm border border-line-subtle bg-surface p-3">
                 <h4 className="text-xs font-medium text-fg">{component.name}</h4>
-                <p className="mt-1 text-2xs leading-relaxed text-fg-muted">
-                  {component.responsibility}
-                </p>
+                <div className="mt-1 text-2xs leading-relaxed text-fg-muted">
+                  <Markdown text={component.responsibility} />
+                </div>
               </li>
             ))}
           </ul>
         </Section>
       )}
 
-      {entities.length > 0 && (
+      {entities.length > 0 && viewMode === "developer" && (
         <Section title="Data model" count={entities.length}>
           <ul className="flex flex-col gap-2">
             {entities.map((entity) => (
@@ -343,7 +351,9 @@ export function BlueprintView({ content }: { content: Content }) {
                     {componentName.get(entity.component_id) ?? entity.component_id}
                   </span>
                 </div>
-                <p className="mt-1 text-2xs leading-relaxed text-fg-muted">{entity.description}</p>
+                <div className="mt-1 text-2xs leading-relaxed text-fg-muted">
+                  <Markdown text={entity.description} />
+                </div>
                 {(entity.fields ?? []).length > 0 && (
                   <ul className="mt-2 flex flex-col gap-0.5">
                     {(entity.fields ?? []).map((field) => (
@@ -363,7 +373,7 @@ export function BlueprintView({ content }: { content: Content }) {
         </Section>
       )}
 
-      {integrations.length > 0 && (
+      {integrations.length > 0 && viewMode === "developer" && (
         <Section title="Integration points" count={integrations.length}>
           <ul className="flex flex-col gap-2">
             {integrations.map((point) => (
@@ -372,14 +382,16 @@ export function BlueprintView({ content }: { content: Content }) {
                   <h4 className="text-xs font-medium text-fg">{point.system}</h4>
                   <Badge tone="info">{point.direction}</Badge>
                 </div>
-                <p className="mt-1 text-2xs leading-relaxed text-fg-muted">{point.description}</p>
+                <div className="mt-1 text-2xs leading-relaxed text-fg-muted">
+                  <Markdown text={point.description} />
+                </div>
               </li>
             ))}
           </ul>
         </Section>
       )}
 
-      {units.length > 0 && (
+      {units.length > 0 && viewMode === "developer" && (
         <Section title="Units of work" count={units.length}>
           <ol className="flex flex-col gap-2">
             {units.map((unit) => (
@@ -390,9 +402,9 @@ export function BlueprintView({ content }: { content: Content }) {
                   </code>
                   <h4 className="text-xs font-medium text-fg">{unit.title}</h4>
                 </div>
-                <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
-                  {unit.description}
-                </p>
+                <div className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
+                  <Markdown text={unit.description} />
+                </div>
                 {(unit.requirement_ids ?? []).length > 0 && (
                   // the edges the G2 gate scores coverage from - a unit with none of
                   // these counts as covering nothing, however good its description reads
@@ -461,9 +473,9 @@ export function BlueprintView({ content }: { content: Content }) {
                   <Badge tone="info">{contract.method}</Badge>
                   <code className="font-mono text-xs text-fg">{contract.path}</code>
                 </div>
-                <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
-                  {contract.summary}
-                </p>
+                <div className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
+                  <Markdown text={contract.summary} />
+                </div>
                 {contract.request_schema && (
                   <p className="mt-1 text-2xs text-fg-subtle">
                     <span className="text-fg-muted">Request</span> {contract.request_schema}
@@ -539,7 +551,9 @@ export function ReviewView({ content }: { content: Content }) {
                   <Badge tone={SEVERITY_TONE[f.severity]}>{f.severity}</Badge>
                   <code className="tabular font-mono text-2xs text-fg-subtle">{f.id}</code>
                 </div>
-                <p className="text-xs leading-relaxed text-fg">{f.description}</p>
+                <div className="text-xs leading-relaxed text-fg">
+                  <Markdown text={f.description} />
+                </div>
                 {(f.requirement_id ?? f.unit_id) && (
                   <p className="mt-1.5 flex gap-2 text-2xs text-fg-subtle">
                     {f.requirement_id && <span>violates {f.requirement_id}</span>}
@@ -586,7 +600,11 @@ export function ReviewView({ content }: { content: Content }) {
                 {a.pull_request_number != null && (
                   <span className="ml-2 tabular text-xs text-fg-muted">PR #{a.pull_request_number}</span>
                 )}
-                {a.note && <p className="mt-1.5 text-2xs leading-relaxed text-fg-muted">{a.note}</p>}
+                {a.note && (
+                  <div className="mt-1.5 text-2xs leading-relaxed text-fg-muted">
+                    <Markdown text={a.note} />
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -596,7 +614,7 @@ export function ReviewView({ content }: { content: Content }) {
   );
 }
 
-export function DemoView({ content }: { content: Content }) {
+export function DemoView({ content, viewMode }: { content: Content; viewMode: ViewMode }) {
   const summary = str(content, "summary");
   const talkTrack = list<TalkTrackSection>(content, "talk_track");
   const seeds = list<DemoSeed>(content, "demo_data");
@@ -605,11 +623,13 @@ export function DemoView({ content }: { content: Content }) {
     <div className="flex flex-col gap-5">
       {summary && (
         <Section title="Summary">
-          <p className="text-xs leading-relaxed text-fg">{summary}</p>
+          <div className="text-xs leading-relaxed text-fg">
+            <Markdown text={summary} />
+          </div>
         </Section>
       )}
 
-      {talkTrack.length > 0 && (
+      {talkTrack.length > 0 && viewMode === "developer" && (
         <Section title="Talk track" count={talkTrack.length}>
           <ol className="flex flex-col gap-3">
             {talkTrack.map((section, i) => (
@@ -621,7 +641,9 @@ export function DemoView({ content }: { content: Content }) {
                   <code className="tabular font-mono text-2xs text-fg-subtle">
                     {section.requirement_id}
                   </code>
-                  <p className="mt-0.5 text-xs leading-relaxed text-fg">{section.narration}</p>
+                  <div className="mt-0.5 text-xs leading-relaxed text-fg">
+                    <Markdown text={section.narration} />
+                  </div>
                 </div>
               </li>
             ))}
@@ -629,12 +651,12 @@ export function DemoView({ content }: { content: Content }) {
         </Section>
       )}
 
-      {seeds.length > 0 && (
+      {seeds.length > 0 && viewMode === "developer" && (
         <Section title="Seed data" count={seeds.length}>
           <ul className="divide-y divide-line-subtle">
             {seeds.map((seed) => (
               <Row key={seed.entity} id={seed.entity}>
-                {seed.description}
+                <Markdown text={seed.description} />
               </Row>
             ))}
           </ul>

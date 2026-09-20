@@ -3,7 +3,7 @@
 import re
 from typing import Any
 
-from strands import tool
+from strands import Agent, tool
 
 from core.domain.project import OpenQuestion
 from core.domain.spec import StructuredSpec
@@ -95,7 +95,7 @@ def score_template_coverage(template: str, sections: dict[str, str]) -> dict[str
     recognized a known template. A section counts as answered only if present and not
     just the Word template's own unfilled placeholder text (e.g. "Click here to enter
     text.", "Choose an item."). If `template` is "unknown", deterministic template
-    scoring does not apply - fall back to `score_completeness` instead of calling this.
+    scoring does not apply - do not call this.
     """
     anchors = _TEMPLATES.get(template, [])
     missing = [a for a in anchors if a not in sections]
@@ -114,8 +114,22 @@ def score_template_coverage(template: str, sections: dict[str, str]) -> dict[str
     }
 
 
+def _last_detected_fsd_text(agent: Agent) -> str | None:
+    """Return the `text` most recently passed to `detect_fsd_template` in this turn.
+
+    Lets `extract_field_rules` reuse that text instead of making the model retype the
+    whole FSD body a second time to call a second tool on the same document.
+    """
+    for message in reversed(agent.messages):
+        for block in message.get("content", []):
+            tool_use = block.get("toolUse")
+            if tool_use and tool_use.get("name") == "detect_fsd_template":
+                return tool_use.get("input", {}).get("text")
+    return None
+
+
 @tool
-def extract_field_rules(text: str) -> list[dict[str, str]]:
+def extract_field_rules(text: str | None = None, *, agent: Agent) -> list[dict[str, str]]:
     """Deterministically parse field-level constraints out of an FSD's prose.
 
     Recognizes three phrasings seen in real UA FSDs' "Error Handling Fields"-style
@@ -126,7 +140,14 @@ def extract_field_rules(text: str) -> list[dict[str, str]]:
     `MachineReadableRule` using the returned `rule` string verbatim, instead of inventing
     rule wording yourself. An empty result does not mean the FSD has no business rules,
     only that none were phrased this way - still look for others in the prose yourself.
+    Omit `text` if you already called `detect_fsd_template` on this document earlier in
+    this turn - this reuses that text instead of you retyping it.
     """
+    if text is None:
+        text = _last_detected_fsd_text(agent)
+        if text is None:
+            msg = "no `text` given and no prior `detect_fsd_template` call to reuse"
+            raise ValueError(msg)
     rules: list[dict[str, str]] = []
     for match in _MAX_VALUE_PATTERN.finditer(text):
         field = match["field"].strip()

@@ -11,7 +11,8 @@ read-only) lives in tools/snowflake.py.
 
 import json
 import ssl
-from collections.abc import Iterable
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import AbstractAsyncContextManager
 from typing import Any, NamedTuple, Protocol
 
 import httpx
@@ -36,39 +37,42 @@ class SnowflakeCredentials(NamedTuple):
     pat: str
 
 
-class _Response(Protocol):
+class _AsyncResponse(Protocol):
     """The subset of `httpx.Response` this client actually calls.
 
     Lets tests inject a plain fake instead of a real HTTP response.
     """
 
     status_code: int
-    text: str
 
-    def iter_lines(self) -> Iterable[str]: ...
+    async def aread(self) -> bytes: ...
 
-
-class _Client(Protocol):
-    """The subset of `httpx.Client` this client actually calls."""
-
-    def post(self, url: str, *, json: dict[str, Any], headers: dict[str, str]) -> _Response: ...
+    def aiter_lines(self) -> AsyncIterator[str]: ...
 
 
-def run_agent(
+class _AsyncClient(Protocol):
+    """The subset of `httpx.AsyncClient` this client actually calls."""
+
+    def stream(
+        self, method: str, url: str, *, json: dict[str, Any], headers: dict[str, str]
+    ) -> AbstractAsyncContextManager[_AsyncResponse]: ...
+
+    async def aclose(self) -> None: ...
+
+
+async def stream_agent(
     creds: SnowflakeCredentials,
     question: str,
     system_instructions: str,
-    client: _Client | None = None,
-) -> str:
-    """Ask Snowflake's Cortex Coding Agent a plain-language question and return its answer.
+    client: _AsyncClient | None = None,
+) -> AsyncGenerator[str, None]:
+    """Yield each assembled text block from Snowflake's Cortex Coding Agent.
 
-    Reads the agent's SSE response and concatenates each `response.text` event's text (the
-    fully-assembled text for one reasoning block, not the `response.text.delta` pieces it
-    was streamed from - taking both would duplicate every word). Sandbox provisioning plus
-    tool calls can take well over the default 5s httpx timeout, hence the generous one
-    below. Pass `client` to inject a fake in tests.
+    Reads only `response.text` events: each is the fully assembled text for one reasoning
+    block, unlike the `response.text.delta` pieces that precede it. Taking both would
+    duplicate every word. Pass `client` to inject a fake in tests.
     """
-    http = client or httpx.Client(
+    http = client or httpx.AsyncClient(
         verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT), timeout=_TIMEOUT_SECONDS
     )
     url = f"https://{creds.account}.snowflakecomputing.com{_AGENT_RUN_PATH}"
@@ -84,18 +88,32 @@ def run_agent(
         "tool_resources": {"code_toolset_all": {"permission_policy": {"type": "always_allow"}}},
     }
 
-    response = http.post(url, json=body, headers=headers)
-    if response.status_code >= _STATUS_ERROR_THRESHOLD:
-        detail = response.text[:_MAX_LOGGED_ERROR_CHARS]
-        msg = f"Snowflake Cortex Agent returned HTTP {response.status_code}: {detail}"
-        raise RuntimeError(msg)
+    try:
+        async with http.stream("POST", url, json=body, headers=headers) as response:
+            if response.status_code >= _STATUS_ERROR_THRESHOLD:
+                detail = (await response.aread()).decode()[:_MAX_LOGGED_ERROR_CHARS]
+                msg = f"Snowflake Cortex Agent returned HTTP {response.status_code}: {detail}"
+                raise RuntimeError(msg)
 
-    result = ""
-    event_type = ""
-    for line in response.iter_lines():
-        if line.startswith("event: "):
-            event_type = line[len("event: ") :]
-        elif line.startswith("data: ") and event_type == _TEXT_EVENT:
-            event = json.loads(line[len("data: ") :])
-            result += event.get("text", "")
-    return result
+            event_type = ""
+            async for line in response.aiter_lines():
+                if line.startswith("event: "):
+                    event_type = line[len("event: ") :]
+                elif line.startswith("data: ") and event_type == _TEXT_EVENT:
+                    event = json.loads(line[len("data: ") :])
+                    yield event.get("text", "")
+    finally:
+        if client is None:
+            await http.aclose()
+
+
+async def run_agent(
+    creds: SnowflakeCredentials,
+    question: str,
+    system_instructions: str,
+    client: _AsyncClient | None = None,
+) -> str:
+    """Ask Snowflake's Cortex Coding Agent and return its complete text answer."""
+    return "".join(
+        [block async for block in stream_agent(creds, question, system_instructions, client)]
+    )

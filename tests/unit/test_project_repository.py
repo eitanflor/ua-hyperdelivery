@@ -4,7 +4,10 @@ import pytest
 
 from core.domain.project import Station
 from fakes import loaded
-from infrastructure.repositories.project_repository import ProjectRepository
+from infrastructure.repositories.project_repository import (
+    ProjectAlreadyExistsError,
+    ProjectRepository,
+)
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
@@ -24,6 +27,15 @@ def test_create_project_starts_at_distill(repo: ProjectRepository) -> None:
 
     assert project.station == Station.DISTILL
     assert repo.get_project("p1") == project
+
+
+def test_create_project_does_not_overwrite_an_existing_project(repo: ProjectRepository) -> None:
+    original = repo.create_project("p1", "Original")
+
+    with pytest.raises(ProjectAlreadyExistsError, match="already exists"):
+        repo.create_project("p1", "Replacement")
+
+    assert repo.get_project("p1") == original
 
 
 def test_get_project_returns_none_when_missing(repo: ProjectRepository) -> None:

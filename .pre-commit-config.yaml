@@ -19,7 +19,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.5
+    rev: v0.16.4
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -43,4 +43,7 @@ repos:
     rev: v9.4.0
     hooks:
       - id: cspell
-        args: [--no-progress, --no-summary]
+        # `args` replaces the hook's own default args rather than merging with them, so
+        # `--no-must-find-files` must be restated here - without it, cspell exits 1 with
+        # no output at all if a staged path no longer exists (e.g. a deleted file).
+        args: [--no-must-find-files, --no-progress, --no-summary]

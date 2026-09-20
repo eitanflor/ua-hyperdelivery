@@ -32,13 +32,13 @@ def _client() -> tuple[StateMachineClient, _FakeSfnClient]:
 def test_start_execution_uses_project_id_as_execution_name() -> None:
     client, fake = _client()
 
-    client.start_execution("p1")
+    client.start_execution("p1", message="build a widget")
 
     name, kwargs = fake.calls[0]
     assert name == "start_execution"
     assert kwargs["stateMachineArn"] == "arn:aws:states:us-east-1:123:stateMachine:hd"
     assert kwargs["name"] == "p1"
-    assert kwargs["input"] == '{"project_id": "p1"}'
+    assert kwargs["input"] == '{"project_id": "p1", "message": "build a widget"}'
 
 
 def test_send_task_success_serializes_output() -> None:

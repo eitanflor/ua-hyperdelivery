@@ -26,6 +26,8 @@ export interface AgentMeta {
   role: string;
   /** What it hands to the next station, in the same language. */
   output: string;
+  /** Human-readable model name shown in the console. */
+  model: string;
   fg: string;
   bg: string;
 }
@@ -46,6 +48,7 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "scout",
     role: "Measures the brief: every requirement pinned down and cited, and an honest list of what is still missing.",
     output: "Scouting report",
+    model: "Claude Sonnet 5",
     fg: "text-distill",
     bg: "bg-distill-bg",
   },
@@ -55,6 +58,7 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "coach",
     role: "Turns the signed scouting report into the units of work that get built, and the order to build them in.",
     output: "Call sheet",
+    model: "Claude Sonnet 5",
     fg: "text-blueprint",
     bg: "bg-blueprint-bg",
   },
@@ -64,6 +68,7 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "ref",
     role: "Grades the build against the scouting report, calls what fails worst first, and can send a fix over to Copilot when asked.",
     output: "Grade sheet",
+    model: "Claude Sonnet 5",
     fg: "text-review",
     bg: "bg-review-bg",
   },
@@ -73,6 +78,7 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "host",
     role: "Sets up the walkthrough: a run of show and the seed data to demo the real thing with.",
     output: "Run of show",
+    model: "Claude Sonnet 5",
     fg: "text-showroom",
     bg: "bg-showroom-bg",
   },

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import {
+  CaretDownIcon,
+  CaretRightIcon,
   MagnifyingGlassIcon,
   PencilSimpleIcon,
   PlusIcon,
@@ -16,6 +18,12 @@ import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { cn } from "../../lib/cn";
 
 const GATES: Station[] = ["blueprint_approval", "review_approval", "showroom_approval"];
+
+// Rows per group before it collapses behind "N more" - keeps the rail's height bounded
+// regardless of how many projects accumulate in one bucket, Done especially.
+const VISIBLE_CAP = 6;
+
+// All three groups start folded to one summary row until asked open.
 
 interface Row {
   id: string;
@@ -70,6 +78,10 @@ export function ProjectRail({ open }: { open: boolean }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [confirming, setConfirming] = useState<Row | null>(null);
+  // Every group starts folded to one summary row - the rail opens on a glance at counts,
+  // not a scroll through every project.
+  const [openGroups, setOpenGroups] = useState<Partial<Record<Group, boolean>>>({});
+  const [expandedGroups, setExpandedGroups] = useState<Partial<Record<Group, boolean>>>({});
 
   useEffect(() => {
     for (const station of GATES) void loadPending(station);
@@ -95,6 +107,10 @@ export function ProjectRail({ open }: { open: boolean }) {
       done: matched.filter((r) => groupOf(r.station) === "done"),
     };
   }, [rows, filter]);
+
+  // A search is an explicit ask to see everything that matches - caps and the folded
+  // Done group would otherwise hide the very row the person typed to find.
+  const filtering = filter.trim().length > 0;
 
   const commitRename = async (row: Row) => {
     const name = editingName.trim();
@@ -140,16 +156,49 @@ export function ProjectRail({ open }: { open: boolean }) {
           </p>
         )}
 
-        {(["needsYou", "active", "done"] as const).map((group) =>
-          groups[group].length === 0 ? null : (
-            <section key={group} className="mb-4">
-              <h2 className="mb-1 flex items-center gap-1.5 px-1 text-2xs font-semibold tracking-wide text-fg-subtle uppercase">
+        {(["needsYou", "active", "done"] as const).map((group) => {
+          const list = groups[group];
+          if (list.length === 0) return null;
+
+          const open = openGroups[group] ?? false;
+
+          // Folded: just the count, one row tall, until the person asks to see it.
+          if (!open && !filtering) {
+            return (
+              <button
+                key={group}
+                type="button"
+                onClick={() => setOpenGroups((prev) => ({ ...prev, [group]: true }))}
+                className="mb-2 flex w-full items-center gap-1.5 rounded-sm px-1 py-1 text-2xs font-semibold tracking-wide text-fg-subtle uppercase transition-colors hover:text-fg-muted"
+              >
+                <CaretRightIcon className="size-3" />
                 {group === "needsYou" && <span className="size-1.5 rounded-full bg-accent" />}
                 {GROUP_LABEL[group]}
-                <span className="tabular">{groups[group].length}</span>
+                <span className="tabular">{list.length}</span>
+              </button>
+            );
+          }
+
+          const expanded = filtering || (expandedGroups[group] ?? false);
+          const visible = expanded ? list : list.slice(0, VISIBLE_CAP);
+          const hiddenCount = list.length - visible.length;
+
+          return (
+            <section key={group} className="mb-4">
+              <h2 className="mb-1 flex items-center gap-1.5 px-1 text-2xs font-semibold tracking-wide text-fg-subtle uppercase">
+                <button
+                  type="button"
+                  onClick={() => setOpenGroups((prev) => ({ ...prev, [group]: false }))}
+                  className="flex items-center gap-1.5 transition-colors hover:text-fg-muted"
+                >
+                  <CaretDownIcon className="size-3" />
+                  {group === "needsYou" && <span className="size-1.5 rounded-full bg-accent" />}
+                  {GROUP_LABEL[group]}
+                </button>
+                <span className="tabular">{list.length}</span>
               </h2>
               <ul className="flex flex-col gap-0.5">
-                {groups[group].map((row) => (
+                {visible.map((row) => (
                   <li key={row.id} className="group/row">
                     {editingId === row.id ? (
                       <input
@@ -202,9 +251,27 @@ export function ProjectRail({ open }: { open: boolean }) {
                   </li>
                 ))}
               </ul>
+              {hiddenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setExpandedGroups((prev) => ({ ...prev, [group]: true }))}
+                  className="mt-0.5 w-full rounded-sm px-2 py-1.5 text-left text-2xs text-fg-subtle transition-colors hover:bg-surface hover:text-fg-muted"
+                >
+                  +{hiddenCount} more
+                </button>
+              )}
+              {!filtering && (expandedGroups[group] ?? false) && list.length > VISIBLE_CAP && (
+                <button
+                  type="button"
+                  onClick={() => setExpandedGroups((prev) => ({ ...prev, [group]: false }))}
+                  className="mt-0.5 w-full rounded-sm px-2 py-1.5 text-left text-2xs text-fg-subtle transition-colors hover:bg-surface hover:text-fg-muted"
+                >
+                  Show less
+                </button>
+              )}
             </section>
-          ),
-        )}
+          );
+        })}
       </div>
 
       <ConfirmDialog

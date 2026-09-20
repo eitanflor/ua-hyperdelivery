@@ -102,8 +102,10 @@ def test_approval_persist_can_publish_notifications() -> None:
 def test_approval_wait_states_use_lambda_wait_for_task_token() -> None:
     definition = _state_machine_definition(_template())
     # DynamoDB service integrations don't support callback patterns - the three human
-    # approval waits must go through Lambda's waitForTaskToken instead.
-    assert definition.count("lambda:invoke.waitForTaskToken") == 3
+    # approval waits, plus Distill's elicitation wait (same wait-for-task-token shape,
+    # for "Distill needs an answer" instead of a gate decision), all go through Lambda's
+    # waitForTaskToken instead.
+    assert definition.count("lambda:invoke.waitForTaskToken") == 4
 
 
 def test_review_is_followed_by_a_human_gate_before_showroom() -> None:

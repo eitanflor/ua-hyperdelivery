@@ -4,7 +4,7 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncIterator
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from anyio.to_thread import run_sync
 from fastapi import (
@@ -23,6 +23,7 @@ from pydantic import ValidationError
 from api.auth import get_current_user
 from api.schemas.project import (
     AdvanceRequest,
+    AnswerRequest,
     ArtifactResponse,
     BuildResponse,
     BuildsResponse,
@@ -32,11 +33,13 @@ from api.schemas.project import (
     PreviewResponse,
     ProjectResponse,
     RenameProjectRequest,
+    StreamTicketResponse,
     UploadDocumentResponse,
 )
 from config.settings import get_settings
 from core.domain.project import AGENT_STATIONS, APPROVAL_STATIONS, Artifact, Project, Station
 from core.domain.review import ReviewReport
+from core.prompting import context_section
 from core.validation import evaluate_artifact
 from infrastructure.local_preview import (
     PreviewTarget,
@@ -44,7 +47,10 @@ from infrastructure.local_preview import (
     start_preview,
     stop_preview,
 )
-from infrastructure.repositories.project_repository import ProjectRepository
+from infrastructure.repositories.project_repository import (
+    ProjectAlreadyExistsError,
+    ProjectRepository,
+)
 from orchestration.project_namer import ProjectNamer, heuristic_name
 from providers.documents.parsing import SUPPORTED_EXTENSIONS
 from providers.github.merge import resolve_and_merge
@@ -55,11 +61,26 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(get_current_user)])
 
 
-def _to_response(project: Project) -> ProjectResponse:
+def _orchestration_mode(request: Request) -> Literal["local", "deployed"]:
+    """Which turn-advancing path the console UI should use for this deployment.
+
+    "local" means the console UI's `/advance/stream` composer flow works (no state
+    machine deployed); "deployed" means turns are driven by Step Functions instead, and
+    the frontend must poll + use `/answer` rather than expecting a live stream - see
+    docs/decisions.md, "console UI polling for the deployed orchestration path".
+    """
+    return "local" if request.app.state.state_machine_client is None else "deployed"
+
+
+def _to_response(
+    project: Project, orchestration_mode: Literal["local", "deployed"]
+) -> ProjectResponse:
     return ProjectResponse(
         id=project.id,
         name=project.name,
         station=project.station,
+        pending_question=project.pending_question,
+        orchestration_mode=orchestration_mode,
         created_at=project.created_at.isoformat(),
         updated_at=project.updated_at.isoformat(),
     )
@@ -95,6 +116,19 @@ def _merge_all_builds_or_fail(repo: ProjectRepository, project_id: str) -> None:
     if token is None:
         return
     secret = token.get_secret_value()
+    wip_builds = [
+        build.number
+        for build in report.builds
+        if (pull := read_pull_request(secret, report.repository, build.number)) is not None
+        and pull.state not in {"merged", "closed"}
+        and pull.title.lstrip().lower().startswith("[wip]")
+    ]
+    if wip_builds:
+        numbers = ", ".join(f"#{number}" for number in wip_builds)
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail=f"approval blocked - builds still in progress: {numbers}",
+        )
     failures = [
         f"PR #{build.number}: {result.message}"
         for build in report.builds
@@ -145,13 +179,21 @@ def _build_prompt(
     predecessors: dict[str, dict[str, Any]],
     previous_draft: dict[str, Any] | None,
     user_prompt: str,
+    context: str = "",
 ) -> str:
-    """Ground the agent in its predecessors' artifacts and in its own last draft.
+    """Ground the agent in the system's standing context, predecessors and last draft.
 
     Every invocation starts from an empty message list (see agent_runtime.factory), so a
     retry after an open gap would otherwise redraft from scratch instead of closing it.
+    `context` is whatever a human has written to the system-wide standing context - repo,
+    database, design system, conventions - and comes first since it applies regardless
+    of which predecessor artifacts exist yet; see `_context_section` for why it may be a
+    preview.
     """
-    sections = [
+    sections: list[str] = []
+    if (section := context_section(context)) is not None:
+        sections.append(section)
+    sections += [
         f"# {predecessor}'s output\n```json\n{json.dumps(content, indent=2)}\n```"
         for predecessor, content in predecessors.items()
     ]
@@ -185,6 +227,10 @@ def create_project(
     A message-only request gets an instant heuristic name so creation never blocks on the
     naming model call - the console UI navigates to the project immediately. The nicer
     AI-generated name is applied afterward, in the background, via `rename_project`.
+
+    Accepts a caller-supplied `id` (see `CreateProjectRequest`) so the console UI can open
+    this project's WebSocket connection before this call even starts the state machine
+    execution that will try to broadcast over it.
     """
     name = payload.name
     if not name:
@@ -194,8 +240,18 @@ def create_project(
             )
         name = heuristic_name(payload.message)
 
+    if payload.id is not None:
+        try:
+            uuid.UUID(payload.id)
+        except ValueError as err:
+            msg = "id must be a valid UUID"
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=msg) from err
+    project_id = payload.id or str(uuid.uuid4())
     repo = request.app.state.project_repository
-    project = repo.create_project(project_id=str(uuid.uuid4()), name=name)
+    try:
+        project = repo.create_project(project_id=project_id, name=name)
+    except ProjectAlreadyExistsError as err:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=str(err)) from err
     if payload.name is None and payload.message:
         background_tasks.add_task(
             _apply_generated_name,
@@ -205,8 +261,8 @@ def create_project(
             payload.message,
         )
     if (sfn := request.app.state.state_machine_client) is not None:
-        sfn.start_execution(project.id)
-    return _to_response(project)
+        sfn.start_execution(project.id, message=payload.message or "")
+    return _to_response(project, _orchestration_mode(request))
 
 
 def _apply_generated_name(
@@ -228,14 +284,16 @@ def _apply_generated_name(
 def list_pending(station: Station, request: Request) -> list[ProjectResponse]:
     """List the projects that owe a decision at `station`."""
     repo = request.app.state.project_repository
-    return [_to_response(p) for p in repo.list_pending(station)]
+    mode = _orchestration_mode(request)
+    return [_to_response(p, mode) for p in repo.list_pending(station)]
 
 
 @router.get("", response_model=list[ProjectResponse])
 def list_projects(request: Request) -> list[ProjectResponse]:
     """List every project, most recently updated first - backs the portfolio dashboard."""
     repo = request.app.state.project_repository
-    return [_to_response(p) for p in repo.list_projects()]
+    mode = _orchestration_mode(request)
+    return [_to_response(p, mode) for p in repo.list_projects()]
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
@@ -245,7 +303,24 @@ def get_project(project_id: str, request: Request) -> ProjectResponse:
     project = repo.get_project(project_id)
     if project is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
-    return _to_response(project)
+    return _to_response(project, _orchestration_mode(request))
+
+
+@router.post("/{project_id}/stream-ticket", response_model=StreamTicketResponse)
+def create_stream_ticket(project_id: str, request: Request) -> StreamTicketResponse:
+    """Mint a short-lived, one-time credential for a project stream.
+
+    The project may not exist yet: the landing page reserves a random project ID and
+    opens its stream before creating the project, so the first agent turn cannot race
+    the WebSocket handshake.
+    """
+    repo = request.app.state.connections_repository
+    if repo is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="live project streams are not configured",
+        )
+    return StreamTicketResponse(ticket=repo.issue_ticket(project_id))
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -269,7 +344,7 @@ def rename_project(
     if not name:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="name must not be empty")
     updated = repo.rename_project(project_id, name)
-    return _to_response(updated)
+    return _to_response(updated, _orchestration_mode(request))
 
 
 @router.get("/{project_id}/artifacts", response_model=list[ArtifactResponse])
@@ -465,7 +540,11 @@ def _auto_preview() -> None:
     start_preview(target)
 
 
-@router.post("/{project_id}/preview", response_model=PreviewResponse)
+@router.post(
+    "/{project_id}/preview",
+    response_model=PreviewResponse,
+    responses={409: {"description": "Local preview is not configured"}},
+)
 def preview_project(project_id: str, request: Request) -> PreviewResponse:
     """Pull the merged default branch locally and start the target repo's own preview script.
 
@@ -553,9 +632,14 @@ def advance_project(
 
     agent = project.station.value
     prompt = (payload.prompt if payload else None) or f"Project {project_id}"
-    predecessors = _predecessor_contents(repo, project_id, agent)
     previous = repo.get_artifact(project_id, agent)
-    prompt = _build_prompt(predecessors, previous.content if previous else None, prompt)
+    finished = _finish_if_requested(repo, project, agent, prompt, previous)
+    if finished is not None:
+        return _to_response(finished, _orchestration_mode(request))
+
+    predecessors = _predecessor_contents(repo, project_id, agent)
+    context = request.app.state.context_repository.get_context().context
+    prompt = _build_prompt(predecessors, previous.content if previous else None, prompt, context)
     raw_result = request.app.state.local_agent_client.invoke(
         agent, prompt=prompt, project_id=project_id
     )
@@ -563,16 +647,14 @@ def advance_project(
         # a valid outcome, not a failure: the agent chose not to draft anything this
         # turn (e.g. Distill only asked a clarifying question) - see LocalAgentClient.invoke.
         # Nothing to save or gate on, so the project sits exactly where it was.
-        return _to_response(project)
+        return _to_response(project, _orchestration_mode(request))
     result = _scored(raw_result, agent, predecessors)
     repo.save_artifact(project_id, agent, result)
 
-    # A station only advances once its deterministic verdict has no open gaps - the
-    # agent's own opinion of its draft was overwritten in `_scored` above.
-    if _is_incomplete(result):
-        return _to_response(project)
+    if not _advances(agent, result):
+        return _to_response(project, _orchestration_mode(request))
     updated = repo.advance_after_artifact(project_id, agent)
-    return _to_response(updated)
+    return _to_response(updated, _orchestration_mode(request))
 
 
 def _is_incomplete(result: dict[str, Any]) -> bool:
@@ -582,6 +664,68 @@ def _is_incomplete(result: dict[str, Any]) -> bool:
     completeness = cast("dict[str, Any]", raw_completeness)
     score = completeness.get("score")
     return bool(completeness.get("gaps")) or (isinstance(score, (int, float)) and score < 1.0)
+
+
+_FINISH_PHRASE = "project completed"
+
+
+def _is_finish_phrase(prompt: str) -> bool:
+    return prompt.strip().casefold() == _FINISH_PHRASE
+
+
+def _advances(agent: str, result: dict[str, Any]) -> bool:
+    """Whether a finished, gap-free draft should move the project to its next station.
+
+    True for every agent station except Showroom: unlike the others, its next station is
+    DONE (shipped) rather than a human approval gate, so completing its own deterministic
+    checklist can't be the thing that ships the project - that needs an explicit
+    `_is_finish_phrase` message instead (see `_finish_if_requested`).
+    """
+    return agent != Station.SHOWROOM.value and not _is_incomplete(result)
+
+
+def _finish_if_requested(
+    repo: ProjectRepository,
+    project: Project,
+    agent: str,
+    prompt: str,
+    previous: Artifact | None,
+) -> Project | None:
+    """Advances Showroom to DONE on an explicit "project completed" message.
+
+    `None` for every other station or prompt, so both `/advance` endpoints fall through
+    to their normal agent-invocation path unchanged. Raises if Showroom hasn't produced a
+    gap-free run of show yet, rather than silently invoking the agent on a phrase it was
+    never meant to see.
+    """
+    if project.station != Station.SHOWROOM or not _is_finish_phrase(prompt):
+        return None
+    if previous is None or _is_incomplete(previous.content):
+        detail = "Host hasn't produced a finished run of show yet"
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=detail)
+    return repo.advance_after_artifact(project.id, agent)
+
+
+def _finish_response_or_none(
+    repo: ProjectRepository,
+    project: Project,
+    agent: str,
+    prompt: str,
+    previous: Artifact | None,
+) -> StreamingResponse | None:
+    """SSE counterpart of `_finish_if_requested`, for `advance_project_stream`."""
+    finished = _finish_if_requested(repo, project, agent, prompt, previous)
+    if finished is None:
+        return None
+
+    async def finish_stream() -> AsyncIterator[str]:
+        # only ever reached via advance_project_stream, which 409s before this if a
+        # state machine exists - always "local" here, not worth threading request through.
+        yield _sse(
+            {"done": True, "project": _to_response(finished, "local").model_dump(mode="json")}
+        )
+
+    return StreamingResponse(finish_stream(), media_type="text/event-stream")
 
 
 def _sse(event: dict[str, Any]) -> str:
@@ -643,12 +787,16 @@ def _finish_turn(
     `result` is `None` when the agent chose not to draft anything this turn (e.g. a
     clarifying question) - a valid outcome, not a failure, so the project just stays put.
     """
+    # only ever reached via advance_project_stream, which 409s before this if a state
+    # machine exists - always "local" here, not worth threading request through.
     if result is None:
-        return {"done": True, "project": _to_response(project).model_dump(mode="json")}
+        return {"done": True, "project": _to_response(project, "local").model_dump(mode="json")}
     scored = _scored(result, agent, predecessors)
     repo.save_artifact(project.id, agent, scored)
-    updated = project if _is_incomplete(scored) else repo.advance_after_artifact(project.id, agent)
-    return {"done": True, "project": _to_response(updated).model_dump(mode="json")}
+    updated = (
+        repo.advance_after_artifact(project.id, agent) if _advances(agent, scored) else project
+    )
+    return {"done": True, "project": _to_response(updated, "local").model_dump(mode="json")}
 
 
 @router.post("/{project_id}/advance/stream")
@@ -680,9 +828,17 @@ def advance_project_stream(
 
     agent = project.station.value
     prompt = (payload.prompt if payload else None) or f"Project {project_id}"
-    predecessors = _predecessor_contents(repo, project_id, agent)
     previous = repo.get_artifact(project_id, agent)
-    prompt = _build_prompt(predecessors, previous.content if previous else None, prompt)
+    if (response := _finish_response_or_none(repo, project, agent, prompt, previous)) is not None:
+        return response
+
+    predecessors = _predecessor_contents(repo, project_id, agent)
+    prompt = _build_prompt(
+        predecessors,
+        previous.content if previous else None,
+        prompt,
+        request.app.state.context_repository.get_context().context,
+    )
     local_agent_client = request.app.state.local_agent_client
 
     async def event_stream() -> AsyncIterator[str]:
@@ -747,6 +903,63 @@ def advance_project_stream(
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
+def _next_distill_message(pending_question: dict[str, Any] | None, answer: str) -> str:
+    """Fold a human's answer into the conversation Distill's next turn is grounded in.
+
+    `pending_question["prior_message"]` is the full exchange so far (see
+    `orchestration.persist_question`) - without threading it forward, each round would
+    only ever carry the latest question, dropping everything answered before it.
+    """
+    if pending_question is None:
+        return answer
+    prior_message = pending_question.get("prior_message", "")
+    if pending_question.get("status") == "questions":
+        asked = "\n".join(f"- {q['question']}" for q in pending_question.get("questions", []))
+        exchange = f"You asked:\n{asked}\n\nMy answer: {answer}"
+    else:
+        exchange = f"You said: {pending_question.get('message', '')}\n\nMy reply: {answer}"
+    return f"{prior_message}\n\n{exchange}" if prior_message else exchange
+
+
+@router.post("/{project_id}/answer", response_model=ProjectResponse)
+def answer_question(project_id: str, payload: AnswerRequest, request: Request) -> ProjectResponse:
+    """Answer Distill's pending clarifying question(s) and resume the paused execution.
+
+    Only meaningful once a state machine is deployed - Distill's elicitation loop in
+    `infra/stacks/orchestration_stack.py` is what pauses on a task token in the first
+    place; the LOCAL-only `/advance` path just calls the agent again directly instead.
+    """
+    repo = request.app.state.project_repository
+    project = repo.get_project(project_id)
+    if project is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    if project.station != Station.DISTILL or project.task_token is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="project is not waiting on a Distill question",
+        )
+    sfn = request.app.state.state_machine_client
+    if sfn is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="not available without a state machine"
+        )
+
+    next_message = _next_distill_message(project.pending_question, payload.answer)
+    # A bare string, not {"message": next_message} - _elicitation_wait's
+    # result_path="$.message" puts this task's result directly at $.message, and
+    # _agent_task's prompt reads $.message as plain text, not as a wrapper object.
+    sfn.send_task_success(project.task_token, next_message)
+    repo.clear_pending_question(project_id)
+
+    updated = repo.get_project(project_id)
+    if updated is None:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="project missing after answering",
+        )
+    return _to_response(updated, _orchestration_mode(request))
+
+
 @router.post("/{project_id}/decisions", response_model=ProjectResponse)
 def submit_decision(
     project_id: str, payload: DecisionRequest, request: Request, background_tasks: BackgroundTasks
@@ -793,4 +1006,4 @@ def submit_decision(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="project missing after recording decision",
         )
-    return _to_response(updated)
+    return _to_response(updated, _orchestration_mode(request))

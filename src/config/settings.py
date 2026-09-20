@@ -6,6 +6,8 @@ from pathlib import Path
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from core.constants import Environment
+
 # resolve relative to the repo root, not cwd - `make dev-*` runs with cwd=src/
 _ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
 
@@ -21,7 +23,9 @@ class Settings(BaseSettings):
     # that aren't declared as fields below.
     model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 
-    environment: str = "local"
+    # Drives api/main.py's orchestration wiring: LOCAL always uses LocalAgentClient;
+    # DEV/PROD always require STATE_MACHINE_ARN and use the real Step Functions path.
+    environment: Environment = Environment.LOCAL
     log_level: str = "INFO"
     aws_region: str = "us-east-1"
     port: int = 8080
@@ -53,6 +57,9 @@ class Settings(BaseSettings):
     # ap-southeast-2 split is gone, see docs/decisions.md, 'Consolidate all AWS
     # resources into us-east-1'.
     projects_table: str = "hyperdelivery-dev-projects"
+    # WebSocket connection/ticket table. Unset in local mode, where the console uses
+    # the API's SSE endpoint instead of API Gateway WebSockets.
+    connections_table: str | None = None
     # None until the state machine is deployed (blocked on IAM) - console API falls back
     # to DynamoDB-only writes with no execution to start/resume.
     state_machine_arn: str | None = None

@@ -22,3 +22,11 @@ htmlcov/
 # cdk (infra/ has its own package.json + synth output)
 cdk.out/
 node_modules/
+
+# Corporate TLS-inspection CA certs (network-specific, generated locally)
+certs/*.crt
+!certs/.gitkeep
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+src/requirements-lambda.txt

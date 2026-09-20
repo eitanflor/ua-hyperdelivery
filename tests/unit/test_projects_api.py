@@ -13,6 +13,7 @@ from api.main import create_app
 from core.domain.project import Station
 from fakes import FakeStateMachineClient, FakeTable, complete_spec_content, loaded
 from infrastructure.local_preview import PreviewTarget, PullResult
+from infrastructure.repositories.context_repository import ContextRepository
 from infrastructure.repositories.project_repository import ProjectRepository
 from providers.github.merge import MergeResult
 from providers.github.pull_requests import PullRequestState
@@ -72,6 +73,15 @@ class _FakeLocalAgentClient:
         yield {"result": self._next_result()}
 
 
+class _FakeConnectionsRepository:
+    def __init__(self) -> None:
+        self.projects: list[str] = []
+
+    def issue_ticket(self, project_id: str) -> str:
+        self.projects.append(project_id)
+        return "ticket-123"
+
+
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     # avoid create_app() reaching for real AWS credentials/table during app construction
@@ -84,6 +94,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
         self.__dict__["_table"] = FakeTable()
 
     monkeypatch.setattr(ProjectRepository, "__init__", fake_init)
+    monkeypatch.setattr(ContextRepository, "__init__", fake_init)
     app = create_app()
     app.state.state_machine_client = FakeStateMachineClient()
     # sign-in is exercised separately in test_auth.py - everything else assumes an
@@ -100,6 +111,45 @@ def test_create_and_get_project(client: TestClient) -> None:
 
     fetched = client.get(f"/projects/{created['id']}").json()
     assert fetched == created
+
+
+def test_orchestration_mode_is_deployed_when_a_state_machine_is_configured(
+    client: TestClient,
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    assert created["orchestration_mode"] == "deployed"
+
+
+def test_orchestration_mode_is_local_when_no_state_machine_is_configured(
+    client: TestClient,
+) -> None:
+    _state(client).state_machine_client = None
+
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    assert created["orchestration_mode"] == "local"
+
+
+def test_stream_ticket_can_be_issued_before_project_creation(client: TestClient) -> None:
+    repo = _FakeConnectionsRepository()
+    _state(client).connections_repository = repo
+
+    response = client.post("/projects/reserved-project-id/stream-ticket")
+
+    assert response.status_code == 200
+    assert response.json() == {"ticket": "ticket-123"}
+    assert repo.projects == ["reserved-project-id"]
+
+
+def test_stream_ticket_is_unavailable_without_websocket_infrastructure(
+    client: TestClient,
+) -> None:
+    _state(client).connections_repository = None
+
+    response = client.post("/projects/project-1/stream-ticket")
+
+    assert response.status_code == 409
 
 
 def test_list_projects_returns_every_project(client: TestClient) -> None:
@@ -157,6 +207,37 @@ def test_create_project_generates_a_name_from_a_message_when_no_name_given(
 
 def test_create_project_400s_when_neither_name_nor_message_given(client: TestClient) -> None:
     resp = client.post("/projects", json={})
+
+    assert resp.status_code == 400
+
+
+def test_create_project_uses_a_caller_supplied_id(client: TestClient) -> None:
+    # Lets the console UI open this project's WebSocket connection - and wait for it to
+    # actually connect - before this call starts the state machine execution that will
+    # try to broadcast over it. See docs/decisions.md.
+    given_id = "11111111-1111-1111-1111-111111111111"
+
+    resp = client.post("/projects", json={"name": "My Project", "id": given_id})
+
+    assert resp.status_code == 201
+    assert resp.json()["id"] == given_id
+
+
+def test_create_project_409s_without_overwriting_a_caller_supplied_id(
+    client: TestClient,
+) -> None:
+    given_id = "11111111-1111-1111-1111-111111111111"
+    first = client.post("/projects", json={"name": "Original", "id": given_id})
+
+    duplicate = client.post("/projects", json={"name": "Replacement", "id": given_id})
+
+    assert first.status_code == 201
+    assert duplicate.status_code == 409
+    assert client.get(f"/projects/{given_id}").json()["name"] == "Original"
+
+
+def test_create_project_400s_on_a_malformed_caller_supplied_id(client: TestClient) -> None:
+    resp = client.post("/projects", json={"name": "My Project", "id": "not-a-uuid"})
 
     assert resp.status_code == 400
 
@@ -240,7 +321,7 @@ def test_create_project_starts_a_state_machine_execution(client: TestClient) -> 
     created = client.post("/projects", json={"name": "My Project"}).json()
 
     sfn: FakeStateMachineClient = _state(client).state_machine_client
-    assert sfn.calls == [("start_execution", (created["id"],))]
+    assert sfn.calls == [("start_execution", (created["id"], ""))]
 
 
 def test_approved_decision_resumes_execution_via_task_token(client: TestClient) -> None:
@@ -275,6 +356,53 @@ def test_rejected_decision_fails_execution_via_task_token(client: TestClient) ->
 
     sfn: FakeStateMachineClient = _state(client).state_machine_client
     assert ("send_task_failure", ("token-123", "Rejected")) in sfn.calls
+
+
+def test_answer_resumes_execution_and_folds_the_answer_into_the_next_message(
+    client: TestClient,
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    project = loaded(repo.get_project(created["id"]))
+    project.task_token = "token-456"
+    item = repo._state_item(project)
+    item["pending_question"] = json.dumps(
+        {
+            "status": "questions",
+            "questions": [{"id": "q1", "question": "Who approves expenses?"}],
+            "prior_message": "the original brief",
+        }
+    )
+    repo._table.put_item(Item=item)
+
+    resp = client.post(f"/projects/{created['id']}/answer", json={"answer": "The finance team"})
+
+    assert resp.status_code == 200
+    sfn: FakeStateMachineClient = _state(client).state_machine_client
+    name, (token, output) = sfn.calls[-1]
+    assert name == "send_task_success"
+    assert token == "token-456"
+    # A bare string, not {"message": ...} - result_path="$.message" would otherwise put
+    # the wrapper object at $.message, and Distill's next prompt would be its ASL
+    # string-formatted stringification instead of the text itself (see docs/decisions.md).
+    assert isinstance(output, str)
+    assert "the original brief" in output
+    assert "Who approves expenses?" in output
+    assert "The finance team" in output
+    # The wait is released, not just resumed - FakeTable.update_item only records the
+    # call rather than applying it (see fakes.py), so assert on the call itself.
+    assert any(
+        call.get("UpdateExpression", "").startswith("REMOVE")
+        for call in cast(FakeTable, repo._table).update_calls
+    )
+
+
+def test_answer_rejects_a_project_not_waiting_on_a_question(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/answer", json={"answer": "sure"})
+
+    assert resp.status_code == 409
 
 
 def test_get_artifact_404_when_missing(client: TestClient) -> None:
@@ -449,6 +577,36 @@ def test_advance_prepends_the_predecessor_artifact_as_context(client: TestClient
     assert prompt.endswith("Blueprint may begin.")
 
 
+def test_advance_inlines_short_standing_context_in_the_prompt(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient({"title": "FSD"})
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    _state(client).context_repository.set_context("Repo: org/repo. DB: Postgres on RDS.", "rahul")
+
+    resp = client.post(f"/projects/{created['id']}/advance", json={"prompt": "go"})
+
+    assert resp.status_code == 200
+    _, prompt = fake_agent.calls[0]
+    assert "# standing context\nRepo: org/repo. DB: Postgres on RDS." in prompt
+
+
+def test_advance_only_previews_long_standing_context_in_the_prompt(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient({"title": "FSD"})
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    long_context = "x" * 5_000
+    _state(client).context_repository.set_context(long_context, "rahul")
+
+    resp = client.post(f"/projects/{created['id']}/advance", json={"prompt": "go"})
+
+    assert resp.status_code == 200
+    _, prompt = fake_agent.calls[0]
+    assert long_context not in prompt
+    assert "get_context" in prompt
+
+
 def test_advance_stays_at_the_same_station_when_gaps_are_flagged(client: TestClient) -> None:
     _state(client).state_machine_client = None
     incomplete = complete_spec_content()
@@ -500,6 +658,93 @@ def test_advance_supports_multiple_turns_until_gaps_are_resolved(client: TestCli
     assert len(fake_agent.calls) == 2
     # the retry turn is grounded in the draft it has to fix, not started from scratch
     assert "your previous draft" in fake_agent.calls[1][1]
+
+
+def _at_showroom(repo: ProjectRepository, project_id: str) -> None:
+    project = loaded(repo.get_project(project_id))
+    project.station = Station.SHOWROOM
+    repo._table.put_item(Item=repo._state_item(project))
+
+
+def _complete_demo_package() -> dict[str, Any]:
+    """A DemoPackage that scores 1.0 against `complete_spec_content()`'s single R1."""
+    return {
+        "title": "Demo",
+        "summary": "Walks through password reset",
+        "demo_data": [{"entity": "User", "description": "a sample user"}],
+        "talk_track": [{"requirement_id": "R1", "narration": "here it is"}],
+        "completeness": {"score": 1.0, "gaps": []},
+    }
+
+
+def test_advance_stays_at_showroom_even_once_the_run_of_show_is_complete(
+    client: TestClient,
+) -> None:
+    # Showroom's next station is DONE (shipped), not another approval gate, so its own
+    # deterministic score being gap-free can't be what ships the project on its own.
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient(_complete_demo_package())
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "distill", complete_spec_content())
+    _at_showroom(repo, created["id"])
+
+    resp = client.post(f"/projects/{created['id']}/advance", json={"prompt": "Host may begin."})
+
+    assert resp.status_code == 200
+    assert resp.json()["station"] == Station.SHOWROOM.value
+    artifact = client.get(f"/projects/{created['id']}/artifacts/showroom").json()
+    assert artifact["content"]["completeness"] == {"score": 1.0, "gaps": [], "questions": []}
+
+
+def test_advance_project_completed_ships_a_finished_run_of_show(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    fake_agent = _FakeLocalAgentClient(_complete_demo_package())
+    _state(client).local_agent_client = fake_agent
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "distill", complete_spec_content())
+    repo.save_artifact(created["id"], "showroom", _complete_demo_package())
+    _at_showroom(repo, created["id"])
+
+    resp = client.post(f"/projects/{created['id']}/advance", json={"prompt": "project completed"})
+
+    assert resp.status_code == 200
+    assert resp.json()["station"] == Station.DONE.value
+    # the phrase itself never reaches the agent - there's nothing left for it to draft
+    assert fake_agent.calls == []
+
+
+def test_advance_project_completed_is_case_and_whitespace_insensitive(
+    client: TestClient,
+) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FakeLocalAgentClient()
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "distill", complete_spec_content())
+    repo.save_artifact(created["id"], "showroom", _complete_demo_package())
+    _at_showroom(repo, created["id"])
+
+    resp = client.post(
+        f"/projects/{created['id']}/advance", json={"prompt": "  Project Completed  "}
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["station"] == Station.DONE.value
+
+
+def test_advance_project_completed_409s_without_a_finished_run_of_show(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FakeLocalAgentClient()
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    _at_showroom(repo, created["id"])
+
+    resp = client.post(f"/projects/{created['id']}/advance", json={"prompt": "project completed"})
+
+    assert resp.status_code == 409
 
 
 def test_advance_409s_when_a_state_machine_is_configured(client: TestClient) -> None:
@@ -983,6 +1228,12 @@ def test_g3_approval_merges_every_recorded_build_before_completing(
         calls.append(number)
         return MergeResult(merged=True, sha="abc123", message="merged")
 
+    def _ready_pull_request(_token: str, _repository: str, number: int) -> PullRequestState:
+        return PullRequestState(
+            number, "open", "passing", False, "Ready", "https://example.com/pr/7"
+        )
+
+    monkeypatch.setattr("api.routers.projects.read_pull_request", _ready_pull_request)
     monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merge_and_record)
 
     resp = client.post(
@@ -993,6 +1244,43 @@ def test_g3_approval_merges_every_recorded_build_before_completing(
     assert resp.status_code == 200
     assert resp.json()["station"] == Station.SHOWROOM.value
     assert calls == [7]
+
+
+def test_g3_approval_is_blocked_while_a_build_is_wip(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "review", _review_with_build())
+    _at_showroom_approval(repo, created["id"])
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(github_pat=SecretStr("token"), preview_checkout_path=None),
+    )
+
+    def _wip_pull_request(_token: str, _repository: str, number: int) -> PullRequestState:
+        return PullRequestState(
+            number, "open", "pending", False, "[WIP] Building", "https://example.com/pr/7"
+        )
+
+    monkeypatch.setattr("api.routers.projects.read_pull_request", _wip_pull_request)
+    merge_calls: list[int] = []
+
+    def _merge(_token: str, _repository: str, number: int) -> MergeResult:
+        merge_calls.append(number)
+        return MergeResult(merged=True, sha="abc123", message="merged")
+
+    monkeypatch.setattr("api.routers.projects.resolve_and_merge", _merge)
+
+    resp = client.post(
+        f"/projects/{created['id']}/decisions",
+        json={"approved": True, "signer": "rahul"},
+    )
+
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "approval blocked - builds still in progress: #7"
+    assert merge_calls == []
+    assert loaded(repo.get_project(created["id"])).station == Station.SHOWROOM_APPROVAL
 
 
 def test_g3_approval_is_blocked_when_a_build_has_a_real_conflict(
