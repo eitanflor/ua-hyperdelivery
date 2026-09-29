@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
+  CaretDownIcon,
+  CaretUpIcon,
   ChatCircleDotsIcon,
   KanbanIcon,
   LockSimpleIcon,
@@ -15,6 +17,7 @@ import type { Project, Station } from "../api/types";
 import { cn } from "../lib/cn";
 import { timeAgo } from "../lib/time";
 import { Artwork } from "../components/art/Artwork";
+import { Button } from "../components/ui/Button";
 
 const LAST_STATION_INDEX = PIPELINE.length - 1;
 
@@ -42,6 +45,27 @@ function isTab(value: string | null): value is Tab {
 }
 
 const IDLE_DAYS = 7;
+
+type SortKey = "updated" | "name" | "stage";
+
+const SORT_LABEL: Record<SortKey, string> = {
+  updated: "Updated",
+  name: "Project",
+  stage: "Stage",
+};
+
+/** The direction a column starts in when first chosen: newest first, but A-Z and line order. */
+const DEFAULT_DIR: Record<SortKey, "asc" | "desc"> = { updated: "desc", name: "asc", stage: "asc" };
+
+function isSortKey(value: string | null): value is SortKey {
+  return value !== null && value in SORT_LABEL;
+}
+
+function compareBy(key: SortKey, a: Project, b: Project): number {
+  if (key === "name") return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  if (key === "stage") return stationIndex(a.station) - stationIndex(b.station);
+  return a.updated_at.localeCompare(b.updated_at);
+}
 
 /** Days since a crew stage last moved, when that is long enough to be worth saying - a
  * project at a gate is waiting on a person, which the gate already says. */
@@ -100,16 +124,57 @@ function ProgressBar({ station }: { station: Station }) {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="rounded-md border border-line-subtle bg-surface p-4">
-      <div className="stencil text-2xl text-fg">{value}</div>
+      <div className="stencil text-2xl text-fg">
+        {value ?? <span className="inline-block h-7 w-10 animate-pulse rounded-sm bg-sunken align-middle" />}
+      </div>
       <div className="mt-1 text-2xs tracking-wide text-fg-subtle uppercase">{label}</div>
     </div>
   );
 }
 
 const BOARD_CAP = 30;
+
+/** A column header that sorts the table: a real button, with the state on the `th`. */
+function SortHeader({
+  sortKey,
+  label,
+  active,
+  dir,
+  onSort,
+}: {
+  sortKey: SortKey;
+  label: string;
+  active: SortKey;
+  dir: "asc" | "desc";
+  onSort: (key: SortKey) => void;
+}) {
+  const on = active === sortKey;
+  const Caret = dir === "asc" ? CaretUpIcon : CaretDownIcon;
+  return (
+    <th
+      aria-sort={on ? (dir === "asc" ? "ascending" : "descending") : "none"}
+      className="px-3 py-2 font-medium"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={cn(
+          "-mx-1 inline-flex items-center gap-1 rounded-sm px-1 uppercase transition-colors hover:text-fg",
+          on && "text-fg",
+        )}
+      >
+        {label}
+        <Caret weight="bold" className={cn("size-2.5", !on && "opacity-0")} />
+      </button>
+    </th>
+  );
+}
+
+/** Table rows shown before "Show more" - hundreds of rows at once cost more than they tell. */
+const ROW_STEP = 40;
 
 /** The whole line at a glance: one column per stage, a card per project. Gate columns are
  * tinted, because a project there is waiting on a person rather than the crew. */
@@ -180,13 +245,16 @@ export function Portfolio() {
   const navigate = useNavigate();
   const projectsById = useProjectsStore((s) => s.projects);
   const loadProjects = useProjectsStore((s) => s.loadProjects);
-  const loading = useProjectsStore((s) => s.loading);
+  const projectsLoaded = useProjectsStore((s) => s.projectsLoaded);
 
   const [query, setQuery] = useState("");
   // in the URL so Home's "View all" can land on the matching list
   const [params, setParams] = useSearchParams();
   const requested = params.get("tab");
   const tab: Tab = isTab(requested) ? requested : "all";
+  const sortParam = params.get("sort");
+  const sortKey: SortKey = isSortKey(sortParam) ? sortParam : "updated";
+  const sortDir = params.get("dir") === "asc" ? "asc" : params.get("dir") === "desc" ? "desc" : DEFAULT_DIR[sortKey];
   const board = params.get("view") === "board";
   const setParam = (key: string, value: string | null) =>
     setParams(
@@ -199,6 +267,22 @@ export function Portfolio() {
       { replace: true },
     );
   const setTab = (next: Tab) => setParam("tab", next === "all" ? null : next);
+  const sortBy = (key: SortKey) =>
+    setParams(
+      (prev) => {
+        const out = new URLSearchParams(prev);
+        const flipped = sortKey === key ? (sortDir === "asc" ? "desc" : "asc") : DEFAULT_DIR[key];
+        if (key === "updated" && flipped === "desc") {
+          out.delete("sort");
+          out.delete("dir");
+        } else {
+          out.set("sort", key);
+          out.set("dir", flipped);
+        }
+        return out;
+      },
+      { replace: true },
+    );
 
   useEffect(() => {
     void loadProjects();
@@ -209,6 +293,9 @@ export function Portfolio() {
       Object.values(projectsById).sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
     [projectsById],
   );
+
+  // an empty list before the first fetch lands is "not here yet", not "nothing"
+  const pending = !projectsLoaded && projects.length === 0;
 
   // four numbers that add up to the total, named the way Home names them
   const counts = useMemo(() => {
@@ -223,25 +310,50 @@ export function Portfolio() {
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return projects.filter((p) => {
-      if (tab !== "all" && groupOf(p.station) !== tab) return false;
-      return !q || p.name.toLowerCase().includes(q);
-    });
-  }, [projects, query, tab]);
+    const sign = sortDir === "asc" ? 1 : -1;
+    return projects
+      .filter((p) => {
+        if (tab !== "all" && groupOf(p.station) !== tab) return false;
+        return !q || p.name.toLowerCase().includes(q);
+      })
+      .sort(
+        (a, b) =>
+          sign * compareBy(sortKey, a, b) ||
+          // ties fall back to newest first, so equal names or stages stay in a stable order
+          b.updated_at.localeCompare(a.updated_at),
+      );
+  }, [projects, query, tab, sortKey, sortDir]);
+
+  // what each chip would show for the current search, so a chip never promises rows it lacks
+  const tabCounts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const matching = projects.filter((p) => !q || p.name.toLowerCase().includes(q));
+    return {
+      all: matching.length,
+      needsYou: matching.filter((p) => groupOf(p.station) === "needsYou").length,
+      active: matching.filter((p) => groupOf(p.station) === "active").length,
+      done: matching.filter((p) => groupOf(p.station) === "done").length,
+    } satisfies Record<Tab, number>;
+  }, [projects, query]);
+
+  // a new filter starts back at the first page rather than inheriting the last one's length
+  const filterKey = `${tab}|${query}|${sortKey}|${sortDir}`;
+  const [more, setMore] = useState({ key: filterKey, extra: 0 });
+  const shown = ROW_STEP + (more.key === filterKey ? more.extra : 0);
 
   return (
     <div className="h-full overflow-y-auto">
     <div className="mx-auto w-full max-w-5xl px-6 py-8">
       <h1 className="stencil text-2xl tracking-tight text-fg">Portfolio</h1>
       <p className="mt-1 text-sm text-fg-muted">
-        Every project on the line - {projects.length} in all.
+        {pending ? "Loading the line…" : `Every project on the line - ${projects.length} in all.`}
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryCard label="In flight" value={counts.inFlight} />
-        <SummaryCard label="Questions waiting" value={counts.questions} />
-        <SummaryCard label="Waiting for approval" value={counts.needsYou} />
-        <SummaryCard label="Shipped" value={counts.done} />
+        <SummaryCard label="In flight" value={pending ? null : counts.inFlight} />
+        <SummaryCard label="Questions waiting" value={pending ? null : counts.questions} />
+        <SummaryCard label="Waiting for approval" value={pending ? null : counts.needsYou} />
+        <SummaryCard label="Shipped" value={pending ? null : counts.done} />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -269,6 +381,7 @@ export function Portfolio() {
               )}
             >
               {TAB_LABEL[t]}
+              {!pending && <span className="tabular ml-1.5 text-fg-subtle">{tabCounts[t]}</span>}
             </button>
           ))}
         </div>
@@ -304,14 +417,20 @@ export function Portfolio() {
         <table className="w-full text-left text-xs">
           <thead className="bg-sunken text-2xs text-fg-subtle uppercase">
             <tr>
-              <th className="px-3 py-2 font-medium">Project</th>
-              <th className="px-3 py-2 font-medium">Stage</th>
+              {(
+                [
+                  ["name", "Project"],
+                  ["stage", "Stage"],
+                ] as const
+              ).map(([key, label]) => (
+                <SortHeader key={key} sortKey={key} label={label} active={sortKey} dir={sortDir} onSort={sortBy} />
+              ))}
               <th className="px-3 py-2 font-medium">Progress</th>
-              <th className="px-3 py-2 font-medium">Updated</th>
+              <SortHeader sortKey="updated" label="Updated" active={sortKey} dir={sortDir} onSort={sortBy} />
             </tr>
           </thead>
           <tbody className="divide-y divide-line-subtle">
-            {rows.map((p: Project) => (
+            {rows.slice(0, shown).map((p: Project) => (
               <tr
                 key={p.id}
                 // the whole row is a mouse target; the name is the real link, so it opens in a
@@ -337,7 +456,25 @@ export function Portfolio() {
                 </td>
               </tr>
             ))}
-            {rows.length === 0 && !loading && (
+            {rows.length > shown && (
+              <tr>
+                <td colSpan={4} className="bg-surface px-3 py-2 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setMore({
+                        key: filterKey,
+                        extra: (more.key === filterKey ? more.extra : 0) + ROW_STEP,
+                      })
+                    }
+                  >
+                    Show {Math.min(ROW_STEP, rows.length - shown)} more · {rows.length - shown} left
+                  </Button>
+                </td>
+              </tr>
+            )}
+            {rows.length === 0 && !pending && (
               <tr>
                 <td colSpan={4} className="px-3 py-8 text-center text-fg-subtle">
                   <Artwork id="d6-column" className="mx-auto mb-3 block h-16 w-auto" />

@@ -6,10 +6,15 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const VARIANT: Record<Variant, string> = {
-  primary: "bg-accent text-fg-on-accent hover:bg-accent-hover shadow-raised",
-  secondary: "bg-surface text-fg border border-line hover:border-line-strong hover:bg-sunken",
-  ghost: "text-fg-muted hover:bg-sunken hover:text-fg",
-  danger: "bg-surface text-danger border border-line hover:border-danger hover:bg-danger-bg",
+  // a disabled primary goes neutral rather than fading: half-opacity red reads as pink,
+  // which looks like a different, live button
+  primary:
+    "bg-accent text-fg-on-accent hover:bg-accent-hover shadow-raised disabled:bg-sunken disabled:text-fg-subtle disabled:shadow-none",
+  secondary:
+    "bg-surface text-fg border border-line hover:border-line-strong hover:bg-sunken disabled:opacity-45",
+  ghost: "text-fg-muted hover:bg-sunken hover:text-fg disabled:opacity-45",
+  danger:
+    "bg-surface text-danger border border-line hover:border-danger hover:bg-danger-bg disabled:opacity-45",
 };
 
 const SIZE: Record<Size, string> = {
@@ -45,7 +50,7 @@ export function Button({
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-sm font-medium whitespace-nowrap",
         "transition-[background-color,border-color,color] duration-150",
-        "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45",
+        "active:scale-[0.98] disabled:pointer-events-none",
         VARIANT[variant],
         SIZE[size],
         className,

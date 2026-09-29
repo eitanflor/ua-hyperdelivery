@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useContextStore } from "../store/useContextStore";
 import { personName } from "../lib/people";
+import { formatWhen } from "../lib/time";
 import { Button } from "../components/ui/Button";
 import { TextArea } from "../components/ui/Field";
 import { Spinner } from "../components/ui/Spinner";
@@ -44,7 +45,7 @@ function ContextForm({
         <p className="text-2xs text-fg-subtle" title={updatedBy ?? undefined}>
           {updatedBy
             ? `Last updated by ${personName(updatedBy)}${
-                updatedAt ? ` on ${new Date(updatedAt).toLocaleString()}` : ""
+                updatedAt ? ` on ${formatWhen(updatedAt)}` : ""
               }`
             : "No context recorded yet."}
         </p>

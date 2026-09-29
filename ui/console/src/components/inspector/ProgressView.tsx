@@ -2,7 +2,8 @@ import { ArrowSquareOutIcon, ArrowUUpLeftIcon, SealCheckIcon } from "@phosphor-i
 import type { Artifact, Decision, Project, Station } from "../../api/types";
 import { AGENT_META, PIPELINE, STATION_META, stationIndex } from "../../lib/pipeline";
 import { withoutPlan } from "../../lib/plan";
-import { timeAgo } from "../../lib/time";
+import { receiptsFrom } from "../../lib/receipts";
+import { formatWhen, timeAgo } from "../../lib/time";
 import { personName } from "../../lib/people";
 import { cn } from "../../lib/cn";
 import { useProjectsStore, type ChatTurn } from "../../store/useProjectsStore";
@@ -12,6 +13,9 @@ import { StatusMark } from "../ui/StatusMark";
 
 const NO_TURNS: ChatTurn[] = [];
 const NO_DECISIONS: Decision[] = [];
+
+/** Receipts shown before the rest fold into a count. */
+const RECEIPT_LIMIT = 6;
 
 function lower(text: string | undefined, fallback: string): string {
   return (text ?? fallback).toLowerCase();
@@ -83,6 +87,7 @@ export function ProgressView({
   const streaming = conversation.find((t) => t.streaming);
   const documentFor = new Set(documents.map((d) => d.agent));
   const next = nextStep(project.station);
+  const receipts = receiptsFrom(conversation.flatMap((turn) => turn.toolCalls ?? []));
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
@@ -184,6 +189,47 @@ export function ProgressView({
         </section>
       )}
 
+      {receipts.length > 0 && (
+        <section aria-labelledby="progress-receipts" className="mt-5">
+          <h3
+            id="progress-receipts"
+            className="text-2xs font-semibold tracking-wide text-fg-subtle uppercase"
+          >
+            Done outside the console
+          </h3>
+          <ul className="mt-2.5 flex flex-col gap-2">
+            {receipts.slice(-RECEIPT_LIMIT).map((r) => (
+              <li key={r.id} className="flex items-start gap-2.5">
+                <span className="mt-0.5">
+                  <StatusMark status={r.ok ? "done" : "failed"} />
+                </span>
+                <p className="min-w-0 flex-1 text-xs text-fg">
+                  {r.label}
+                  {r.target && <span className="text-fg-subtle"> · {r.target}</span>}
+                  {!r.ok && <span className="text-danger"> - did not go through</span>}
+                </p>
+                {r.href && (
+                  <a
+                    href={r.href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="hit-area flex shrink-0 items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-accent-text transition-colors hover:bg-accent-bg"
+                  >
+                    Open
+                    <ArrowSquareOutIcon className="size-3" />
+                  </a>
+                )}
+              </li>
+            ))}
+            {receipts.length > RECEIPT_LIMIT && (
+              <li className="pl-6 text-2xs text-fg-subtle">
+                {receipts.length - RECEIPT_LIMIT} earlier not shown
+              </li>
+            )}
+          </ul>
+        </section>
+      )}
+
       {decisions.length > 0 && (
         <section aria-labelledby="progress-activity" className="mt-5">
           <h3
@@ -206,7 +252,7 @@ export function ProgressView({
                     {d.approved ? "approved" : "sent back"} by{" "}
                     <span title={d.signer}>{personName(d.signer)}</span>
                   </p>
-                  <p className="tabular mt-0.5 text-2xs text-fg-subtle" title={new Date(d.decided_at).toLocaleString()}>
+                  <p className="tabular mt-0.5 text-2xs text-fg-subtle" title={formatWhen(d.decided_at)}>
                     {timeAgo(d.decided_at)}
                   </p>
                   {d.comment && (

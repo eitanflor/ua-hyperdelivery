@@ -20,7 +20,7 @@ import { AGENT_META, AGENT_STATIONS, PIPELINE, STATION_META, stationIndex } from
 import { documentStats } from "../../lib/documentStats";
 import { downloadMarkdown, downloadWord, printDocument, type ExportMeta } from "../../lib/exportDocument";
 import { lastSeenVersion, markSeen } from "../../lib/seenVersions";
-import { timeAgo } from "../../lib/time";
+import { formatWhen, timeAgo } from "../../lib/time";
 import { personName } from "../../lib/people";
 import { cn } from "../../lib/cn";
 import { useProjectsStore, type ViewMode } from "../../store/useProjectsStore";
@@ -35,10 +35,19 @@ const DesignViews = lazy(() => import("../canvas/DesignViews"));
 
 type TabId = "design" | "content" | "raw" | "changes";
 
-function ContentBody({ artifact, viewMode }: { artifact: Artifact; viewMode: ViewMode }) {
+function ContentBody({
+  artifact,
+  viewMode,
+  asking,
+}: {
+  artifact: Artifact;
+  viewMode: ViewMode;
+  /** The project is still at this document's station, so its open questions are live. */
+  asking: boolean;
+}) {
   switch (artifactKind(artifact.agent)) {
     case "spec":
-      return <SpecView content={artifact.content} viewMode={viewMode} />;
+      return <SpecView content={artifact.content} viewMode={viewMode} asking={asking} />;
     case "blueprint":
       return <BlueprintView content={artifact.content} viewMode={viewMode} />;
     case "review":
@@ -271,7 +280,7 @@ export function DocumentViewer({
               </span>
               <span className="tabular">Version {artifact.version}</span>
               <span aria-hidden="true">·</span>
-              <span title={new Date(artifact.created_at).toLocaleString()}>Updated {timeAgo(artifact.created_at)}</span>
+              <span title={formatWhen(artifact.created_at)}>Updated {timeAgo(artifact.created_at)}</span>
             </p>
           </div>
 
@@ -441,7 +450,7 @@ export function DocumentViewer({
         {activeTab === "content" && (
           <SelectionActions askAs={askAs} onQuote={quote} documentTitle={title}>
             <div ref={body}>
-              <ContentBody artifact={artifact} viewMode={viewMode} />
+              <ContentBody artifact={artifact} viewMode={viewMode} asking={project?.station === artifact.agent} />
             </div>
           </SelectionActions>
         )}

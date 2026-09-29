@@ -57,7 +57,9 @@ AgentCore invocation constructs a request-scoped Strands agent because one `Agen
 instance rejects concurrent calls and carries mutable conversation, metrics, and hook
 state. Streaming tools yield native Strands tool events, which the runtime maps onto the
 same `tool_call` SSE contract as tool start and completion so local SSE and deployed
-WebSocket clients see progressive results without a separate transport. Snowflake uses
+WebSocket clients see progressive results without a separate transport. A tool call is
+`running`, then `done`, `failed` (the tool returned an error; `result` is the reason) or
+`interrupted` (the turn ended first). Snowflake uses
 `httpx.AsyncClient.stream`, so long Cortex waits do not occupy worker threads.
 
 ## The control plane (Phase 2 - deployed in dev)
@@ -144,7 +146,14 @@ version, what the console reads by default) and an immutable `ARTIFACT_VERSION#<
 history item per rerun - `ProjectRepository.list_artifact_versions` reads the latter, and
 `GET /projects/{id}/artifacts/{agent}/versions` serves it so the console can show what
 changed between drafts. Decisions are `DECISION#<iso-ts>` items, read back oldest first by
-`GET /projects/{id}/decisions`. Browser uploads live in S3 under
+`GET /projects/{id}/decisions`. Each finished agent turn is a `TURN#<iso-ts>#<agent>` item -
+its message (what the person sent), text, tool calls (results clipped), usage and any error -
+written by the console API for local runs and by the deployed invoker (a deployed create or
+answer with no streamed reply is recorded as a message-only turn), and served oldest first by
+`GET /projects/{id}/turns`, so the conversation and trace outlive the browser that watched the
+run. The console keeps only the recent-projects list and detail level in `localStorage`; the
+thread is rebuilt from these items, the artifacts and the decisions. Browser
+uploads live in S3 under
 `projects/<id>/uploads/`, listed by `GET /projects/{id}/documents`.
 
 See [docs/decisions.md](./decisions.md) for why each of these shapes was chosen.

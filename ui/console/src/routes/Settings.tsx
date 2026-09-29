@@ -80,7 +80,7 @@ function Choices<T extends string>({
           className={cn(
             "flex cursor-pointer gap-3 rounded-md border px-3 py-2.5 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent",
             value === option.value
-              ? "border-accent bg-accent-bg"
+              ? "border-fg-muted bg-sunken"
               : "border-line-subtle bg-surface hover:border-line-strong",
           )}
         >

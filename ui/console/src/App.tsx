@@ -19,6 +19,7 @@ import { Workspace } from "./routes/Workspace";
 import { Context } from "./routes/Context";
 import { useProjectsStore } from "./store/useProjectsStore";
 import { useTabBadge } from "./lib/favicon";
+import { AGENT_META } from "./lib/pipeline";
 import { AuthGate } from "./auth/AuthGate";
 import { msalInstance } from "./auth/msalConfig";
 
@@ -42,6 +43,10 @@ function Shell() {
   const project = useProjectsStore((s) => (projectId ? (s.projects[projectId] ?? null) : null));
   const pendingByStation = useProjectsStore((s) => s.pendingByStation);
   const working = useProjectsStore((s) => s.runningProjectId !== null);
+  const workingAgent = useProjectsStore((s) => {
+    const running = s.runningProjectId ? s.projects[s.runningProjectId] : undefined;
+    return running ? (AGENT_META[running.station]?.name ?? null) : null;
+  });
 
   const [railOpen, setRailOpen] = useState(() => window.matchMedia(RAIL_BREAKPOINT).matches);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -52,7 +57,12 @@ function Shell() {
     (pendingByStation.review_approval?.length ?? 0) +
     (pendingByStation.showroom_approval?.length ?? 0);
 
-  useTabBadge({ waiting: needsYouCount, working, title: project?.name ?? PAGE_TITLE[location.pathname] ?? (projectId ? undefined : "Not found") });
+  useTabBadge({
+    waiting: needsYouCount,
+    working,
+    activity: workingAgent ? `${workingAgent} is working` : null,
+    title: project?.name ?? PAGE_TITLE[location.pathname] ?? (projectId ? undefined : "Not found"),
+  });
 
   useEffect(() => {
     // the landing page tags this navigation so the rail (open by default while there is

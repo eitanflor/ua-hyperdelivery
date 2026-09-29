@@ -122,7 +122,7 @@ export function SourcesView({ projectId, artifacts }: { projectId: string; artif
       {read.length > 0 && (
         <section aria-labelledby="sources-read" className="mt-5">
           <h3 id="sources-read" className="text-2xs font-semibold tracking-wide text-fg-subtle uppercase">
-            Read by the crew this session
+            Read by the crew
           </h3>
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {read.map((name) => (

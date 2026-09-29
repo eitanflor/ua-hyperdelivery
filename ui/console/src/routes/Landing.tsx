@@ -133,7 +133,7 @@ export function Landing() {
                     className={cn(
                       "flex items-start gap-2.5 rounded-md border px-3 py-2.5 text-left transition-colors",
                       selected
-                        ? "border-accent bg-accent-bg"
+                        ? "border-fg-muted bg-sunken"
                         : "border-line-subtle bg-surface hover:border-line-strong",
                     )}
                   >
@@ -141,7 +141,7 @@ export function Landing() {
                       weight="duotone"
                       className={cn(
                         "mt-0.5 size-5 shrink-0",
-                        selected ? "text-accent-text" : "text-fg-muted",
+                        selected ? "text-fg" : "text-fg-muted",
                       )}
                     />
                     <span>

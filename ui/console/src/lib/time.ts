@@ -1,3 +1,11 @@
+const WHEN = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+/** "23 Sept 2026, 14:51" - one full-date format everywhere, so a signature line and its
+ * tooltip never disagree about how a date is written. */
+export function formatWhen(when: Date | string): string {
+  return WHEN.format(typeof when === "string" ? new Date(when) : when);
+}
+
 const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 
 const STEPS: [Intl.RelativeTimeFormatUnit, number][] = [

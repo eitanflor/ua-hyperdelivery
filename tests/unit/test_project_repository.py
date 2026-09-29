@@ -1,8 +1,10 @@
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
 
 from core.domain.project import Station
+from core.domain.turn import ToolCallRecord, Turn
 from fakes import loaded
 from infrastructure.repositories.project_repository import (
     ProjectAlreadyExistsError,
@@ -246,3 +248,46 @@ def test_rename_project_updates_the_name(repo: ProjectRepository) -> None:
 def test_rename_project_raises_for_an_unknown_project(repo: ProjectRepository) -> None:
     with pytest.raises(ValueError, match="unknown project"):
         repo.rename_project("ghost", "New Name")
+
+
+def test_turns_come_back_oldest_first_with_their_tool_calls(repo: ProjectRepository) -> None:
+    started = datetime(2026, 9, 29, 12, 0, tzinfo=UTC)
+    later = Turn(project_id="p1", agent="blueprint", started_at=started + timedelta(minutes=5))
+    earlier = Turn(
+        project_id="p1",
+        agent="distill",
+        started_at=started,
+        text="Read it.",
+        tool_calls=[
+            ToolCallRecord(id="t1", name="get_context", status="done", result={"score": 0.5})
+        ],
+        usage={"total_tokens": 9},
+    )
+    repo.save_turn(later)
+    repo.save_turn(earlier)
+
+    turns = repo.list_turns("p1")
+
+    assert [t.agent for t in turns] == ["distill", "blueprint"]
+    assert turns[0] == earlier
+
+
+def test_turns_are_per_project_and_do_not_appear_as_decisions(repo: ProjectRepository) -> None:
+    started = datetime(2026, 9, 29, 12, 0, tzinfo=UTC)
+    repo.create_project("p1", "One")
+    repo.save_turn(Turn(project_id="p1", agent="distill", started_at=started))
+    repo.save_turn(Turn(project_id="p2", agent="distill", started_at=started))
+
+    assert len(repo.list_turns("p1")) == 1
+    assert repo.list_decisions("p1") == []
+
+
+def test_deleting_a_project_deletes_its_turns(repo: ProjectRepository) -> None:
+    repo.create_project("p1", "One")
+    repo.save_turn(
+        Turn(project_id="p1", agent="distill", started_at=datetime(2026, 9, 29, tzinfo=UTC))
+    )
+
+    repo.delete_project("p1")
+
+    assert repo.list_turns("p1") == []

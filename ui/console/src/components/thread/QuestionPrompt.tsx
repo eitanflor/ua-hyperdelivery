@@ -79,6 +79,12 @@ export function QuestionPrompt({
         )}
       </div>
 
+      {disabled && (
+        <p role="status" className="mt-1 text-2xs text-fg-subtle">
+          {asker} is still finishing - you can answer in a moment.
+        </p>
+      )}
+
       <div key={question.id} className="animate-fade">
         <p className="mt-2 text-sm leading-relaxed text-fg">{question.question}</p>
         {question.options.length > 0 && (
@@ -95,8 +101,8 @@ export function QuestionPrompt({
                   className={cn(
                     "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors disabled:opacity-50",
                     on
-                      ? "border-accent bg-accent text-fg-on-accent"
-                      : "border-line bg-surface text-fg-muted hover:border-accent hover:text-fg",
+                      ? "border-fg bg-sunken text-fg"
+                      : "border-line bg-surface text-fg-muted hover:border-line-strong hover:text-fg",
                   )}
                 >
                   {on && <CheckIcon weight="bold" className="size-3" />}

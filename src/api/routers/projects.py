@@ -36,6 +36,8 @@ from api.schemas.project import (
     RenameProjectRequest,
     StoredDocumentResponse,
     StreamTicketResponse,
+    ToolCallResponse,
+    TurnResponse,
     UploadDocumentResponse,
 )
 from config.settings import get_settings
@@ -54,6 +56,7 @@ from infrastructure.repositories.project_repository import (
     ProjectRepository,
 )
 from orchestration.project_namer import ProjectNamer, heuristic_name
+from orchestration.turn_log import TurnLog, record_message
 from providers.documents.parsing import SUPPORTED_EXTENSIONS
 from providers.github.merge import resolve_and_merge
 from providers.github.pull_requests import read_pull_request
@@ -264,6 +267,9 @@ def create_project(
             payload.message,
         )
     if (sfn := request.app.state.state_machine_client) is not None:
+        # a local project's first message arrives with its first streamed turn instead
+        if payload.message:
+            record_message(repo, project.id, Station.DISTILL.value, payload.message)
         sfn.start_execution(project.id, message=payload.message or "")
     return _to_response(project, _orchestration_mode(request))
 
@@ -834,6 +840,86 @@ def _finish_turn(
     return {"done": True, "project": _to_response(updated, "local").model_dump(mode="json")}
 
 
+async def _stream_turn(  # noqa: PLR0913 - one turn's whole context, none of it optional
+    repo: ProjectRepository,
+    local_agent_client: Any,  # noqa: ANN401 - LocalAgentClient or the test double standing in for it
+    project: Project,
+    agent: str,
+    prompt: str,
+    *,
+    previous: Artifact | None,
+    predecessors: dict[str, dict[str, Any]],
+    message: str | None = None,
+) -> AsyncIterator[str]:
+    """Relay one local turn as SSE, saving its artifact and its record however it ends."""
+    project_id = project.id
+    result: dict[str, Any] | None = None
+    # boxes the raw HTTP response to the agent's dev server, so a disconnect (see
+    # below) can close it from here and unblock the `next()` call that's stuck
+    # reading it in the worker thread - without this the agent invocation (and any
+    # tool call it's mid-way through) just keeps running unseen after "Stop".
+    held_response: list[Any] = []
+    gen = local_agent_client.stream(
+        agent, prompt, project_id=project_id, on_response=held_response.append
+    )
+    # populated as `tool_call` "done" events for `_SIDE_EFFECT_TOOLS` are relayed below,
+    # so a failure partway through the turn still has something to persist - see
+    # `_partial_progress_content`.
+    side_effects: list[dict[str, Any]] = []
+    # what the turn did, kept whether it finishes, fails or is stopped - see `TurnLog`
+    turn_log = TurnLog(repo, project_id, agent, message)
+
+    def next_event() -> dict[str, Any] | None:
+        # `None` (rather than raising StopIteration across the thread hop) keeps
+        # the type simple and side-steps PEP 479 turning a StopIteration that
+        # escapes an async generator's frame into an opaque RuntimeError.
+        return next(gen, None)
+
+    try:
+        while True:
+            # abandon_on_cancel=True: if the client disconnects, Starlette cancels
+            # this task while it's awaiting exactly this call (see StreamingResponse's
+            # own listen_for_disconnect) - the `finally` below still runs, closing
+            # the connection to the agent's dev server so its blocked read unblocks.
+            event = await run_sync(next_event, abandon_on_cancel=True)
+            if event is None:
+                break
+            turn_log.feed(event)
+            relayed = next((key for key in _RELAYED_EVENTS if key in event), None)
+            if relayed is not None:
+                yield _sse({relayed: event[relayed]})
+                if _is_finished_side_effect(event):
+                    side_effects.append(event["tool_call"])
+            elif "error" in event:
+                if side_effects:
+                    content = _partial_progress_content(previous, side_effects, event["error"])
+                    repo.save_artifact(project_id, agent, content)
+                turn_log.save(str(event["error"]))
+                yield _sse({"error": event["error"]})
+                return
+            elif "result" in event:
+                result = event["result"]
+
+        turn_log.save()
+        yield _sse(_finish_turn(repo, agent, project, predecessors, result))
+    except Exception as exc:
+        # covers the agent stream itself *and* the save-artifact/advance-station
+        # calls after it - those run after the HTTP response has already started
+        # streaming, so an uncaught exception here would otherwise just kill the
+        # connection (client sees a raw network error, not a clean {"error": ...}).
+        logger.exception("advance_project_stream failed for %s/%s", project_id, agent)
+        if side_effects:
+            content = _partial_progress_content(previous, side_effects, str(exc))
+            repo.save_artifact(project_id, agent, content)
+        turn_log.save(str(exc))
+        yield _sse({"error": str(exc)})
+    finally:
+        # a stopped or dropped run never reaches a branch above; a no-op if one did
+        turn_log.save("stopped")
+        if held_response:
+            held_response[0].close()
+
+
 @router.post("/{project_id}/advance/stream")
 def advance_project_stream(
     project_id: str, request: Request, payload: AdvanceRequest | None = None
@@ -875,67 +961,19 @@ def advance_project_stream(
         request.app.state.context_repository.get_context().context,
     )
     local_agent_client = request.app.state.local_agent_client
-
-    async def event_stream() -> AsyncIterator[str]:
-        result: dict[str, Any] | None = None
-        # boxes the raw HTTP response to the agent's dev server, so a disconnect (see
-        # below) can close it from here and unblock the `next()` call that's stuck
-        # reading it in the worker thread - without this the agent invocation (and any
-        # tool call it's mid-way through) just keeps running unseen after "Stop".
-        held_response: list[Any] = []
-        gen = local_agent_client.stream(
-            agent, prompt, project_id=project_id, on_response=held_response.append
-        )
-        # populated as `tool_call` "done" events for `_SIDE_EFFECT_TOOLS` are relayed below,
-        # so a failure partway through the turn still has something to persist - see
-        # `_partial_progress_content`.
-        side_effects: list[dict[str, Any]] = []
-
-        def next_event() -> dict[str, Any] | None:
-            # `None` (rather than raising StopIteration across the thread hop) keeps
-            # the type simple and side-steps PEP 479 turning a StopIteration that
-            # escapes an async generator's frame into an opaque RuntimeError.
-            return next(gen, None)
-
-        try:
-            while True:
-                # abandon_on_cancel=True: if the client disconnects, Starlette cancels
-                # this task while it's awaiting exactly this call (see StreamingResponse's
-                # own listen_for_disconnect) - the `finally` below still runs, closing
-                # the connection to the agent's dev server so its blocked read unblocks.
-                event = await run_sync(next_event, abandon_on_cancel=True)
-                if event is None:
-                    break
-                relayed = next((key for key in _RELAYED_EVENTS if key in event), None)
-                if relayed is not None:
-                    yield _sse({relayed: event[relayed]})
-                    if _is_finished_side_effect(event):
-                        side_effects.append(event["tool_call"])
-                elif "error" in event:
-                    if side_effects:
-                        content = _partial_progress_content(previous, side_effects, event["error"])
-                        repo.save_artifact(project_id, agent, content)
-                    yield _sse({"error": event["error"]})
-                    return
-                elif "result" in event:
-                    result = event["result"]
-
-            yield _sse(_finish_turn(repo, agent, project, predecessors, result))
-        except Exception as exc:
-            # covers the agent stream itself *and* the save-artifact/advance-station
-            # calls after it - those run after the HTTP response has already started
-            # streaming, so an uncaught exception here would otherwise just kill the
-            # connection (client sees a raw network error, not a clean {"error": ...}).
-            logger.exception("advance_project_stream failed for %s/%s", project_id, agent)
-            if side_effects:
-                content = _partial_progress_content(previous, side_effects, str(exc))
-                repo.save_artifact(project_id, agent, content)
-            yield _sse({"error": str(exc)})
-        finally:
-            if held_response:
-                held_response[0].close()
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        _stream_turn(
+            repo,
+            local_agent_client,
+            project,
+            agent,
+            prompt,
+            previous=previous,
+            predecessors=predecessors,
+            message=payload.message if payload else None,
+        ),
+        media_type="text/event-stream",
+    )
 
 
 def _next_distill_message(pending_question: dict[str, Any] | None, answer: str) -> str:
@@ -985,6 +1023,7 @@ def answer_question(project_id: str, payload: AnswerRequest, request: Request) -
     # _agent_task's prompt reads $.message as plain text, not as a wrapper object.
     sfn.send_task_success(project.task_token, next_message)
     repo.clear_pending_question(project_id)
+    record_message(repo, project_id, Station.DISTILL.value, payload.answer)
 
     updated = repo.get_project(project_id)
     if updated is None:
@@ -993,6 +1032,27 @@ def answer_question(project_id: str, payload: AnswerRequest, request: Request) -
             detail="project missing after answering",
         )
     return _to_response(updated, _orchestration_mode(request))
+
+
+@router.get("/{project_id}/turns", response_model=list[TurnResponse])
+def list_turns(project_id: str, request: Request) -> list[TurnResponse]:
+    """Every recorded agent turn on a project, oldest first - the trace behind each document."""
+    repo = request.app.state.project_repository
+    if repo.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    return [
+        TurnResponse(
+            agent=turn.agent,
+            started_at=turn.started_at.isoformat(),
+            message=turn.message,
+            duration_ms=turn.duration_ms,
+            text=turn.text,
+            tool_calls=[ToolCallResponse(**call.model_dump()) for call in turn.tool_calls],
+            usage=turn.usage,
+            error=turn.error,
+        )
+        for turn in repo.list_turns(project_id)
+    ]
 
 
 @router.get("/{project_id}/decisions", response_model=list[DecisionResponse])

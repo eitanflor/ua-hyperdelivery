@@ -389,6 +389,26 @@ def test_create_project_starts_a_state_machine_execution(client: TestClient) -> 
     assert sfn.calls == [("start_execution", (created["id"], ""))]
 
 
+def test_create_project_from_a_message_records_the_message_when_deployed(
+    client: TestClient,
+) -> None:
+    created = client.post("/projects", json={"message": "a weekly returns report"}).json()
+
+    [turn] = _turns(client, created["id"])
+    assert turn["message"] == "a weekly returns report"
+    assert turn["agent"] == "distill"
+    # only what the person sent: the agent's side is recorded by the invoker
+    assert (turn["text"], turn["tool_calls"], turn["usage"]) == ("", [], None)
+
+
+def test_create_project_from_a_message_records_nothing_when_local(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+
+    created = client.post("/projects", json={"message": "a weekly returns report"}).json()
+
+    assert _turns(client, created["id"]) == []
+
+
 def test_approved_decision_resumes_execution_via_task_token(client: TestClient) -> None:
     created = client.post("/projects", json={"name": "My Project"}).json()
     repo: ProjectRepository = _state(client).project_repository
@@ -460,6 +480,7 @@ def test_answer_resumes_execution_and_folds_the_answer_into_the_next_message(
         call.get("UpdateExpression", "").startswith("REMOVE")
         for call in cast(FakeTable, repo._table).update_calls
     )
+    assert [turn["message"] for turn in _turns(client, created["id"])] == ["The finance team"]
 
 
 def test_answer_rejects_a_project_not_waiting_on_a_question(client: TestClient) -> None:
@@ -1613,3 +1634,92 @@ def test_merge_build_auto_preview_failure_does_not_fail_the_merge_response(
     # the merge itself already succeeded - a broken local checkout is never this response's problem
     assert resp.status_code == 200
     assert resp.json()["merged"] is True
+
+
+def _turns(client: TestClient, project_id: str) -> list[dict[str, Any]]:
+    return cast(list[dict[str, Any]], client.get(f"/projects/{project_id}/turns").json())
+
+
+def test_turns_404s_for_an_unknown_project(client: TestClient) -> None:
+    assert client.get("/projects/missing/turns").status_code == 404
+
+
+def test_advance_stream_records_the_turn_so_its_trace_outlives_the_browser(
+    client: TestClient,
+) -> None:
+    _state(client).state_machine_client = None
+    tool_call = {
+        "id": "t1",
+        "name": "get_context",
+        "status": "done",
+        "input": {"path": "a"},
+        "result": "ok",
+    }
+    _state(client).local_agent_client = _FakeLocalAgentClient(
+        {"title": "FSD"},
+        events=[{"chunk": "Reading"}, {"tool_call": tool_call}, {"usage": {"total_tokens": 9}}],
+    )
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    [turn] = _turns(client, created["id"])
+    assert turn["agent"] == "distill"
+    assert turn["text"] == "Reading"
+    assert turn["usage"] == {"total_tokens": 9}
+    assert turn["error"] is None
+    assert turn["tool_calls"] == [tool_call]
+
+
+def test_advance_stream_records_what_the_person_sent_not_the_transcript(
+    client: TestClient,
+) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FakeLocalAgentClient({"title": "FSD"}, events=[])
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    client.post(
+        f"/projects/{created['id']}/advance/stream",
+        json={"prompt": "User: earlier\nUser: a weekly report", "message": "a weekly report"},
+    )
+
+    [turn] = _turns(client, created["id"])
+    assert turn["message"] == "a weekly report"
+
+
+def test_advance_stream_from_an_older_console_records_no_message(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FakeLocalAgentClient({"title": "FSD"}, events=[])
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    [turn] = _turns(client, created["id"])
+    assert turn["message"] is None
+
+
+def test_advance_stream_records_a_failed_turn_with_its_error(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FailingAgentClient()
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    client.post(f"/projects/{created['id']}/advance/stream")
+
+    [turn] = _turns(client, created["id"])
+    assert (turn["text"], turn["error"]) == ("Analyzing", "agent invocation failed")
+
+
+def test_a_turn_that_cannot_be_recorded_does_not_fail_the_run(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def refuse(self: ProjectRepository, turn: object) -> None:
+        raise ValueError("table unavailable")
+
+    monkeypatch.setattr(ProjectRepository, "save_turn", refuse)
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FakeLocalAgentClient({"title": "FSD"})
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    assert _parse_sse(resp.text)[-1].get("done") is True

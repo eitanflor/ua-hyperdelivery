@@ -189,7 +189,9 @@ class _ToolUseStream:
             event: dict[str, Any] = {
                 "id": call.tool_use_id,
                 "name": call.name or announced,
-                "status": "done",
+                # Strands hands an errored call back as an ordinary result, so without this
+                # a failed lookup is indistinguishable from a successful one in the console
+                "status": "failed" if call.result.get("status") == "error" else "done",
                 "result": _tool_result_payload(call.result),
             }
             summary = _tool_input_summary(call.tool_input)

@@ -17,6 +17,36 @@ Template for new entries:
 
 ---
 
+## 2026-09-29 - Agent turns are recorded server-side, not in the browser
+- **Status**: Accepted
+- **Context**: The console kept a turn's tool calls only in the browser that watched it, and
+  `localStorage` is small (about 5 MB), per browser and readable by any script on the origin.
+  So the trace, the sources and any failed or writing call vanished on reload and were never
+  visible to an approver on another machine - the people who most need to check the work.
+- **Decision**: The API records one `TURN#<start time>#<agent>` item per finished turn under
+  the project's partition (agent, text, tool calls, usage, duration, and the error if it
+  failed or was stopped), from both the local stream and the deployed invoker, and serves them
+  at `GET /projects/{id}/turns`. Tool results are clipped to 1,500 characters and a turn to 60
+  calls. A failed save is logged and dropped, never raised into the run. The console loads the
+  record and no longer stores any of the trace in `localStorage`.
+- **Update 2026-09-30**: The record also carries the person's message, so the whole
+  conversation, not only the trace, is server-side. A deployed create or answer, which has no
+  streamed reply to hang the message on, is recorded as a message-only turn. The console
+  rebuilds the thread from the records (`conversationFromRecords`) and persists only the
+  recent-projects list and detail level; the conversation, signatures and the
+  quota-eviction fallback for `localStorage` are gone, and the persisted-state version was
+  bumped so old copies are ignored. Turns from before this change have no message.
+- **Alternatives considered**: Keeping and extending `localStorage` - still per browser and
+  capped, and it was the problem. Storing full results - a DynamoDB item is capped at 400 KB
+  and a fetched file or query result would eat it. A separate table or S3 - the projects table
+  is already single-table and a new sort-key prefix needs no table or index change, so more
+  infrastructure bought nothing.
+- **Consequences**: No infrastructure change, and `delete_project` already removes turns with
+  everything else under the partition. A turn is only as good as what fits after clipping, so a
+  large result reads as "not kept". Older browsers and older APIs fall back to what they have.
+  Revisit if a project's turns approach the partition's size, or if approvers need the full
+  results rather than a clipped copy.
+
 ## 2026-09-28 - Illustrations are optional drop-ins with designed fallbacks
 
 - **Status**: Accepted

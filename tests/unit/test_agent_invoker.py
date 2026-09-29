@@ -311,3 +311,16 @@ def test_broadcaster_drops_a_gone_connection_without_raising(
 
     assert disconnected == ["conn-1"]
     assert [c for c, _ in management.posted] == ["conn-2", "conn-2"]
+
+
+def test_invoke_hands_every_event_to_on_event_including_the_result(
+    runtimes: list[dict[str, Any]],
+) -> None:
+    # unlike broadcast, the turn record wants the whole stream - the handler decides what to keep
+    events = [{"chunk": "hi"}, {"usage": {"total_tokens": 3}}, {"result": {"a": 1}}]
+    invoker = _invoker(_FakeControlClient(runtimes), _FakeDataClient(events))
+    seen: list[dict[str, Any]] = []
+
+    invoker.invoke("distill", "p1", "do the thing", on_event=seen.append)
+
+    assert seen == events

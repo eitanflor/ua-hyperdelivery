@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowSquareOutIcon, CaretRightIcon, FileTextIcon, PlayIcon, WrenchIcon } from "@phosphor-icons/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ArrowSquareOutIcon, CaretRightIcon, FileTextIcon, PlayIcon, WrenchIcon, XCircleIcon } from "@phosphor-icons/react";
 import type { ToolCallEvent, UsageEvent } from "../../api/client";
 import type { PendingQuestion } from "../../api/types";
 import { hasContent } from "../../api/artifacts";
@@ -14,6 +14,7 @@ import { cn } from "../../lib/cn";
 import type { ViewMode } from "../../store/useProjectsStore";
 import { AgentFace } from "../agents/AgentFace";
 import { AgentAvatar } from "./AgentAvatar";
+import { ToolTile } from "./ToolTile";
 import { DocumentSkeleton } from "./DocumentSkeleton";
 import { ThoughtLine } from "./ThoughtLine";
 import { Button } from "../ui/Button";
@@ -149,6 +150,7 @@ function ArtifactCard({
 function ToolChips({ calls }: { calls: ToolCallEvent[] }) {
   const [open, setOpen] = useState(false);
   const top = summarizeCalls(calls).slice(0, 3);
+  const failed = calls.filter((call) => call.status === "failed").length;
   return (
     <div className="mb-2">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -172,13 +174,20 @@ function ToolChips({ calls }: { calls: ToolCallEvent[] }) {
               {count > 1 && <span className="tabular"> ×{count}</span>}
             </span>
           ))}
+        {/* a failure is the one thing in a collapsed trace worth seeing without opening it */}
+        {failed > 0 && (
+          <span className="flex items-center gap-1 rounded-full bg-danger-bg px-2 py-0.5 text-2xs text-danger">
+            <XCircleIcon weight="fill" className="size-3" />
+            <span className="tabular">{failed}</span> failed
+          </span>
+        )}
       </div>
       {open && (
-        <div className="mt-2 flex animate-fade flex-col border-l border-line-subtle pl-3">
+        <TraceList className="mt-2 animate-fade">
           {groupToolCalls(calls).map((group) => (
             <ToolCallGroup key={group[0]?.id} calls={group} />
           ))}
-        </div>
+        </TraceList>
       )}
     </div>
   );
@@ -217,6 +226,7 @@ export function AgentTurn({
   toolCalls,
   usage,
   durationMs,
+  error,
   viewMode = "developer",
   onViewArtifact,
 }: {
@@ -226,6 +236,8 @@ export function AgentTurn({
   toolCalls?: ToolCallEvent[];
   usage?: UsageEvent;
   durationMs?: number;
+  /** Why the turn stopped, for a run that failed rather than finished. */
+  error?: string;
   viewMode?: ViewMode;
   onViewArtifact: (agent: string) => void;
 }) {
@@ -237,10 +249,12 @@ export function AgentTurn({
   const askedViaTool = questionsFromToolCalls(toolCalls).length;
   const isPm = viewMode === "pm";
   const stepCount = groupToolCalls(toolRows).length;
+  const failedCount = toolRows.filter((call) => call.status === "failed").length;
   const note = isPm
     ? [
         ...(durationMs !== undefined ? [`finished in ${formatDuration(durationMs)}`] : []),
         ...(stepCount > 0 ? [`${stepCount} step${stepCount === 1 ? "" : "s"}`] : []),
+        ...(failedCount > 0 ? [`${failedCount} failed`] : []),
       ].join(" · ")
     : undefined;
   return (
@@ -260,7 +274,12 @@ export function AgentTurn({
               summary below is derived from the artifact and cannot mention what the agent
               could not do (a table it had no access to, a source it fell back from) */}
           {!isPm && text?.trim() && <Markdown text={text} />}
-          <Markdown text={composeReply(content, askedViaTool)} />
+          {/* when the agent has already said it, the generic "before I draft anything..." line
+              only repeats it - it is for a turn that said nothing, or one read in Simple mode */}
+          {(isPm || !text?.trim() || hasContent(content)) && !error && (
+            <Markdown text={composeReply(content, askedViaTool)} />
+          )}
+          {error && <p className="text-danger">This run did not finish: {error}</p>}
         </div>
         <SourceChips calls={toolRows} />
         {hasContent(content) && (
@@ -363,11 +382,11 @@ export function StreamingTurn({
           (isPm ? (
             <PlainSteps calls={toolRows} />
           ) : (
-            <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
+            <TraceList className="mb-2">
               {groupToolCalls(toolRows).map((group) => (
                 <ToolCallGroup key={group[0]?.id} calls={group} />
               ))}
-            </div>
+            </TraceList>
           ))}
         {/* the only live region for the reply itself: without it the stream is silent
             to a screen reader, which is the one thing here that changes with no user
@@ -456,9 +475,11 @@ function PlainSteps({ calls }: { calls: ToolCallEvent[] }) {
         if (!first) return null;
         const status: Status = group.some((c) => c.status === "running")
           ? "running"
-          : group.every((c) => c.status === "interrupted")
-            ? "stopped"
-            : "done";
+          : group.some((c) => c.status === "failed")
+            ? "failed"
+            : group.every((c) => c.status === "interrupted")
+              ? "stopped"
+              : "done";
         return (
           <li key={first.id} className="flex items-center gap-2 text-xs text-fg-muted">
             <StatusMark status={status} />
@@ -499,6 +520,14 @@ function groupToolCalls(toolCalls: ToolCallEvent[]): ToolCallEvent[][] {
   }, []);
 }
 
+/** The trace as a quiet column under the thread's own left rule, not a box - it is how the
+ * agent got there, so it should recede behind the reply. */
+function TraceList({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("flex flex-col border-l border-line-subtle pl-3", className)}>{children}</div>
+  );
+}
+
 /** A fan-out as a single counted row, expanding to the individual calls. */
 function ToolCallGroup({ calls }: { calls: ToolCallEvent[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -508,6 +537,7 @@ function ToolCallGroup({ calls }: { calls: ToolCallEvent[] }) {
   if (rest.length === 0) return <ToolCallRow toolCall={first} />;
 
   const running = calls.some((call) => call.status === "running");
+  const failed = calls.filter((call) => call.status === "failed").length;
 
   return (
     <div>
@@ -517,20 +547,18 @@ function ToolCallGroup({ calls }: { calls: ToolCallEvent[] }) {
         disabled={running}
         aria-expanded={expanded}
         className={cn(
-          "group flex w-full items-center gap-1.5 py-0.5 text-left text-2xs transition-colors",
+          "group flex w-full items-center gap-2 py-0.5 text-left text-2xs transition-colors",
           running ? "text-fg-subtle" : "text-fg-muted hover:text-fg",
         )}
       >
-        {running ? (
-          <Spinner className="size-2.5 shrink-0 text-fg-subtle" />
-        ) : (
-          <TraceCaret expanded={expanded} />
-        )}
+        <ToolTile name={first.name} failed={failed === calls.length} running={running} />
         <span className="shrink-0">{toolLabel(first.name)}</span>
         <span className="tabular shrink-0 font-mono text-fg-subtle">×{calls.length}</span>
+        {failed > 0 && <span className="shrink-0 text-danger">{failed} failed</span>}
+        {!running && <TraceCaret expanded={expanded} />}
       </button>
       {expanded && (
-        <div className="flex flex-col pl-4">
+        <div className="flex flex-col pl-5.5">
           {calls.map((call) => (
             <ToolCallRow key={call.id} toolCall={call} />
           ))}
@@ -542,38 +570,40 @@ function ToolCallGroup({ calls }: { calls: ToolCallEvent[] }) {
 
 /** Render a compact, expandable tool call row. */
 function ToolCallRow({ toolCall }: { toolCall: ToolCallEvent }) {
-  const [expanded, setExpanded] = useState(false);
+  const [manual, setManual] = useState<boolean | null>(null);
   const running = toolCall.status === "running";
   const interrupted = toolCall.status === "interrupted";
+  const failed = toolCall.status === "failed";
   const label = toolCallLabel(toolCall.input);
 
-  useEffect(() => {
-    if (running && toolCall.result !== undefined) setExpanded(true);
-  }, [running, toolCall.result]);
+  // a result that arrives while the call is still running opens it once; after that the
+  // reader's own toggle wins. Set during render rather than in an effect: it is derived state.
+  const [autoOpened, setAutoOpened] = useState(false);
+  if (running && toolCall.result !== undefined && !autoOpened) setAutoOpened(true);
+  // a failure opens on its own: its result is the reason, which is the whole point of the row
+  const expanded = manual ?? (autoOpened || failed);
 
   return (
     <div>
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
+        onClick={() => setManual(!expanded)}
         disabled={running}
         aria-expanded={expanded}
         className={cn(
-          "group flex w-full items-center gap-1.5 py-0.5 text-left text-2xs transition-colors",
+          "group flex w-full items-center gap-2 py-0.5 text-left text-2xs transition-colors",
           running ? "text-fg-subtle" : "text-fg-muted hover:text-fg",
         )}
       >
-        {running ? (
-          <Spinner className="size-2.5 shrink-0 text-fg-subtle" />
-        ) : (
-          <TraceCaret expanded={expanded} />
-        )}
+        <ToolTile name={toolCall.name} failed={failed} running={running} />
         <span className="shrink-0">{toolLabel(toolCall.name)}</span>
-        {label && <span className="truncate font-mono text-fg-subtle">{label}</span>}
+        {label && <span className="min-w-0 truncate font-mono text-fg-subtle">{label}</span>}
+        {failed && <span className="shrink-0 text-danger">failed</span>}
         {interrupted && <span className="shrink-0 text-fg-subtle">no result</span>}
+        {!running && !failed && <TraceCaret expanded={expanded} />}
       </button>
       {expanded && (
-        <div className="my-1 pl-4">
+        <div className="my-1 pl-5.5">
           <ToolCallResult result={toolCall.result} />
         </div>
       )}

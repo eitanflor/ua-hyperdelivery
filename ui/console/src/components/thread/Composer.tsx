@@ -158,7 +158,7 @@ export function Composer({
       )}
       <div
         className={cn(
-          "relative rounded-md border bg-surface transition-colors",
+          "group relative rounded-md border bg-surface transition-colors",
           "border-line focus-within:border-accent",
         )}
       >
@@ -169,7 +169,7 @@ export function Composer({
           id="composer"
           className="w-full resize-none rounded-md bg-transparent px-3.5 pt-3 pr-12 pb-7 text-xs leading-relaxed text-fg placeholder:text-fg-subtle focus:outline-none"
           rows={3}
-          placeholder={`Message ${label}…`}
+          placeholder={questions.length > 0 ? `Add a note for ${label} (optional)` : `Message ${label}…`}
           value={text}
           disabled={running}
           onChange={(e) => setText(e.target.value)}
@@ -206,7 +206,9 @@ export function Composer({
               >
                 <PaperclipIcon className="size-3.5" />
               </button>
-              <span>Enter to send, ⇧/⌘/Ctrl + Enter for a new line</span>
+              <span className="opacity-0 transition-opacity group-focus-within:opacity-100">
+                Enter to send, ⇧ + Enter for a new line
+              </span>
             </>
           )}
         </div>
@@ -215,7 +217,7 @@ export function Composer({
           onClick={() => (running ? cancelRun() : void send())}
           disabled={!running && !text.trim() && attachments.length === 0 && answeredCount === 0}
           aria-label={running ? `Stop ${label}` : `Send to ${label}`}
-          className="absolute right-2 bottom-2 flex size-7 items-center justify-center rounded-full bg-accent text-fg-on-accent transition-all hover:bg-accent-hover active:scale-95 disabled:opacity-35"
+          className="absolute right-2 bottom-2 flex size-7 items-center justify-center rounded-full bg-accent text-fg-on-accent transition-all hover:bg-accent-hover active:scale-95 disabled:bg-sunken disabled:text-fg-subtle"
         >
           {running ? (
             <StopIcon weight="bold" className="size-3.5" />

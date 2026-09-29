@@ -253,12 +253,14 @@ function nonSectionGaps(gaps: string[]): string[] {
 
 /** What stops the brief being complete, in words - the percentage itself is the ring on the
  * document's cover, so it is not repeated here. */
-export function CompletenessMeter({ content }: { content: Content }) {
+export function CompletenessMeter({ content, asking }: { content: Content; asking: boolean }) {
   const score = completeness(content);
   if (!score) return null;
   const missingSections = missingRequiredSections(content, score.gaps);
   const otherGaps = nonSectionGaps(score.gaps);
-  if (missingSections.length === 0 && otherGaps.length === 0 && score.questions.length === 0) return null;
+  // once the station has handed off there is no message box to answer in
+  const waiting = asking ? score.questions.length : 0;
+  if (missingSections.length === 0 && otherGaps.length === 0 && waiting === 0) return null;
 
   return (
     <div>
@@ -272,18 +274,26 @@ export function CompletenessMeter({ content }: { content: Content }) {
           Other gaps: {otherGaps.join("; ")}
         </p>
       )}
-      {score.questions.length > 0 && (
+      {waiting > 0 && (
         <p className="mt-3 rounded-sm border border-line bg-surface px-2.5 py-1.5 text-2xs text-fg-muted first:mt-0">
-          {score.questions.length === 1
+          {waiting === 1
             ? "One question is waiting above the message box."
-            : `${score.questions.length} questions are waiting above the message box.`}
+            : `${waiting} questions are waiting above the message box.`}
         </p>
       )}
     </div>
   );
 }
 
-export function SpecView({ content, viewMode }: { content: Content; viewMode: ViewMode }) {
+export function SpecView({
+  content,
+  viewMode,
+  asking,
+}: {
+  content: Content;
+  viewMode: ViewMode;
+  asking: boolean;
+}) {
   const requirements = list<Requirement>(content, "requirements");
   const criteria = list<GateCriterion>(content, "gate_criteria");
   const rules = list<MachineRule>(content, "rules");
@@ -314,7 +324,7 @@ export function SpecView({ content, viewMode }: { content: Content; viewMode: Vi
 
   return (
     <div className="flex flex-col gap-5">
-      <CompletenessMeter content={content} />
+      <CompletenessMeter content={content} asking={asking} />
 
       {/* PM already sees gate criteria in GateConsole at sign-off - repeating them here
           is developer-only detail, same as the sections below */}

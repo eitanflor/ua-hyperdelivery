@@ -1,29 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router";
-import {
-  CaretDownIcon,
-  CaretRightIcon,
-  MagnifyingGlassIcon,
-  PencilSimpleIcon,
-  PlusIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
+import { NavLink, useMatch, useNavigate } from "react-router";
+import { MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useProjectsStore } from "../../store/useProjectsStore";
 import type { Station } from "../../api/types";
-import { AGENT_META, STATION_META } from "../../lib/pipeline";
-import { AgentFace } from "../agents/AgentFace";
+import { STATION_META } from "../../lib/pipeline";
 import { IconButton } from "../ui/IconButton";
-import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { cn } from "../../lib/cn";
 
 const GATES: Station[] = ["blueprint_approval", "review_approval", "showroom_approval"];
 
-// Rows per group before it collapses behind "N more" - keeps the rail's height bounded
-// regardless of how many projects accumulate in one bucket, Done especially.
-const VISIBLE_CAP = 6;
-
-// All three groups start folded to one summary row until asked open.
+// The rail is somewhere to jump back into recent work, not the whole portfolio - past
+// these it points at Portfolio, which can sort, filter and page.
+const NEEDS_YOU_CAP = 5;
+const RECENT_CAP = 8;
+const SEARCH_CAP = 50;
 
 interface Row {
   id: string;
@@ -31,44 +22,25 @@ interface Row {
   station: Station | undefined;
 }
 
-type Group = "needsYou" | "active" | "done";
-
-const GROUP_LABEL: Record<Group, string> = {
-  needsYou: "Waiting for approval",
-  active: "Active",
-  done: "Done",
-};
-
-function groupOf(station: Station | undefined): Group {
-  if (station === "done") return "done";
-  if (station && STATION_META[station].kind === "gate") return "needsYou";
-  return "active";
+function isGate(station: Station | undefined): boolean {
+  return station !== undefined && STATION_META[station].kind === "gate";
 }
 
-/** The station chip. One canonical form, everywhere a station appears in a list. */
-function StationChip({ station }: { station: Station | undefined }) {
-  if (!station) return null;
-  const meta = STATION_META[station];
-  const agent = meta.agent ? AGENT_META[meta.agent] : undefined;
-
+function SectionLabel({ children, count, urgent }: { children: string; count?: number; urgent?: boolean }) {
   return (
-    <span
-      className={cn(
-        "ml-auto flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-medium",
-        meta.kind === "gate" && "bg-accent-bg text-accent-text",
-        meta.kind === "done" && "bg-success-bg text-success",
-        meta.kind === "agent" && agent && `${agent.bg} ${agent.fg}`,
-      )}
-    >
-      {agent && <AgentFace agent={agent.face} className="size-3.5" />}
-      {meta.label}
-    </span>
+    <h2 className="mb-0.5 flex items-center gap-1.5 px-2 text-2xs font-medium text-fg-subtle">
+      {urgent && <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />}
+      {children}
+      {count !== undefined && <span className="tabular font-normal text-fg-subtle/70">{count}</span>}
+    </h2>
   );
 }
 
 export function ProjectRail({ open }: { open: boolean }) {
   const navigate = useNavigate();
+  const activeId = useMatch("/projects/:projectId")?.params.projectId;
   const projectsById = useProjectsStore((s) => s.projects);
+  const projectsLoaded = useProjectsStore((s) => s.projectsLoaded);
   const loadPending = useProjectsStore((s) => s.loadPending);
   const loadProjects = useProjectsStore((s) => s.loadProjects);
   const deleteProject = useProjectsStore((s) => s.deleteProject);
@@ -78,10 +50,6 @@ export function ProjectRail({ open }: { open: boolean }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [confirming, setConfirming] = useState<Row | null>(null);
-  // Every group starts folded to one summary row - the rail opens on a glance at counts,
-  // not a scroll through every project.
-  const [openGroups, setOpenGroups] = useState<Partial<Record<Group, boolean>>>({});
-  const [expandedGroups, setExpandedGroups] = useState<Partial<Record<Group, boolean>>>({});
 
   useEffect(() => {
     for (const station of GATES) void loadPending(station);
@@ -92,25 +60,37 @@ export function ProjectRail({ open }: { open: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // most recently touched first: the project you were just in is the one you want back
   const rows = useMemo<Row[]>(
     () =>
-      Object.values(projectsById).map((p) => ({ id: p.id, name: p.name, station: p.station })),
+      Object.values(projectsById)
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+        .map((p) => ({ id: p.id, name: p.name, station: p.station })),
     [projectsById],
   );
 
-  const groups = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    const matched = q ? rows.filter((r) => r.name.toLowerCase().includes(q)) : rows;
-    return {
-      needsYou: matched.filter((r) => groupOf(r.station) === "needsYou"),
-      active: matched.filter((r) => groupOf(r.station) === "active"),
-      done: matched.filter((r) => groupOf(r.station) === "done"),
+  const query = filter.trim().toLowerCase();
+  const { needsYou, needsYouTotal, recent, recentTotal } = useMemo(() => {
+    // a search is an explicit ask to see what matches, in one list
+    if (query) {
+      const matched = rows.filter((r) => r.name.toLowerCase().includes(query));
+      return { needsYou: [], needsYouTotal: 0, recent: matched.slice(0, SEARCH_CAP), recentTotal: matched.length };
+    }
+    const waiting = rows.filter((r) => isGate(r.station));
+    const rest = rows.filter((r) => !isGate(r.station));
+    // the project you are in is always listed, so the rail never loses your place
+    const shown = (list: Row[], cap: number) => {
+      const head = list.slice(0, cap);
+      const current = list.find((r) => r.id === activeId);
+      return current && !head.includes(current) ? [current, ...head.slice(0, cap - 1)] : head;
     };
-  }, [rows, filter]);
-
-  // A search is an explicit ask to see everything that matches - caps and the folded
-  // Done group would otherwise hide the very row the person typed to find.
-  const filtering = filter.trim().length > 0;
+    return {
+      needsYou: shown(waiting, NEEDS_YOU_CAP),
+      needsYouTotal: waiting.length,
+      recent: shown(rest, RECENT_CAP),
+      recentTotal: rest.length,
+    };
+  }, [rows, query, activeId]);
 
   const commitRename = async (row: Row) => {
     const name = editingName.trim();
@@ -121,25 +101,82 @@ export function ProjectRail({ open }: { open: boolean }) {
 
   if (!open) return null;
 
+  const renderRow = (row: Row) => {
+    const waiting = isGate(row.station);
+    const stage = row.station ? STATION_META[row.station].label : undefined;
+    return (
+      <li key={row.id} className="group/row">
+        {editingId === row.id ? (
+          <input
+            autoFocus
+            aria-label={`Rename ${row.name}`}
+            className="w-full rounded-sm border border-line-strong bg-surface px-2 py-1.5 text-xs text-fg focus:outline-none"
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            onBlur={() => void commitRename(row)}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing) return;
+              if (e.key === "Enter") void commitRename(row);
+              if (e.key === "Escape") setEditingId(null);
+            }}
+          />
+        ) : (
+          <div className="flex items-center gap-0.5 rounded-sm transition-colors hover:bg-sunken has-[.active]:bg-sunken">
+            <NavLink
+              to={`/projects/${row.id}`}
+              title={stage ? `${row.name} · ${stage}` : row.name}
+              className={({ isActive }) =>
+                cn(
+                  "flex min-h-8 min-w-0 flex-1 items-center rounded-sm px-2 py-1 text-xs",
+                  isActive ? "active font-medium text-fg" : "text-fg-muted hover:text-fg",
+                )
+              }
+            >
+              <span className="truncate">{row.name}</span>
+              {waiting && <span className="sr-only"> - waiting for approval</span>}
+            </NavLink>
+            <span className="flex shrink-0 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
+              <IconButton
+                size="sm"
+                label={`Rename ${row.name}`}
+                icon={<PencilSimpleIcon className="size-3.5" />}
+                onClick={() => {
+                  setEditingId(row.id);
+                  setEditingName(row.name);
+                }}
+              />
+              <IconButton
+                size="sm"
+                tone="danger"
+                label={`Delete ${row.name}`}
+                icon={<TrashIcon className="size-3.5" />}
+                onClick={() => setConfirming(row)}
+              />
+            </span>
+          </div>
+        )}
+      </li>
+    );
+  };
+
   return (
     <nav
       aria-label="Projects"
-      className="flex w-64 shrink-0 flex-col gap-3 border-r border-line-subtle bg-sunken p-3"
+      className="flex w-64 shrink-0 flex-col gap-2 border-r border-line-subtle bg-canvas p-3"
     >
-      <Button
-        variant="secondary"
-        size="sm"
-        icon={<PlusIcon className="size-3.5" />}
+      <button
+        type="button"
         onClick={() => void navigate("/start")}
-        className="w-full"
+        className="flex h-8 items-center gap-2 rounded-sm px-2 text-xs font-medium text-fg transition-colors hover:bg-sunken"
       >
+        <PlusIcon className="size-3.5" />
         New project
-      </Button>
+      </button>
 
       <div className="relative">
         <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-fg-subtle" />
         <input
-          className="h-8 w-full rounded-sm border border-line bg-surface pr-2 pl-8 text-2xs text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none"
+          className="h-8 w-full rounded-sm bg-sunken pr-2 pl-8 text-xs text-fg placeholder:text-fg-subtle focus:bg-surface focus:ring-1 focus:ring-line-strong focus:outline-none"
           placeholder="Filter projects"
           aria-label="Filter projects"
           value={filter}
@@ -147,133 +184,58 @@ export function ProjectRail({ open }: { open: boolean }) {
         />
       </div>
 
-      <div className="-mx-1 flex-1 overflow-y-auto px-1">
-        {rows.length === 0 && (
+      <div className="-mx-1 mt-1 flex-1 overflow-y-auto px-1">
+        {rows.length === 0 && !projectsLoaded && (
+          <div aria-hidden="true" className="flex flex-col gap-2 px-1 py-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span key={i} className="h-6 animate-pulse rounded-sm bg-line-subtle" />
+            ))}
+          </div>
+        )}
+        {rows.length === 0 && projectsLoaded && (
           <p className="px-1 py-6 text-center text-2xs leading-relaxed text-fg-subtle">
             No projects yet.
             <br />
             Start one to get going.
           </p>
         )}
+        {query && recentTotal === 0 && rows.length > 0 && (
+          <p className="px-2 py-4 text-2xs text-fg-subtle">Nothing matches "{filter.trim()}".</p>
+        )}
 
-        {(["needsYou", "active", "done"] as const).map((group) => {
-          const list = groups[group];
-          if (list.length === 0) return null;
-
-          const open = openGroups[group] ?? false;
-
-          // Folded: just the count, one row tall, until the person asks to see it.
-          if (!open && !filtering) {
-            return (
-              <button
-                key={group}
-                type="button"
-                onClick={() => setOpenGroups((prev) => ({ ...prev, [group]: true }))}
-                className="mb-2 flex w-full items-center gap-1.5 rounded-sm px-1 py-1 text-2xs font-semibold tracking-wide text-fg-subtle uppercase transition-colors hover:text-fg-muted"
+        {needsYou.length > 0 && (
+          <section className="mb-4">
+            <SectionLabel count={needsYouTotal} urgent>
+              Needs you
+            </SectionLabel>
+            <ul className="flex flex-col gap-0.5">{needsYou.map(renderRow)}</ul>
+            {needsYouTotal > needsYou.length && (
+              <NavLink
+                to="/portfolio?tab=needsYou"
+                className="mt-0.5 block rounded-sm px-2 py-1.5 text-2xs text-fg-subtle transition-colors hover:bg-sunken hover:text-fg-muted"
               >
-                <CaretRightIcon className="size-3" />
-                {group === "needsYou" && <span className="size-1.5 rounded-full bg-accent" />}
-                {GROUP_LABEL[group]}
-                <span className="tabular">{list.length}</span>
-              </button>
-            );
-          }
+                +{needsYouTotal - needsYou.length} more waiting
+              </NavLink>
+            )}
+          </section>
+        )}
 
-          const expanded = filtering || (expandedGroups[group] ?? false);
-          const visible = expanded ? list : list.slice(0, VISIBLE_CAP);
-          const hiddenCount = list.length - visible.length;
-
-          return (
-            <section key={group} className="mb-4">
-              <h2 className="mb-1 flex items-center gap-1.5 px-1 text-2xs font-semibold tracking-wide text-fg-subtle uppercase">
-                <button
-                  type="button"
-                  onClick={() => setOpenGroups((prev) => ({ ...prev, [group]: false }))}
-                  className="flex items-center gap-1.5 transition-colors hover:text-fg-muted"
-                >
-                  <CaretDownIcon className="size-3" />
-                  {group === "needsYou" && <span className="size-1.5 rounded-full bg-accent" />}
-                  {GROUP_LABEL[group]}
-                </button>
-                <span className="tabular">{list.length}</span>
-              </h2>
-              <ul className="flex flex-col gap-0.5">
-                {visible.map((row) => (
-                  <li key={row.id} className="group/row">
-                    {editingId === row.id ? (
-                      <input
-                        autoFocus
-                        aria-label={`Rename ${row.name}`}
-                        className="w-full rounded-sm border border-accent bg-surface px-2 py-1.5 text-xs text-fg focus:outline-none"
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        onBlur={() => void commitRename(row)}
-                        onKeyDown={(e) => {
-                          if (e.nativeEvent.isComposing) return;
-                          if (e.key === "Enter") void commitRename(row);
-                          if (e.key === "Escape") setEditingId(null);
-                        }}
-                      />
-                    ) : (
-                      <div className="flex items-center gap-0.5 rounded-sm transition-colors hover:bg-surface has-[.active]:bg-surface">
-                        <NavLink
-                          to={`/projects/${row.id}`}
-                          title={row.name}
-                          className={({ isActive }) =>
-                            cn(
-                              "flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-xs",
-                              isActive ? "active font-medium text-fg" : "text-fg-muted",
-                            )
-                          }
-                        >
-                          <span className="truncate">{row.name}</span>
-                          <StationChip station={row.station} />
-                        </NavLink>
-                        <span className="flex shrink-0 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
-                          <IconButton
-                            size="sm"
-                            label={`Rename ${row.name}`}
-                            icon={<PencilSimpleIcon className="size-3.5" />}
-                            onClick={() => {
-                              setEditingId(row.id);
-                              setEditingName(row.name);
-                            }}
-                          />
-                          <IconButton
-                            size="sm"
-                            tone="danger"
-                            label={`Delete ${row.name}`}
-                            icon={<TrashIcon className="size-3.5" />}
-                            onClick={() => setConfirming(row)}
-                          />
-                        </span>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {hiddenCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setExpandedGroups((prev) => ({ ...prev, [group]: true }))}
-                  className="mt-0.5 w-full rounded-sm px-2 py-1.5 text-left text-2xs text-fg-subtle transition-colors hover:bg-surface hover:text-fg-muted"
-                >
-                  +{hiddenCount} more
-                </button>
-              )}
-              {!filtering && (expandedGroups[group] ?? false) && list.length > VISIBLE_CAP && (
-                <button
-                  type="button"
-                  onClick={() => setExpandedGroups((prev) => ({ ...prev, [group]: false }))}
-                  className="mt-0.5 w-full rounded-sm px-2 py-1.5 text-left text-2xs text-fg-subtle transition-colors hover:bg-surface hover:text-fg-muted"
-                >
-                  Show less
-                </button>
-              )}
-            </section>
-          );
-        })}
+        {recent.length > 0 && (
+          <section className="mb-2">
+            {!query && <SectionLabel>Recent</SectionLabel>}
+            <ul className="flex flex-col gap-0.5">{recent.map(renderRow)}</ul>
+          </section>
+        )}
       </div>
+
+      {rows.length > 0 && (
+        <NavLink
+          to="/portfolio"
+          className="-mb-1 rounded-sm px-2 py-1.5 text-2xs text-fg-subtle transition-colors hover:bg-sunken hover:text-fg-muted"
+        >
+          {!query && recentTotal > recent.length ? `View all ${rows.length} in Portfolio` : "Open Portfolio"}
+        </NavLink>
+      )}
 
       <ConfirmDialog
         open={confirming !== null}

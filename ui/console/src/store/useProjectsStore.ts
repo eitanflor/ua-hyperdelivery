@@ -1,11 +1,12 @@
 import { create } from "zustand";
-import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { api } from "../api/client";
-import type { AdvanceStreamEvent, ToolCallEvent, UsageEvent } from "../api/client";
+import type { AdvanceStreamEvent, ToolCallEvent, TurnRecord, UsageEvent } from "../api/client";
 import { buildTranscript } from "../lib/transcript";
 import { describeError, type FriendlyError } from "../lib/errors";
 import { withAttachments, type Attachment } from "../lib/attachments";
-import { QUESTIONS_TOOL } from "../lib/plan";
+import { paragraphBreaks } from "../lib/streamText";
+import { conversationFromRecords } from "../lib/runs";
 import { AGENT_META, AGENT_STATIONS } from "../lib/pipeline";
 import type {
   Artifact,
@@ -93,6 +94,8 @@ export interface ChatTurn {
   draft?: string; // the artifact's JSON as it is being written, streaming turns only
   waitingSeconds?: number; // how long the model has been silent, streaming turns only
   streaming?: boolean; // true while an agent turn is still receiving chunks
+  /** Why a recorded turn ended without finishing; live failures are dropped instead. */
+  error?: string;
   toolCalls?: ToolCallEvent[]; // tool calls made so far during a streaming turn
   usage?: UsageEvent; // arrives once, at the end of an agent turn
   durationMs?: number; // wall-clock time from send to the finished turn, finished turns only
@@ -136,6 +139,9 @@ interface ProjectsState {
   artifactsByProject: Record<string, Artifact[]>;
   pendingByStation: Partial<Record<Station, Project[]>>;
   recentProjects: RecentProject[];
+  /** The project list has been fetched once (successfully or not). Until then an empty list
+   * means "not here yet", not "no projects". */
+  projectsLoaded: boolean;
   // Full per-project turn history (user prompts + agent replies) - lets a station's
   // elicitation loop (e.g. Distill asking for missing info) render as a real back-and-
   // forth instead of a single overwritten artifact.
@@ -143,6 +149,9 @@ interface ProjectsState {
   signaturesByProject: Record<string, Signature[]>;
   /** The server's decision trail - authoritative, unlike the local echo above. */
   decisionsByProject: Record<string, Decision[]>;
+  /** What the server recorded of each project's agent turns - the trace, which lives on the
+   * server rather than in this browser so any machine sees it. Not persisted locally. */
+  turnsByProject: Record<string, TurnRecord[]>;
   /** Each project's unsent message, so a quote from a document can land in it. */
   composerDrafts: Record<string, string>;
   buildsByProject: Record<string, Builds>;
@@ -168,6 +177,7 @@ interface ProjectsState {
   loadProjects: () => Promise<void>;
   loadArtifacts: (projectId: string) => Promise<void>;
   loadDecisions: (projectId: string) => Promise<void>;
+  loadTurns: (projectId: string) => Promise<void>;
   loadPending: (station: Station) => Promise<void>;
   /** Reads the build pull requests once. `watchBuilds` is what keeps them fresh. */
   loadBuilds: (projectId: string) => Promise<void>;
@@ -267,31 +277,6 @@ function rememberRecent(recents: RecentProject[], project: Project): RecentProje
   return [{ id: project.id, name: project.name }, ...withoutThis].slice(0, MAX_RECENTS);
 }
 
-/** Only what's worth surviving a reload - `toolCalls`/`draft`/`waitingSeconds`/`streaming`
- * are mid-stream bookkeeping, meaningless once a turn is done and potentially large (a
- * tool call's `result` can be a whole fetched document or query result set). A turn
- * reloaded mid-stream should just show as whatever it last finished, not resume streaming. */
-function persistableTurn(turn: ChatTurn): ChatTurn {
-  const { id, role, agent, text, content, usage, durationMs, createdAt } = turn;
-  const toolCalls = turn.toolCalls?.filter((call) => call.name === QUESTIONS_TOOL);
-  return {
-    id,
-    role,
-    agent,
-    text,
-    content,
-    toolCalls: toolCalls?.length ? toolCalls : undefined,
-    usage,
-    durationMs,
-    createdAt,
-  };
-}
-
-function pickByRecent<T>(byProject: Record<string, T>, recents: RecentProject[]): Record<string, T> {
-  const ids = new Set(recents.map((p) => p.id));
-  return Object.fromEntries(Object.entries(byProject).filter(([id]) => ids.has(id)));
-}
-
 /** Polls until Distill's next turn actually lands: either a new `pending_question` is
  * persisted or the project leaves the distill station entirely (it drafted and advanced
  * past the gate). Clearing the previous question is only an intermediate state between
@@ -376,6 +361,7 @@ function createTurnAccumulator(set: SetState, projectId: string, streamingTurnId
   let pendingDraft = "";
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
   let drafted = false;
+  const breaks = paragraphBreaks();
 
   const flush = () => {
     if (!pendingText && !pendingDraft) return;
@@ -406,7 +392,7 @@ function createTurnAccumulator(set: SetState, projectId: string, streamingTurnId
 
   return {
     appendChunk: (chunk: string) => {
-      pendingText += chunk;
+      pendingText += breaks.chunk(chunk);
       scheduleFlush();
     },
     appendDraft: (draft: string) => {
@@ -414,7 +400,8 @@ function createTurnAccumulator(set: SetState, projectId: string, streamingTurnId
       pendingDraft += draft;
       scheduleFlush();
     },
-    upsertToolCall: (toolCall: ToolCallEvent) =>
+    upsertToolCall: (toolCall: ToolCallEvent) => {
+      breaks.toolCall(toolCall);
       set((state) => {
         const turns = state.conversationByProject[projectId] ?? [];
         return {
@@ -436,7 +423,8 @@ function createTurnAccumulator(set: SetState, projectId: string, streamingTurnId
             }),
           },
         };
-      }),
+      });
+    },
     flushNow: () => {
       if (flushTimer !== null) clearTimeout(flushTimer);
       flushTimer = null;
@@ -508,47 +496,6 @@ function waitForDistillTurnOverSocket(
   });
 }
 
-/** localStorage has a per-origin quota (5-10MB) and zustand's persist does not catch a
- * `setItem` that exceeds it - it throws synchronously out of whichever `set()` call
- * triggered the write, breaking that update rather than just failing to save. Bounding
- * what gets persisted (above) keeps normal use well under quota; this is the fallback for
- * when it still doesn't fit - drop the oldest recent project's history and retry rather
- * than let a full disk break an unrelated state update. */
-const evictingLocalStorage: StateStorage = {
-  getItem: (name) => localStorage.getItem(name),
-  removeItem: (name) => localStorage.removeItem(name),
-  setItem: (name, value) => {
-    let payload = value;
-    for (let attempt = 0; attempt <= MAX_RECENTS; attempt++) {
-      try {
-        localStorage.setItem(name, payload);
-        return;
-      } catch {
-        let parsed: {
-          state: {
-            recentProjects: RecentProject[];
-            conversationByProject: Record<string, ChatTurn[]>;
-            signaturesByProject: Record<string, Signature[]>;
-          };
-        };
-        try {
-          parsed = JSON.parse(payload) as typeof parsed;
-        } catch {
-          return;
-        }
-        const oldest = parsed.state.recentProjects.at(-1);
-        if (!oldest) return;
-        parsed.state.recentProjects = parsed.state.recentProjects.filter((p) => p.id !== oldest.id);
-        delete parsed.state.conversationByProject[oldest.id];
-        delete parsed.state.signaturesByProject[oldest.id];
-        payload = JSON.stringify(parsed);
-      }
-    }
-    // still over quota with nothing left to evict, or storage unavailable entirely - the
-    // in-memory store still works for this tab, it just will not survive a reload
-  },
-};
-
 export const useProjectsStore = create<ProjectsState>()(
   persist(
     (set, get) => ({
@@ -556,9 +503,11 @@ export const useProjectsStore = create<ProjectsState>()(
       artifactsByProject: {},
       pendingByStation: {},
       recentProjects: [],
+      projectsLoaded: false,
       conversationByProject: {},
       signaturesByProject: {},
       decisionsByProject: {},
+      turnsByProject: {},
       composerDrafts: {},
       buildsByProject: {},
       previewByProject: {},
@@ -619,17 +568,21 @@ export const useProjectsStore = create<ProjectsState>()(
 
       loadProjects: () =>
         guarded(set, async () => {
-          const projects = await api.listProjects();
-          const ids = new Set(projects.map((p) => p.id));
-          set((state) => ({
-            projects: {
-              ...state.projects,
-              ...Object.fromEntries(projects.map((p) => [p.id, p])),
-            },
-            // the list is every project this API knows, so a recent it lacks was deleted
-            // or belongs to another environment - kept, it lingers in search forever
-            recentProjects: state.recentProjects.filter((p) => ids.has(p.id)),
-          }));
+          try {
+            const projects = await api.listProjects();
+            const ids = new Set(projects.map((p) => p.id));
+            set((state) => ({
+              projects: {
+                ...state.projects,
+                ...Object.fromEntries(projects.map((p) => [p.id, p])),
+              },
+              // the list is every project this API knows, so a recent it lacks was deleted
+              // or belongs to another environment - kept, it lingers in search forever
+              recentProjects: state.recentProjects.filter((p) => ids.has(p.id)),
+            }));
+          } finally {
+            set({ projectsLoaded: true });
+          }
         }),
 
       loadArtifacts: (projectId) =>
@@ -647,6 +600,27 @@ export const useProjectsStore = create<ProjectsState>()(
             decisionsByProject: { ...state.decisionsByProject, [projectId]: decisions },
           }));
         }),
+
+      // Deliberately not `guarded`: the trace is an extra, so a failed fetch leaves the thread
+      // as it was rather than raising a toast over a page that is otherwise fine.
+      loadTurns: async (projectId) => {
+        try {
+          const turns = await api.listTurns(projectId);
+          set((state) => {
+            const local = state.conversationByProject[projectId] ?? [];
+            const merged = conversationFromRecords(local, turns);
+            return {
+              turnsByProject: { ...state.turnsByProject, [projectId]: turns },
+              // untouched when the records add nothing, so a poll does not re-render the thread
+              ...(merged === local
+                ? {}
+                : { conversationByProject: { ...state.conversationByProject, [projectId]: merged } }),
+            };
+          });
+        } catch {
+          // an older API without the endpoint, or a blip - nothing to show
+        }
+      },
 
       // Deliberately not `guarded`: a poll that flips the global loading spinner every
       // few seconds, or raises a toast because GitHub blipped, is worse than a stale card
@@ -773,6 +747,7 @@ export const useProjectsStore = create<ProjectsState>()(
               }));
               await get().loadArtifacts(pending.projectId);
               void get().loadDecisions(pending.projectId);
+              void get().loadTurns(pending.projectId);
               for (const gate of GATES) void get().loadPending(gate);
 
               // "when a decision commits, the line visibly advances and the next agent
@@ -939,7 +914,9 @@ export const useProjectsStore = create<ProjectsState>()(
                   text: streamed?.text,
                   toolCalls: streamed?.toolCalls,
                   durationMs: Date.now() - startedAt,
-                  createdAt: artifact?.created_at ?? new Date().toISOString(),
+                  // the turn's own start, not when its artifact landed: that is what its server
+                  // record is matched on, and a long run would otherwise appear twice
+                  createdAt: streamed?.createdAt ?? new Date().toISOString(),
                 };
               } else {
                 updated = race.polled;
@@ -965,6 +942,7 @@ export const useProjectsStore = create<ProjectsState>()(
               runningProjectId: null,
             }));
             if (updated.station !== "distill") await get().loadArtifacts(projectId);
+            void get().loadTurns(projectId);
           } catch (err) {
             if (waitingTimer !== null) clearInterval(waitingTimer);
             // Not `ws?.close()`: the error might be `answerQuestion`'s REST call, or the
@@ -1056,8 +1034,9 @@ export const useProjectsStore = create<ProjectsState>()(
               flush();
             }, STREAM_FLUSH_MS);
           };
+          const breaks = paragraphBreaks();
           const appendChunk = (chunk: string) => {
-            pendingText += chunk;
+            pendingText += breaks.chunk(chunk);
             scheduleFlush();
           };
           // set once real draft content arrives - a voluntary-structured-output agent
@@ -1071,7 +1050,8 @@ export const useProjectsStore = create<ProjectsState>()(
           };
           // a running call becomes its own done call in place once it finishes - matched
           // by tool use id, so a retried call (same name, new id) gets its own row
-          const upsertToolCall = (toolCall: ToolCallEvent) =>
+          const upsertToolCall = (toolCall: ToolCallEvent) => {
+            breaks.toolCall(toolCall);
             set((state) => {
               const turns = state.conversationByProject[projectId] ?? [];
               return {
@@ -1094,6 +1074,7 @@ export const useProjectsStore = create<ProjectsState>()(
                 },
               };
             });
+          };
           // the model reports nothing at all while it works through a large context, so
           // this is the only sign the turn is alive - guarded because it repeats on a
           // timer and every distinct value is a re-render
@@ -1135,6 +1116,7 @@ export const useProjectsStore = create<ProjectsState>()(
               projectId,
               transcript,
               runController.signal,
+              prompt,
             )) {
               if (event.thinking) {
                 setWaiting(event.thinking.seconds);
@@ -1179,7 +1161,8 @@ export const useProjectsStore = create<ProjectsState>()(
               toolCalls: streamingTurn?.toolCalls,
               usage,
               durationMs: Date.now() - startedAt,
-              createdAt: artifact?.created_at ?? new Date().toISOString(),
+              // the turn's own start, so it lines up with its server record (see `conversationFromRecords`)
+              createdAt: streamingTurn?.createdAt ?? new Date().toISOString(),
             };
             const withoutStreaming = turns.filter((t) => t.id !== streamingTurnId);
             return {
@@ -1192,6 +1175,7 @@ export const useProjectsStore = create<ProjectsState>()(
             };
           });
           await get().loadArtifacts(projectId);
+          void get().loadTurns(projectId);
         }),
 
       cancelRun: () => {
@@ -1255,17 +1239,26 @@ export const useProjectsStore = create<ProjectsState>()(
     }),
     {
       name: "hyperdelivery-console",
-      storage: createJSONStorage(() => evictingLocalStorage),
+      version: 2,
+      storage: createJSONStorage(() => localStorage),
+      // Only what belongs to this browser: which projects it opened, and how much detail it
+      // wants. Conversations and the trace live on the server (see `loadTurns`), so nothing a
+      // project produced is kept here - it is small, per browser and readable by any script on
+      // the origin.
       partialize: (state) => ({
         recentProjects: state.recentProjects,
-        conversationByProject: Object.fromEntries(
-          Object.entries(pickByRecent(state.conversationByProject, state.recentProjects)).map(
-            ([id, turns]) => [id, turns.map(persistableTurn)],
-          ),
-        ),
-        signaturesByProject: pickByRecent(state.signaturesByProject, state.recentProjects),
         viewMode: state.viewMode,
       }),
+      // Named fields only, so what an older version stored (whole conversations, signatures)
+      // is ignored and then overwritten on the next save instead of loaded back in.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<Pick<ProjectsState, "recentProjects" | "viewMode">>;
+        return {
+          ...current,
+          recentProjects: saved.recentProjects ?? current.recentProjects,
+          viewMode: saved.viewMode ?? current.viewMode,
+        };
+      },
     },
   ),
 );

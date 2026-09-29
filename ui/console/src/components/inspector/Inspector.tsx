@@ -14,13 +14,15 @@ import { AgentFace } from "../agents/AgentFace";
 import { IconButton } from "../ui/IconButton";
 import { Tooltip } from "../ui/Tooltip";
 import { cn } from "../../lib/cn";
+import { rovingKeyDown } from "../../lib/roving";
 import { DocumentViewer } from "./DocumentViewer";
 import { ProgressView } from "./ProgressView";
 import { SourcesView } from "./SourcesView";
 import { TraceView } from "./TraceView";
 
-/** Past this many tabs the row no longer fits a normal-width panel, so the tabs you are not
- * on show only their icon. The open one always keeps its name. */
+/** Past this many tabs the row no longer fits a normal-width panel, so Progress, Sources and
+ * Trace (whose icons are distinct) show only their icon when not open. The agents' tabs never
+ * do: two robot faces with no name are indistinguishable. The open tab always keeps its name. */
 const COMPACT_AT = 5;
 
 function PanelTab({
@@ -44,7 +46,9 @@ function PanelTab({
   const tab = (
     <button
       type="button"
-      aria-pressed={active}
+      role="tab"
+      aria-selected={active}
+      tabIndex={active ? 0 : -1}
       aria-label={iconOnly ? label : undefined}
       title={iconOnly ? undefined : title}
       onClick={onClick}
@@ -112,7 +116,12 @@ export function Inspector({
       )}
     >
       <div className="flex h-12 shrink-0 items-center gap-1 border-b border-line-subtle px-2">
-        <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
+        <div
+          role="tablist"
+          aria-label="Panel views"
+          onKeyDown={(e) => rovingKeyDown(e, '[role="tab"]', (tab) => tab.click())}
+          className="flex min-w-0 flex-1 gap-1 overflow-x-auto"
+        >
           <PanelTab
             active={view === "progress"}
             onClick={() => onPanel("progress")}
@@ -149,7 +158,6 @@ export function Inspector({
                 onClick={() => onPanel(a.agent)}
                 icon={meta ? <AgentFace agent={meta.face} className="size-4" /> : null}
                 label={meta?.name ?? a.agent}
-                compact={compact}
               />
             );
           })}

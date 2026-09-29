@@ -54,10 +54,12 @@ function fileName(path: string): string {
   return last.replace(/^[0-9a-f]{32}-/, "");
 }
 
-/** The files and documents a turn read, by name - the sources its reply rests on. */
-export function callSources(calls: Pick<ToolCallEvent, "input">[]): string[] {
+/** The files and documents a turn read, by name - the sources its reply rests on. A read
+ * that failed is not a source. */
+export function callSources(calls: Pick<ToolCallEvent, "input" | "status">[]): string[] {
   const names = new Set<string>();
   for (const call of calls) {
+    if (call.status === "failed") continue;
     const target = callTarget(call.input);
     if (target?.key === "path") names.add(fileName(target.value));
   }

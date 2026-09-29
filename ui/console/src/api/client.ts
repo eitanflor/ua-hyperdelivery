@@ -63,12 +63,28 @@ export interface ToolCallEvent {
   id: string;
   name: string;
   /** `interrupted` is a call the turn ended without a result for - it is finished in the
-   * sense that nothing more is coming, which is what stops the spinner. */
-  status: "running" | "done" | "interrupted";
+   * sense that nothing more is coming, which is what stops the spinner. `failed` is a call
+   * that came back with an error: its `result` is the reason. */
+  status: "running" | "done" | "failed" | "interrupted";
   result?: unknown;
   /** The call's arguments, long strings clipped. Only on a finished call - while one is
    * still streaming its input is a half-written JSON string. */
   input?: Record<string, unknown>;
+}
+
+/** One agent turn as the server recorded it, so the trace outlives the browser that watched
+ * it. Tool results are already cut down server-side (see core/domain/turn.py). */
+export interface TurnRecord {
+  agent: string;
+  started_at: string;
+  /** What the person sent to start the turn, when the server was told. */
+  message: string | null;
+  duration_ms: number | null;
+  text: string;
+  tool_calls: ToolCallEvent[];
+  usage: UsageEvent | null;
+  /** Set when the turn ended in a failure or was stopped. */
+  error: string | null;
 }
 
 /** Tokens the whole turn burned, accumulated across every model call the agent made.
@@ -213,6 +229,7 @@ export const api = {
     }),
 
   listDecisions: (projectId: string) => request<Decision[]>(`/projects/${projectId}/decisions`),
+  listTurns: (projectId: string) => request<TurnRecord[]>(`/projects/${projectId}/turns`),
 
   // Deployed-mode counterpart of the local advanceProject stream: answers Distill's
   // pending_question via the state machine's task token instead of invoking an agent
@@ -231,12 +248,15 @@ export const api = {
     projectId: string,
     prompt?: string,
     signal?: AbortSignal,
+    message?: string,
   ): AsyncGenerator<AdvanceStreamEvent> {
     const token = await getIdToken();
     const resp = await fetch(`${API_BASE_URL}/projects/${projectId}/advance/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ prompt: prompt ?? null }),
+      // `prompt` is the whole transcript; `message` is what the person typed, kept on the turn's
+      // record so the conversation can be rebuilt anywhere
+      body: JSON.stringify({ prompt: prompt ?? null, message: message ?? null }),
       signal,
     });
     if (!resp.ok) {

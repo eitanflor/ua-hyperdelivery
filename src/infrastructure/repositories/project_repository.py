@@ -16,6 +16,7 @@ from core.domain.project import (
     prior_station,
     utcnow,
 )
+from core.domain.turn import Turn
 from infrastructure.repositories.keys import (
     ALL_PROJECTS_GSI2PK,
     ALL_PROJECTS_INDEX,
@@ -23,12 +24,14 @@ from infrastructure.repositories.keys import (
     DECISION_PREFIX,
     PENDING_BY_STATION_INDEX,
     STATE_SK,
+    TURN_PREFIX,
     artifact_sk,
     artifact_version_prefix,
     artifact_version_sk,
     decision_sk,
     pending_gsi1pk,
     project_pk,
+    turn_sk,
 )
 
 if TYPE_CHECKING:  # boto3-stubs is a dev-only dependency
@@ -43,7 +46,8 @@ class ProjectRepository:
     """DynamoDB-backed project state + decision audit trail.
 
     Single-table schema: pk=PROJECT#<id>, sk='STATE' | 'DECISION#<iso-ts>' |
-    'ARTIFACT#<agent>' (latest) | 'ARTIFACT_VERSION#<agent>#v<NNNN>' (history), plus
+    'TURN#<iso-ts>#<agent>' | 'ARTIFACT#<agent>' (latest) |
+    'ARTIFACT_VERSION#<agent>#v<NNNN>' (history), plus
     gsi1-pending-by-station ("who owes a decision") and gsi2-all-projects-by-updated
     ("every project, most recent first"). Schema owned by infra/stacks/storage_stack.py -
     keep both in sync.
@@ -163,6 +167,29 @@ class ProjectRepository:
                 break
             kwargs["ExclusiveStartKey"] = last_key
         return [self._decision_from_item(project_id, item) for item in items]
+
+    def save_turn(self, turn: Turn) -> None:
+        """Record one finished agent turn: what it said, which tools it called, what it cost."""
+        self._table.put_item(Item=self._turn_item(turn))
+
+    def list_turns(self, project_id: str) -> list[Turn]:
+        """Every recorded turn on a project, oldest first."""
+        kwargs: dict[str, Any] = {
+            "KeyConditionExpression": "pk = :pk AND begins_with(sk, :prefix)",
+            "ExpressionAttributeValues": {
+                ":pk": project_pk(project_id),
+                ":prefix": TURN_PREFIX,
+            },
+        }
+        items: list[dict[str, Any]] = []
+        while True:
+            resp = self._table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            last_key = resp.get("LastEvaluatedKey")
+            if not last_key:
+                break
+            kwargs["ExclusiveStartKey"] = last_key
+        return [self._turn_from_item(project_id, item) for item in items]
 
     def clear_pending_question(self, project_id: str) -> None:
         """Release Distill's elicitation wait once the console API has resumed it."""
@@ -335,6 +362,22 @@ class ProjectRepository:
             comment=item.get("comment"),
             decided_at=item["decided_at"],
         )
+
+    @staticmethod
+    def _turn_item(turn: Turn) -> dict[str, Any]:
+        return {
+            "pk": project_pk(turn.project_id),
+            "sk": turn_sk(turn.started_at.isoformat(), turn.agent),
+            "agent": turn.agent,
+            "started_at": turn.started_at.isoformat(),
+            # a JSON string for the same reason as an artifact's content: the Table resource
+            # rejects native float, and a tool result can hold any JSON value
+            "body": json.dumps(turn.model_dump(mode="json", exclude={"project_id"})),
+        }
+
+    @staticmethod
+    def _turn_from_item(project_id: str, item: dict[str, Any]) -> Turn:
+        return Turn(project_id=project_id, **json.loads(item["body"]))
 
     @staticmethod
     def _project_from_item(item: dict[str, Any]) -> Project:

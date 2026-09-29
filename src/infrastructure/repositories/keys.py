@@ -12,6 +12,7 @@ ALL_PROJECTS_GSI2PK = "PROJECT"  # constant partition value - every STATE item c
 STATE_SK = "STATE"
 ARTIFACT_PREFIX = "ARTIFACT#"  # latest-only items; distinct from ARTIFACT_VERSION# below
 DECISION_PREFIX = "DECISION#"  # append-only; the ISO-timestamp suffix sorts them in time order
+TURN_PREFIX = "TURN#"  # append-only; one item per agent turn, ISO start time sorts them
 
 GLOBAL_PK = "GLOBAL"  # partition for system-wide, not-per-project items
 CONTEXT_SK = "CONTEXT"
@@ -50,3 +51,8 @@ def artifact_version_sk(agent: str, version: int) -> str:
 def artifact_version_prefix(agent: str) -> str:
     """`begins_with` prefix matching every historical version of one agent's artifact."""
     return f"ARTIFACT_VERSION#{agent}#v"
+
+
+def turn_sk(started_at_iso: str, agent: str) -> str:
+    """Sort key for one agent turn - the start time orders them, the agent keeps two apart."""
+    return f"{TURN_PREFIX}{started_at_iso}#{agent}"

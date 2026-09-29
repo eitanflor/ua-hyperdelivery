@@ -23,6 +23,7 @@ export function Workspace() {
   const loadProject = useProjectsStore((s) => s.loadProject);
   const loadArtifacts = useProjectsStore((s) => s.loadArtifacts);
   const loadDecisions = useProjectsStore((s) => s.loadDecisions);
+  const loadTurns = useProjectsStore((s) => s.loadTurns);
 
   // in the URL, so a copied link reopens the same document at the same section
   const panel = params.get("panel") ?? "progress";
@@ -62,7 +63,8 @@ export function Workspace() {
     void loadProject(projectId);
     void loadArtifacts(projectId);
     void loadDecisions(projectId);
-  }, [projectId, loadProject, loadArtifacts, loadDecisions]);
+    void loadTurns(projectId);
+  }, [projectId, loadProject, loadArtifacts, loadDecisions, loadTurns]);
 
   // follow a document as it lands - but only one that is new since this project's list
   // first loaded, so a link to Progress or to another document is not overridden

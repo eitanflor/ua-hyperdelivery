@@ -17,6 +17,36 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Changed
 
+- A tool call that returns an error is reported as `failed` in the `tool_call` event, not
+  `done` (Strands hands an errored call back as an ordinary result, so the two were
+  indistinguishable). Console clients that only know `running`, `done` and `interrupted`
+  will treat it as unknown. A failed `create_pull_request_with_copilot` or
+  `assign_copilot_to_issue` no longer counts as a side effect worth saving.
+- Console: a failed tool call shows a red mark, opens to its reason, and counts as "N failed"
+  on the collapsed trace chip, in Simple mode's steps and in its summary line; a failed read
+  is no longer listed as a source. The Progress tab lists what the crew did outside the
+  console (files written, issues and pull requests, Jira changes) with a link to each and a
+  "did not go through" note for failures. The tab title names the agent that is working, and a
+  run that finishes while the tab is out of sight shows "Finished" and a green dot until you
+  look at it.
+- The API records each finished agent turn (text, tool calls, usage, duration, and the error if
+  it failed or was stopped) as a `TURN#<start>#<agent>` item under the project, from both the
+  local stream and the deployed invoker, and serves them at `GET /projects/{id}/turns`. Tool
+  results are clipped to 1,500 characters and a turn to 60 calls, and a failed save is logged,
+  not raised into the run. No table or index change. The console reads the trace from there
+  instead of `localStorage`, so it survives a reload and shows on any machine. See
+  docs/decisions.md.
+- The turn record also carries the person's message, and a deployed create or answer is
+  recorded as a message-only turn. The console rebuilds the whole conversation from the
+  server on open and keeps only the recent-projects list and detail level in `localStorage`
+  (no conversations, signatures or quota-eviction fallback; old stored copies are ignored).
+  The "seen document versions" map is capped at the 300 newest. A failed turn reads as
+  "This run did not finish" with its reason.
+- Console: each step in the tool trace has a small icon for its kind (read, search, query,
+  write, question) and a failed step shows a red cross, all under the trace's quiet left rule.
+- Console Portfolio: the filter chips show how many projects each would list (for the
+  current search), and Project, Stage and Updated sort the table. The sort is kept in the
+  URL (`?sort=name&dir=asc`), and Updated, newest first, stays the default.
 - Console Home is one bento that fits a laptop screen: every tile shows at most four rows
   (the first tile spans two columns and lists eight when the grid would otherwise leave a
   gap), "View all" opens the matching Portfolio filter, and the crew is a tile of the same
@@ -40,6 +70,38 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Fixed
 
+- Console, from a second review of the live app:
+  - The project rail is a short list instead of three folded groups above an empty column:
+    "Needs you" (up to five, a red dot, "+N more waiting" into Portfolio), then "Recent"
+    (the 8 most recently updated), with "View all N in Portfolio" pinned at the bottom.
+    The project you are in is always listed and highlighted, a search shows every match in
+    one list, and the station moved from a chip into the row's tooltip. The rail now shares
+    the page's background, with plain rows and no per-row dots, instead of a grey panel.
+  - A reply where the agent has already spoken no longer repeats itself with the generic
+    "Before I draft anything..." line, and a question card that is greyed out while the run
+    finishes says why.
+  - Text an agent streams before and after a tool call no longer runs together ("...a few
+    basics from you:I checked..."); the first chunk after a call starts a new paragraph.
+  - A project opens at the end of its thread, where the gate is. The thread follows any
+    growth (streamed text, and the documents and signatures that land after first paint)
+    while the reader is at the end, so Approve is no longer left below the fold.
+  - The thread holds a skeleton until documents and decisions are in, so the gate no longer
+    paints first and jumps down when the turns above it arrive.
+  - The artifacts panel's tabs are a real tablist with arrow-key
+    movement, and the agents' tabs always show their names (Scout and Coach were two
+    unlabeled robot faces).
+  - A signed document no longer says questions are waiting "above the message box" once the
+    station has handed off.
+  - Disabled primary buttons and the composer's send button are neutral, not faded red.
+    Selected options in Settings, the starting-point picker and question answers are
+    neutral; red stays for the primary action, current station and gates.
+  - Portfolio shows skeleton counts and no "No projects match" while the list loads, and
+    the table shows 40 rows with "Show more" instead of all of them. The project rail no
+    longer flashes "No projects yet." on first paint.
+  - Signature lines, the document tooltip and Workspace notes share one date format.
+  - Home's "What brings you here?" sits below the queues instead of pushing them down; the
+    composer hint shows on focus, and its placeholder says "Add a note" while questions are
+    open. A tool call's expand state is derived rather than set in an effect.
 - Console, from a review of the live app:
   - A question the crew parked on the server now shows in the project's thread for everyone,
     not only in the browser that asked it.

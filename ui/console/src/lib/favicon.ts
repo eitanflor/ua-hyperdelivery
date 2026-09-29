@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const BASE_TITLE = "Hyperdelivery Console";
 const SIZE = 64;
 // fixed rather than theme tokens: the tab strip belongs to the browser, not the page
 const WAITING = "#e4002b";
 const WORKING = "#86868f";
+const FINISHED = "#1f8a4c";
 
 let base: Promise<HTMLImageElement> | null = null;
 let originalHref: string | null = null;
@@ -57,21 +58,44 @@ function paintIcon(color: string | null): void {
 }
 
 /** Says, from a background tab, whether anything needs you: a count in the title and a
- * red dot on the icon when approvals are waiting, a gray dot while an agent works. */
+ * red dot on the icon when approvals are waiting, a gray dot and the agent's name while it
+ * works, and a green dot with "Finished" when a run ended while the tab was out of sight -
+ * until the tab is looked at again. */
 export function useTabBadge({
   waiting,
   working,
+  activity,
   title,
 }: {
   waiting: number;
   working: boolean;
+  /** Who is working, for the title, e.g. "Scout is working". */
+  activity?: string | null;
   title?: string;
 }): void {
-  useEffect(() => {
-    document.title = `${waiting > 0 ? `(${waiting}) ` : ""}${title ? `${title} · ` : ""}${BASE_TITLE}`;
-  }, [waiting, title]);
+  // set during render rather than in an effect: it is derived from `working` changing
+  const [wasWorking, setWasWorking] = useState(working);
+  const [finished, setFinished] = useState(false);
+  if (wasWorking !== working) {
+    setWasWorking(working);
+    setFinished(wasWorking && !working && document.hidden);
+  }
 
   useEffect(() => {
-    paintIcon(waiting > 0 ? WAITING : working ? WORKING : null);
-  }, [waiting, working]);
+    const onVisible = () => {
+      if (!document.hidden) setFinished(false);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
+  useEffect(() => {
+    const count = waiting > 0 ? `(${waiting}) ` : "";
+    const status = working ? (activity ? `${activity} · ` : "") : finished ? "Finished · " : "";
+    document.title = `${count}${status}${title ? `${title} · ` : ""}${BASE_TITLE}`;
+  }, [waiting, working, finished, activity, title]);
+
+  useEffect(() => {
+    paintIcon(waiting > 0 ? WAITING : working ? WORKING : finished ? FINISHED : null);
+  }, [waiting, working, finished]);
 }

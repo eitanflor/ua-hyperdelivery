@@ -23,6 +23,9 @@ const NO_ARTIFACTS: Artifact[] = [];
  * tick does not stop the thread following the stream. */
 const PINNED_SLACK = 120;
 
+/** How long to wait for a project's documents and decisions before showing what there is. */
+const READY_TIMEOUT_MS = 4000;
+
 function Skeleton() {
   return (
     <div className="flex flex-col gap-4" aria-label="Loading project" role="status">
@@ -63,8 +66,18 @@ export function Thread({
   const cancelRun = useProjectsStore((s) => s.cancelRun);
   const advanceProject = useProjectsStore((s) => s.advanceProject);
   const scroller = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
   const [behind, setBehind] = useState(false);
+  const artifactsLoaded = useProjectsStore((s) => s.artifactsByProject[projectId] !== undefined);
+  const decisionsLoaded = useProjectsStore((s) => s.decisionsByProject[projectId] !== undefined);
+  // A failed load leaves these undefined for good, so waiting is bounded: better a thread
+  // that fills in late than a skeleton that never goes away.
+  const [gaveUpOn, setGaveUpOn] = useState<string | null>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => setGaveUpOn(projectId), READY_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [projectId]);
 
   // One connection for as long as this project's thread is on screen, not one per turn
   // (see `ensureProjectSocket`) - a no-op in local mode/builds with no WebSocket API
@@ -94,9 +107,12 @@ export function Thread({
     if (project?.station === "done") void startPreview(projectId);
   }, [projectId, project?.station, startPreview]);
 
-  const streamingTurn = conversation?.find((t) => t.streaming);
   const lastUserTurnId = conversation?.findLast((t) => t.role === "user")?.id;
   const loaded = project !== undefined;
+  // The gate is the last thing in the thread, so painting it before the turns and signed
+  // checkpoints above it makes it jump down a screen when they arrive. Hold everything
+  // until the documents and decisions it is built from are in.
+  const ready = loaded && ((artifactsLoaded && decisionsLoaded) || gaveUpOn === projectId);
 
   const toLatest = () => {
     const el = scroller.current;
@@ -119,28 +135,24 @@ export function Thread({
 
   // follow the conversation as it grows, but only while the reader is at the end - pulling
   // someone back down while they reread the requirements is worse than no follow at all.
-  // Instant rather than smooth: a smooth scroll's own intermediate positions read as the
-  // reader scrolling away. Tool calls and the draft count as growth, since a station that
-  // goes straight to tools produces no text at all.
+  // Watching the content's height rather than particular state means every source of growth
+  // is covered: streamed text, tool calls, and the documents and signatures that land after
+  // the first paint (which is what used to leave a gate below the fold on open). Instant
+  // rather than smooth: a smooth scroll's own intermediate positions read as the reader
+  // scrolling away.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      if (pinned.current) {
-        const el = scroller.current;
-        if (el) el.scrollTop = el.scrollHeight;
-      } else {
-        setBehind(true);
-      }
+    const el = scroller.current;
+    const inner = content.current;
+    if (!el || !inner) return;
+    const observer = new ResizeObserver(() => {
+      if (pinned.current) el.scrollTop = el.scrollHeight;
+      else setBehind(true);
     });
-    return () => cancelAnimationFrame(frame);
-  }, [
-    loaded,
-    conversation?.length,
-    streamingTurn?.text,
-    streamingTurn?.toolCalls?.length,
-    streamingTurn?.draft?.length,
-  ]);
+    observer.observe(inner);
+    return () => observer.disconnect();
+  }, [ready]);
 
-  if (!project) {
+  if (!ready || !project) {
     return (
       <div className="mx-auto w-full max-w-[48rem] px-6 py-6">
         <Skeleton />
@@ -182,7 +194,7 @@ export function Thread({
       <div ref={scroller} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto">
         {/* one readable measure whether or not the side panel is open, so the column
             never jumps when the panel opens and never stretches past comfortable reading */}
-        <div className="mx-auto flex w-full max-w-[48rem] flex-col gap-5 px-6 py-6">
+        <div ref={content} className="mx-auto flex w-full max-w-[48rem] flex-col gap-5 px-6 py-6">
           {PIPELINE.map((station) => {
             const meta = STATION_META[station];
             const index = stationIndex(station);
@@ -296,11 +308,22 @@ export function Thread({
                         <AgentTurn
                           key={turn.id}
                           agent={turn.agent}
-                          content={turn.content ?? {}}
+                          content={
+                            turn.content ??
+                            // a turn rebuilt from the server's record has no document, only what it
+                            // said - the station's document is what its last reply produced, unless
+                            // that reply only asked questions
+                            (turn.id === turns.findLast((t) => t.role === "agent")?.id &&
+                            questionsFromToolCalls(turn.toolCalls).length === 0
+                              ? artifact?.content
+                              : undefined) ??
+                            {}
+                          }
                           text={turn.text}
                           toolCalls={turn.toolCalls}
                           usage={turn.usage}
                           durationMs={turn.durationMs}
+                          error={turn.error}
                           onViewArtifact={onViewArtifact}
                           viewMode={viewMode}
                         />

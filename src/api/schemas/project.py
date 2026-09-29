@@ -65,6 +65,29 @@ class DecisionResponse(BaseModel):
     decided_at: str
 
 
+class ToolCallResponse(BaseModel):
+    """One tool call in a recorded turn, its result already cut down (see core.domain.turn)."""
+
+    id: str
+    name: str
+    status: str
+    input: dict[str, Any] | None = None
+    result: Any = None
+
+
+class TurnResponse(BaseModel):
+    """One recorded agent turn, as returned by `GET /projects/{id}/turns`."""
+
+    agent: str
+    started_at: str
+    message: str | None = None
+    duration_ms: int | None = None
+    text: str
+    tool_calls: list[ToolCallResponse]
+    usage: dict[str, int] | None = None
+    error: str | None = None
+
+
 class AnswerRequest(BaseModel):
     """Body for `POST /projects/{id}/answer`, resuming Distill's elicitation wait."""
 
@@ -121,6 +144,10 @@ class AdvanceRequest(BaseModel):
     """
 
     prompt: str | None = None
+
+    # The person's own words for this turn, kept on its record so the conversation can be
+    # rebuilt on any machine. `prompt` is the console's transcript, not what they typed.
+    message: str | None = None
 
 
 class BuildResponse(BaseModel):

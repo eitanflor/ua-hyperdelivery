@@ -659,6 +659,21 @@ async def test_reports_which_arguments_a_finished_tool_was_called_with(
     assert events[0]["tool_call"]["input"] == {"path": "src/api/main.py"}
 
 
+async def test_reports_a_tool_that_errored_as_failed_not_done(
+    monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
+) -> None:
+    # Strands returns an errored call as a normal result; a lookup that failed must not
+    # read as one that succeeded, or the console shows a green tick beside an error message
+    failed = _after_tool_call("t1", "get_file_contents", "404 Not Found")
+    failed.result["status"] = "error"
+    monkeypatch.setattr(stub_agent, "_events", [failed, {"result": _Result(_Output(value="ok"))}])
+
+    events = await _drain(invoke({"prompt": "do the thing"}, None))
+
+    assert events[0]["tool_call"]["status"] == "failed"
+    assert events[0]["tool_call"]["result"] == "404 Not Found"
+
+
 async def test_clips_a_long_tool_argument_instead_of_sending_the_whole_file(
     monkeypatch: pytest.MonkeyPatch, invoke: Any, stub_agent: _StubAgent
 ) -> None:

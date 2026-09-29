@@ -448,8 +448,6 @@ export function Home() {
           </Link>
         </header>
 
-        {!roleAsked && <RoleQuestion />}
-
         {!loaded ? (
           <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <SkeletonTile className="md:col-span-2" />
@@ -490,6 +488,9 @@ export function Home() {
             {crewTile}
           </div>
         )}
+
+        {/* after the queues: a one-off question should not push what needs you below it */}
+        {loaded && !roleAsked && <RoleQuestion />}
       </div>
     </div>
   );

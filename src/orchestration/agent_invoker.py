@@ -20,6 +20,7 @@ from infrastructure.aws import BotoClientFactory
 from infrastructure.repositories.connections_repository import ConnectionsRepository
 from infrastructure.repositories.context_repository import ContextRepository
 from infrastructure.repositories.project_repository import ProjectRepository
+from orchestration.turn_log import TurnLog
 
 logger = logging.getLogger("agent_invoker")
 
@@ -72,6 +73,7 @@ class AgentInvoker:
         project_id: str,
         prompt: str,
         broadcast: BroadcastFn | None = None,
+        on_event: Callable[[dict[str, Any]], None] | None = None,
     ) -> dict[str, Any]:
         """Run `agent` against `prompt` and return one of three outcomes.
 
@@ -87,6 +89,9 @@ class AgentInvoker:
         watching connection (no `broadcast`, or one that no-ops because nobody is
         watching) behaves identically to before this existed - broadcasting is a pure
         side effect, it never changes what this returns to the state machine.
+
+        `on_event`, if given, sees every parsed event the same way `broadcast` does - the
+        handler uses it to record the turn (see `orchestration.turn_log`).
 
         A forced-structured-output agent (Blueprint/Review/Showroom) always ends in
         `{"status": "drafted", "result": {...}}`. Distill (voluntary draft) can instead
@@ -115,6 +120,8 @@ class AgentInvoker:
             if not line.startswith("data: "):
                 continue
             event = json.loads(line[len("data: ") :])
+            if on_event is not None:
+                on_event(event)
             if "error" in event:
                 if broadcast is not None:
                     broadcast(event)
@@ -194,12 +201,20 @@ def handler(event: dict[str, Any], _context: object) -> dict[str, Any]:
         runtime_prefix=os.environ["AGENT_RUNTIME_PREFIX"],
     )
     logger.info("invoking agent %s for project %s", agent, project_id)
-    outcome = invoker.invoke(
-        agent,
-        project_id,
-        prompt,
-        broadcast=_broadcaster(project_id),
-    )
+    turn_log = TurnLog(repo, project_id, agent)
+    try:
+        outcome = invoker.invoke(
+            agent,
+            project_id,
+            prompt,
+            broadcast=_broadcaster(project_id),
+            on_event=turn_log.feed,
+        )
+    except Exception as exc:
+        # re-raised untouched: this only makes sure a failed turn still leaves a record
+        turn_log.save(str(exc))
+        raise
+    turn_log.save()
     if outcome["status"] != "drafted":
         logger.info("agent %s ended the turn with status %s", agent, outcome["status"])
         return outcome

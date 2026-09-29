@@ -4,6 +4,7 @@ import { SealCheckIcon } from "@phosphor-icons/react";
 import type { Decision, Station } from "../../api/types";
 import { AGENT_META, STATION_META } from "../../lib/pipeline";
 import { personName } from "../../lib/people";
+import { formatWhen } from "../../lib/time";
 import { AgentFace } from "../agents/AgentFace";
 import { Handoff } from "../moments/Handoff";
 import type { Signature } from "../../store/useProjectsStore";
@@ -74,7 +75,7 @@ export function SignedCheckpoint({
             </p>
             <p className="tabular mt-0.5 truncate text-2xs text-fg-muted" title={record?.signer}>
               {record && at
-                ? `${rejected ? "Returned" : "Signed"} by ${personName(record.signer)} · ${at.toLocaleString()}`
+                ? `${rejected ? "Returned" : "Signed"} by ${personName(record.signer)} · ${formatWhen(at)}`
                 : "Signed before this session"}
             </p>
             {record?.comment && (
