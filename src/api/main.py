@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.errors import register_error_handlers
 from api.routers import context, projects
 from config.settings import get_settings
 from core.constants import Environment
@@ -21,6 +22,7 @@ def create_app() -> FastAPI:
     configure_logging(settings.log_level)
 
     app = FastAPI(title="Hyperdelivery Console API", version="0.1.0")
+    register_error_handlers(app)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],

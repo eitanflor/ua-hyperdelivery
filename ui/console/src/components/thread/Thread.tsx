@@ -71,6 +71,7 @@ export function Thread({
   const [behind, setBehind] = useState(false);
   const artifactsLoaded = useProjectsStore((s) => s.artifactsByProject[projectId] !== undefined);
   const decisionsLoaded = useProjectsStore((s) => s.decisionsByProject[projectId] !== undefined);
+  const turnsLoaded = useProjectsStore((s) => s.turnsByProject[projectId] !== undefined);
   // A failed load leaves these undefined for good, so waiting is bounded: better a thread
   // that fills in late than a skeleton that never goes away.
   const [gaveUpOn, setGaveUpOn] = useState<string | null>(null);
@@ -111,8 +112,9 @@ export function Thread({
   const loaded = project !== undefined;
   // The gate is the last thing in the thread, so painting it before the turns and signed
   // checkpoints above it makes it jump down a screen when they arrive. Hold everything
-  // until the documents and decisions it is built from are in.
-  const ready = loaded && ((artifactsLoaded && decisionsLoaded) || gaveUpOn === projectId);
+  // until the documents, decisions and turns it is built from are in.
+  const ready =
+    loaded && ((artifactsLoaded && decisionsLoaded && turnsLoaded) || gaveUpOn === projectId);
 
   const toLatest = () => {
     const el = scroller.current;
@@ -277,6 +279,17 @@ export function Thread({
 
             const turns = conversation?.filter((t) => t.agent === station) ?? [];
             const artifact = artifactByAgent.get(station);
+            // a turn rebuilt from the server's record has no document, only what it said: the
+            // document belongs to the last reply that started before it was saved, unless that
+            // reply only asked questions - a later failed or chat-only turn did not produce it
+            const producedAt = artifact ? Date.parse(artifact.created_at) : Number.NaN;
+            const producerId = turns.findLast(
+              (t) =>
+                t.role === "agent" &&
+                !t.streaming &&
+                Date.parse(t.createdAt) <= producedAt &&
+                questionsFromToolCalls(t.toolCalls).length === 0,
+            )?.id;
             const isCurrent = project.station === station;
 
             return (
@@ -309,21 +322,14 @@ export function Thread({
                           key={turn.id}
                           agent={turn.agent}
                           content={
-                            turn.content ??
-                            // a turn rebuilt from the server's record has no document, only what it
-                            // said - the station's document is what its last reply produced, unless
-                            // that reply only asked questions
-                            (turn.id === turns.findLast((t) => t.role === "agent")?.id &&
-                            questionsFromToolCalls(turn.toolCalls).length === 0
-                              ? artifact?.content
-                              : undefined) ??
-                            {}
+                            turn.content ?? (turn.id === producerId ? artifact?.content : undefined) ?? {}
                           }
                           text={turn.text}
                           toolCalls={turn.toolCalls}
                           usage={turn.usage}
                           durationMs={turn.durationMs}
                           error={turn.error}
+                          errorCode={turn.errorCode}
                           onViewArtifact={onViewArtifact}
                           viewMode={viewMode}
                         />

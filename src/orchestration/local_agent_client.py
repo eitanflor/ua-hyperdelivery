@@ -15,7 +15,14 @@ from typing import Any, Protocol
 
 import requests
 
-_AGENT_PORTS = {"distill": 8080, "blueprint": 8081, "review": 8082, "showroom": 8083}
+from core.constants import AgentName, StreamEvent
+
+_AGENT_PORTS: dict[str, int] = {
+    AgentName.DISTILL: 8080,
+    AgentName.BLUEPRINT: 8081,
+    AgentName.REVIEW: 8082,
+    AgentName.SHOWROOM: 8083,
+}
 # Must stay comfortably above providers.storage.snowflake's own 240s timeout, since a
 # Distill call that uses snowflake_query blocks this whole hop until that one returns -
 # 120s here caused real ReadTimeoutErrors on a ~117s Snowflake Cortex Agent call.
@@ -95,9 +102,9 @@ class LocalAgentClient:
         the model chose not to draft anything this turn.
         """
         for event in self.stream(agent, prompt, project_id=project_id):
-            if "error" in event:
-                msg = f"{agent} agent invocation failed: {event['error']}"
+            if StreamEvent.ERROR in event:
+                msg = f"{agent} agent invocation failed: {event[StreamEvent.ERROR]}"
                 raise RuntimeError(msg)
-            if "result" in event:
-                return event["result"]
+            if StreamEvent.RESULT in event:
+                return event[StreamEvent.RESULT]
         return None

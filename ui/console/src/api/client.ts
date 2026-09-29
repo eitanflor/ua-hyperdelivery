@@ -10,6 +10,8 @@ import type {
   StoredDocument,
 } from "./types";
 import { getIdToken } from "../auth/idToken";
+import { ERROR_CODES, TURN_ERROR_CODES, type ErrorCode, type TurnErrorCode } from "./errorCodes";
+import type { ToolStatus } from "./protocol";
 
 const API_BASE_URL: string =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8090";
@@ -25,11 +27,27 @@ const WS_OPEN_TIMEOUT_MS = 5_000;
 
 export class ApiError extends Error {
   status: number;
+  /** Why the server refused, when it said; branch on this, not on `message`. */
+  code: ErrorCode | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code: ErrorCode | null = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
+  }
+}
+
+/** An agent turn that failed, from the stream's `error` event. */
+export class TurnError extends Error {
+  code: TurnErrorCode | null;
+
+  constructor(message: string, code?: unknown) {
+    super(message);
+    this.name = "TurnError";
+    this.code = (TURN_ERROR_CODES as readonly string[]).includes(code as string)
+      ? (code as TurnErrorCode)
+      : null;
   }
 }
 
@@ -40,23 +58,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!resp.ok) {
-    throw new ApiError(resp.status, await _errorMessage(resp));
+    throw await _apiError(resp);
   }
   return (await resp.json()) as T;
 }
 
-// FastAPI's HTTPException bodies are `{"detail": "..."}` - surface that directly
-// instead of the raw JSON blob, since this ends up shown to the user verbatim (e.g.
-// in the global error toast).
-async function _errorMessage(resp: Response): Promise<string> {
+// The API's error bodies are `{"detail": "...", "code": "..."}` - surface the message
+// directly instead of the raw JSON blob, since it ends up shown to the user verbatim (e.g.
+// in the global error toast), and keep the code for anything that needs to branch.
+async function _apiError(resp: Response): Promise<ApiError> {
   const text = await resp.text();
   try {
     const parsed = JSON.parse(text);
-    if (typeof parsed?.detail === "string") return parsed.detail;
+    if (typeof parsed?.detail === "string") {
+      const code = (ERROR_CODES as readonly string[]).includes(parsed.code) ? parsed.code : null;
+      return new ApiError(resp.status, parsed.detail, code);
+    }
   } catch {
     // not JSON - fall through to the raw text
   }
-  return text || resp.statusText;
+  return new ApiError(resp.status, text || resp.statusText);
 }
 
 export interface ToolCallEvent {
@@ -65,7 +86,7 @@ export interface ToolCallEvent {
   /** `interrupted` is a call the turn ended without a result for - it is finished in the
    * sense that nothing more is coming, which is what stops the spinner. `failed` is a call
    * that came back with an error: its `result` is the reason. */
-  status: "running" | "done" | "failed" | "interrupted";
+  status: ToolStatus;
   result?: unknown;
   /** The call's arguments, long strings clipped. Only on a finished call - while one is
    * still streaming its input is a half-written JSON string. */
@@ -85,6 +106,8 @@ export interface TurnRecord {
   usage: UsageEvent | null;
   /** Set when the turn ended in a failure or was stopped. */
   error: string | null;
+  /** Why it failed, when the server knew; absent for a stopped turn and older records. */
+  error_code: TurnErrorCode | null;
 }
 
 /** Tokens the whole turn burned, accumulated across every model call the agent made.
@@ -104,6 +127,8 @@ export interface AdvanceStreamEvent {
   /** The next slice of the artifact's JSON as the agent writes it - append, don't replace. */
   draft?: string;
   error?: string;
+  /** Beside `error`: why the turn failed. */
+  code?: string;
   done?: true;
   project?: Project;
   tool_call?: ToolCallEvent;
@@ -173,7 +198,7 @@ export const api = {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!resp.ok) {
-      throw new ApiError(resp.status, await _errorMessage(resp));
+      throw await _apiError(resp);
     }
   },
 
@@ -207,7 +232,7 @@ export const api = {
       body,
     });
     if (!resp.ok) {
-      throw new ApiError(resp.status, await _errorMessage(resp));
+      throw await _apiError(resp);
     }
     return (await resp.json()) as { key: string; filename: string };
   },
@@ -260,8 +285,7 @@ export const api = {
       signal,
     });
     if (!resp.ok) {
-      const detail = await resp.text();
-      throw new ApiError(resp.status, detail || resp.statusText);
+      throw await _apiError(resp);
     }
     yield* readSse(resp);
   },

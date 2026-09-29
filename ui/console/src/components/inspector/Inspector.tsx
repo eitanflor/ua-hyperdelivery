@@ -25,7 +25,11 @@ import { TraceView } from "./TraceView";
  * do: two robot faces with no name are indistinguishable. The open tab always keeps its name. */
 const COMPACT_AT = 5;
 
+const PANEL_ID = "inspector-panel";
+const tabId = (key: string) => `inspector-tab-${key}`;
+
 function PanelTab({
+  id,
   active,
   onClick,
   className,
@@ -34,6 +38,7 @@ function PanelTab({
   label,
   compact = false,
 }: {
+  id: string;
   active: boolean;
   onClick: () => void;
   className?: string;
@@ -47,7 +52,9 @@ function PanelTab({
     <button
       type="button"
       role="tab"
+      id={tabId(id)}
       aria-selected={active}
+      aria-controls={PANEL_ID}
       tabIndex={active ? 0 : -1}
       aria-label={iconOnly ? label : undefined}
       title={iconOnly ? undefined : title}
@@ -123,6 +130,7 @@ export function Inspector({
           className="flex min-w-0 flex-1 gap-1 overflow-x-auto"
         >
           <PanelTab
+            id="progress"
             active={view === "progress"}
             onClick={() => onPanel("progress")}
             icon={<ListChecksIcon className="size-4" />}
@@ -130,6 +138,7 @@ export function Inspector({
             compact={compact}
           />
           <PanelTab
+            id="sources"
             active={view === "sources"}
             onClick={() => onPanel("sources")}
             icon={<BooksIcon className="size-4" />}
@@ -138,6 +147,7 @@ export function Inspector({
           />
           {canTrace && (
             <PanelTab
+              id="trace"
               active={view === "trace"}
               title="Each requirement from plan to demo"
               onClick={() => onPanel("trace")}
@@ -152,6 +162,7 @@ export function Inspector({
             return (
               <PanelTab
                 key={a.agent}
+                id={a.agent}
                 active={a.agent === selected?.agent}
                 title={meta?.output}
                 className={cn(meta?.bg, meta?.fg)}
@@ -182,18 +193,25 @@ export function Inspector({
         />
       </div>
 
-      {view === "progress" && <ProgressView projectId={projectId} documents={documents} onOpen={onPanel} />}
-      {view === "sources" && <SourcesView projectId={projectId} artifacts={documents} />}
-      {view === "trace" && <TraceView artifacts={documents} />}
-      {view === "document" && selected && (
-        <DocumentViewer
-          key={selected.agent}
-          projectId={projectId}
-          artifact={selected}
-          section={section}
-          onSection={onSection}
-        />
-      )}
+      <div
+        role="tabpanel"
+        id={PANEL_ID}
+        aria-labelledby={tabId(view === "document" && selected ? selected.agent : view)}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        {view === "progress" && <ProgressView projectId={projectId} documents={documents} onOpen={onPanel} />}
+        {view === "sources" && <SourcesView projectId={projectId} artifacts={documents} />}
+        {view === "trace" && <TraceView artifacts={documents} />}
+        {view === "document" && selected && (
+          <DocumentViewer
+            key={selected.agent}
+            projectId={projectId}
+            artifact={selected}
+            section={section}
+            onSection={onSection}
+          />
+        )}
+      </div>
     </aside>
   );
 }

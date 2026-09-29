@@ -22,14 +22,17 @@ from typing import NamedTuple, Protocol, cast
 import httpx
 import truststore
 
-logger = logging.getLogger(__name__)
+from providers.github.http import (
+    API_ROOT,
+    ERROR_STATUS_THRESHOLD,
+    TIMEOUT_SECONDS,
+)
 
-_API_ROOT = "https://api.github.com"
-_GRAPHQL_URL = "https://api.github.com/graphql"
-_TIMEOUT_SECONDS = 10.0
+logger = logging.getLogger(__name__)
+_GRAPHQL_URL = f"{API_ROOT}/graphql"
+
 _STATUS_OK = 200
 _STATUS_ACCEPTED = 202
-_STATUS_ERROR_THRESHOLD = 400
 #: A dropped connection through a TLS-inspecting proxy is common enough here that one
 #: transient blip must not block a whole G3 approval - a real 4xx/5xx from GitHub itself
 #: is not this, and is never retried (callers check `response.status_code` themselves).
@@ -127,7 +130,7 @@ def mark_ready_for_review(
     # OS trust store, not certifi: under corporate TLS inspection GitHub's cert is
     # re-signed by a root only the system store knows. See CONTRIBUTING.md.
     verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=verify) as owned:
+    with httpx.Client(timeout=TIMEOUT_SECONDS, verify=verify) as owned:
         return _mark_ready(owned, token, repository, number)
 
 
@@ -137,7 +140,7 @@ def _mark_ready(http: _ReadyClient, token: str, repository: str, number: int) ->
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    pull = _get(http, f"{_API_ROOT}/repos/{repository}/pulls/{number}", headers)
+    pull = _get(http, f"{API_ROOT}/repos/{repository}/pulls/{number}", headers)
     if pull is None:
         return False
     if not pull.get("draft"):
@@ -192,7 +195,7 @@ def _get(http: _ReadyClient, url: str, headers: dict[str, str]) -> dict[str, obj
     except httpx.HTTPError:
         logger.warning("could not reach GitHub for %s", url)
         return None
-    if response.status_code >= _STATUS_ERROR_THRESHOLD:
+    if response.status_code >= ERROR_STATUS_THRESHOLD:
         logger.warning("GitHub returned HTTP %s for %s", response.status_code, url)
         return None
     try:
@@ -220,7 +223,7 @@ def update_branch(token: str, repository: str, number: int, client: _Client | No
     if client is not None:
         return _update_branch(client, token, repository, number)
     verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=verify) as owned:
+    with httpx.Client(timeout=TIMEOUT_SECONDS, verify=verify) as owned:
         return _update_branch(owned, token, repository, number)
 
 
@@ -230,7 +233,7 @@ def _update_branch(http: _Client, token: str, repository: str, number: int) -> b
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    url = f"{_API_ROOT}/repos/{repository}/pulls/{number}/update-branch"
+    url = f"{API_ROOT}/repos/{repository}/pulls/{number}/update-branch"
     try:
         response = _call_with_retries(lambda: http.put(url, headers=headers, json={}))
     except httpx.HTTPError:
@@ -256,7 +259,7 @@ def merge_pull_request(
     if client is not None:
         return _merge(client, token, repository, number)
     verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=verify) as owned:
+    with httpx.Client(timeout=TIMEOUT_SECONDS, verify=verify) as owned:
         return _merge(owned, token, repository, number)
 
 
@@ -288,7 +291,7 @@ def _merge(http: _MergeClient, token: str, repository: str, number: int) -> Merg
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    url = f"{_API_ROOT}/repos/{repository}/pulls/{number}/merge-async"
+    url = f"{API_ROOT}/repos/{repository}/pulls/{number}/merge-async"
     try:
         response = _call_with_retries(
             lambda: http.put(url, headers=headers, json={"merge_method": "squash"})
@@ -314,7 +317,7 @@ def _poll_async_merge(
     http: _MergeClient, headers: dict[str, str], repository: str, number: int, uuid: str
 ) -> MergeResult:
     """Poll GitHub's background merge job until it reports merged or failed."""
-    url = f"{_API_ROOT}/repos/{repository}/pulls/{number}/merge-async/{uuid}"
+    url = f"{API_ROOT}/repos/{repository}/pulls/{number}/merge-async/{uuid}"
     for _attempt in range(_MERGE_POLL_ATTEMPTS):
         time.sleep(_MERGE_POLL_INTERVAL_SECONDS)
         try:

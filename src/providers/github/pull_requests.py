@@ -12,11 +12,10 @@ from typing import NamedTuple, Protocol, cast
 import httpx
 import truststore
 
+from providers.github.http import API_ROOT, ERROR_STATUS_THRESHOLD, TIMEOUT_SECONDS
+
 logger = logging.getLogger(__name__)
 
-_API_ROOT = "https://api.github.com"
-_TIMEOUT_SECONDS = 10.0
-_STATUS_ERROR_THRESHOLD = 400
 _FAILED_CONCLUSIONS = ("failure", "timed_out", "canceled")
 
 
@@ -72,7 +71,7 @@ def read_pull_request(
     # OS trust store, not certifi: under corporate TLS inspection GitHub's cert is
     # re-signed by a root only the system store knows. See CONTRIBUTING.md.
     verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=verify) as owned:
+    with httpx.Client(timeout=TIMEOUT_SECONDS, verify=verify) as owned:
         return _read(owned, token, repository, number)
 
 
@@ -82,7 +81,7 @@ def _read(http: _Client, token: str, repository: str, number: int) -> PullReques
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    pull = _get(http, f"{_API_ROOT}/repos/{repository}/pulls/{number}", headers)
+    pull = _get(http, f"{API_ROOT}/repos/{repository}/pulls/{number}", headers)
     if pull is None:
         return None
 
@@ -104,7 +103,7 @@ def _checks_verdict(http: _Client, repository: str, sha: str, headers: dict[str,
     A check that has not concluded outranks a failure: a build is only failing once
     everything has had its say, or the console would announce a red build mid-run.
     """
-    payload = _get(http, f"{_API_ROOT}/repos/{repository}/commits/{sha}/check-runs", headers)
+    payload = _get(http, f"{API_ROOT}/repos/{repository}/commits/{sha}/check-runs", headers)
     raw = payload.get("check_runs") if payload else None
     if not isinstance(raw, list):
         return "none"
@@ -130,7 +129,7 @@ def _get(http: _Client, url: str, headers: dict[str, str]) -> dict[str, object] 
     except httpx.HTTPError:
         logger.warning("could not reach GitHub for %s", url)
         return None
-    if response.status_code >= _STATUS_ERROR_THRESHOLD:
+    if response.status_code >= ERROR_STATUS_THRESHOLD:
         logger.warning("GitHub returned HTTP %s for %s", response.status_code, url)
         return None
     try:

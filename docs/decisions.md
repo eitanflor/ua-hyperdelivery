@@ -17,6 +17,54 @@ Template for new entries:
 
 ---
 
+## 2026-09-29 - API errors carry a stable code beside the unchanged message
+- **Status**: Accepted
+- **Context**: The API raised 48 `HTTPException`s with free-text `detail`, so a client could only
+  branch on the HTTP status. A 409 meant both "someone moved this project on" and "GITHUB_PAT is
+  not configured", and the console showed the first message for both. `project not found` was
+  typed 14 times.
+- **Decision**: Every failure is `ApiError(ErrorCode.X)`. `core.errors.ErrorCode` names the
+  reason; `api/errors.py` holds a catalog of each code's status and default message, so one code
+  can never answer with two statuses, and one handler writes `{"detail", "code"}`. `detail` keeps
+  its old meaning, so a client that ignores `code` behaves as before. The console mirrors the
+  list in `api/errorCodes.ts` (drift test) and words each code in `lib/errors.ts`, falling back to
+  the status for anything without one. The routers declare `ErrorResponse` in OpenAPI.
+- **Alternatives considered**: `detail: {code, message}` - breaks every reader of `detail`, the
+  console's parser and the tests. Codes in a response header - invisible to a browser reading the
+  body, and nothing else needs it. One exception class per error - about 27 classes for what is a
+  table lookup.
+- **Consequences**: A new failure is one enum value, one catalog line, one mirrored string and
+  the console's wording; forgetting a piece fails a test. Agent failures follow the same idea
+  with their own `TurnErrorCode` (a timeout, an output limit, a run that produced nothing,
+  a save that failed after the agent finished): it rides beside `error` on the stream event,
+  is kept on the turn record as `error_code`, and the console words it (older records and a
+  stopped turn have none). The Python SDK raises `HyperdeliveryError`, still an
+  `httpx.HTTPStatusError`, carrying `code`. They are a separate enum because they are not
+  HTTP responses and have no status.
+
+---
+
+## 2026-09-29 - Shared constants have one owner, single-use ones stay private
+- **Status**: Accepted
+- **Context**: The stream protocol (event keys, tool statuses, the stopped marker) existed only
+  as string literals repeated across six backend files and the console, so adding the `failed`
+  status meant hand-editing each. The GitHub REST clients each defined the same API root,
+  timeout and error threshold, and the review severities were defined in three places.
+- **Decision**: `core.constants` gains `StreamEvent`, `ToolStatus` and `TURN_STOPPED`, used
+  wherever an event is built or read; the console mirrors them in `api/protocol.ts` and a test
+  fails if the two lists differ. GitHub's shared values live in `providers/github/http.py`, and
+  severities in `core.domain.review`. AGENTS.md states the rule: two or more users means a
+  shared home, one user means a private constant beside it.
+- **Alternatives considered**: One global constants file - it becomes a dumping ground and
+  separates every timeout from the code it tunes. Generating the console's list from the Python
+  enum - a build step for eight strings; a drift test costs less. Merging the per-gate
+  "no spec" messages - they look alike but say different things for each gate, so they are not
+  duplicates.
+- **Consequences**: Adding an event or status is one edit plus the mirrored list, and the test
+  catches a missed side. Snowflake keeps its own 400 threshold, since it shares nothing else
+  with the GitHub clients. Error codes for the API's failures are a separate, contract-changing
+  step.
+
 ## 2026-09-29 - Agent turns are recorded server-side, not in the browser
 - **Status**: Accepted
 - **Context**: The console kept a turn's tool calls only in the browser that watched it, and
@@ -36,6 +84,20 @@ Template for new entries:
   recent-projects list and detail level; the conversation, signatures and the
   quota-eviction fallback for `localStorage` are gone, and the persisted-state version was
   bumped so old copies are ignored. Turns from before this change have no message.
+- **Update 2026-09-30 (freshness and ordering)**: A turn is saved only after what it produced,
+  so a failed save shows on the record instead of beside a "successful" turn. The two paths
+  differ in what that covers. The local stream saves the artifact and advances the station
+  first, then the turn. The deployed invoker saves the artifact, then the turn, and returns;
+  the station is advanced afterwards by the next Step Functions state, so a failure there is
+  not on the turn record. A deployed run that
+  finishes while nobody in the tab is waiting on it (a gate released the next agent) is picked
+  up from the project socket's `done`/`error` event, not by polling: the console re-reads the
+  project, documents, decisions and turns at 1.5s, 5s and 12s after it, because `done` is sent
+  before those are saved. That is zero requests while nothing runs, and the retries are
+  bounded per run. Rejected: polling while a deployed project sits at an agent station - it
+  costs requests per open tab for as long as a run might happen, and still lags. A `settled`
+  event sent after the whole state machine step would replace the retries, and is the cleaner
+  follow-up if the delays prove visible.
 - **Alternatives considered**: Keeping and extending `localStorage` - still per browser and
   capped, and it was the problem. Storing full results - a DynamoDB item is capped at 400 KB
   and a fetched file or query result would eat it. A separate table or S3 - the projects table

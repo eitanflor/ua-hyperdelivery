@@ -224,6 +224,11 @@ export function ProjectRail({ open }: { open: boolean }) {
           <section className="mb-2">
             {!query && <SectionLabel>Recent</SectionLabel>}
             <ul className="flex flex-col gap-0.5">{recent.map(renderRow)}</ul>
+            {query && recentTotal > recent.length && (
+              <p className="px-2 py-1.5 text-2xs text-fg-subtle">
+                Showing {recent.length} of {recentTotal} matches. Type more to narrow them.
+              </p>
+            )}
           </section>
         )}
       </div>

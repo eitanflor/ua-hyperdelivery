@@ -195,6 +195,62 @@ def test_score_result_overwrites_self_reported_completeness(
     assert scored["completeness"]["gaps"]
 
 
+class _NoContext:
+    context = ""
+
+
+class _FakeContextRepository:
+    def __init__(self, **_: object) -> None: ...
+
+    def get_context(self) -> _NoContext:
+        return _NoContext()
+
+
+class _DraftingInvoker:
+    def __init__(self, **_: object) -> None: ...
+
+    def invoke(self, agent: str, project_id: str, prompt: str, **_: object) -> dict[str, Any]:
+        return {"status": "drafted", "result": {"title": "Blueprint"}}
+
+
+def test_handler_records_the_turn_as_failed_when_its_artifact_cannot_be_saved(
+    fake_dynamodb: "DynamoDBServiceResource", monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = ProjectRepository(
+        table_name="projects", region="us-east-1", dynamodb_resource=fake_dynamodb
+    )
+
+    def refuse(*_: object, **__: object) -> None:
+        raise RuntimeError("table unavailable")
+
+    monkeypatch.setattr(repo, "save_artifact", refuse)
+    for name, value in {
+        "AWS_REGION": "us-east-1",
+        "AGENTCORE_REGION": "us-east-1",
+        "AGENT_RUNTIME_PREFIX": "hyperdelivery_",
+        "PROJECTS_TABLE": "projects",
+    }.items():
+        monkeypatch.setenv(name, value)
+
+    def repository(**_: object) -> ProjectRepository:
+        return repo
+
+    def nobody_watching(_project_id: str) -> None:
+        return None
+
+    monkeypatch.setattr(agent_invoker, "ProjectRepository", repository)
+    monkeypatch.setattr(agent_invoker, "ContextRepository", _FakeContextRepository)
+    monkeypatch.setattr(agent_invoker, "AgentInvoker", _DraftingInvoker)
+    monkeypatch.setattr(agent_invoker, "_broadcaster", nobody_watching)
+
+    with pytest.raises(RuntimeError, match="table unavailable"):
+        agent_invoker.handler({"agent": "blueprint", "project_id": "p1", "prompt": "go"}, None)
+
+    [turn] = repo.list_turns("p1")
+    assert turn.error == "table unavailable"
+    assert turn.error_code == "turn_failed"
+
+
 class _FakeManagementClient:
     def __init__(self, gone_connections: set[str] | None = None) -> None:
         self.posted: list[tuple[str, bytes]] = []

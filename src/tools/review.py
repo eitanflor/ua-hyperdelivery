@@ -5,8 +5,7 @@ from typing import Any
 
 from strands import tool
 
-_VALID_SEVERITIES = {"blocker", "major", "minor"}
-_ASSIGNABLE_SEVERITIES = {"blocker", "major"}
+from core.domain.review import ASSIGNABLE_SEVERITIES, VALID_SEVERITIES
 
 
 @tool
@@ -32,7 +31,7 @@ def validate_review_report(
     issues += [
         f"finding has invalid severity {sev!r}"
         for sev in finding_severities
-        if sev not in _VALID_SEVERITIES
+        if sev not in VALID_SEVERITIES
     ]
     missing = sorted(known - set(coverage_requirement_ids))
     extra = sorted(set(coverage_requirement_ids) - known)
@@ -117,7 +116,7 @@ def validate_copilot_assignments(
     assignable = {
         fid
         for fid, severity in zip(finding_ids, finding_severities, strict=True)
-        if severity in _ASSIGNABLE_SEVERITIES
+        if severity in ASSIGNABLE_SEVERITIES
     }
     assignment_counts = Counter(assignment_finding_ids)
     issues = [

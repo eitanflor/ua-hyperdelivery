@@ -154,3 +154,25 @@ def test_a_failed_turn_keeps_what_it_did_and_says_why() -> None:
     turn = recorder.finish(START + timedelta(seconds=3), error="agent invocation failed")
 
     assert (turn.text, turn.error) == ("Partway", "agent invocation failed")
+
+
+def test_a_failed_turn_keeps_the_code_its_error_event_carried() -> None:
+    recorder = _recorder()
+    recorder.feed({"error": "agent invocation timed out", "code": "agent_timeout"})
+
+    turn = recorder.finish(START, error="agent invocation timed out")
+
+    assert turn.error_code == "agent_timeout"
+
+
+def test_a_code_passed_at_the_end_wins_over_the_one_the_agent_sent() -> None:
+    recorder = _recorder()
+    recorder.feed({"error": "boom", "code": "agent_failed"})
+
+    turn = recorder.finish(START, error="could not save", error_code="turn_failed")
+
+    assert turn.error_code == "turn_failed"
+
+
+def test_a_turn_that_did_not_fail_has_no_error_code() -> None:
+    assert _recorder().finish(START).error_code is None

@@ -14,12 +14,14 @@ from typing import Any
 
 import jwt
 import truststore
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
 from pydantic import BaseModel
 
+from api.errors import ApiError
 from config.settings import Settings, get_settings
+from core.errors import ErrorCode
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +56,7 @@ def clear_auth_cache() -> None:
 def _decode(token: str, settings: Settings) -> dict[str, Any]:
     if not settings.entra_tenant_id or not settings.entra_client_id:
         logger.error("Entra ID auth is not configured (ENTRA_TENANT_ID/ENTRA_CLIENT_ID).")
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, detail="Sign-in is not configured on this server."
-        )
+        raise ApiError(ErrorCode.SIGN_IN_NOT_CONFIGURED)
     jwk_client = _get_jwk_client(settings.entra_tenant_id)
     try:
         signing_key = jwk_client.get_signing_key_from_jwt(token)
@@ -69,9 +69,7 @@ def _decode(token: str, settings: Settings) -> dict[str, Any]:
         )
     except jwt.PyJWTError as error:
         logger.warning("Rejected an Entra ID token: %s", error)
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired sign-in token."
-        ) from error
+        raise ApiError(ErrorCode.TOKEN_INVALID) from error
 
 
 def get_current_user(
@@ -80,11 +78,9 @@ def get_current_user(
 ) -> CurrentUser:
     """FastAPI dependency: validate the bearer ID token and return who signed in."""
     if credentials is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Missing sign-in token.")
+        raise ApiError(ErrorCode.NOT_AUTHENTICATED)
     claims = _decode(credentials.credentials, settings)
     oid = claims.get("oid")
     if not oid:
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, detail="Sign-in token is missing a subject identifier."
-        )
+        raise ApiError(ErrorCode.TOKEN_INVALID, "Sign-in token is missing a subject identifier.")
     return CurrentUser(oid=oid, email=claims.get("preferred_username"), name=claims.get("name"))

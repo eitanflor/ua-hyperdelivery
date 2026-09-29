@@ -5,11 +5,21 @@ import type { ChatTurn } from "../store/useProjectsStore";
  * the same turn: the two clocks are not the same clock, and a run can be long. */
 const MATCH_WINDOW_MS = 5 * 60_000;
 
+/** Whether the record holds an agent's side of a turn, not only the person's message. */
+function hasOutput(record: TurnRecord): boolean {
+  return (
+    record.text.trim() !== "" ||
+    record.tool_calls.length > 0 ||
+    record.usage !== null ||
+    record.error !== null
+  );
+}
+
 /** The server's record of `turn`, if there is one nobody else has claimed.
  *
  * The browser's turn ids are its own, so a turn is matched to its record by agent and by which
  * start is nearest. Each record is handed out once (`taken`), so two quick turns by the same
- * agent do not both land on one record. */
+ * agent do not both land on one record. A message-only record is never the reply. */
 export function recordFor(
   turn: Pick<ChatTurn, "agent" | "createdAt">,
   records: TurnRecord[],
@@ -19,7 +29,7 @@ export function recordFor(
   let best: TurnRecord | undefined;
   let bestGap = MATCH_WINDOW_MS;
   for (const record of records) {
-    if (taken.has(record) || record.agent !== turn.agent) continue;
+    if (taken.has(record) || record.agent !== turn.agent || !hasOutput(record)) continue;
     const gap = Math.abs(Date.parse(record.started_at) - at);
     if (gap <= bestGap) {
       best = record;
@@ -66,9 +76,7 @@ export function conversationFromRecords(local: ChatTurn[], records: TurnRecord[]
         createdAt: new Date(at - 1).toISOString(),
       });
     }
-    const hasOutput =
-      record.text.trim() !== "" || record.tool_calls.length > 0 || record.usage !== null || record.error !== null;
-    if (hasOutput && !taken.has(record)) {
+    if (hasOutput(record) && !taken.has(record)) {
       added.push({
         id: `turn-${record.started_at}-${record.agent}`,
         role: "agent",
@@ -78,6 +86,7 @@ export function conversationFromRecords(local: ChatTurn[], records: TurnRecord[]
         usage: record.usage ?? undefined,
         durationMs: record.duration_ms ?? undefined,
         error: record.error ?? undefined,
+        errorCode: record.error_code ?? undefined,
         createdAt: record.started_at,
       });
     }

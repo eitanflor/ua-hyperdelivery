@@ -1,17 +1,22 @@
 """G3 artifact: what Review found when it checked the build against spec and design."""
 
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, Field
 
 from core.domain.project import CompletenessScore
+
+Severity = Literal["blocker", "major", "minor"]
+VALID_SEVERITIES = frozenset(get_args(Severity))
+# The severities a fix must be assigned for; a minor finding is reported but not chased.
+ASSIGNABLE_SEVERITIES = frozenset({"blocker", "major"})
 
 
 class Finding(BaseModel):
     """One gap, mistake or standards deviation, traced back to what it violates."""
 
     id: str
-    severity: Literal["blocker", "major", "minor"]
+    severity: Severity
     description: str
     requirement_id: str | None = None
     unit_id: str | None = None

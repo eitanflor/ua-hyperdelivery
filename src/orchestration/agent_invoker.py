@@ -14,6 +14,8 @@ from typing import Any, cast
 import boto3
 from botocore.exceptions import ClientError
 
+from core.constants import StreamEvent, ToolStatus
+from core.errors import TurnErrorCode
 from core.prompting import prepend_context
 from core.validation import evaluate_artifact
 from infrastructure.aws import BotoClientFactory
@@ -122,30 +124,30 @@ class AgentInvoker:
             event = json.loads(line[len("data: ") :])
             if on_event is not None:
                 on_event(event)
-            if "error" in event:
+            if StreamEvent.ERROR in event:
                 if broadcast is not None:
                     broadcast(event)
-                msg = f"{agent} agent invocation failed: {event['error']}"
+                msg = f"{agent} agent invocation failed: {event[StreamEvent.ERROR]}"
                 raise RuntimeError(msg)
-            if isinstance(event.get("chunk"), str):
-                chat_text += event["chunk"]
-            tool_call = event.get("tool_call")
+            if isinstance(event.get(StreamEvent.CHUNK), str):
+                chat_text += event[StreamEvent.CHUNK]
+            tool_call = event.get(StreamEvent.TOOL_CALL)
             if (
                 isinstance(tool_call, dict)
                 and tool_call.get("name") == "ask_clarifying_questions"
-                and tool_call.get("status") == "done"
+                and tool_call.get("status") == ToolStatus.DONE
                 and isinstance(tool_call.get("result"), dict)
             ):
                 questions = tool_call["result"].get("questions")
-            if "result" in event:
-                result = event["result"]
+            if StreamEvent.RESULT in event:
+                result = event[StreamEvent.RESULT]
             elif broadcast is not None:
                 # the final `result` event carries the whole drafted artifact, which the
                 # console UI already fetches separately via GET /artifacts once `done`
                 # arrives - broadcasting it too would just be a second, larger copy.
                 broadcast(event)
         if broadcast is not None:
-            broadcast({"done": True})
+            broadcast({StreamEvent.DONE: True})
         if result is not None:
             return {"status": "drafted", "result": result}
         if questions:
@@ -214,13 +216,20 @@ def handler(event: dict[str, Any], _context: object) -> dict[str, Any]:
         # re-raised untouched: this only makes sure a failed turn still leaves a record
         turn_log.save(str(exc))
         raise
-    turn_log.save()
     if outcome["status"] != "drafted":
+        turn_log.save()
         logger.info("agent %s ended the turn with status %s", agent, outcome["status"])
         return outcome
 
-    # Persist results for the console API; Step Functions output is transient.
-    result = _score_result(repo, project_id, agent, outcome["result"])
-    outcome["result"] = result
-    repo.save_artifact(project_id, agent, result)
+    # Persist results for the console API; Step Functions output is transient. The turn is
+    # recorded after, so a failed save is on the record rather than a success beside it.
+    try:
+        result = _score_result(repo, project_id, agent, outcome["result"])
+        outcome["result"] = result
+        repo.save_artifact(project_id, agent, result)
+    except Exception as exc:
+        # the agent finished cleanly, so no error event carried a code
+        turn_log.save(str(exc), TurnErrorCode.TURN_FAILED)
+        raise
+    turn_log.save()
     return outcome

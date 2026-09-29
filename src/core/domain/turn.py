@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from core.constants import StreamEvent, ToolStatus
+
 # A DynamoDB item is capped at 400 KB and a turn shares the table with everything else, so
 # what is kept is what a reader needs to check the work, not a copy of every fetched file.
 MAX_RESULT_CHARS = 1500
@@ -40,6 +42,9 @@ class Turn(BaseModel):
     usage: dict[str, int] | None = None
     # Set when the turn ended in a failure, so a run that produced nothing is still visible.
     error: str | None = None
+    # Why it failed, as a `core.errors.TurnErrorCode`; absent for a stopped turn and for turns
+    # recorded before codes existed.
+    error_code: str | None = None
 
 
 def clip_result(result: object) -> object:
@@ -76,11 +81,12 @@ class TurnRecorder:
         self._text = ""
         self._calls: dict[str, ToolCallRecord] = {}
         self._usage: dict[str, int] | None = None
+        self._error_code: str | None = None
         self._after_tool_call = False
 
     def feed(self, event: dict[str, Any]) -> None:
         """Take one streamed event: a text chunk, a tool call update, or the token usage."""
-        chunk = event.get("chunk")
+        chunk = event.get(StreamEvent.CHUNK)
         if isinstance(chunk, str) and chunk:
             joiner = (
                 "\n\n"
@@ -90,21 +96,23 @@ class TurnRecorder:
             self._after_tool_call = False
             self._text += joiner + chunk
             return
-        call = event.get("tool_call")
+        call = event.get(StreamEvent.TOOL_CALL)
         if isinstance(call, dict):
             self._record_call(call)
             return
-        usage = event.get("usage")
+        usage = event.get(StreamEvent.USAGE)
         if isinstance(usage, dict):
             self._usage = {str(k): int(v) for k, v in usage.items() if isinstance(v, int)}
+        elif StreamEvent.ERROR in event and event.get(StreamEvent.CODE):
+            self._error_code = str(event[StreamEvent.CODE])
 
     def _record_call(self, call: dict[str, Any]) -> None:
         call_id = call.get("id")
         name = call.get("name")
         if not isinstance(call_id, str) or not isinstance(name, str):
             return
-        status = str(call.get("status", "running"))
-        if status == "running":
+        status = str(call.get("status", ToolStatus.RUNNING))
+        if status == ToolStatus.RUNNING:
             self._after_tool_call = True
         known = self._calls.get(call_id)
         if known is None and len(self._calls) >= MAX_TOOL_CALLS:
@@ -121,10 +129,17 @@ class TurnRecorder:
             else (known.result if known else None),
         )
 
-    def finish(self, finished_at: datetime, error: str | None = None) -> Turn:
-        """The turn as recorded. A call that never reported a result is marked interrupted."""
+    def finish(
+        self, finished_at: datetime, error: str | None = None, error_code: str | None = None
+    ) -> Turn:
+        """The turn as recorded. A call that never reported a result is marked interrupted.
+
+        `error_code` defaults to the one the agent's own `error` event carried.
+        """
         calls = [
-            call.model_copy(update={"status": "interrupted"}) if call.status == "running" else call
+            call.model_copy(update={"status": ToolStatus.INTERRUPTED})
+            if call.status == ToolStatus.RUNNING
+            else call
             for call in self._calls.values()
         ]
         elapsed = int((finished_at - self._started_at).total_seconds() * 1000)
@@ -138,4 +153,5 @@ class TurnRecorder:
             tool_calls=calls,
             usage=self._usage,
             error=error,
+            error_code=(error_code or self._error_code) if error else None,
         )

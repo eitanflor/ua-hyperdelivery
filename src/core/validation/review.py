@@ -4,11 +4,10 @@ from collections import Counter
 
 from core.domain.blueprint import Blueprint
 from core.domain.project import CompletenessScore
-from core.domain.review import ReviewReport
+from core.domain.review import ASSIGNABLE_SEVERITIES, ReviewReport
 from core.domain.spec import StructuredSpec
 from core.validation.graph import duplicate_id_issues
 
-_ASSIGNABLE_SEVERITIES = {"blocker", "major"}
 _NO_SPEC_GAP = (
     "no approved spec was available to check this review against - ask for the approved "
     "spec, the Blueprint, and a description of the built deliverable before producing findings"
@@ -65,7 +64,7 @@ def evaluate_review(
     gaps += [
         f"assignment references {finding_severity[fid]} finding {fid}, which is not assignable"
         for fid in sorted(assignment_counts)
-        if fid in finding_severity and finding_severity[fid] not in _ASSIGNABLE_SEVERITIES
+        if fid in finding_severity and finding_severity[fid] not in ASSIGNABLE_SEVERITIES
     ]
     gaps += [
         f"finding {fid} has {count} assignments, expected exactly one"

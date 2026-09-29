@@ -4,7 +4,7 @@ from typing import Any
 import httpx
 import pytest
 
-from sdk.python.client import HyperdeliveryClient
+from sdk.python.client import HyperdeliveryClient, HyperdeliveryError
 
 
 def _client_with_handler(
@@ -96,3 +96,32 @@ def test_raises_for_error_response() -> None:
         client.get_project("missing")
 
     assert excinfo.value.response.status_code == 404
+
+
+def test_an_error_response_carries_the_apis_code_and_message() -> None:
+    body = {"detail": "project not found", "code": "project_not_found"}
+    client = _client_with_handler(lambda request: httpx.Response(404, json=body))
+
+    with pytest.raises(HyperdeliveryError) as excinfo:
+        client.get_project("missing")
+
+    assert (excinfo.value.code, excinfo.value.detail) == ("project_not_found", "project not found")
+
+
+def test_a_redirect_is_not_treated_as_success() -> None:
+    client = _client_with_handler(lambda request: httpx.Response(302, headers={"location": "/x"}))
+
+    with pytest.raises(HyperdeliveryError) as excinfo:
+        client.get_project("p1")
+
+    assert excinfo.value.response.status_code == 302
+
+
+def test_an_error_without_a_code_still_raises_with_the_status_message() -> None:
+    client = _client_with_handler(lambda request: httpx.Response(502, text="bad gateway"))
+
+    with pytest.raises(HyperdeliveryError) as excinfo:
+        client.get_project("p1")
+
+    assert excinfo.value.code is None
+    assert excinfo.value.response.status_code == 502

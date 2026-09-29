@@ -17,6 +17,24 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Changed
 
+- API errors now carry a stable `code` next to `detail`: `{"detail": "project not found",
+  "code": "project_not_found"}`. `detail` is unchanged, so existing clients keep working. Each
+  code has one HTTP status (`api/errors.py`), the routers document `ErrorResponse` in OpenAPI,
+  and the console words each code itself: a missing `GITHUB_PAT` or S3 setting reads "This isn't
+  set up on the server" instead of "This project moved on without you". A failed stream request
+  now shows the server's message rather than the raw JSON body. A failed agent turn's `error`
+  stream event also carries a `code` (`TurnErrorCode`: `agent_timeout`, `agent_output_limit`,
+  `agent_no_result`, `agent_failed`, `invalid_prompt`, `invalid_project`, `turn_failed`), kept on
+  the turn record as `error_code` and returned by `GET /projects/{id}/turns`; the console words
+  each ("The agent took too long", "The document was too big to finish"). The Python SDK raises
+  `HyperdeliveryError`, still an `httpx.HTTPStatusError`, with the API's `code`. See
+  docs/decisions.md.
+- Stream events, tool statuses and the stopped marker are `StreamEvent`, `ToolStatus` and
+  `TURN_STOPPED` in `core.constants` instead of repeated string literals, mirrored in the
+  console's `api/protocol.ts` with a test that fails if they differ. The GitHub REST clients
+  share `providers/github/http.py`, review severities live in `core.domain.review`, and the
+  local agent ports use `AgentName`. A stopped turn now reads "This run was stopped" rather
+  than "did not finish". The wire format is unchanged. See docs/decisions.md.
 - A tool call that returns an error is reported as `failed` in the `tool_call` event, not
   `done` (Strands hands an errored call back as an ordinary result, so the two were
   indistinguishable). Console clients that only know `running`, `done` and `interrupted`
@@ -42,6 +60,12 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   (no conversations, signatures or quota-eviction fallback; old stored copies are ignored).
   The "seen document versions" map is capped at the 300 newest. A failed turn reads as
   "This run did not finish" with its reason.
+- A turn is recorded after its artifact is saved (local stream and deployed invoker), so a
+  failed save is on the record. A deployed run that finishes with nobody in the tab waiting on
+  it now refreshes the project, documents, decisions and turns from the socket's `done` or
+  `error` event (at 1.5s, 5s and 12s after, since `done` precedes the saves), so a build plan
+  released by a gate appears without reopening the page. Unconsumed socket events are capped
+  at 200.
 - Console: each step in the tool trace has a small icon for its kind (read, search, query,
   write, question) and a failed step shows a red cross, all under the trace's quiet left rule.
 - Console Portfolio: the filter chips show how many projects each would list (for the

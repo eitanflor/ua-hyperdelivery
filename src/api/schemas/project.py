@@ -86,6 +86,7 @@ class TurnResponse(BaseModel):
     tool_calls: list[ToolCallResponse]
     usage: dict[str, int] | None = None
     error: str | None = None
+    error_code: str | None = None
 
 
 class AnswerRequest(BaseModel):

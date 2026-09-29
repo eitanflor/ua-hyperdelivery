@@ -1135,7 +1135,7 @@ def test_advance_stream_surfaces_persistence_errors_as_an_sse_event(client: Test
 
     assert resp.status_code == 200
     events = _parse_sse(resp.text)
-    assert events[-1] == {"error": "token expired"}
+    assert events[-1] == {"error": "token expired", "code": "turn_failed"}
 
 
 def test_advance_stream_409s_when_a_state_machine_is_configured(client: TestClient) -> None:
@@ -1709,6 +1709,50 @@ def test_advance_stream_records_a_failed_turn_with_its_error(client: TestClient)
     assert (turn["text"], turn["error"]) == ("Analyzing", "agent invocation failed")
 
 
+class _TimedOutAgentClient(_FailingAgentClient):
+    def stream(
+        self,
+        agent: str,
+        prompt: str,
+        project_id: str | None = None,
+        on_response: Callable[[Any], None] | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        yield {"error": "agent invocation timed out", "code": "agent_timeout"}
+
+
+def test_a_failure_code_reaches_the_browser_and_the_recorded_turn(client: TestClient) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _TimedOutAgentClient()
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.post(f"/projects/{created['id']}/advance/stream")
+
+    assert _parse_sse(resp.text) == [
+        {"error": "agent invocation timed out", "code": "agent_timeout"}
+    ]
+    [turn] = _turns(client, created["id"])
+    assert turn["error_code"] == "agent_timeout"
+
+
+def test_a_turn_whose_artifact_could_not_be_saved_is_recorded_as_failed(
+    client: TestClient,
+) -> None:
+    _state(client).state_machine_client = None
+    _state(client).local_agent_client = _FakeLocalAgentClient({"title": "FSD"})
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    def _boom(*args: object, **kwargs: object) -> Never:
+        raise RuntimeError("token expired")
+
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact = _boom
+
+    client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
+
+    [turn] = _turns(client, created["id"])
+    assert turn["error"] == "token expired"
+
+
 def test_a_turn_that_cannot_be_recorded_does_not_fail_the_run(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1723,3 +1767,25 @@ def test_a_turn_that_cannot_be_recorded_does_not_fail_the_run(
     resp = client.post(f"/projects/{created['id']}/advance/stream", json={"prompt": "a vague idea"})
 
     assert _parse_sse(resp.text)[-1].get("done") is True
+
+
+def test_a_failed_request_carries_its_code_beside_the_unchanged_detail(client: TestClient) -> None:
+    resp = client.get("/projects/missing")
+
+    assert resp.status_code == 404
+    assert resp.json() == {"detail": "project not found", "code": "project_not_found"}
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "code"),
+    [
+        ("get", "/projects/missing/artifacts/distill", "artifact_not_found"),
+        ("get", "/projects/missing/turns", "project_not_found"),
+        ("get", "/projects/missing/decisions", "project_not_found"),
+        ("post", "/projects/missing/advance", "state_machine_active"),
+    ],
+)
+def test_each_failure_names_why_it_failed(
+    client: TestClient, method: str, path: str, code: str
+) -> None:
+    assert client.request(method, path).json()["code"] == code

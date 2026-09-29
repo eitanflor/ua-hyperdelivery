@@ -293,7 +293,7 @@ async def test_rejects_a_missing_or_blank_prompt(
 ) -> None:
     events = await _drain(invoke(payload, None))
 
-    assert events == [{"error": "'prompt' must be a non-empty string"}]
+    assert events == [{"error": "'prompt' must be a non-empty string", "code": "invalid_prompt"}]
     assert stub_agent.calls == []
 
 
@@ -304,7 +304,7 @@ async def test_reports_an_error_when_the_agent_raises(
 
     events = await _drain(invoke({"prompt": "do the thing"}, None))
 
-    assert events == [{"error": "agent invocation failed"}]
+    assert events == [{"error": "agent invocation failed", "code": "agent_failed"}]
 
 
 async def test_says_so_when_the_artifact_outgrew_the_output_limit(
@@ -316,7 +316,12 @@ async def test_says_so_when_the_artifact_outgrew_the_output_limit(
 
     events = await _drain(invoke({"prompt": "do the thing"}, None))
 
-    assert events == [{"error": "the model ran out of output space before finishing the artifact"}]
+    assert events == [
+        {
+            "error": "the model ran out of output space before finishing the artifact",
+            "code": "agent_output_limit",
+        }
+    ]
 
 
 async def test_reports_an_error_when_no_structured_output_is_produced(
@@ -326,7 +331,9 @@ async def test_reports_an_error_when_no_structured_output_is_produced(
 
     events = await _drain(invoke({"prompt": "do the thing"}, None))
 
-    assert events == [{"error": "agent did not produce structured output"}]
+    assert events == [
+        {"error": "agent did not produce structured output", "code": "agent_no_result"}
+    ]
 
 
 async def test_gives_up_on_a_turn_that_will_never_finish(
@@ -344,7 +351,7 @@ async def test_gives_up_on_a_turn_that_will_never_finish(
 
     events = await _drain(invoke({"prompt": "do the thing"}, None))
 
-    assert events == [{"error": "agent invocation timed out"}]
+    assert events == [{"error": "agent invocation timed out", "code": "agent_timeout"}]
 
 
 async def test_streams_free_text_chunks_before_the_result(
@@ -749,7 +756,7 @@ async def test_closes_out_a_running_tool_call_when_the_turn_fails(
     assert events == [
         {"tool_call": {"id": "t1", "name": "search_code", "status": "running"}},
         {"tool_call": {"id": "t1", "name": "search_code", "status": "interrupted"}},
-        {"error": "agent invocation failed"},
+        {"error": "agent invocation failed", "code": "agent_failed"},
     ]
 
 

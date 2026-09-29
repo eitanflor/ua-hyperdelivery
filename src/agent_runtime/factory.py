@@ -22,6 +22,8 @@ from strands.types.tools import ToolResult
 
 from config.loader import load_agent_config
 from config.settings import get_settings
+from core.constants import StreamEvent, ToolStatus
+from core.errors import TurnErrorCode
 from infrastructure.observability.logging import configure_logging, project_id_var, session_id_var
 from infrastructure.observability.tracing import configure_tracing
 from providers.agents.strands_factory import build_agent
@@ -166,7 +168,15 @@ class _ToolUseStream:
         if not tool_use_id or not tool_name or tool_use_id in self._started:
             return []
         self._started[tool_use_id] = tool_name
-        return [{"tool_call": {"id": tool_use_id, "name": tool_name, "status": "running"}}]
+        return [
+            {
+                StreamEvent.TOOL_CALL: {
+                    "id": tool_use_id,
+                    "name": tool_name,
+                    "status": ToolStatus.RUNNING,
+                }
+            }
+        ]
 
     def drain_finished(self, finished: list[_FinishedToolCall]) -> list[dict[str, Any]]:
         """Empty `finished` into one "done" event per real tool call.
@@ -191,13 +201,15 @@ class _ToolUseStream:
                 "name": call.name or announced,
                 # Strands hands an errored call back as an ordinary result, so without this
                 # a failed lookup is indistinguishable from a successful one in the console
-                "status": "failed" if call.result.get("status") == "error" else "done",
+                "status": (
+                    ToolStatus.FAILED if call.result.get("status") == "error" else ToolStatus.DONE
+                ),
                 "result": _tool_result_payload(call.result),
             }
             summary = _tool_input_summary(call.tool_input)
             if summary is not None:
                 event["input"] = summary
-            events.append({"tool_call": event})
+            events.append({StreamEvent.TOOL_CALL: event})
         return events
 
     def progress_events(self, event: dict[str, Any]) -> list[dict[str, Any]]:
@@ -218,10 +230,10 @@ class _ToolUseStream:
         self._started[tool_use_id] = tool_name
         return [
             {
-                "tool_call": {
+                StreamEvent.TOOL_CALL: {
                     "id": tool_use_id,
                     "name": tool_name,
-                    "status": "running",
+                    "status": ToolStatus.RUNNING,
                     "result": result,
                 }
             }
@@ -244,8 +256,14 @@ class _ToolUseStream:
         ends, never reaches the hook - and the console persists a turn's tool calls, so
         the chip goes on spinning long after the turn that started it is gone.
         """
-        events = [
-            {"tool_call": {"id": tool_use_id, "name": name, "status": "interrupted"}}
+        events: list[dict[str, Any]] = [
+            {
+                StreamEvent.TOOL_CALL: {
+                    "id": tool_use_id,
+                    "name": name,
+                    "status": ToolStatus.INTERRUPTED,
+                }
+            }
             for tool_use_id, name in self._started.items()
         ]
         self._started.clear()
@@ -260,7 +278,7 @@ class _ToolUseStream:
             return []
         tail = partial[self._drafted :]
         self._drafted = len(partial)
-        return [{"draft": tail}]
+        return [{StreamEvent.DRAFT: tail}]
 
 
 async def _with_heartbeat(
@@ -329,7 +347,7 @@ async def _model_events(
             # model speaks again, leaving the console showing it as still running
             for done_event in tool_uses.drain_finished(finished):
                 yield done_event
-            yield {"thinking": {"seconds": waited}}
+            yield {StreamEvent.THINKING: {"seconds": waited}}
             continue
         idle_since = time.monotonic()
         # ahead of this event's own chunk/tool-use so a call that finished between
@@ -337,13 +355,14 @@ async def _model_events(
         for done_event in tool_uses.drain_finished(finished):
             yield done_event
         if isinstance(event.get("data"), str):
-            yield {"chunk": event["data"]}
+            yield {StreamEvent.CHUNK: event["data"]}
         for tool_use_event in tool_uses.events(event.get("current_tool_use") or {}):
             yield tool_use_event
         for progress_event in tool_uses.progress_events(event):
             yield progress_event
+        # "result" is Strands' own key on the incoming event; only the emitted key is ours
         if "result" in event:
-            yield {"result": event["result"]}
+            yield {StreamEvent.RESULT: event["result"]}
     # a tool call can finish after the last model-stream event we see but before the loop
     # above exits - drain once more so its "done" event is never lost
     for done_event in tool_uses.drain_finished(finished):
@@ -429,17 +448,27 @@ def _closing_events(
     """
     if result is None:
         logger.error("agent invocation ended without a result")
-        return [{"error": "agent invocation ended without a result"}]
+        return [
+            {
+                StreamEvent.ERROR: "agent invocation ended without a result",
+                StreamEvent.CODE: TurnErrorCode.AGENT_NO_RESULT,
+            }
+        ]
     events: list[dict[str, Any]] = []
     usage = _usage_payload(result)
     if usage is not None:
         logger.info("invocation used %s tokens", usage["total_tokens"])
-        events.append({"usage": usage})
+        events.append({StreamEvent.USAGE: usage})
     if force_structured_output:
         structured_output = getattr(result, "structured_output", None)
         if structured_output is None:
             logger.error("agent did not produce structured output")
-            events.append({"error": "agent did not produce structured output"})
+            events.append(
+                {
+                    StreamEvent.ERROR: "agent did not produce structured output",
+                    StreamEvent.CODE: TurnErrorCode.AGENT_NO_RESULT,
+                }
+            )
             return events
         dumped = structured_output.model_dump()
     else:
@@ -455,7 +484,7 @@ def _closing_events(
     # LOG_LEVEL=DEBUG in .env to see it).
     logger.debug("result: %s", dumped)
     logger.info("invocation succeeded")
-    events.append({"result": dumped})
+    events.append({StreamEvent.RESULT: dumped})
     return events
 
 
@@ -510,11 +539,17 @@ def create_app(
         session_id_var.set(getattr(context, "session_id", "-"))
         prompt = payload.get("prompt", "")
         if not isinstance(prompt, str) or not prompt.strip():
-            yield {"error": "'prompt' must be a non-empty string"}
+            yield {
+                StreamEvent.ERROR: "'prompt' must be a non-empty string",
+                StreamEvent.CODE: TurnErrorCode.INVALID_PROMPT,
+            }
             return
         project_id = payload.get("project_id")
         if project_id is not None and not isinstance(project_id, str):
-            yield {"error": "'project_id' must be a string"}
+            yield {
+                StreamEvent.ERROR: "'project_id' must be a string",
+                StreamEvent.CODE: TurnErrorCode.INVALID_PROJECT,
+            }
             return
         project_token = project_id_var.set(project_id)
         try:
@@ -527,7 +562,7 @@ def create_app(
             tool_uses = _ToolUseStream(output_model.__name__)
             structured_output_model = output_model if force_structured_output else None
 
-            error: str | None = None
+            error: tuple[str, TurnErrorCode] | None = None
             try:
                 # the clock covers the consumer's time between `yield`s too, which is fine at
                 # this scale: the only reader is an SSE proxy that writes and comes straight back
@@ -535,23 +570,26 @@ def create_app(
                     async for event in _model_events(
                         agent, prompt, structured_output_model, tool_uses, finished_tool_calls
                     ):
-                        if "result" in event:
-                            result = event["result"]
+                        if StreamEvent.RESULT in event:
+                            result = event[StreamEvent.RESULT]
                             continue
                         yield event
             except TimeoutError:
                 logger.exception("agent invocation timed out after %ss", _TURN_TIMEOUT_SECONDS)
-                error = "agent invocation timed out"
+                error = ("agent invocation timed out", TurnErrorCode.AGENT_TIMEOUT)
             except MaxTokensReachedException:
                 logger.exception("agent hit its output limit mid-artifact")
-                error = "the model ran out of output space before finishing the artifact"
+                error = (
+                    "the model ran out of output space before finishing the artifact",
+                    TurnErrorCode.AGENT_OUTPUT_LIMIT,
+                )
             except Exception:
                 logger.exception("agent invocation failed")
-                error = "agent invocation failed"
+                error = ("agent invocation failed", TurnErrorCode.AGENT_FAILED)
             for abandoned in tool_uses.abandoned():
                 yield abandoned
             if error is not None:
-                yield {"error": error}
+                yield {StreamEvent.ERROR: error[0], StreamEvent.CODE: error[1]}
                 return
             for closing_event in _closing_events(
                 result,

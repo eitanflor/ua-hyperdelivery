@@ -3,10 +3,16 @@
 from fastapi import APIRouter, Depends, Request
 
 from api.auth import CurrentUser, get_current_user
+from api.errors import ERROR_RESPONSES
 from api.schemas.context import ContextResponse, SetContextRequest
 from core.domain.context import GlobalContext
 
-router = APIRouter(prefix="/context", tags=["context"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/context",
+    tags=["context"],
+    dependencies=[Depends(get_current_user)],
+    responses=ERROR_RESPONSES,
+)
 
 
 def _to_response(context: GlobalContext) -> ContextResponse:

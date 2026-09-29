@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import { api } from "../api/client";
+import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
+import { api, TurnError } from "../api/client";
 import type { AdvanceStreamEvent, ToolCallEvent, TurnRecord, UsageEvent } from "../api/client";
+import type { TurnErrorCode } from "../api/errorCodes";
 import { buildTranscript } from "../lib/transcript";
 import { describeError, type FriendlyError } from "../lib/errors";
 import { withAttachments, type Attachment } from "../lib/attachments";
@@ -96,6 +97,8 @@ export interface ChatTurn {
   streaming?: boolean; // true while an agent turn is still receiving chunks
   /** Why a recorded turn ended without finishing; live failures are dropped instead. */
   error?: string;
+  /** Why it failed, when the server knew. */
+  errorCode?: TurnErrorCode;
   toolCalls?: ToolCallEvent[]; // tool calls made so far during a streaming turn
   usage?: UsageEvent; // arrives once, at the end of an agent turn
   durationMs?: number; // wall-clock time from send to the finished turn, finished turns only
@@ -178,6 +181,8 @@ interface ProjectsState {
   loadArtifacts: (projectId: string) => Promise<void>;
   loadDecisions: (projectId: string) => Promise<void>;
   loadTurns: (projectId: string) => Promise<void>;
+  /** Re-read a project and what its runs changed, quietly: no spinner, no error toast. */
+  refreshProject: (projectId: string) => Promise<void>;
   loadPending: (station: Station) => Promise<void>;
   /** Reads the build pull requests once. `watchBuilds` is what keeps them fresh. */
   loadBuilds: (projectId: string) => Promise<void>;
@@ -238,6 +243,45 @@ interface ProjectSocket {
 
 const projectSockets = new Map<string, Promise<ProjectSocket | null>>();
 
+// Events nobody is consuming pile up until a send flow attaches; a long-open thread must not
+// keep every chunk of every automatic run.
+const MAX_BUFFERED_EVENTS = 200;
+
+/** `done` is broadcast before the run's turn, document and next station are saved, so a run
+ * that finished with nobody in this tab waiting on it (a gate released the next agent) is
+ * re-read a few times over the seconds after, not once. */
+const REFRESH_DELAYS_MS = [1_500, 5_000, 12_000];
+const refreshTimers = new Map<string, ReturnType<typeof setTimeout>[]>();
+
+function cancelRefresh(projectId: string): void {
+  for (const timer of refreshTimers.get(projectId) ?? []) clearTimeout(timer);
+  refreshTimers.delete(projectId);
+}
+
+function refreshAfterRun(projectId: string): void {
+  cancelRefresh(projectId);
+  refreshTimers.set(
+    projectId,
+    REFRESH_DELAYS_MS.map((delay) =>
+      setTimeout(() => void useProjectsStore.getState().refreshProject(projectId), delay),
+    ),
+  );
+}
+
+function endsARun(data: string): boolean {
+  try {
+    const event: unknown = JSON.parse(data);
+    return (
+      typeof event === "object" &&
+      event !== null &&
+      ((event as { done?: unknown }).done === true ||
+        typeof (event as { error?: unknown }).error === "string")
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Return the project's open connection or start one. */
 export function ensureProjectSocket(projectId: string): Promise<ProjectSocket | null> {
   const pending = projectSockets.get(projectId);
@@ -256,8 +300,13 @@ function openProjectSocket(projectId: string): Promise<ProjectSocket | null> {
     if (!socket) return null;
     const connection: ProjectSocket = { socket, bufferedEvents: [], consume: null };
     socket.addEventListener("message", (event: MessageEvent<string>) => {
-      if (connection.consume) connection.consume(event.data);
-      else connection.bufferedEvents.push(event.data);
+      if (connection.consume) {
+        connection.consume(event.data);
+        return;
+      }
+      if (connection.bufferedEvents.length >= MAX_BUFFERED_EVENTS) connection.bufferedEvents.shift();
+      connection.bufferedEvents.push(event.data);
+      if (endsARun(event.data)) refreshAfterRun(projectId);
     });
     return connection;
   });
@@ -267,6 +316,7 @@ function openProjectSocket(projectId: string): Promise<ProjectSocket | null> {
 
 /** Close a project's connection when its thread is no longer visible. */
 export function closeProjectSocket(projectId: string): void {
+  cancelRefresh(projectId);
   const pending = projectSockets.get(projectId);
   projectSockets.delete(projectId);
   void pending?.then((connection) => connection?.socket.close());
@@ -470,7 +520,7 @@ function waitForDistillTurnOverSocket(
       else if (event.tool_call) acc.upsertToolCall(event.tool_call);
       else if (typeof event.error === "string") {
         cleanup();
-        reject(new Error(event.error));
+        reject(new TurnError(event.error, event.code));
       } else if (event.done) {
         cleanup();
         resolve();
@@ -495,6 +545,32 @@ function waitForDistillTurnOverSocket(
     for (const data of connection.bufferedEvents.splice(0)) onMessage(data);
   });
 }
+
+/** `localStorage` that never throws: a full or blocked store (private mode, disabled storage)
+ * must break neither hydration nor an unrelated state update. */
+const safeLocalStorage: StateStorage = {
+  getItem: (name) => {
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  removeItem: (name) => {
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      // nothing stored, or nothing we may touch
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      localStorage.setItem(name, value);
+    } catch {
+      // this tab keeps working, it just will not remember
+    }
+  },
+};
 
 export const useProjectsStore = create<ProjectsState>()(
   persist(
@@ -618,7 +694,31 @@ export const useProjectsStore = create<ProjectsState>()(
             };
           });
         } catch {
-          // an older API without the endpoint, or a blip - nothing to show
+          // an older API without the endpoint, or a blip - nothing to show, but the thread
+          // need not keep waiting for it
+          set((state) => ({
+            turnsByProject: { ...state.turnsByProject, [projectId]: state.turnsByProject[projectId] ?? [] },
+          }));
+        }
+      },
+
+      // Not `guarded`, like `loadTurns`: this runs unprompted when a run finishes, so it must
+      // not flip the global spinner or raise a toast over a page the reader is just reading.
+      refreshProject: async (projectId) => {
+        try {
+          const [project, artifacts, decisions] = await Promise.all([
+            api.getProject(projectId),
+            api.listArtifacts(projectId),
+            api.listDecisions(projectId),
+          ]);
+          set((state) => ({
+            projects: { ...state.projects, [projectId]: project },
+            artifactsByProject: { ...state.artifactsByProject, [projectId]: artifacts },
+            decisionsByProject: { ...state.decisionsByProject, [projectId]: decisions },
+          }));
+          await get().loadTurns(projectId);
+        } catch {
+          // a blip: the next scheduled read tries again
         }
       },
 
@@ -1127,7 +1227,7 @@ export const useProjectsStore = create<ProjectsState>()(
               else if (typeof event.draft === "string") appendDraft(event.draft);
               else if (event.tool_call) upsertToolCall(event.tool_call);
               else if (event.usage) usage = event.usage;
-              else if (typeof event.error === "string") throw new Error(event.error);
+              else if (typeof event.error === "string") throw new TurnError(event.error, event.code);
               else if (event.done && event.project) project = event.project;
             }
             if (!project) throw new Error(`${agent} agent invocation ended without a result`);
@@ -1240,7 +1340,7 @@ export const useProjectsStore = create<ProjectsState>()(
     {
       name: "hyperdelivery-console",
       version: 2,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => safeLocalStorage),
       // Only what belongs to this browser: which projects it opened, and how much detail it
       // wants. Conversations and the trace live on the server (see `loadTurns`), so nothing a
       // project produced is kept here - it is small, per browser and readable by any script on

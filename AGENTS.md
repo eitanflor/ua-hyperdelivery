@@ -89,7 +89,17 @@ Never a literal. Never a token in a log line.
 
 **Names.** Agent names come from `core.constants.AgentName`, station names from
 `core.domain.project.Station`, DynamoDB keys from `infrastructure.repositories.keys`. If
-you find yourself typing `"distill"` or `"PROJECT#"` as a literal, use the constant.
+you find yourself typing `"distill"` or `"PROJECT#"` as a literal, use the constant. The
+events a turn streams and a tool call's status are `core.constants.StreamEvent` and
+`ToolStatus`; the console mirrors them in `ui/console/src/api/protocol.ts`, and
+`tests/unit/test_protocol_constants.py` fails if the two drift.
+
+**Constants.** One used by two or more modules lives in `core/` (`core.constants` for names on
+the wire, the owning domain module for a domain value such as
+`core.domain.review.ASSIGNABLE_SEVERITIES`) or in its provider's shared module
+(`providers/github/http.py`). One used by a single module stays private (`_NAME`) beside its
+use - there is deliberately no global constants file. Before adding a constant, search for the
+value: a second copy is the sign it belongs in the shared place.
 
 **Prose.** US English. `cspell.json` enforces it: every entry in its `flagWords` list fails
 the gate with the American form as the suggested fix. New domain terms go in its `words`
@@ -120,6 +130,12 @@ comment saying when it is needed. The docs-drift test enforces the pair.
 
 **Change the DynamoDB schema.** `infrastructure/repositories/keys.py` and
 `infra/stacks/orchestration_stack.py` both own it. Change them together.
+
+**Add an API error.** Never raise a bare `HTTPException`: add a value to
+`core.errors.ErrorCode`, its status and default message to `CATALOG` in `api/errors.py`, and
+the name to `ui/console/src/api/errorCodes.ts`, then `raise ApiError(ErrorCode.X)` (a `detail`
+adds specifics). `tests/unit/test_error_codes.py` fails if a code lacks a catalog entry or the
+console's list differs. Add how the console should word it to `BY_CODE` in `lib/errors.ts`.
 
 ## Testing
 

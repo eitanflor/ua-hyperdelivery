@@ -46,12 +46,12 @@ class TurnLog:
         """Take one streamed event."""
         self._recorder.feed(event)
 
-    def save(self, error: str | None = None) -> None:
+    def save(self, error: str | None = None, error_code: str | None = None) -> None:
         """Save the turn as it stands, with `error` if it ended in one; the first call wins."""
         if self._saved:
             return
         self._saved = True
         try:
-            self._repo.save_turn(self._recorder.finish(utcnow(), error))
+            self._repo.save_turn(self._recorder.finish(utcnow(), error, error_code))
         except (BotoCoreError, ClientError, ValueError):
             logger.exception("could not record the turn")

@@ -59,7 +59,8 @@ state. Streaming tools yield native Strands tool events, which the runtime maps 
 same `tool_call` SSE contract as tool start and completion so local SSE and deployed
 WebSocket clients see progressive results without a separate transport. A tool call is
 `running`, then `done`, `failed` (the tool returned an error; `result` is the reason) or
-`interrupted` (the turn ended first). Snowflake uses
+`interrupted` (the turn ended first). A failed turn's `error` event carries a `code`
+(`core.errors.TurnErrorCode`), kept on its record as `error_code`. Snowflake uses
 `httpx.AsyncClient.stream`, so long Cortex waits do not occupy worker threads.
 
 ## The control plane (Phase 2 - deployed in dev)

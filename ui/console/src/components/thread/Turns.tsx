@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowSquareOutIcon, CaretRightIcon, FileTextIcon, PlayIcon, WrenchIcon, XCircleIcon } from "@phosphor-icons/react";
 import type { ToolCallEvent, UsageEvent } from "../../api/client";
+import { TURN_STOPPED } from "../../api/protocol";
+import type { TurnErrorCode } from "../../api/errorCodes";
+import { turnFailureText } from "../../lib/errors";
 import type { PendingQuestion } from "../../api/types";
 import { hasContent } from "../../api/artifacts";
 import { AGENT_META } from "../../lib/pipeline";
@@ -227,6 +230,7 @@ export function AgentTurn({
   usage,
   durationMs,
   error,
+  errorCode,
   viewMode = "developer",
   onViewArtifact,
 }: {
@@ -238,6 +242,7 @@ export function AgentTurn({
   durationMs?: number;
   /** Why the turn stopped, for a run that failed rather than finished. */
   error?: string;
+  errorCode?: TurnErrorCode;
   viewMode?: ViewMode;
   onViewArtifact: (agent: string) => void;
 }) {
@@ -279,7 +284,14 @@ export function AgentTurn({
           {(isPm || !text?.trim() || hasContent(content)) && !error && (
             <Markdown text={composeReply(content, askedViaTool)} />
           )}
-          {error && <p className="text-danger">This run did not finish: {error}</p>}
+          {error &&
+            (error === TURN_STOPPED ? (
+              <p className="text-fg-muted">This run was stopped.</p>
+            ) : (
+              <p className="text-danger">
+                This run did not finish: {turnFailureText(errorCode, error)}
+              </p>
+            ))}
         </div>
         <SourceChips calls={toolRows} />
         {hasContent(content) && (

@@ -12,7 +12,6 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     File,
-    HTTPException,
     Request,
     UploadFile,
     status,
@@ -21,6 +20,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 
 from api.auth import CurrentUser, get_current_user
+from api.errors import ERROR_RESPONSES, ApiError
 from api.schemas.project import (
     AdvanceRequest,
     AnswerRequest,
@@ -41,8 +41,10 @@ from api.schemas.project import (
     UploadDocumentResponse,
 )
 from config.settings import get_settings
+from core.constants import TURN_STOPPED, StreamEvent, ToolStatus
 from core.domain.project import AGENT_STATIONS, APPROVAL_STATIONS, Artifact, Project, Station
 from core.domain.review import ReviewReport
+from core.errors import ErrorCode, TurnErrorCode
 from core.prompting import context_section
 from core.validation import evaluate_artifact
 from infrastructure.local_preview import (
@@ -63,7 +65,12 @@ from providers.github.pull_requests import read_pull_request
 from providers.storage.s3 import UploadedDocument, list_uploaded_documents, put_uploaded_document
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/projects",
+    tags=["projects"],
+    dependencies=[Depends(get_current_user)],
+    responses=ERROR_RESPONSES,
+)
 
 
 def _orchestration_mode(request: Request) -> Literal["local", "deployed"]:
@@ -130,9 +137,9 @@ def _merge_all_builds_or_fail(repo: ProjectRepository, project_id: str) -> None:
     ]
     if wip_builds:
         numbers = ", ".join(f"#{number}" for number in wip_builds)
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail=f"approval blocked - builds still in progress: {numbers}",
+        raise ApiError(
+            ErrorCode.BUILDS_IN_PROGRESS,
+            f"approval blocked - builds still in progress: {numbers}",
         )
     failures = [
         f"PR #{build.number}: {result.message}"
@@ -140,9 +147,9 @@ def _merge_all_builds_or_fail(repo: ProjectRepository, project_id: str) -> None:
         if not (result := resolve_and_merge(secret, report.repository, build.number)).merged
     ]
     if failures:
-        raise HTTPException(
-            status.HTTP_502_BAD_GATEWAY,
-            detail="approval blocked - could not merge every build: " + "; ".join(failures),
+        raise ApiError(
+            ErrorCode.MERGE_FAILED,
+            "approval blocked - could not merge every build: " + "; ".join(failures),
         )
 
 
@@ -241,23 +248,20 @@ def create_project(
     name = payload.name
     if not name:
         if not payload.message:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, detail="either name or message is required"
-            )
+            raise ApiError(ErrorCode.NAME_REQUIRED, "either name or message is required")
         name = heuristic_name(payload.message)
 
     if payload.id is not None:
         try:
             uuid.UUID(payload.id)
         except ValueError as err:
-            msg = "id must be a valid UUID"
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=msg) from err
+            raise ApiError(ErrorCode.INVALID_PROJECT_ID) from err
     project_id = payload.id or str(uuid.uuid4())
     repo = request.app.state.project_repository
     try:
         project = repo.create_project(project_id=project_id, name=name)
     except ProjectAlreadyExistsError as err:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=str(err)) from err
+        raise ApiError(ErrorCode.PROJECT_ALREADY_EXISTS, str(err)) from err
     if payload.name is None and payload.message:
         background_tasks.add_task(
             _apply_generated_name,
@@ -311,7 +315,7 @@ def get_project(project_id: str, request: Request) -> ProjectResponse:
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     return _to_response(project, _orchestration_mode(request))
 
 
@@ -325,10 +329,7 @@ def create_stream_ticket(project_id: str, request: Request) -> StreamTicketRespo
     """
     repo = request.app.state.connections_repository
     if repo is None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="live project streams are not configured",
-        )
+        raise ApiError(ErrorCode.STREAMS_NOT_CONFIGURED)
     return StreamTicketResponse(ticket=repo.issue_ticket(project_id))
 
 
@@ -337,7 +338,7 @@ def delete_project(project_id: str, request: Request) -> None:
     """Delete a project and everything under it (artifacts, decision history)."""
     repo = request.app.state.project_repository
     if repo.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     repo.delete_project(project_id)
 
 
@@ -348,10 +349,10 @@ def rename_project(
     """Rename a project in place - station and history are untouched."""
     repo = request.app.state.project_repository
     if repo.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     name = payload.name.strip()
     if not name:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="name must not be empty")
+        raise ApiError(ErrorCode.NAME_REQUIRED)
     updated = repo.rename_project(project_id, name)
     return _to_response(updated, _orchestration_mode(request))
 
@@ -369,7 +370,7 @@ def get_artifact(project_id: str, agent: str, request: Request) -> ArtifactRespo
     repo = request.app.state.project_repository
     artifact = repo.get_artifact(project_id, agent)
     if artifact is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="artifact not found")
+        raise ApiError(ErrorCode.ARTIFACT_NOT_FOUND)
     return _artifact_to_response(artifact)
 
 
@@ -378,7 +379,7 @@ def list_artifact_versions(project_id: str, agent: str, request: Request) -> lis
     """Every saved version of one agent's artifact, oldest first - what changed between drafts."""
     versions = request.app.state.project_repository.list_artifact_versions(project_id, agent)
     if not versions:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="artifact not found")
+        raise ApiError(ErrorCode.ARTIFACT_NOT_FOUND)
     return [_artifact_to_response(a) for a in versions]
 
 
@@ -389,7 +390,7 @@ def list_documents(project_id: str, request: Request) -> list[StoredDocumentResp
     Empty rather than an error when S3 is not configured: nothing can have been uploaded.
     """
     if request.app.state.project_repository.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     settings = get_settings()
     if not (settings.s3_bucket and settings.s3_region):
         return []
@@ -421,7 +422,7 @@ async def _read_within_limit(file: UploadFile, max_bytes: int) -> bytes:
         total += len(chunk)
         if total > max_bytes:
             detail = f"file exceeds the {max_bytes // (1024 * 1024)}MB upload limit"
-            raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, detail=detail)
+            raise ApiError(ErrorCode.UPLOAD_TOO_LARGE, detail)
         chunks.append(chunk)
     return b"".join(chunks)
 
@@ -437,21 +438,19 @@ async def upload_document(
     as any other S3-resident document.
     """
     if request.app.state.project_repository.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
 
     filename = file.filename or ""
     if not filename.lower().endswith(SUPPORTED_EXTENSIONS):
         supported = ", ".join(SUPPORTED_EXTENSIONS)
-        raise HTTPException(
-            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"unsupported file type for {filename}; expected one of: {supported}",
+        raise ApiError(
+            ErrorCode.UNSUPPORTED_FILE_TYPE,
+            f"unsupported file type for {filename}; expected one of: {supported}",
         )
 
     settings = get_settings()
     if not (settings.s3_bucket and settings.s3_region):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="S3_BUCKET and S3_REGION are not configured"
-        )
+        raise ApiError(ErrorCode.STORAGE_NOT_CONFIGURED)
 
     data = await _read_within_limit(file, settings.max_upload_bytes)
     key = await run_sync(
@@ -520,26 +519,26 @@ def merge_build(
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     if project.station not in _MERGEABLE_STATIONS:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail=f"project has not reached the G3 gate yet (at {project.station.value})",
+        raise ApiError(
+            ErrorCode.NOT_AT_MERGE_GATE,
+            f"project has not reached the G3 gate yet (at {project.station.value})",
         )
 
     report = _get_review_report(repo, project_id)
     if report is None or report.repository is None:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail="no review builds recorded yet")
+        raise ApiError(ErrorCode.NO_BUILDS_RECORDED)
     if not any(build.number == number for build in report.builds):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="not a build of this project")
+        raise ApiError(ErrorCode.BUILD_NOT_FOUND)
 
     token = get_settings().github_pat
     if token is None:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail="GITHUB_PAT is not configured")
+        raise ApiError(ErrorCode.GITHUB_NOT_CONFIGURED)
 
     result = resolve_and_merge(token.get_secret_value(), report.repository, number)
     if not result.merged:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail=result.message)
+        raise ApiError(ErrorCode.MERGE_FAILED, result.message)
     background_tasks.add_task(_auto_preview)
     return MergeBuildResponse(
         merged=True,
@@ -594,18 +593,16 @@ def preview_project(project_id: str, request: Request) -> PreviewResponse:
     endpoint is for re-running it by hand, e.g. after a later merge.
     """
     if request.app.state.project_repository.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
 
     settings = get_settings()
     path = settings.preview_checkout_path
     if path is None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="PREVIEW_CHECKOUT_PATH is not configured"
-        )
+        raise ApiError(ErrorCode.PREVIEW_NOT_CONFIGURED)
 
     pulled = pull_default_branch(path)
     if not pulled.ok:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail=f"could not pull: {pulled.message}")
+        raise ApiError(ErrorCode.PREVIEW_PULL_FAILED, f"could not pull: {pulled.message}")
 
     healthy = start_preview(
         PreviewTarget(
@@ -631,14 +628,12 @@ def preview_project(project_id: str, request: Request) -> PreviewResponse:
 def stop_preview_project(project_id: str, request: Request) -> PreviewResponse:
     """Free the preview's ports - safe to call even if nothing is running."""
     if request.app.state.project_repository.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
 
     settings = get_settings()
     path = settings.preview_checkout_path
     if path is None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="PREVIEW_CHECKOUT_PATH is not configured"
-        )
+        raise ApiError(ErrorCode.PREVIEW_NOT_CONFIGURED)
 
     stop_preview(path, settings.preview_command)
     return PreviewResponse(running=False, message="preview stopped")
@@ -656,19 +651,16 @@ def advance_project(
     state machine is wired, since that drives progression on its own.
     """
     if request.app.state.state_machine_client is not None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="not available once the state machine is deployed",
-        )
+        raise ApiError(ErrorCode.STATE_MACHINE_ACTIVE)
 
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     if project.station not in AGENT_STATIONS:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail=f"project is not at an agent station (at {project.station.value})",
+        raise ApiError(
+            ErrorCode.NOT_AT_AGENT_STATION,
+            f"project is not at an agent station (at {project.station.value})",
         )
 
     agent = project.station.value
@@ -742,8 +734,7 @@ def _finish_if_requested(
     if project.station != Station.SHOWROOM or not _is_finish_phrase(prompt):
         return None
     if previous is None or _is_incomplete(previous.content):
-        detail = "Host hasn't produced a finished demo script yet"
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=detail)
+        raise ApiError(ErrorCode.SHOWROOM_NOT_READY)
     return repo.advance_after_artifact(project.id, agent)
 
 
@@ -763,7 +754,10 @@ def _finish_response_or_none(
         # only ever reached via advance_project_stream, which 409s before this if a
         # state machine exists - always "local" here, not worth threading request through.
         yield _sse(
-            {"done": True, "project": _to_response(finished, "local").model_dump(mode="json")}
+            {
+                StreamEvent.DONE: True,
+                "project": _to_response(finished, "local").model_dump(mode="json"),
+            }
         )
 
     return StreamingResponse(finish_stream(), media_type="text/event-stream")
@@ -775,7 +769,13 @@ def _sse(event: dict[str, Any]) -> str:
 
 # Relayed to the browser untouched - only `error` and `result` are acted on here. See
 # agent_runtime.factory for what each one carries.
-_RELAYED_EVENTS = ("chunk", "draft", "tool_call", "thinking", "usage")
+_RELAYED_EVENTS = (
+    StreamEvent.CHUNK,
+    StreamEvent.DRAFT,
+    StreamEvent.TOOL_CALL,
+    StreamEvent.THINKING,
+    StreamEvent.USAGE,
+)
 
 # Tool calls that change real state on GitHub (a PR, a Copilot hand-off) rather than
 # just reading it - see `_partial_progress_content`, which is why these are worth
@@ -789,10 +789,10 @@ def _is_finished_side_effect(event: dict[str, Any]) -> bool:
     Read-only tools (a file fetch, a search) aren't worth remembering past a failed
     turn - only ones that changed real state on GitHub are.
     """
-    call = event.get("tool_call")
+    call = event.get(StreamEvent.TOOL_CALL)
     return (
         isinstance(call, dict)
-        and call.get("status") == "done"
+        and call.get("status") == ToolStatus.DONE
         and call.get("name") in _SIDE_EFFECT_TOOLS
     )
 
@@ -831,13 +831,19 @@ def _finish_turn(
     # only ever reached via advance_project_stream, which 409s before this if a state
     # machine exists - always "local" here, not worth threading request through.
     if result is None:
-        return {"done": True, "project": _to_response(project, "local").model_dump(mode="json")}
+        return {
+            StreamEvent.DONE: True,
+            "project": _to_response(project, "local").model_dump(mode="json"),
+        }
     scored = _scored(result, agent, predecessors)
     repo.save_artifact(project.id, agent, scored)
     updated = (
         repo.advance_after_artifact(project.id, agent) if _advances(agent, scored) else project
     )
-    return {"done": True, "project": _to_response(updated, "local").model_dump(mode="json")}
+    return {
+        StreamEvent.DONE: True,
+        "project": _to_response(updated, "local").model_dump(mode="json"),
+    }
 
 
 async def _stream_turn(  # noqa: PLR0913 - one turn's whole context, none of it optional
@@ -889,19 +895,29 @@ async def _stream_turn(  # noqa: PLR0913 - one turn's whole context, none of it 
             if relayed is not None:
                 yield _sse({relayed: event[relayed]})
                 if _is_finished_side_effect(event):
-                    side_effects.append(event["tool_call"])
-            elif "error" in event:
+                    side_effects.append(event[StreamEvent.TOOL_CALL])
+            elif StreamEvent.ERROR in event:
                 if side_effects:
-                    content = _partial_progress_content(previous, side_effects, event["error"])
+                    content = _partial_progress_content(
+                        previous, side_effects, event[StreamEvent.ERROR]
+                    )
                     repo.save_artifact(project_id, agent, content)
-                turn_log.save(str(event["error"]))
-                yield _sse({"error": event["error"]})
+                turn_log.save(str(event[StreamEvent.ERROR]))
+                yield _sse(
+                    {
+                        key: event[key]
+                        for key in (StreamEvent.ERROR, StreamEvent.CODE)
+                        if key in event
+                    }
+                )
                 return
-            elif "result" in event:
-                result = event["result"]
+            elif StreamEvent.RESULT in event:
+                result = event[StreamEvent.RESULT]
 
+        # saved after the artifact and station are, so a persistence failure lands on the record
+        finished = _finish_turn(repo, agent, project, predecessors, result)
         turn_log.save()
-        yield _sse(_finish_turn(repo, agent, project, predecessors, result))
+        yield _sse(finished)
     except Exception as exc:
         # covers the agent stream itself *and* the save-artifact/advance-station
         # calls after it - those run after the HTTP response has already started
@@ -911,11 +927,11 @@ async def _stream_turn(  # noqa: PLR0913 - one turn's whole context, none of it 
         if side_effects:
             content = _partial_progress_content(previous, side_effects, str(exc))
             repo.save_artifact(project_id, agent, content)
-        turn_log.save(str(exc))
-        yield _sse({"error": str(exc)})
+        turn_log.save(str(exc), TurnErrorCode.TURN_FAILED)
+        yield _sse({StreamEvent.ERROR: str(exc), StreamEvent.CODE: TurnErrorCode.TURN_FAILED})
     finally:
         # a stopped or dropped run never reaches a branch above; a no-op if one did
-        turn_log.save("stopped")
+        turn_log.save(TURN_STOPPED)
         if held_response:
             held_response[0].close()
 
@@ -932,19 +948,16 @@ def advance_project_stream(
     `{"error": ...}` SSE event instead of a status code.
     """
     if request.app.state.state_machine_client is not None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="not available once the state machine is deployed",
-        )
+        raise ApiError(ErrorCode.STATE_MACHINE_ACTIVE)
 
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     if project.station not in AGENT_STATIONS:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail=f"project is not at an agent station (at {project.station.value})",
+        raise ApiError(
+            ErrorCode.NOT_AT_AGENT_STATION,
+            f"project is not at an agent station (at {project.station.value})",
         )
 
     agent = project.station.value
@@ -1005,17 +1018,12 @@ def answer_question(project_id: str, payload: AnswerRequest, request: Request) -
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     if project.station != Station.DISTILL or project.task_token is None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="project is not waiting on a Distill question",
-        )
+        raise ApiError(ErrorCode.NO_PENDING_QUESTION)
     sfn = request.app.state.state_machine_client
     if sfn is None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="not available without a state machine"
-        )
+        raise ApiError(ErrorCode.STATE_MACHINE_REQUIRED)
 
     next_message = _next_distill_message(project.pending_question, payload.answer)
     # A bare string, not {"message": next_message} - _elicitation_wait's
@@ -1027,10 +1035,7 @@ def answer_question(project_id: str, payload: AnswerRequest, request: Request) -
 
     updated = repo.get_project(project_id)
     if updated is None:
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="project missing after answering",
-        )
+        raise ApiError(ErrorCode.PROJECT_MISSING, "project missing after answering")
     return _to_response(updated, _orchestration_mode(request))
 
 
@@ -1039,7 +1044,7 @@ def list_turns(project_id: str, request: Request) -> list[TurnResponse]:
     """Every recorded agent turn on a project, oldest first - the trace behind each document."""
     repo = request.app.state.project_repository
     if repo.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     return [
         TurnResponse(
             agent=turn.agent,
@@ -1050,6 +1055,7 @@ def list_turns(project_id: str, request: Request) -> list[TurnResponse]:
             tool_calls=[ToolCallResponse(**call.model_dump()) for call in turn.tool_calls],
             usage=turn.usage,
             error=turn.error,
+            error_code=turn.error_code,
         )
         for turn in repo.list_turns(project_id)
     ]
@@ -1060,7 +1066,7 @@ def list_decisions(project_id: str, request: Request) -> list[DecisionResponse]:
     """Every gate decision on a project, oldest first - who signed what, and when."""
     repo = request.app.state.project_repository
     if repo.get_project(project_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     return [
         DecisionResponse(
             station=decision.station,
@@ -1096,11 +1102,11 @@ def submit_decision(
     repo = request.app.state.project_repository
     project = repo.get_project(project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+        raise ApiError(ErrorCode.PROJECT_NOT_FOUND)
     if project.station not in APPROVAL_STATIONS:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail=f"project is not awaiting approval (at {project.station.value})",
+        raise ApiError(
+            ErrorCode.NOT_AWAITING_APPROVAL,
+            f"project is not awaiting approval (at {project.station.value})",
         )
 
     if payload.approved and project.station == Station.SHOWROOM_APPROVAL:
@@ -1122,8 +1128,5 @@ def submit_decision(
 
     updated = repo.get_project(project_id)
     if updated is None:
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="project missing after recording decision",
-        )
+        raise ApiError(ErrorCode.PROJECT_MISSING, "project missing after recording decision")
     return _to_response(updated, _orchestration_mode(request))

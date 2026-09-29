@@ -16,11 +16,10 @@ from typing import NamedTuple, Protocol, cast
 import httpx
 import truststore
 
+from providers.github.http import API_ROOT, ERROR_STATUS_THRESHOLD, TIMEOUT_SECONDS
+
 logger = logging.getLogger(__name__)
 
-_API_ROOT = "https://api.github.com"
-_TIMEOUT_SECONDS = 10.0
-_STATUS_ERROR_THRESHOLD = 400
 # Bounds the thread pool, not the request count - GitHub's own rate limit is the real cap.
 _MAX_CONCURRENCY = 8
 
@@ -78,7 +77,7 @@ def fetch_files(
     # OS trust store, not certifi: under corporate TLS inspection GitHub's cert is
     # re-signed by a root only the system store knows. See CONTRIBUTING.md.
     verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    with httpx.Client(timeout=_TIMEOUT_SECONDS, verify=verify) as owned:
+    with httpx.Client(timeout=TIMEOUT_SECONDS, verify=verify) as owned:
         return _fetch_all(owned, repository, paths, headers, params)
 
 
@@ -99,13 +98,13 @@ def _fetch_all(
 def _fetch_one(
     http: _Client, repository: str, path: str, headers: dict[str, str], params: dict[str, str]
 ) -> FileContent:
-    url = f"{_API_ROOT}/repos/{repository}/contents/{path}"
+    url = f"{API_ROOT}/repos/{repository}/contents/{path}"
     try:
         response = http.get(url, headers=headers, params=params)
     except httpx.HTTPError:
         logger.warning("could not reach GitHub for %s", path)
         return FileContent(path=path, content=None, error="could not reach GitHub")
-    if response.status_code >= _STATUS_ERROR_THRESHOLD:
+    if response.status_code >= ERROR_STATUS_THRESHOLD:
         return FileContent(
             path=path, content=None, error=f"GitHub returned HTTP {response.status_code}"
         )

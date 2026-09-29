@@ -1,8 +1,39 @@
 """Python client for the console API."""
 
-from typing import Any
+from typing import Any, cast
 
 import httpx
+
+
+class HyperdeliveryError(httpx.HTTPStatusError):
+    """The API refused a request. Branch on `code`, not on the message.
+
+    Still an `httpx.HTTPStatusError`, so a caller that catches that keeps working. `code` is
+    the API's `ErrorCode` value, or `None` for a failure that carries none (a gateway error, an
+    unknown route).
+    """
+
+    def __init__(self, response: httpx.Response) -> None:
+        """Read the message and code out of the API's `{"detail", "code"}` body."""
+        body = _error_body(response)
+        detail = body.get("detail")
+        code = body.get("code")
+        self.detail = detail if isinstance(detail, str) else response.reason_phrase
+        self.code = code if isinstance(code, str) else None
+        super().__init__(self.detail, request=response.request, response=response)
+
+
+def _error_body(response: httpx.Response) -> dict[str, object]:
+    try:
+        body = response.json()
+    except ValueError:
+        return {}
+    return cast("dict[str, object]", body) if isinstance(body, dict) else {}
+
+
+def _check(response: httpx.Response) -> None:
+    if not response.is_success:
+        raise HyperdeliveryError(response)
 
 
 class HyperdeliveryClient:
@@ -20,25 +51,25 @@ class HyperdeliveryClient:
     def create_project(self, name: str) -> dict[str, Any]:
         """Create a project and start it down the line."""
         response = self._client.post("/projects", json={"name": name})
-        response.raise_for_status()
+        _check(response)
         return response.json()
 
     def get_project(self, project_id: str) -> dict[str, Any]:
         """Fetch a project's current station and metadata."""
         response = self._client.get(f"/projects/{project_id}")
-        response.raise_for_status()
+        _check(response)
         return response.json()
 
     def list_pending(self, station: str) -> list[dict[str, Any]]:
         """List the projects waiting for a decision at `station`."""
         response = self._client.get(f"/projects/pending/{station}")
-        response.raise_for_status()
+        _check(response)
         return response.json()
 
     def list_decisions(self, project_id: str) -> list[dict[str, Any]]:
         """List every gate decision on a project, oldest first."""
         response = self._client.get(f"/projects/{project_id}/decisions")
-        response.raise_for_status()
+        _check(response)
         return response.json()
 
     def submit_decision(
@@ -52,7 +83,7 @@ class HyperdeliveryClient:
             f"/projects/{project_id}/decisions",
             json={"approved": approved, "comment": comment},
         )
-        response.raise_for_status()
+        _check(response)
         return response.json()
 
     def close(self) -> None:
