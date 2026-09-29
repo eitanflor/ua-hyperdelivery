@@ -9,6 +9,7 @@ __pycache__/
 
 # console UI
 ui/console/dist/
+ui/console/coverage/
 
 # type checking
 .pyright/

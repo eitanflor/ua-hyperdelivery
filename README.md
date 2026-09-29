@@ -74,7 +74,7 @@ curl -X POST http://localhost:8080/invocations \
 ## Testing
 
 ```bash
-make check       # fast gate: format, lint, types, tests, secrets
+make check       # fast gate: format, lint, types, tests, secrets (plus console UI checks when pnpm is installed)
 make check-full  # fast gate plus AWS infrastructure checks
 make check-fix   # fast gate, but auto-fixes mechanical failures first
 ```

@@ -17,6 +17,24 @@ Template for new entries:
 
 ---
 
+## 2026-09-30 - Vitest for console UI unit tests
+- **Status**: Accepted
+- **Context**: `ui/console` had no tests and `make check` never touched it, while `src/lib/`
+  holds pure logic (streaming JSON repair, draft diffing, answer composition) that can
+  regress silently.
+- **Decision**: Add `vitest` as a dev dependency, node environment, co-located `*.test.ts`
+  beside the module. Gate it in `scripts/precheck.sh` (`ui`, with `oxlint` and `tsc -b`) and CI.
+- **Alternatives considered**: *Jest* - rejected: needs its own TypeScript/ESM transform
+  beside Vite's. *Playwright e2e first* - rejected for now: heavy, and Entra sign-in blocks
+  unattended runs. *jsdom + Testing Library* - deferred until a component has logic worth
+  pinning.
+- **Consequences**: CI now needs Node 22 and pnpm 11. `@vitest/coverage-v8` reports coverage
+  over `src/lib`, `src/store` and `src/api` only, with a statements floor (currently 70%,
+  baseline about 77%) that is a ratchet like the Python one. Component and e2e coverage are
+  still open; revisit when a component carries non-trivial logic.
+
+---
+
 ## 2026-09-29 - API errors carry a stable code beside the unchanged message
 - **Status**: Accepted
 - **Context**: The API raised 48 `HTTPException`s with free-text `detail`, so a client could only

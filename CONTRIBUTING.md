@@ -66,7 +66,7 @@ that is this - use the same context rather than disabling verification.
 ## The gate
 
 ```bash
-make check       # format, lint, types, tests, secrets, spelling
+make check       # format, lint, types, tests, secrets, spelling (plus console UI checks when pnpm is installed)
 make check-full  # include the slower AWS infrastructure checks
 make check-fix   # auto-fix the mechanical failures, then run the fast gate
 ```

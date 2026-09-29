@@ -38,7 +38,7 @@ const NO_CHECKS_GRACE_MS = 120_000;
  *
  * `noChecksSince` carries when each build first reported no checks, so "no CI configured"
  * can be told apart from "CI has not started yet". They look identical to the API. */
-function isSettled(build: Build, noChecksSince: Map<number, number>): boolean {
+export function isSettled(build: Build, noChecksSince: Map<number, number>): boolean {
   if (build.state === "merged" || build.state === "closed") return true;
   if (build.draft) return false;
   if (build.checks === "passing" || build.checks === "failing") return true;
@@ -268,7 +268,8 @@ function refreshAfterRun(projectId: string): void {
   );
 }
 
-function endsARun(data: string): boolean {
+/** Whether a socket event ends a run: `done: true` or a string `error`. Other or malformed events do not. */
+export function endsARun(data: string): boolean {
   try {
     const event: unknown = JSON.parse(data);
     return (

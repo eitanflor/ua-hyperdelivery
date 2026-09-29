@@ -77,6 +77,14 @@ run_gate "lint" uv run ruff check .
 run_gate "types" uv run pyright --level error
 run_gate "tests" uv run pytest -q
 
+# ui/console is a pnpm project; skip rather than fail on a machine without pnpm.
+if command -v pnpm >/dev/null 2>&1; then
+  run_gate "ui" bash -c \
+    'cd ui/console && pnpm install --frozen-lockfile --silent && pnpm lint && pnpm typecheck && pnpm coverage'
+else
+  skip_gate "ui" "pnpm not installed - brew install pnpm"
+fi
+
 # infra/ is a separate uv project with its own lockfile and CDK dependencies.
 if [[ $RUN_INFRA -eq 1 ]]; then
   run_gate "infra" bash -c \

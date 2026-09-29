@@ -8,6 +8,15 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ## [Unreleased]
 
+### Added
+
+- Console UI checks: `vitest` in `ui/console` (`pnpm test`, `pnpm coverage`), covering the
+  pure logic in `src/lib/`, `api/client.ts` (requests, errors, SSE parsing, the WebSocket opener)
+  and `useProjectsStore` (recents, delete/rename, the undoable gate decision, local and deployed
+  runs, build polling), and `pnpm typecheck` (`tsc -b`). `make check` and CI run lint,
+  typecheck and tests with a coverage floor as the `ui` gate (skipped locally when `pnpm` is
+  missing). See docs/decisions.md.
+
 ### Security
 
 - `POST /projects/{id}/decisions` records the authenticated caller as the signer (email,

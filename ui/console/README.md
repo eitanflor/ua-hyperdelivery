@@ -197,6 +197,9 @@ pnpm install
 pnpm dev      # http://localhost:5173, calling the console API at VITE_API_BASE_URL
 pnpm build    # production build
 pnpm lint     # oxlint
+pnpm typecheck # tsc -b
+pnpm test     # vitest: unit tests for the pure logic in src/lib/
+pnpm coverage # the same, with a coverage report and a floor (see vite.config.ts)
 ```
 
 Needs a `.env` (see `.env.example`): `VITE_API_BASE_URL`, `VITE_ENTRA_TENANT_ID`,
