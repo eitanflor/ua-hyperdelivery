@@ -41,7 +41,7 @@ function Status({ build, reviewComplete }: { build: Build; reviewComplete: boole
     // Review already assessed this pull request - GitHub's own draft flag just means
     // Copilot never flipped it, not that work is still in progress (see merge.py's
     // mark_ready_for_review, which flips it at merge time regardless).
-    return <span className="text-2xs text-fg-muted">in draft · ready for your sign-off</span>;
+    return <span className="text-2xs text-fg-muted">in draft · ready for your approval</span>;
   }
   return (
     <span className="flex items-center gap-1 text-2xs text-fg-muted">
@@ -144,7 +144,7 @@ export function BuildBoard({
       <p className={cn("mt-2 text-2xs", watching ? "text-fg-subtle" : "text-warning")}>
         {watching
           ? "Updating on its own - Copilot takes a few minutes per pull request, and this " +
-            "station picks the thread back up once they settle. Approving at the gate " +
+            "stage picks the thread back up once they settle. Approving at the gate " +
             "merges every build here automatically."
           : "No GitHub token on the console, so these are links only - open them to see status."}
       </p>

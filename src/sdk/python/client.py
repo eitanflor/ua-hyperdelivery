@@ -35,13 +35,22 @@ class HyperdeliveryClient:
         response.raise_for_status()
         return response.json()
 
+    def list_decisions(self, project_id: str) -> list[dict[str, Any]]:
+        """List every gate decision on a project, oldest first."""
+        response = self._client.get(f"/projects/{project_id}/decisions")
+        response.raise_for_status()
+        return response.json()
+
     def submit_decision(
-        self, project_id: str, approved: bool, signer: str, comment: str | None = None
+        self, project_id: str, approved: bool, comment: str | None = None
     ) -> dict[str, Any]:
-        """Approve or reject the gate the project is currently held at."""
+        """Approve or reject the gate the project is currently held at.
+
+        The API records the signed-in caller as the signer.
+        """
         response = self._client.post(
             f"/projects/{project_id}/decisions",
-            json={"approved": approved, "signer": signer, "comment": comment},
+            json={"approved": approved, "comment": comment},
         )
         response.raise_for_status()
         return response.json()

@@ -17,6 +17,243 @@ Template for new entries:
 
 ---
 
+## 2026-09-28 - Illustrations are optional drop-ins with designed fallbacks
+
+- **Status**: Accepted
+- **Context**: Phase 6 of `docs/design/roadmap.md` calls for about fifteen illustrations in
+  two themes, which will be generated in outside tools (Higgsfield, Recraft, Midjourney) on
+  their own schedule. The console should not wait for them, and adding one should not need
+  an engineer.
+- **Decision**: Every illustration is a named slot (`<Artwork id="..." />`) with a fallback
+  drawn in code: the isometric line, the ASCII head, a halftone portrait, or nothing for
+  small empty-state spots. `lib/artwork.ts` finds files named `<id>.<light|dark>.<ext>` in
+  `ui/console/src/assets/illustrations/` with Vite's `import.meta.glob` at build time, so
+  dropping a file in replaces the fallback, and a missing file costs nothing.
+- **Alternatives considered**: *Probe `/public` at runtime* (try to load the image, fall
+  back on error) - rejected: every slot costs a request and a flash of the fallback, even
+  when no artwork exists, and missing-file 404s pile up in the console. *A manifest file
+  listing the delivered assets* - rejected: one more thing to keep in step with the folder,
+  and forgetting it silently hides a delivered file. *Wait for the artwork before building
+  the surfaces* - rejected: blocks Phase 6 on outside tools and leaves the placeholders in
+  place indefinitely.
+- **Consequences**: A new file needs a dev-server restart or a rebuild to be picked up. The
+  fallbacks are real designs, not placeholders, so the app is finished without the artwork.
+  The id list in `lib/artwork.ts` and the table in `docs/design/asset-prompts.md` have to
+  change together.
+
+---
+
+## 2026-09-28 - React Flow and dagre for the console's canvases
+
+- **Status**: Accepted
+- **Context**: Phase 5 of `docs/design/roadmap.md` makes the architecture and build order
+  explorable. The existing diagram was hand-laid-out SVG with a hard cap of 12 components
+  and no pan, zoom, selection or keyboard path (UX-13).
+- **Decision**: Add `@xyflow/react` (React Flow 12, MIT) for pan, zoom, minimap, selection
+  and custom nodes, and `@dagrejs/dagre` (MIT) for layered left-to-right layout. Both load
+  in a lazy chunk (about 80 kB gzipped) only when a Design tab opens. The static SVG diagram
+  and its layout helper are removed rather than kept for the inline view.
+- **Alternatives considered**: `elkjs` - better edge routing and ports, but about 1.4 MB
+  and asynchronous; blueprint-sized graphs do not need it, and dagre lays them out in a
+  frame on the main thread. Extending the hand-rolled SVG - pan, zoom, minimap and keyboard
+  navigation are exactly what React Flow already does well. Keeping the static diagram
+  beside the canvas (as the canvas pattern suggested) - two renderers for one picture, and
+  printing goes through the document export, not the diagram.
+- **Consequences**: Nodes are ordinary React components on our tokens, so the canvas
+  follows theme and detail level. Revisit ELK if a real blueprint's layout reads poorly or
+  graphs grow past ~200 nodes. Canvas SVG/PNG export is not built; it would need an
+  image-export dependency.
+
+## 2026-09-28 - The signer comes from the token, and decisions are readable
+
+- **Status**: Accepted
+- **Context**: `POST /projects/{id}/decisions` recorded whatever `signer` string the body
+  carried, so any signed-in caller could sign as anyone - on the one record the gates exist to
+  produce. Decisions were also write-only, so a gate cleared in another browser showed
+  "Signed before this session" (UX-14 in `docs/design/ux-audit-2026-09.md`).
+- **Decision**: The endpoint records the authenticated caller - the token's email, or its
+  object id when there is no email. `DecisionRequest` drops `signer`; one sent by an older
+  client is ignored, not rejected. `GET /projects/{id}/decisions` returns the trail oldest
+  first, and the console reads it for checkpoints and an Activity list.
+- **Alternatives considered**: Keeping `signer` and rejecting a mismatch with the token -
+  every client would have to know which claim the server compares, for no gain over
+  ignoring it. Keeping `signer` on the SDK as a deprecated no-op parameter - a parameter that
+  does nothing misleads the caller. Recording the object id always - stable, but unreadable
+  in the trail; the email is what an auditor recognizes.
+- **Consequences**: `HyperdeliveryClient.submit_decision` loses its `signer` parameter. A
+  renamed user's old decisions keep the old email. Per-gate approvers (roadmap Phase 3) can
+  now check against the same identity.
+
+## 2026-09-28 - Sign-off stays a button until the usability test
+
+- **Status**: Accepted
+- **Context**: The roadmap's Phase 3 names hold-to-sign or slide-to-sign for the gate, and
+  says to choose after a usability test. That test has not run, and nobody was available to
+  choose.
+- **Decision**: Keep the approve button. Build the rest of the gate card around it - what you
+  are approving, criteria, what is missing, what happens next, the filling undo bar.
+- **Alternatives considered**: Hold to sign - the simpler keyboard path (hold Space or
+  Enter), but adding friction on a guess. Slide to sign - more ceremony, harder on touchpads
+  and needing an arrow-key path. Either could be undone later, but only after people had
+  learned it.
+- **Consequences**: The deliberateness still comes from the criteria checklist and the
+  twelve-second undo. Revisit after the moderated test in the Phase 3 exit criteria.
+
+## 2026-09-28 - A Settings page for per-person preferences
+
+- **Status**: Accepted
+- **Context**: The Simple/Detailed switch sat in the header and a "Your role" list sat in the
+  account menu. Feedback: the role does not belong in the dropdown, and per-user settings -
+  including, later, tokens - need a page of their own, with the detail level exposed there.
+- **Decision**: `/settings` holds detail level, theme and role, reached from the account menu
+  and `⌘K`. The header switch and the dropdown role list are gone; theme is also still in
+  the account menu. Everything on the page is stored in the browser and changes only what
+  the person sees.
+- **Alternatives considered**: Adding token fields now - nothing on the backend accepts a
+  per-user token yet, and AGENTS.md rules out speculative wiring. The Phase 4 plan of
+  settings inside the side panel - the feedback asked for a page.
+- **Consequences**: A per-user token needs a server-side home before it can appear here; this
+  page is browser-local by design, and a secret must not be kept in `localStorage`.
+
+## 2026-09-28 - The workspace side panel is always there, and opens on Progress
+
+- **Status**: Accepted
+- **Context**: Feedback: too much empty space in the chat area and a poor split between the
+  working area and the chat. The side panel stayed closed until a document existed, then
+  took half the screen, and the chat column widened to fill whatever was left.
+- **Decision**: On screens 1024px and wider the panel is open by default at a steady width
+  (`clamp(22rem, 34vw, 38rem)`), and its first tab, Progress, shows every stage, what is
+  happening now and what happens next. The chat keeps one 48rem measure whether or not the
+  panel is open. `/start` becomes two columns, so it fits a laptop screen without scrolling.
+- **Alternatives considered**: Keeping the half-screen panel - it only existed because a
+  fixed-width panel that opened late left idle space beside the chat, and a panel that is
+  always open fills that space. Letting the chat widen to fill - lines past about 75
+  characters are harder to read, which is why the column had a measure in the first place.
+- **Consequences**: Below 1024px the panel starts closed. Escape no longer closes it, because
+  it is no longer a transient overlay. Phase 4's artifact-panel work starts from this layout.
+
+## 2026-09-28 - Home at `/`, and a per-browser role that only shapes the view
+
+- **Status**: Accepted
+- **Context**: The console opened on a project-intake form for everyone, including people who
+  came to approve or answer something, and "Needs you" counted every gate for every viewer
+  (UX-05, UX-06 in `docs/design/ux-audit-2026-09.md`).
+- **Decision**: `/` is Home: tiles for waiting for approval, questions waiting, in flight and
+  recently shipped, ordered by a role picked on first visit. Intake moves to `/start`. The
+  role (requester, approver, subject expert, analyst, developer, leadership) is stored in
+  the browser (`usePreferences`), sets the default detail level, and grants nothing.
+- **Alternatives considered**: Keeping the intake form at `/` and Home only for returning
+  users - two front doors for one app, and a first visit from a gate link would still land on
+  intake. Storing the role on the server - it would need a user-profile model and an endpoint
+  for something that changes only the order of tiles. Inferring the role from Entra groups -
+  no group mapping exists, and a wrong guess is worse than one question.
+- **Consequences**: The role must be asked again in each browser. When gates get assigned
+  approvers (roadmap Phase 3), "Waiting for approval" becomes personal and the role can move
+  server-side if something starts to depend on it.
+
+## 2026-09-28 - Simple by default, and agent colors that never match a status
+
+- **Status**: Accepted
+- **Context**: The console opened in the developer view, labeled "Developer / PM"; its PM
+  view went silent while agents worked yet still showed raw JSON and token counts. Ref's and
+  Host's identity colors were exactly the warning and success colors (UX-01-03, UX-11 in
+  `docs/design/ux-audit-2026-09.md`).
+- **Decision**: Rename the switch to Simple / Detailed and default to Simple. Keep the stored
+  values (`pm`, `developer`) so existing choices survive. Simple narrates runs as grouped
+  plain steps and hides JSON and tokens; Detailed is unchanged. Move Ref to violet
+  (`#6b3fa0` / `#b995f0`) and Host to magenta (`#a3287f` / `#f07ac8`).
+- **Alternatives considered**: Renaming the stored values to `simple` / `detailed` with a
+  persist migration - cleaner code, but churn across six files for no user-visible gain.
+  Copper for Host - it sat 16-20 degrees of hue from danger and warning, so it would still
+  read as a status; magenta is 31 degrees from UA red and at least 51 from the rest.
+- **Consequences**: New users see the outcome first; developers switch once and keep it.
+  Defaulting from a role waits for Phase 1's first-run question. Illustration briefs use the
+  new hues.
+
+## 2026-09-28 - Graft in VS Code through native hooks and a payload adapter
+
+- **Status**: Accepted
+- **Context**: graft 0.20 wires Claude Code (skill, MCP, hooks) and Cursor, but for
+  Copilot it writes only the instructions file. In VS Code the agent never saw the graft MCP
+  tools, and edits never marked the graph stale, so `graft check` failed after every session.
+- **Decision**: Commit `.vscode/mcp.json` for the MCP server and a native VS Code hook file,
+  `.github/hooks/graft.json` (SessionStart, PostToolUse, Stop), that calls
+  `.github/hooks/graft-vscode.cjs`. The adapter renames VS Code's `filePath` to graft's
+  `file_path` and hands the payload to the existing `.claude/helpers/graft-hooks.cjs`.
+  Cursor's generated `hooks.json` is git-ignored because it holds absolute paths.
+- **Alternatives considered**: Turning on `chat.useClaudeHooks` to reuse
+  `.claude/settings.json` - VS Code ignores matchers in that mode, so every Claude hook would
+  fire on every tool call, and edits would still not be recognized. Instructions only -
+  leaves the graph stale and the MCP tools unused.
+- **Consequences**: Copilot sessions get the same orientation, blast-radius context and
+  end-of-turn refresh as Claude Code. The adapter depends on graft's Claude hook payload;
+  drop it when graft ships Copilot hooks, and re-run the checks in CONTRIBUTING.md after a
+  graft upgrade.
+
+## 2026-09-28 - Plain stage names around a named crew
+
+- **Status**: Accepted. Supersedes 2026-08-28 "Splitting station from crew: staff titles for
+  the agents"; the crew names and faces carry over.
+- **Context**: The adoption audit for non-technical users (`docs/design/ux-audit-2026-09.md`,
+  UX-04) found the console stacking factory, sports-staff and sports-venue metaphors on top of
+  engineering terms, so a gate header needed three translations before it said what was being
+  approved. The only glossary was the landing page, which also said there were two gates.
+- **Decision**: Option A in `docs/design/vocabulary.md`. Keep Scout, Coach, Ref and Host and
+  add plain job titles (requirements analyst, build planner, quality reviewer, demo producer).
+  Stages become Requirements, Plan, Build check, Demo and Shipped; outputs become requirements
+  brief, build plan, quality report and demo script; gates are named as actions ("Gate 2 ·
+  Approve the plan") and gate copy says approve rather than sign, keeping "Signed by" in the
+  record. Numbers drop the factory "ST" prefix. Still display-only in `pipeline.ts`.
+- **Alternatives considered**: Fully plain names with no characters - loses the persona that
+  makes the crew likable. UA's garment journey as stage names (Brief, Pattern, Fit, Launch) -
+  on-brand, but "Pattern" and "Fit" still need explaining outside merchandising. Keeping the
+  sports names with subtitles - smallest change, but the reader still decodes two names for
+  every thing. Full comparison in `docs/design/vocabulary.md`.
+- **Consequences**: A gate reads as the decision it is, and the crew no longer needs a
+  glossary. The venue names are gone, which also retires the "Ref in the Film Room" seam the
+  superseded entry flagged. The rest of the one-noun-per-concept pass ("artifact",
+  "station", "units of work" in remaining copy) is still Phase 0 work in
+  `docs/design/roadmap.md`.
+
+## 2026-09-28 - Outside design sources may be used in implementation, under porting rules
+
+- **Status**: Accepted
+- **Context**: The console redesign for non-technical users draws on Kobra, React Bits,
+  Beautiful UI and `@xyflow/react` with a layout engine. Their licenses differ (paid, MIT +
+  Commons Clause, MIT, EPL-2.0 for `elkjs`), and each brings its own icons and colors.
+- **Decision**: All of them may be used for implementation, not just inspiration, and may be
+  modified or extended - provided every ported piece passes the porting rules in
+  `docs/design/principles.md`: Phosphor icons only, semantic tokens only, the 12px floor, a
+  reduced-motion branch, license notices kept, Kobra paid components bought before install.
+  Each package still gets its own entry here when it is actually added.
+- **Alternatives considered**: Inspiration only, rebuilding everything in-house - offered and
+  not chosen; it keeps the dependency list shorter but re-solves problems these libraries
+  already handle well (lifecycle status marks, hold-to-confirm, agent task rows).
+- **Consequences**: A faster route to the working-state and approval patterns. No package is
+  added by this entry. The `elkjs` license must be checked before the canvas phase (with
+  `dagre` as the MIT fallback), and a Kobra purchase is a procurement step before any paid
+  component lands.
+
+## 2026-09-28 - The UI/UX library lives in `docs/design/`
+
+- **Status**: Accepted
+- **Context**: A new adoption-focused audit, the research behind it (component libraries,
+  a catalog of interface details, diagram rules), and a roadmap needed a durable home that
+  later work can extend. The previous audit is a single dated file,
+  `docs/console-redesign.md`.
+- **Decision**: `docs/design/` holds an index, the audit, personas, principles, vocabulary,
+  roadmap and asset briefs, with `patterns/` for cross-cutting designs and `references/` for
+  one file per external source (license, catalog, what we take). `docs/console-redesign.md`
+  stays where it is as the historical record, with a note where it has gone stale.
+- **Alternatives considered**: A top-level `references/ui-ux/` - all prose in this repo lives
+  under `docs/`, and a top-level folder reads as code or data. `docs/references/ui-ux/` -
+  the library holds more than references (audit, principles, roadmap), so the name would
+  mislabel most of it. Extending `docs/console-redesign.md` - it is a dated record and
+  already long.
+- **Consequences**: One place to look for design context. `docs/design/README.md` defines
+  how to add a reference and asks for a quarterly review; the roadmap requires the audit to
+  be updated as each phase closes findings, which is the guard against drift.
+
 ## 2026-09-18 - Keep AWS infrastructure checks out of the fast local gate
 
 - **Status**: Accepted
@@ -1234,7 +1471,9 @@ Template for new entries:
 
 ## 2026-09-04 - The architecture diagram is hand-rolled SVG, not Mermaid
 
-- **Status**: Accepted.
+- **Status**: Superseded by "2026-09-28 - React Flow and dagre for the console's canvases".
+  The case against Mermaid still stands: the canvas renders from the structured artifact,
+  never from a DSL string.
 - **Context**: Blueprint's design became structured data (components, data entities,
   integration points, unit-to-component edges), which makes it drawable. A reviewer at G2
   can judge a picture far faster than a list. The obvious library for this is Mermaid.
@@ -1973,8 +2212,9 @@ Template for new entries:
 
 ## 2026-08-28 - Splitting station from crew: staff titles for the agents
 
-- **Status**: Accepted. Supersedes 2026-08-27 "The crew: naming the agents after the
-  apparel line, not the code".
+- **Status**: Superseded by 2026-09-28 "Plain stage names around a named crew" (the crew
+  names and faces carry over; the station, output and gate names do not). It had superseded
+  2026-08-27 "The crew: naming the agents after the apparel line, not the code".
 - **Context**: The apparel naming (Draft / Pattern / Fit / Showroom) was an improvement on
   the engineering ids, but every name was still a process noun, so the console read as a
   list of stages rather than a team: "Fit found 3 blockers" names a step, not a someone.

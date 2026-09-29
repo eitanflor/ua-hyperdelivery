@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable, Iterator
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any, Never, cast
 
@@ -10,14 +11,14 @@ from pydantic import SecretStr
 
 from api.auth import CurrentUser, get_current_user
 from api.main import create_app
-from core.domain.project import Station
+from core.domain.project import Decision, Station
 from fakes import FakeStateMachineClient, FakeTable, complete_spec_content, loaded
 from infrastructure.local_preview import PreviewTarget, PullResult
 from infrastructure.repositories.context_repository import ContextRepository
 from infrastructure.repositories.project_repository import ProjectRepository
 from providers.github.merge import MergeResult
 from providers.github.pull_requests import PullRequestState
-from providers.storage.s3 import UploadedDocument
+from providers.storage.s3 import StoredDocument, UploadedDocument
 
 
 def _state(client: TestClient) -> Any:
@@ -317,6 +318,70 @@ def test_decision_advances_station_and_appears_in_pending_list(client: TestClien
     assert resp.json()["station"] == Station.BLUEPRINT.value
 
 
+def test_decision_signer_is_the_signed_in_user_not_the_request_body(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    project = loaded(repo.get_project(created["id"]))
+    project.station = Station.BLUEPRINT_APPROVAL
+    repo._table.put_item(Item=repo._state_item(project))
+    cast(FastAPI, client.app).dependency_overrides[get_current_user] = lambda: CurrentUser(
+        oid="oid-1", email="approver@example.com"
+    )
+
+    client.post(
+        f"/projects/{created['id']}/decisions",
+        json={"approved": True, "signer": "someone-else@example.com"},
+    )
+
+    decisions = client.get(f"/projects/{created['id']}/decisions").json()
+    assert [d["signer"] for d in decisions] == ["approver@example.com"]
+
+
+def test_decision_signer_falls_back_to_the_object_id_without_an_email(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    project = loaded(repo.get_project(created["id"]))
+    project.station = Station.BLUEPRINT_APPROVAL
+    repo._table.put_item(Item=repo._state_item(project))
+
+    client.post(f"/projects/{created['id']}/decisions", json={"approved": True})
+
+    decisions = client.get(f"/projects/{created['id']}/decisions").json()
+    assert [d["signer"] for d in decisions] == ["test-user"]
+
+
+def test_list_decisions_returns_the_trail_oldest_first(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    for decided_at, approved, signer, comment in [
+        (datetime(2026, 9, 2, tzinfo=UTC), True, "b@example.com", None),
+        (datetime(2026, 9, 1, tzinfo=UTC), False, "a@example.com", "thin"),
+    ]:
+        decision = Decision(
+            project_id=created["id"],
+            station=Station.BLUEPRINT_APPROVAL,
+            approved=approved,
+            signer=signer,
+            comment=comment,
+            decided_at=decided_at,
+        )
+        repo._table.put_item(Item=repo._decision_item(decision))
+
+    decisions = client.get(f"/projects/{created['id']}/decisions").json()
+
+    assert [(d["approved"], d["signer"], d["comment"]) for d in decisions] == [
+        (False, "a@example.com", "thin"),
+        (True, "b@example.com", None),
+    ]
+    assert all(d["station"] == Station.BLUEPRINT_APPROVAL.value for d in decisions)
+
+
+def test_list_decisions_404s_for_an_unknown_project(client: TestClient) -> None:
+    resp = client.get("/projects/ghost/decisions")
+
+    assert resp.status_code == 404
+
+
 def test_create_project_starts_a_state_machine_execution(client: TestClient) -> None:
     created = client.post("/projects", json={"name": "My Project"}).json()
 
@@ -424,6 +489,80 @@ def test_get_artifact_returns_saved_content(client: TestClient) -> None:
     body = resp.json()
     assert body["agent"] == "distill"
     assert body["content"] == {"title": "FSD"}
+
+
+def test_artifact_versions_list_every_draft_oldest_first(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    repo: ProjectRepository = _state(client).project_repository
+    repo.save_artifact(created["id"], "distill", {"title": "First"})
+    repo.save_artifact(created["id"], "distill", {"title": "Second"})
+
+    resp = client.get(f"/projects/{created['id']}/artifacts/distill/versions")
+
+    assert resp.status_code == 200
+    assert [(v["version"], v["content"]["title"]) for v in resp.json()] == [
+        (1, "First"),
+        (2, "Second"),
+    ]
+    assert client.get(f"/projects/{created['id']}/artifacts/distill").json()["version"] == 2
+
+
+def test_artifact_versions_404_before_the_agent_has_run(client: TestClient) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+
+    resp = client.get(f"/projects/{created['id']}/artifacts/distill/versions")
+
+    assert resp.status_code == 404
+
+
+def test_list_documents_is_empty_without_s3_configured(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(s3_bucket=None, s3_region=None),
+    )
+
+    resp = client.get(f"/projects/{created['id']}/documents")
+
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_list_documents_returns_uploads_under_their_original_names(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created = client.post("/projects", json={"name": "My Project"}).json()
+    monkeypatch.setattr(
+        "api.routers.projects.get_settings",
+        lambda: SimpleNamespace(s3_bucket="my-bucket", s3_region="us-east-1"),
+    )
+    uploaded_at = datetime(2026, 9, 1, tzinfo=UTC)
+
+    def fake_list(bucket: str, project_id: str, region: str) -> list[StoredDocument]:
+        return [
+            StoredDocument(f"projects/{project_id}/uploads/x-fsd.pdf", "fsd.pdf", 42, uploaded_at)
+        ]
+
+    monkeypatch.setattr("api.routers.projects.list_uploaded_documents", fake_list)
+
+    resp = client.get(f"/projects/{created['id']}/documents")
+
+    assert resp.json() == [
+        {
+            "key": f"projects/{created['id']}/uploads/x-fsd.pdf",
+            "filename": "fsd.pdf",
+            "size": 42,
+            "uploaded_at": uploaded_at.isoformat(),
+        }
+    ]
+
+
+def test_list_documents_404s_for_an_unknown_project(client: TestClient) -> None:
+    resp = client.get("/projects/ghost/documents")
+
+    assert resp.status_code == 404
 
 
 def test_list_artifacts_returns_all_agents_for_project(client: TestClient) -> None:

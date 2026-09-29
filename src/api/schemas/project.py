@@ -45,11 +45,24 @@ class ProjectResponse(BaseModel):
 
 
 class DecisionRequest(BaseModel):
-    """Body for `POST /projects/{id}/decisions`."""
+    """Body for `POST /projects/{id}/decisions`.
 
+    There is no signer field: the signer is the authenticated caller. A `signer` sent by
+    an older client is ignored rather than rejected, so it cannot claim someone else.
+    """
+
+    approved: bool
+    comment: str | None = None
+
+
+class DecisionResponse(BaseModel):
+    """One recorded gate decision, as returned by `GET /projects/{id}/decisions`."""
+
+    station: Station
     approved: bool
     signer: str
     comment: str | None = None
+    decided_at: str
 
 
 class AnswerRequest(BaseModel):
@@ -75,7 +88,17 @@ class ArtifactResponse(BaseModel):
 
     agent: str
     content: dict[str, Any]
+    version: int = 1
     created_at: str
+
+
+class StoredDocumentResponse(BaseModel):
+    """One document uploaded to a project, as listed by `GET /projects/{id}/documents`."""
+
+    key: str
+    filename: str
+    size: int
+    uploaded_at: str | None = None
 
 
 class UploadDocumentResponse(BaseModel):

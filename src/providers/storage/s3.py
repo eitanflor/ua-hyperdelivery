@@ -6,6 +6,7 @@ an object key into text. The per-agent least-privilege wrapper lives in tools/do
 
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from functools import lru_cache
 from hashlib import sha256
 from typing import TYPE_CHECKING
@@ -36,6 +37,20 @@ class UploadedDocument:
     project_id: str
     filename: str
     data: bytes
+
+
+@dataclass(frozen=True)
+class StoredDocument:
+    """A browser-uploaded document as it sits in S3, listed back without its bytes."""
+
+    key: str
+    filename: str
+    size: int
+    uploaded_at: datetime | None
+
+
+# the random prefix `put_uploaded_document` adds so two uploads of one name cannot collide
+_COLLISION_PREFIX = re.compile(r"^[0-9a-f]{32}-")
 
 
 @lru_cache
@@ -115,12 +130,42 @@ def put_uploaded_document(
     A random prefix on the filename avoids collisions between two uploads of the same name.
     """
     client = s3_client or _default_client(region)
-    key = (
-        f"projects/{_safe_segment(document.project_id)}/uploads/"
-        f"{uuid4().hex}-{_safe_filename(document.filename)}"
-    )
+    key = f"{uploads_prefix(document.project_id)}{uuid4().hex}-{_safe_filename(document.filename)}"
     client.put_object(Bucket=bucket, Key=key, Body=document.data, ServerSideEncryption="AES256")
     return key
+
+
+def uploads_prefix(project_id: str) -> str:
+    """The S3 prefix every browser upload for one project is stored under."""
+    return f"projects/{_safe_segment(project_id)}/uploads/"
+
+
+def list_uploaded_documents(
+    bucket: str, project_id: str, region: str, s3_client: "S3Client | None" = None
+) -> list[StoredDocument]:
+    """Return every document uploaded to a project, oldest first, under its original name."""
+    client = s3_client or _default_client(region)
+    documents: list[StoredDocument] = []
+    pages = client.get_paginator("list_objects_v2").paginate(
+        Bucket=bucket, Prefix=uploads_prefix(project_id)
+    )
+    for page in pages:
+        for obj in page.get("Contents", []):
+            key = obj.get("Key")
+            if not key:
+                continue
+            name = key.rsplit("/", maxsplit=1)[-1]
+            documents.append(
+                StoredDocument(
+                    key=key,
+                    filename=_COLLISION_PREFIX.sub("", name),
+                    size=obj.get("Size", 0),
+                    uploaded_at=obj.get("LastModified"),
+                )
+            )
+    return sorted(
+        documents, key=lambda d: d.uploaded_at.timestamp() if d.uploaded_at else float("inf")
+    )
 
 
 def list_document_keys(

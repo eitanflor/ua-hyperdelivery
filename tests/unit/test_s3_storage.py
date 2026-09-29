@@ -1,4 +1,5 @@
 import io
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -194,6 +195,42 @@ class _StubPaginatedS3Client:
     def get_paginator(self, name: str) -> _StubPaginator:
         self.paginator_name = name
         return _StubPaginator(self._pages)
+
+
+def test_list_uploaded_documents_restores_original_names_oldest_first() -> None:
+    newer = datetime(2026, 9, 2, tzinfo=UTC)
+    older = datetime(2026, 9, 1, tzinfo=UTC)
+    client = _StubPaginatedS3Client(
+        [
+            {
+                "Contents": [
+                    {
+                        "Key": f"projects/p1/uploads/{'a' * 32}-line-plan.docx",
+                        "Size": 10,
+                        "LastModified": newer,
+                    }
+                ]
+            },
+            {
+                "Contents": [
+                    {
+                        "Key": f"projects/p1/uploads/{'b' * 32}-brief.pdf",
+                        "Size": 20,
+                        "LastModified": older,
+                    }
+                ]
+            },
+        ]
+    )
+
+    result = s3.list_uploaded_documents(
+        "my-bucket", "p1", "us-east-1", s3_client=cast("S3Client", client)
+    )
+
+    assert [(d.filename, d.size, d.uploaded_at) for d in result] == [
+        ("brief.pdf", 20, older),
+        ("line-plan.docx", 10, newer),
+    ]
 
 
 def test_list_document_keys_paginates_and_sorts() -> None:

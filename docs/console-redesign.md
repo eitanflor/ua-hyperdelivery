@@ -542,6 +542,13 @@ exercise on the next real run.
 
 ## 13. The crew, and the visual signature
 
+> **Superseded naming.** The Draft / Pattern / Fit / Showroom names below were replaced on
+> 2026-08-28 by the staff titles Scout / Coach / Ref / Host at Combine / Playbook / Film Room
+> / Gameday - see "Splitting station from crew" in [decisions.md](decisions.md). The
+> faces, the one-head-per-agent rule and the hazard stripe still stand. On 2026-09-28 the
+> station, output and gate names were replaced again with plain language around the same
+> crew - see [design/vocabulary.md](design/vocabulary.md).
+
 Added after the first implementation, from two references: the Hyperdelivery concept page
 (an industrial factory line) and Grok Bot (avatars with eyes, and bots named by job).
 

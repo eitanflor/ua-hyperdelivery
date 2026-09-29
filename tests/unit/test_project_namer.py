@@ -49,7 +49,31 @@ def test_generate_falls_back_to_a_heuristic_when_the_model_call_fails(
     monkeypatch.setattr(namer_module, "Agent", _raise)
     namer = ProjectNamer(region_name="us-east-1")
 
-    assert namer.generate("We want a feedback portal for users") == "We want a feedback portal for"
+    assert namer.generate("We want a feedback portal for users") == "We want a feedback portal"
+
+
+def test_generate_uses_a_heuristic_name_when_the_model_replies_with_prose(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _ChattyAgent(_FakeAgent):
+        def __call__(self, message: str) -> _FakeAgentResult:
+            return _FakeAgentResult("I'm ready to name software projects. Please describe it.")
+
+    monkeypatch.setattr(namer_module, "Agent", _ChattyAgent)
+    namer = ProjectNamer(region_name="us-east-1")
+
+    assert namer.generate("hi") == "hi"
+
+
+def test_fallback_name_skips_paths_and_urls() -> None:
+    message = "Use the local FRD at: /Users/someone/Desktop/frd.pdf please"
+    assert heuristic_name(message) == "Use the local FRD at please"
+
+
+def test_fallback_name_drops_a_dangling_connector_word() -> None:
+    assert heuristic_name("Read the uploaded FRD excerpt and summarize it") == (
+        "Read the uploaded FRD excerpt"
+    )
 
 
 def test_fallback_name_uses_the_first_six_words() -> None:

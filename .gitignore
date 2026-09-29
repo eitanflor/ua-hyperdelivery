@@ -29,4 +29,6 @@ certs/*.crt
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+# graft init writes absolute paths here; each machine generates its own.
+/.cursor/hooks.json
 src/requirements-lambda.txt

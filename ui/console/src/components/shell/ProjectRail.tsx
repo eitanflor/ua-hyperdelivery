@@ -34,7 +34,7 @@ interface Row {
 type Group = "needsYou" | "active" | "done";
 
 const GROUP_LABEL: Record<Group, string> = {
-  needsYou: "Needs you",
+  needsYou: "Waiting for approval",
   active: "Active",
   done: "Done",
 };
@@ -130,7 +130,7 @@ export function ProjectRail({ open }: { open: boolean }) {
         variant="secondary"
         size="sm"
         icon={<PlusIcon className="size-3.5" />}
-        onClick={() => void navigate("/")}
+        onClick={() => void navigate("/start")}
         className="w-full"
       >
         New project
@@ -152,7 +152,7 @@ export function ProjectRail({ open }: { open: boolean }) {
           <p className="px-1 py-6 text-center text-2xs leading-relaxed text-fg-subtle">
             No projects yet.
             <br />
-            Describe one to get started.
+            Start one to get going.
           </p>
         )}
 
@@ -209,6 +209,7 @@ export function ProjectRail({ open }: { open: boolean }) {
                         onChange={(e) => setEditingName(e.target.value)}
                         onBlur={() => void commitRename(row)}
                         onKeyDown={(e) => {
+                          if (e.nativeEvent.isComposing) return;
                           if (e.key === "Enter") void commitRename(row);
                           if (e.key === "Escape") setEditingId(null);
                         }}
@@ -278,7 +279,7 @@ export function ProjectRail({ open }: { open: boolean }) {
         open={confirming !== null}
         onOpenChange={(next) => !next && setConfirming(null)}
         title={`Delete "${confirming?.name ?? ""}"?`}
-        description="This removes the project, every artifact its agents produced, and its decision history. It cannot be undone."
+        description="This removes the project, every document its crew produced, and its decision history. It cannot be undone."
         confirmLabel="Delete project"
         destructive
         onConfirm={() => {

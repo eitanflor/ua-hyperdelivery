@@ -7,7 +7,16 @@ import { describeError, type FriendlyError } from "../lib/errors";
 import { withAttachments, type Attachment } from "../lib/attachments";
 import { QUESTIONS_TOOL } from "../lib/plan";
 import { AGENT_META, AGENT_STATIONS } from "../lib/pipeline";
-import type { Artifact, Build, Builds, DecisionRequest, PreviewResponse, Project, Station } from "../api/types";
+import type {
+  Artifact,
+  Build,
+  Builds,
+  Decision,
+  DecisionRequest,
+  PreviewResponse,
+  Project,
+  Station,
+} from "../api/types";
 
 const MAX_RECENTS = 30;
 
@@ -41,7 +50,7 @@ function isSettled(build: Build, noChecksSince: Map<number, number>): boolean {
  * Deliberately client-side for now: if the tab closes inside the window the decision is
  * dropped rather than recorded, which is the safe direction to fail for an audit gate.
  * A server-side deferred dispatch would make it durable - see docs/console-redesign.md. */
-const UNDO_MS = 12_000;
+export const UNDO_MS = 12_000;
 
 /** Streamed tokens are buffered this long before hitting the store, so a fast agent
  * does not rewrite the conversation map once per token. */
@@ -64,11 +73,11 @@ export interface RecentProject {
   name: string;
 }
 
-/** "developer" shows the full trace (tool calls, raw agent text, raw JSON) - the
- * default, since that is who has driven this console so far. "pm" hides that debug
- * detail and shows only the synthesized reply and the structured artifact view, for
- * someone who wants the outcome, not how the agent got there. A display preference, not
- * project state, so it lives outside any per-project data and persists across projects. */
+/** How much of the machinery to show. "pm" (labeled Simple) shows the synthesized reply,
+ * plain-language steps and the structured document - the default, because most people
+ * here want the outcome. "developer" (labeled Detailed) adds the full trace: tool calls,
+ * raw agent text, JSON and token counts. The stored values predate the labels and are kept
+ * so existing choices survive. A display preference, not project state. */
 export type ViewMode = "developer" | "pm";
 
 export interface ChatTurn {
@@ -101,6 +110,8 @@ export interface PendingDecision {
   projectId: string;
   station: Station;
   decision: DecisionRequest;
+  /** For the local echo only - the API records whoever is signed in. */
+  signer: string;
   /** Epoch ms at which this stops being undoable and is sent. */
   deadline: number;
   /** Set once the undo window closes and the decision is in flight. */
@@ -130,6 +141,10 @@ interface ProjectsState {
   // forth instead of a single overwritten artifact.
   conversationByProject: Record<string, ChatTurn[]>;
   signaturesByProject: Record<string, Signature[]>;
+  /** The server's decision trail - authoritative, unlike the local echo above. */
+  decisionsByProject: Record<string, Decision[]>;
+  /** Each project's unsent message, so a quote from a document can land in it. */
+  composerDrafts: Record<string, string>;
   buildsByProject: Record<string, Builds>;
   previewByProject: Record<string, PreviewResponse>;
   loading: boolean;
@@ -152,6 +167,7 @@ interface ProjectsState {
   // visited (unlike `recentProjects`, which is a local echo).
   loadProjects: () => Promise<void>;
   loadArtifacts: (projectId: string) => Promise<void>;
+  loadDecisions: (projectId: string) => Promise<void>;
   loadPending: (station: Station) => Promise<void>;
   /** Reads the build pull requests once. `watchBuilds` is what keeps them fresh. */
   loadBuilds: (projectId: string) => Promise<void>;
@@ -163,7 +179,7 @@ interface ProjectsState {
   startPreview: (projectId: string) => Promise<void>;
   /** Fires one agent turn once every build has stopped moving. At most once per project. */
   announceBuildsSettled: (projectId: string) => Promise<void>;
-  decide: (projectId: string, station: Station, decision: DecisionRequest) => void;
+  decide: (projectId: string, station: Station, decision: DecisionRequest, signer: string) => void;
   undoDecision: () => void;
   // Dispatches to the local (SSE-streaming) or deployed (polling) implementation based
   // on the project's `orchestration_mode` - the only thing any caller should invoke.
@@ -181,6 +197,7 @@ interface ProjectsState {
   renameProject: (projectId: string, name: string) => Promise<void>;
   clearError: () => void;
   setViewMode: (mode: ViewMode) => void;
+  setComposerDraft: (projectId: string, text: string) => void;
 }
 
 // Kept outside the store: neither is state the UI renders, and neither should ever be
@@ -541,6 +558,8 @@ export const useProjectsStore = create<ProjectsState>()(
       recentProjects: [],
       conversationByProject: {},
       signaturesByProject: {},
+      decisionsByProject: {},
+      composerDrafts: {},
       buildsByProject: {},
       previewByProject: {},
       loading: false,
@@ -548,7 +567,7 @@ export const useProjectsStore = create<ProjectsState>()(
       failedRun: null,
       pendingDecision: null,
       runningProjectId: null,
-      viewMode: "developer",
+      viewMode: "pm",
 
       createProject: async (name) => {
         const project = await api.createProject({ name });
@@ -601,11 +620,15 @@ export const useProjectsStore = create<ProjectsState>()(
       loadProjects: () =>
         guarded(set, async () => {
           const projects = await api.listProjects();
+          const ids = new Set(projects.map((p) => p.id));
           set((state) => ({
             projects: {
               ...state.projects,
               ...Object.fromEntries(projects.map((p) => [p.id, p])),
             },
+            // the list is every project this API knows, so a recent it lacks was deleted
+            // or belongs to another environment - kept, it lingers in search forever
+            recentProjects: state.recentProjects.filter((p) => ids.has(p.id)),
           }));
         }),
 
@@ -614,6 +637,14 @@ export const useProjectsStore = create<ProjectsState>()(
           const artifacts = await api.listArtifacts(projectId);
           set((state) => ({
             artifactsByProject: { ...state.artifactsByProject, [projectId]: artifacts },
+          }));
+        }),
+
+      loadDecisions: (projectId) =>
+        guarded(set, async () => {
+          const decisions = await api.listDecisions(projectId);
+          set((state) => ({
+            decisionsByProject: { ...state.decisionsByProject, [projectId]: decisions },
           }));
         }),
 
@@ -678,6 +709,8 @@ export const useProjectsStore = create<ProjectsState>()(
         // the state machine's own build-merge handling drives what happens next in
         // deployed mode - this is a local-dev-only nudge for when nothing else will.
         if (project.orchestration_mode === "deployed") return;
+        // a gate cannot take a message - posting one there 409s as "moved on without you"
+        if (!AGENT_STATIONS.includes(project.station)) return;
         if (announced.has(projectId)) return;
         announced.add(projectId);
         const summary = builds.builds
@@ -701,10 +734,10 @@ export const useProjectsStore = create<ProjectsState>()(
 
       // Holds the decision locally for UNDO_MS, then sends it. The gate counts this
       // window down; undoDecision() cancels before anything reaches the backend.
-      decide: (projectId, station, decision) => {
+      decide: (projectId, station, decision, signer) => {
         if (undoTimer !== null) clearTimeout(undoTimer);
         set({
-          pendingDecision: { projectId, station, decision, deadline: Date.now() + UNDO_MS },
+          pendingDecision: { projectId, station, decision, signer, deadline: Date.now() + UNDO_MS },
           error: null,
         });
         undoTimer = setTimeout(() => {
@@ -720,7 +753,7 @@ export const useProjectsStore = create<ProjectsState>()(
               const project = await api.submitDecision(pending.projectId, pending.decision);
               const signature: Signature = {
                 station: pending.station,
-                signer: pending.decision.signer,
+                signer: pending.signer,
                 approved: pending.decision.approved,
                 comment: pending.decision.comment,
                 at: new Date().toISOString(),
@@ -739,6 +772,7 @@ export const useProjectsStore = create<ProjectsState>()(
                 pendingDecision: null,
               }));
               await get().loadArtifacts(pending.projectId);
+              void get().loadDecisions(pending.projectId);
               for (const gate of GATES) void get().loadPending(gate);
 
               // "when a decision commits, the line visibly advances and the next agent
@@ -1215,6 +1249,9 @@ export const useProjectsStore = create<ProjectsState>()(
 
       clearError: () => set({ error: null }),
       setViewMode: (viewMode) => set({ viewMode }),
+
+      setComposerDraft: (projectId, text) =>
+        set((state) => ({ composerDrafts: { ...state.composerDrafts, [projectId]: text } })),
     }),
     {
       name: "hyperdelivery-console",

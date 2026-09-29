@@ -6,12 +6,19 @@ import { ProjectRail } from "./components/shell/ProjectRail";
 import { TopBar } from "./components/shell/TopBar";
 import { CommandPalette } from "./components/shell/CommandPalette";
 import { ErrorToast } from "./components/ErrorToast";
+import { Notices } from "./components/Notices";
+import { HelpPanel } from "./components/help/HelpPanel";
 import { TooltipProvider } from "./components/ui/Tooltip";
+import { Home } from "./routes/Home";
+import { Answer } from "./routes/Answer";
 import { Landing } from "./routes/Landing";
+import { NotFound } from "./routes/NotFound";
 import { Portfolio } from "./routes/Portfolio";
+import { Settings } from "./routes/Settings";
 import { Workspace } from "./routes/Workspace";
 import { Context } from "./routes/Context";
 import { useProjectsStore } from "./store/useProjectsStore";
+import { useTabBadge } from "./lib/favicon";
 import { AuthGate } from "./auth/AuthGate";
 import { msalInstance } from "./auth/msalConfig";
 
@@ -19,20 +26,33 @@ import { msalInstance } from "./auth/msalConfig";
  * measure floor, so the rail starts collapsed. Above it, both panels fit. */
 const RAIL_BREAKPOINT = "(min-width: 1180px)";
 
+/** The tab title for each page, so history, bookmarks and a row of tabs say where each one is. */
+const PAGE_TITLE: Record<string, string> = {
+  "/": "Home",
+  "/start": "Start a project",
+  "/portfolio": "Portfolio",
+  "/context": "Workspace notes",
+  "/settings": "Settings",
+};
+
 function Shell() {
   const match = useMatch("/projects/:projectId");
   const projectId = match?.params.projectId;
   const location = useLocation();
   const project = useProjectsStore((s) => (projectId ? (s.projects[projectId] ?? null) : null));
   const pendingByStation = useProjectsStore((s) => s.pendingByStation);
+  const working = useProjectsStore((s) => s.runningProjectId !== null);
 
   const [railOpen, setRailOpen] = useState(() => window.matchMedia(RAIL_BREAKPOINT).matches);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const needsYouCount =
     (pendingByStation.blueprint_approval?.length ?? 0) +
     (pendingByStation.review_approval?.length ?? 0) +
     (pendingByStation.showroom_approval?.length ?? 0);
+
+  useTabBadge({ waiting: needsYouCount, working, title: project?.name ?? PAGE_TITLE[location.pathname] ?? (projectId ? undefined : "Not found") });
 
   useEffect(() => {
     // the landing page tags this navigation so the rail (open by default while there is
@@ -58,26 +78,41 @@ function Shell() {
 
   return (
     <div className="flex h-dvh flex-col bg-canvas text-fg">
+      <a
+        href="#main"
+        className="sr-only rounded-sm bg-overlay px-3 py-2 text-xs font-medium text-fg shadow-overlay focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60]"
+      >
+        Skip to content
+      </a>
       <TopBar
         project={project}
         needsYouCount={needsYouCount}
         railOpen={railOpen}
         onToggleRail={() => setRailOpen((open) => !open)}
         onOpenPalette={() => setPaletteOpen(true)}
+        onOpenHelp={() => setHelpOpen(true)}
       />
       <div className="flex min-h-0 flex-1">
         <ProjectRail open={railOpen} />
-        <main className="min-w-0 flex-1 overflow-hidden">
+        <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-hidden outline-none">
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/start" element={<Landing />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/projects/:projectId" element={<Workspace />} />
             <Route path="/context" element={<Context />} />
-            <Route path="*" element={<Landing />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        onOpenHelp={() => setHelpOpen(true)}
+      />
+      <HelpPanel open={helpOpen} onOpenChange={setHelpOpen} />
+      <Notices viewingProjectId={projectId} />
       <ErrorToast />
     </div>
   );
@@ -91,7 +126,11 @@ function App() {
           {/* motion follows the OS setting rather than being overridden per-component */}
           <MotionConfig reducedMotion="user">
             <BrowserRouter>
-              <Shell />
+              <Routes>
+                {/* outside the shell on purpose: no rail, no top bar, just the questions */}
+                <Route path="/answer/:projectId" element={<Answer />} />
+                <Route path="*" element={<Shell />} />
+              </Routes>
             </BrowserRouter>
           </MotionConfig>
         </TooltipProvider>

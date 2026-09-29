@@ -8,13 +8,63 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ## [Unreleased]
 
+### Security
+
+- `POST /projects/{id}/decisions` records the authenticated caller as the signer (email,
+  or object id when the token has none). The request body no longer carries a signer, and
+  one sent by an older client is ignored, so a caller can no longer sign as someone else.
+  `HyperdeliveryClient.submit_decision` drops its `signer` parameter. See docs/decisions.md.
+
 ### Changed
 
+- Console Home is one bento that fits a laptop screen: every tile shows at most four rows
+  (the first tile spans two columns and lists eight when the grid would otherwise leave a
+  gap), "View all" opens the matching Portfolio filter, and the crew is a tile of the same
+  height. `⌘K` is the standard size (640px, 56px input) with grouped results, searches every
+  project rather than only recent ones, and shows key hints; the header search trigger is
+  wider and labeled.
+- The console defaults to **Simple**: the "Developer / PM" switch is now "Simple / Detailed"
+  (stored choices are kept). Simple narrates a run as plain steps with status marks instead
+  of going silent, and hides raw JSON and token counts. Thread, gate and document text is
+  one size larger; the content tab is named for the document; remaining copy says
+  "document", "stage" and "build task". Ref and Host moved to violet and magenta so no
+  agent color matches a status color. Enter no longer sends mid-IME-composition, the logo
+  navigates without reloading, and small attach/remove buttons have 24px hit areas.
+- The console's names are plain around the named crew: stages are Requirements, Plan, Build
+  check and Demo; outputs are the requirements brief, build plan, quality report and demo
+  script; gates read "Approve requirements", "Approve the plan", "Approve the build"; each
+  agent shows a job title. The landing page now names all three gates instead of two.
+  Display strings only - wire ids and the API contract are unchanged. See docs/decisions.md.
 - The default `make check` skips slow AWS infrastructure validation; `make check-full`
   runs it explicitly, and CI continues to run the full gate.
 
 ### Fixed
 
+- Console, from a review of the live app:
+  - A question the crew parked on the server now shows in the project's thread for everyone,
+    not only in the browser that asked it.
+  - A local stage that should be running and is not offers "Start {agent}".
+  - Gate 3 lists the requirements the build check found not met. A project shipped with
+    open requirements says so and does not celebrate.
+  - A quality report's ring shows requirements met, not the report's own completeness.
+  - Finished-turn replies and document cards state real counts ("4 of 7 met").
+  - People show by name: "Eitan Flor", initials "EF", signers named from their email.
+  - The thread keeps a readable column when the project list and a widened panel are both
+    open, and crowded panel tabs collapse to labeled icons.
+  - Portfolio's four counts add up to the total, stale crew stages are marked idle, and
+    table rows and board cards are real links.
+  - Search results show each project's stage and last update.
+  - Every page has its own tab title, and there is a skip link.
+  - Opening a project at a gate no longer raises "moved on without you".
+  - Project names no longer take a chat reply from the naming model, or a file path from
+    the brief.
+- Console: the station line in the top bar no longer runs over the logo and search box -
+  its labels now appear only as room allows, and inactive gate labels stay hidden as
+  intended. The Portfolio page scrolls. `⌘K` no longer lists projects this API does not
+  have (deleted, or visited against another environment); recents are pruned whenever the
+  project list loads.
+- The VS Code graft hook no longer creates a stray `graft/.cache` directory when an agent
+  tries to read a path that does not exist.
 - WebSocket broadcasting no longer constructs an AWS management client when no console
   connection is watching the project.
 - AgentCore invocations now isolate request state and stream Snowflake tool progress over
@@ -36,9 +86,88 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 - Removed the obsolete Streamlit agent test harness and its development dependency; the
   React console is the supported human interface.
+- The capped static architecture diagram (`ArchitectureDiagram.tsx`,
+  `lib/architectureGraph.ts`), replaced by the canvas.
 
 ### Added
 
+- Console visual signature: an isometric drawing of the line, built in code from the tokens,
+  on Home's first run, in the Help panel and at the top of Progress in Simple mode. In Help it
+  is a full-color overview on a loop: a brief rides the belt, each crew member adds a sheet
+  in their color, each gate swings open, and the demo gets a spotlight. In Progress it shows
+  only that project - finished stages have documents, the gate it waits at is red and
+  pulses, and the belt turns only while a run is active. Three authored moments: signing a gate
+  stamps the ticket stub and sends the document along to the next crew member; the first
+  project a browser starts opens a one-time kickoff card; a project's first view after
+  shipping sends up a burst in the crew's colors. Document cards in the thread lift their
+  pages on hover; the running project on Home shows a pixel-grid wave; the not-found page
+  has an animated ASCII crew head; crew player cards carry the jersey number on a halftone
+  portrait. Every illustration slot takes a dropped-in file from
+  `ui/console/src/assets/illustrations/` and falls back to the code version until then.
+  Prompts for generating each one are in `docs/design/asset-prompts.md`.
+
+- Console canvases (React Flow and dagre, loaded only when a Design tab opens): the build
+  plan's architecture with pan, zoom, fit, a minimap in the full view, keyboard navigation
+  (arrows between nodes, Enter to select, +/- and 0) and an Outline alternative; selecting
+  a component shows what it does, the requirements it serves and the tasks that build it.
+  The inline view keeps the 7 (Simple) or 12 (Detailed) most connected components; the full
+  view has no cap. A build-order view - step columns in Simple, a dependency graph with the
+  critical path and loops in Detailed - and a data-model view. A Trace tab follows each
+  requirement from plan to check to demo, gaps first. Portfolio gains a Board view with a
+  column per stage.
+- `GET /projects/{id}/artifacts/{agent}/versions` (every draft of a document, oldest first)
+  and `GET /projects/{id}/documents` (uploads, under their original names, empty when S3 is
+  not configured). Artifact responses now carry `version`.
+- Console documents: a cover with the document's state (draft, waiting at a gate, approved
+  by whom, sent back), version and export (Markdown, Word, PDF); the numbers that matter
+  with a completeness ring; a sticky contents bar that follows the scroll; a copy-link on
+  every section, with `?panel=` and `?section=` reopening the same place; citation chips
+  that open the excerpt as a context card; filter chips on long requirement and finding
+  lists; *What changed* between any two drafts, and a notice when a document changed since
+  you last looked; selecting text offers *Explain*, *Ask {agent}* (quoted into the message
+  box) and *Copy with link*. A Sources tab lists uploads, what the crew read, and what the
+  requirements cite. Simple mode shows the numbered build order, the demo walkthrough and
+  sample data, plain severity and the spec's open questions. Finished turns collapse their
+  trace to tool chips in Detailed mode and name the files they read.
+- `GET /projects/{id}/decisions`: every gate decision on a project, oldest first
+  (`ProjectRepository.list_decisions`, `HyperdeliveryClient.list_decisions`).
+- Console approvals and questions: the gate card shows what you are approving (real
+  numbers from the document), criteria sentence-first with a confirmed count, what is still
+  missing, what happens next, send-back starter phrases with a check for very short notes,
+  a filling undo bar, and *Copy link for another approver*. Cleared gates are ticket stubs
+  naming the signer from the server trail, and the Progress tab lists every decision under
+  Activity. Questions come one at a time with an own-words answer, Back/Skip, and *I don't
+  know - ask someone*, which copies a link to a new answer-only page (`/answer/:projectId`).
+- Console working states: a thought line under a running agent that narrates the current
+  step in plain words, rotates the crew member's working phrases through silence, shows
+  elapsed time and offers Stop for local runs; Simple mode shows the document's outline
+  filling in section by section instead of a "Writing" line; finished turns in Simple read
+  "finished in 2m 14s · 6 steps". The thread follows the stream only while you are at the
+  end, with a Jump to latest button otherwise. Receipts appear when a run or decision
+  finishes on another project, and the tab title and favicon show waiting approvals and
+  running work.
+- Console Settings page (`/settings`, account menu or `⌘K`) for detail level, theme and
+  role. The Simple/Detailed switch left the header and the role list left the account
+  menu. A Home button joins the header navigation.
+- The workspace side panel is open by default on wide screens, keeps a steady width and
+  starts on a **Progress** tab: every stage with its state, what is happening now, what
+  happens next and links to finished documents. The chat keeps one readable width whether
+  or not the panel is open, and `/start` is two columns so it fits a laptop screen.
+- Console Home at `/`: tiles for waiting for approval, questions waiting, in flight and
+  recently shipped, ordered by a role the person picks on first visit (account menu to
+  change). Starting a project moved to `/start` with starting points, a guided brief, a
+  multi-file drop zone and a missing-attachment check. A help panel with the crew, gates
+  and glossary; crew and gate tooltips; command-palette actions; a not-found page;
+  labeled Portfolio and Workspace notes links. "Needs you" now reads "Waiting for
+  approval", and the portfolio drops the "Stages complete" count.
+- graft is wired into Copilot in VS Code: `.vscode/mcp.json` registers the graft MCP server
+  and `.github/hooks/graft.json` keeps the graph fresh after agent edits. Setup per agent is
+  in CONTRIBUTING.md.
+- `docs/design/`: a UI/UX library for the console - an adoption-focused audit for
+  non-technical personas, personas, principles, naming options, a phased roadmap with its
+  backend dependencies, asset briefs, cross-cutting patterns, and one reference file per
+  inspiration source (Kobra, detail.design, React Bits, Beautiful UI, Diagram Design).
+  Docs only; no console behavior changed.
 - Deployed turns stream through authenticated, one-time-ticket WebSocket subscriptions,
   with deterministic connection registration and polling fallback.
 - `ProjectResponse.orchestration_mode` lets the console select local SSE or deployed Step

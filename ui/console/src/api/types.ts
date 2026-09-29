@@ -46,13 +46,32 @@ export interface GlobalContext {
 export interface Artifact {
   agent: string;
   content: Record<string, unknown>;
+  /** 1 for the first draft; each rerun that rewrites the document adds one. */
+  version: number;
   created_at: string;
 }
 
+/** A document someone uploaded to the project - what the crew was given to read. */
+export interface StoredDocument {
+  key: string;
+  filename: string;
+  size: number;
+  uploaded_at: string | null;
+}
+
+/** The API records the signed-in caller as the signer - there is nothing to send for it. */
 export interface DecisionRequest {
   approved: boolean;
-  signer: string;
   comment?: string | null;
+}
+
+/** A recorded gate decision: the audit trail, readable by anyone on the project. */
+export interface Decision {
+  station: Station;
+  approved: boolean;
+  signer: string;
+  comment: string | null;
+  decided_at: string;
 }
 
 /** One pull request a coding agent is building, as the console polls it.

@@ -58,7 +58,22 @@ def test_list_pending_hits_correct_path() -> None:
     assert result == [{"id": "p1"}]
 
 
-def test_submit_decision_posts_payload() -> None:
+def test_list_decisions_hits_correct_path() -> None:
+    captured: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json=[{"station": "blueprint_approval"}])
+
+    client = _client_with_handler(handler)
+
+    result = client.list_decisions("p1")
+
+    assert captured["url"] == "http://console.test/projects/p1/decisions"
+    assert result == [{"station": "blueprint_approval"}]
+
+
+def test_submit_decision_posts_payload_without_a_signer() -> None:
     captured: dict[str, Any] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -67,10 +82,10 @@ def test_submit_decision_posts_payload() -> None:
 
     client = _client_with_handler(handler)
 
-    result = client.submit_decision("p1", approved=True, signer="rahul", comment="lgtm")
+    result = client.submit_decision("p1", approved=True, comment="lgtm")
 
     assert b'"approved":true' in captured["body"]
-    assert b'"signer":"rahul"' in captured["body"]
+    assert b"signer" not in captured["body"]
     assert result == {"id": "p1", "station": "blueprint"}
 
 

@@ -9,17 +9,22 @@ export function artifactTitle(artifact: Artifact): string {
  * actually contains, so it can be judged without opening it. */
 export function artifactStats(content: Record<string, unknown>): { label: string; value: number }[] {
   const of = (key: string) => (Array.isArray(content[key]) ? (content[key] as unknown[]).length : 0);
-  const candidates: { label: string; value: number }[] = [
-    { label: "requirements", value: of("requirements") },
-    { label: "rules", value: of("rules") },
-    { label: "components", value: of("components") },
-    { label: "units", value: of("units_of_work") },
-    { label: "endpoints", value: of("api_contracts") },
-    { label: "findings", value: of("findings") },
-    { label: "covered", value: of("coverage") },
-    { label: "talk track", value: of("talk_track") },
+  const coverage = Array.isArray(content.coverage) ? (content.coverage as { met?: boolean }[]) : [];
+  const candidates: { label: string; value: number; always?: boolean }[] = [
+    { label: "requirement", value: of("requirements") },
+    { label: "rule", value: of("rules") },
+    { label: "component", value: of("components") },
+    { label: "build task", value: of("units_of_work") },
+    { label: "endpoint", value: of("api_contracts") },
+    // "of 7 met" even at zero: a report that covered everything and met nothing must say so
+    { label: `of ${coverage.length} met`, value: coverage.filter((c) => c.met).length, always: coverage.length > 0 },
+    { label: "finding", value: of("findings") },
+    { label: "walkthrough step", value: of("talk_track") },
   ];
-  return candidates.filter((c) => c.value > 0).slice(0, 3);
+  return candidates
+    .filter((c) => c.always ?? c.value > 0)
+    .slice(0, 3)
+    .map(({ label, value, always }) => ({ label: always || value === 1 ? label : `${label}s`, value }));
 }
 
 const plural = (n: number, noun: string, pluralNoun = `${noun}s`) => `${n} ${n === 1 ? noun : pluralNoun}`;
@@ -57,26 +62,37 @@ export function composeReply(content: Record<string, unknown>, askedViaTool = 0)
         `Open the document to see what's outstanding, and let me know so I can finish it.`
       );
     }
-    return `Done - "${title ?? "the spec"}" is complete and ready to move forward.`;
   }
 
-  // agents with no completeness concept (Blueprint/Review/Showroom) always finish in a
-  // single turn - a short highlight instead of raw field counts
-  const highlights: string[] = [];
-  if (Array.isArray(content.units_of_work)) {
-    highlights.push(plural(content.units_of_work.length, "unit of work", "units of work"));
-  }
-  if (Array.isArray(content.findings)) {
-    highlights.push(plural(content.findings.length, "finding"));
-  }
+  // the numbers that matter for each kind of document, named plainly - the card below
+  // carries the title, so repeating it here only made every reply a long quote
+  const count = (key: string) => (Array.isArray(content[key]) ? (content[key] as unknown[]).length : 0);
   if (Array.isArray(content.coverage)) {
-    highlights.push(`${plural(content.coverage.length, "requirement")} covered`);
+    const coverage = content.coverage as { met?: boolean }[];
+    const met = coverage.filter((c) => c.met).length;
+    const findings = content.findings as { severity?: string }[] | undefined;
+    const blockers = (findings ?? []).filter((f) => f.severity === "blocker").length;
+    if (met === coverage.length) {
+      return `Build check done - all ${plural(coverage.length, "requirement")} met${blockers > 0 ? `, but ${plural(blockers, "finding")} must be fixed` : ""}.`;
+    }
+    return (
+      `Build check done - ${met} of ${plural(coverage.length, "requirement")} met` +
+      `${blockers > 0 ? `, and ${plural(blockers, "finding")} must be fixed` : ""}. ` +
+      "The quality report says what is still missing."
+    );
   }
-  if (Array.isArray(content.talk_track)) {
-    highlights.push(plural(content.talk_track.length, "talk-track section"));
+  if (count("units_of_work") > 0) {
+    const components = count("components");
+    return `Build plan ready - ${plural(count("units_of_work"), "build task")}${components > 0 ? ` across ${plural(components, "component")}` : ""}.`;
   }
-  const suffix = highlights.length > 0 ? ` (${highlights.join(", ")})` : "";
-  return `Done - "${title ?? "this"}"${suffix} is ready.`;
+  if (count("talk_track") > 0) {
+    return `Demo script ready - ${plural(count("talk_track"), "walkthrough step")}.`;
+  }
+  if (count("requirements") > 0) {
+    const open = count("open_questions");
+    return `Requirements brief ready - ${plural(count("requirements"), "requirement")}${open > 0 ? `, ${plural(open, "open question")}` : ", nothing left open"}.`;
+  }
+  return `Done - "${title ?? "this"}" is ready.`;
 }
 
 /** "gate_criteria" -> "Gate Criteria" - field names are whatever each agent's Pydantic

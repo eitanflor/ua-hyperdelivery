@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowSquareOutIcon, CaretRightIcon, FileTextIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CaretRightIcon, FileTextIcon, PlayIcon, WrenchIcon } from "@phosphor-icons/react";
 import type { ToolCallEvent, UsageEvent } from "../../api/client";
+import type { PendingQuestion } from "../../api/types";
 import { hasContent } from "../../api/artifacts";
 import { AGENT_META } from "../../lib/pipeline";
 import { questionsFromToolCalls, withoutPlan } from "../../lib/plan";
 import { toolLabel } from "../../lib/toolLabels";
+import { callSources, summarizeCalls, toolCallLabel } from "../../lib/narration";
+import { formatDuration } from "../../lib/time";
 import { artifactStats, composeReply } from "../../lib/formatArtifact";
 import { Markdown } from "../../lib/markdown";
 import { cn } from "../../lib/cn";
 import type { ViewMode } from "../../store/useProjectsStore";
+import { AgentFace } from "../agents/AgentFace";
 import { AgentAvatar } from "./AgentAvatar";
+import { DocumentSkeleton } from "./DocumentSkeleton";
+import { ThoughtLine } from "./ThoughtLine";
+import { Button } from "../ui/Button";
 import { Spinner } from "../ui/Spinner";
+import { StatusMark, type Status } from "../ui/StatusMark";
 import { Tooltip } from "../ui/Tooltip";
 
 const compactTokens = new Intl.NumberFormat(undefined, {
@@ -22,18 +30,10 @@ export function UserTurn({ text }: { text: string }) {
   return (
     <div className="flex animate-rise justify-end">
       <div className="max-w-[80%] rounded-md rounded-br-sm bg-sunken px-3.5 py-2.5">
-        <p className="text-xs leading-relaxed whitespace-pre-wrap text-fg">{text}</p>
+        <p className="text-sm leading-relaxed whitespace-pre-wrap text-fg">{text}</p>
       </div>
     </div>
   );
-}
-
-/** "12s", "1m 04s" - never sub-second precision, nobody signing off on a gate cares. */
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.round(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return minutes > 0 ? `${minutes}m ${seconds.toString().padStart(2, "0")}s` : `${seconds}s`;
 }
 
 /** What the turn cost, in the same mono register as the station number beside it.
@@ -75,11 +75,14 @@ function Attribution({
   state,
   usage,
   durationMs,
+  note,
 }: {
   agent: string;
   state?: "idle" | "working" | "done";
   usage?: UsageEvent;
   durationMs?: number;
+  /** Simple mode's plain summary in place of the token count. */
+  note?: string;
 }) {
   const meta = AGENT_META[agent];
   return (
@@ -88,6 +91,7 @@ function Attribution({
       <span className="stencil text-2xs text-fg-muted">{meta?.name ?? agent}</span>
       {meta && <span className="tabular font-mono text-2xs text-fg-subtle">{meta.number}</span>}
       {usage && <TokenCount usage={usage} durationMs={durationMs} model={meta?.model} />}
+      {note && <span className="tabular text-2xs text-fg-subtle">{note}</span>}
     </div>
   );
 }
@@ -111,19 +115,98 @@ function ArtifactCard({
     <button
       type="button"
       onClick={onOpen}
-      className="mt-2.5 flex w-full items-center gap-3 rounded-md border border-line-subtle bg-surface px-3 py-2.5 text-left transition-colors hover:border-line hover:bg-sunken"
+      className="group relative mt-2.5 mb-2 block w-full rounded-md text-left"
     >
-      <FileTextIcon className={cn("size-5 shrink-0", meta?.fg ?? "text-fg-subtle")} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium text-fg">{title}</span>
-        <span className="mt-0.5 block text-2xs text-fg-subtle">
-          {meta?.output ?? "Output"}
-          {stats.length > 0 && " · "}
-          {stats.map((s) => `${s.value} ${s.label}`).join(" · ")}
+      {/* two sheets under the card that fan out on hover: it is a document, with pages, and
+          lifting is the one place the design lets depth show */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-3 inset-y-0 translate-y-1.5 rounded-md border border-line-subtle bg-sunken transition-transform duration-200 ease-out group-hover:translate-y-2.5 group-focus-visible:translate-y-2.5"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-1.5 inset-y-0 translate-y-[3px] rounded-md border border-line-subtle bg-surface transition-transform duration-200 ease-out group-hover:translate-y-[5px] group-focus-visible:translate-y-[5px]"
+      />
+      <span className="relative flex w-full items-center gap-3 rounded-md border border-line-subtle bg-surface px-3 py-2.5 transition-[translate,border-color,box-shadow] duration-200 ease-out group-hover:-translate-y-px group-hover:border-line group-hover:shadow-raised group-focus-visible:-translate-y-px">
+        <FileTextIcon className={cn("size-5 shrink-0", meta?.fg ?? "text-fg-subtle")} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium text-fg">{title}</span>
+          <span className="mt-0.5 block text-2xs text-fg-subtle">
+            {meta?.output ?? "Output"}
+            {stats.length > 0 && " · "}
+            {stats.map((s) => `${s.value} ${s.label}`).join(" · ")}
+          </span>
         </span>
+        <ArrowSquareOutIcon className="size-3.5 shrink-0 text-fg-subtle" />
       </span>
-      <ArrowSquareOutIcon className="size-3.5 shrink-0 text-fg-subtle" />
     </button>
+  );
+}
+
+/** A finished trace collapsed to one line of chips - how many calls, and what most of them
+ * did - with the full trace a click away (Beautiful UI Tool Chips). The trace explains how
+ * the agent got there; most readers only want to know that it looked. */
+function ToolChips({ calls }: { calls: ToolCallEvent[] }) {
+  const [open, setOpen] = useState(false);
+  const top = summarizeCalls(calls).slice(0, 3);
+  return (
+    <div className="mb-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="group flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-2xs font-medium text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+        >
+          <WrenchIcon className="size-3" />
+          <span className="tabular">{calls.length}</span> tool call{calls.length === 1 ? "" : "s"}
+          <TraceCaret expanded={open} />
+        </button>
+        {!open &&
+          top.map(({ label, count }) => (
+            <span
+              key={label}
+              className="rounded-full bg-sunken px-2 py-0.5 text-2xs text-fg-subtle"
+            >
+              {label}
+              {count > 1 && <span className="tabular"> ×{count}</span>}
+            </span>
+          ))}
+      </div>
+      {open && (
+        <div className="mt-2 flex animate-fade flex-col border-l border-line-subtle pl-3">
+          {groupToolCalls(calls).map((group) => (
+            <ToolCallGroup key={group[0]?.id} calls={group} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The documents a reply rests on, named - so a reader can see what was actually read
+ * without opening the trace (Beautiful UI Streaming Text sources). */
+function SourceChips({ calls }: { calls: ToolCallEvent[] }) {
+  const sources = callSources(calls);
+  if (sources.length === 0) return null;
+  const shown = sources.slice(0, 4);
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className="text-2xs text-fg-subtle">Read</span>
+      {shown.map((name) => (
+        <span
+          key={name}
+          title={name}
+          className="flex max-w-56 items-center gap-1 rounded-full border border-line-subtle bg-surface px-2 py-0.5 text-2xs text-fg-muted"
+        >
+          <FileTextIcon className="size-3 shrink-0" />
+          <span className="truncate">{name}</span>
+        </span>
+      ))}
+      {sources.length > shown.length && (
+        <span className="tabular text-2xs text-fg-subtle">+{sources.length - shown.length} more</span>
+      )}
+    </div>
   );
 }
 
@@ -153,28 +236,33 @@ export function AgentTurn({
   );
   const askedViaTool = questionsFromToolCalls(toolCalls).length;
   const isPm = viewMode === "pm";
+  const stepCount = groupToolCalls(toolRows).length;
+  const note = isPm
+    ? [
+        ...(durationMs !== undefined ? [`finished in ${formatDuration(durationMs)}`] : []),
+        ...(stepCount > 0 ? [`${stepCount} step${stepCount === 1 ? "" : "s"}`] : []),
+      ].join(" · ")
+    : undefined;
   return (
     <div className="animate-rise">
-      <Attribution agent={agent} usage={usage} durationMs={durationMs} />
+      <Attribution
+        agent={agent}
+        usage={isPm ? undefined : usage}
+        durationMs={durationMs}
+        note={note}
+      />
       <div className="pl-9">
         {/* the tool-call trace is how the agent got there, not what it found - a PM
             reading for the outcome does not need every lookup it took along the way */}
-        {!isPm && toolRows.length > 0 && (
-          // one rule down the whole trace, so what the agent did reads as a margin note
-          // against what it said rather than as a stack of separate controls
-          <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
-            {groupToolCalls(toolRows).map((group) => (
-              <ToolCallGroup key={group[0]?.id} calls={group} />
-            ))}
-          </div>
-        )}
-        <div className="text-xs leading-relaxed text-fg">
+        {!isPm && toolRows.length > 0 && <ToolChips calls={toolRows} />}
+        <div className="text-sm leading-relaxed text-fg">
           {/* what the agent actually said, in the position and voice it streamed in - the
               summary below is derived from the artifact and cannot mention what the agent
               could not do (a table it had no access to, a source it fell back from) */}
           {!isPm && text?.trim() && <Markdown text={text} />}
           <Markdown text={composeReply(content, askedViaTool)} />
         </div>
+        <SourceChips calls={toolRows} />
         {hasContent(content) && (
           <ArtifactCard agent={agent} content={content} onOpen={() => onViewArtifact(agent)} />
         )}
@@ -183,20 +271,87 @@ export function AgentTurn({
   );
 }
 
+/** A question the crew parked on the server, for a reader whose browser never saw the
+ * turn that asked it - an approver, a subject expert, the requester on another machine.
+ * The exchange so far is one collapsed block, not a replayed chat: the server keeps it as
+ * a single transcript, not as separate messages. */
+export function ParkedTurn({ agent, pending }: { agent: string; pending: PendingQuestion }) {
+  const name = AGENT_META[agent]?.name ?? "The crew";
+  const asked = pending.questions?.length ?? 0;
+  const said =
+    pending.status === "chat" && pending.message?.trim()
+      ? pending.message
+      : composeReply({ completeness: { questions: pending.questions ?? [] } }, asked);
+  return (
+    <div className="animate-rise">
+      <Attribution agent={agent} />
+      <div className="pl-9">
+        {pending.prior_message?.trim() && (
+          <details className="group mb-2 rounded-sm border border-line-subtle bg-surface">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 px-2.5 py-1.5 text-2xs text-fg-muted hover:text-fg">
+              <CaretRightIcon className="size-3 transition-transform group-open:rotate-90" />
+              What {name} is working from
+            </summary>
+            <p className="max-h-64 overflow-y-auto border-t border-line-subtle px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap text-fg-muted">
+              {pending.prior_message.trim()}
+            </p>
+          </details>
+        )}
+        <div className="text-sm leading-relaxed text-fg">
+          <Markdown text={said} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// long enough that the pause between a gate committing and the next run starting never shows it
+const IDLE_MS = 20_000;
+
+/** A stage that should be working and is not - a run that died with the dev server, or one
+ * started in a tab that has since closed. Only offered for a local run: a deployed stage is
+ * started by the state machine, and the console has no way to restart it. */
+export function IdleStage({ agent, since, onStart }: { agent: string; since: string; onStart: () => void }) {
+  const meta = AGENT_META[agent];
+  const [due, setDue] = useState(() => Date.now() - Date.parse(since) >= IDLE_MS);
+  useEffect(() => {
+    if (due) return;
+    const timer = setTimeout(() => setDue(true), IDLE_MS - (Date.now() - Date.parse(since)));
+    return () => clearTimeout(timer);
+  }, [due, since]);
+  if (!due || !meta) return null;
+  return (
+    <div role="status" className="flex animate-rise items-center gap-3 rounded-md border border-line bg-surface px-3.5 py-2.5">
+      <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", meta.bg, meta.fg)}>
+        <AgentFace agent={meta.face} className="size-4.5" />
+      </span>
+      <p className="flex-1 text-xs leading-relaxed text-fg-muted">
+        <span className="font-medium text-fg">{meta.name} has not started.</span> The run may have
+        stopped with the server, or started in a tab that is closed now.
+      </p>
+      <Button variant="secondary" size="sm" icon={<PlayIcon weight="fill" className="size-3.5" />} onClick={onStart}>
+        Start {meta.name}
+      </Button>
+    </div>
+  );
+}
+
 export function StreamingTurn({
   agent,
   text,
   draft,
-  waitingSeconds,
+  startedAt,
   toolCalls,
   viewMode = "developer",
+  onStop,
 }: {
   agent: string;
   text: string;
   draft?: string;
-  waitingSeconds?: number;
+  startedAt: string;
   toolCalls: ToolCallEvent[];
   viewMode?: ViewMode;
+  onStop?: () => void;
 }) {
   const toolRows = withoutPlan(toolCalls);
   const isPm = viewMode === "pm";
@@ -204,43 +359,45 @@ export function StreamingTurn({
     <div className="animate-rise">
       <Attribution agent={agent} state="working" />
       <div className="pl-9">
-        {!isPm && toolRows.length > 0 && (
-          <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
-            {groupToolCalls(toolRows).map((group) => (
-              <ToolCallGroup key={group[0]?.id} calls={group} />
-            ))}
+        {toolRows.length > 0 &&
+          (isPm ? (
+            <PlainSteps calls={toolRows} />
+          ) : (
+            <div className="mb-2 flex flex-col border-l border-line-subtle pl-3">
+              {groupToolCalls(toolRows).map((group) => (
+                <ToolCallGroup key={group[0]?.id} calls={group} />
+              ))}
+            </div>
+          ))}
+        {/* the only live region for the reply itself: without it the stream is silent
+            to a screen reader, which is the one thing here that changes with no user
+            action. The working line below announces activity separately. */}
+        {text && (
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="false"
+            className="text-sm leading-relaxed text-fg"
+          >
+            <Markdown text={text} />
+            {!draft && (
+              <span className="ml-0.5 inline-block h-3.5 w-px animate-caret bg-accent align-middle" />
+            )}
           </div>
         )}
-        {/* the only live region in the thread: without it the stream is silent to a
-            screen reader, which is the one thing here that changes with no user action */}
-        <div
-          role="status"
-          aria-live="polite"
-          aria-atomic="false"
-          className="text-xs leading-relaxed text-fg"
-        >
-          <Markdown text={text} />
-          {draft ? (
-            <DraftStream agent={agent} draft={draft} />
-          ) : text ? (
-            <span className="ml-0.5 inline-block h-3.5 w-px animate-caret bg-accent align-middle" />
+        {draft &&
+          (isPm ? (
+            <DocumentSkeleton agent={agent} draft={draft} />
           ) : (
-            <span className="flex items-center gap-1" aria-label="Working">
-              {[0, 160, 320].map((delay) => (
-                <span
-                  key={delay}
-                  className="size-1.5 animate-drift rounded-full bg-fg-subtle"
-                  style={{ animationDelay: `${delay}ms` }}
-                />
-              ))}
-            </span>
-          )}
-          {waitingSeconds !== undefined && (
-            <span className="ml-2 align-middle text-2xs tabular-nums text-fg-subtle">
-              thinking {Math.round(waitingSeconds)}s
-            </span>
-          )}
-        </div>
+            <DraftStream agent={agent} draft={draft} />
+          ))}
+        <ThoughtLine
+          agent={agent}
+          startedAt={startedAt}
+          toolCalls={toolRows}
+          draft={draft}
+          onStop={onStop}
+        />
       </div>
     </div>
   );
@@ -266,7 +423,7 @@ function DraftStream({ agent, draft }: { agent: string; draft: string }) {
       <div className="flex items-center gap-1.5 border-b border-line/60 bg-sunken/60 px-2 py-1">
         <Spinner className="size-3 shrink-0 text-accent-text" />
         <span className="text-2xs text-fg-muted">
-          Writing {(AGENT_META[agent]?.output ?? "the output").toLowerCase()}
+          Writing the {(AGENT_META[agent]?.output ?? "output").toLowerCase()}
         </span>
       </div>
       <pre
@@ -276,6 +433,43 @@ function DraftStream({ agent, draft }: { agent: string; draft: string }) {
         {draft}
       </pre>
     </div>
+  );
+}
+
+const PLAIN_STEP_LIMIT = 5;
+
+/** Simple mode's version of the trace: what the agent is doing, in words, without the
+ * arguments and raw results a developer reads. Only the latest steps - the point is to
+ * show it is moving, not to audit it. */
+function PlainSteps({ calls }: { calls: ToolCallEvent[] }) {
+  const groups = groupToolCalls(calls);
+  const hidden = Math.max(0, groups.length - PLAIN_STEP_LIMIT);
+  return (
+    <ul className="mb-2 flex flex-col gap-1">
+      {hidden > 0 && (
+        <li className="pl-5.5 text-2xs text-fg-subtle">
+          {hidden} earlier step{hidden === 1 ? "" : "s"}
+        </li>
+      )}
+      {groups.slice(hidden).map((group) => {
+        const first = group[0];
+        if (!first) return null;
+        const status: Status = group.some((c) => c.status === "running")
+          ? "running"
+          : group.every((c) => c.status === "interrupted")
+            ? "stopped"
+            : "done";
+        return (
+          <li key={first.id} className="flex items-center gap-2 text-xs text-fg-muted">
+            <StatusMark status={status} />
+            <span>{toolLabel(first.name)}</span>
+            {group.length > 1 && (
+              <span className="tabular text-fg-subtle">×{group.length}</span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -290,19 +484,6 @@ function TraceCaret({ expanded }: { expanded: boolean }) {
       )}
     />
   );
-}
-
-/** The one argument worth showing beside a tool's name, so eighteen reads of the same
- * tool list the files they touched instead of repeating the tool. Ordered by how well
- * each key identifies a call; a tool whose arguments say nothing useful gets no label. */
-const LABEL_KEYS = ["path", "query", "branch", "ref", "title", "name"];
-
-function toolCallLabel(input: Record<string, unknown> | undefined): string | null {
-  for (const key of LABEL_KEYS) {
-    const value = input?.[key];
-    if (typeof value === "string" && value.trim()) return value;
-  }
-  return null;
 }
 
 /** Consecutive calls to the same tool, so an eighteen-file fan-out reads as one step.

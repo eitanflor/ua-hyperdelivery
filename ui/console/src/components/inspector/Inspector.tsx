@@ -1,75 +1,88 @@
-import { useEffect, useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ArrowsInSimpleIcon,
   ArrowsOutSimpleIcon,
+  BooksIcon,
+  FlowArrowIcon,
+  ListChecksIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import type { Artifact } from "../../api/types";
-import {
-  artifactKind,
-  hasContent,
-  list,
-  str,
-  type ApiContract,
-  type Component,
-  type DataEntity,
-  type IntegrationPoint,
-  type UnitOfWork,
-} from "../../api/artifacts";
+import { hasContent } from "../../api/artifacts";
 import { AGENT_META, AGENT_STATIONS } from "../../lib/pipeline";
 import { AgentFace } from "../agents/AgentFace";
 import { IconButton } from "../ui/IconButton";
+import { Tooltip } from "../ui/Tooltip";
 import { cn } from "../../lib/cn";
-import { useProjectsStore, type ViewMode } from "../../store/useProjectsStore";
-import { ArchitectureDiagram } from "./ArchitectureDiagram";
-import { BlueprintView, DemoView, GenericView, ReviewView, SpecView } from "./views";
+import { DocumentViewer } from "./DocumentViewer";
+import { ProgressView } from "./ProgressView";
+import { SourcesView } from "./SourcesView";
+import { TraceView } from "./TraceView";
 
-type TabId = "design" | "content" | "raw";
+/** Past this many tabs the row no longer fits a normal-width panel, so the tabs you are not
+ * on show only their icon. The open one always keeps its name. */
+const COMPACT_AT = 5;
 
-function ContentBody({ artifact, viewMode }: { artifact: Artifact; viewMode: ViewMode }) {
-  switch (artifactKind(artifact.agent)) {
-    case "spec":
-      return <SpecView content={artifact.content} viewMode={viewMode} />;
-    case "blueprint":
-      return <BlueprintView content={artifact.content} viewMode={viewMode} />;
-    case "review":
-      return <ReviewView content={artifact.content} />;
-    case "demo":
-      return <DemoView content={artifact.content} viewMode={viewMode} />;
-    default:
-      return <GenericView content={artifact.content} />;
-  }
-}
-
-function DesignBody({ artifact }: { artifact: Artifact }) {
-  return (
-    <ArchitectureDiagram
-      components={list<Component>(artifact.content, "components")}
-      units={list<UnitOfWork>(artifact.content, "units_of_work")}
-      integrations={list<IntegrationPoint>(artifact.content, "integration_points")}
-      entities={list<DataEntity>(artifact.content, "data_entities")}
-      contracts={list<ApiContract>(artifact.content, "api_contracts")}
-    />
+function PanelTab({
+  active,
+  onClick,
+  className,
+  title,
+  icon,
+  label,
+  compact = false,
+}: {
+  active: boolean;
+  onClick: () => void;
+  className?: string;
+  title?: string;
+  icon: ReactNode;
+  label: string;
+  compact?: boolean;
+}) {
+  const iconOnly = compact && !active;
+  const tab = (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={iconOnly ? label : undefined}
+      title={iconOnly ? undefined : title}
+      onClick={onClick}
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded-sm py-1.5 text-2xs font-medium transition-colors",
+        iconOnly ? "px-2" : "px-2.5",
+        active ? (className ?? "bg-sunken text-fg") : "text-fg-subtle hover:bg-sunken hover:text-fg-muted",
+      )}
+    >
+      {icon}
+      {!iconOnly && label}
+    </button>
   );
+  return iconOnly ? <Tooltip content={title ? `${label} · ${title}` : label}>{tab}</Tooltip> : tab;
 }
 
-/** The structured output of each station, rendered by a view that knows what it is
- * looking at. A spec, a plan, a gap report and a demo package are different documents
- * and no longer share one generic field walk. */
+/** The side panel: where the project is, what the crew read, then each station's document.
+ * Which tab is open lives in the URL (`?panel=`, `?section=`), so a copied link reopens the
+ * same document at the same section. */
 export function Inspector({
+  projectId,
   artifacts,
-  selectedAgent,
-  onSelectAgent,
+  panel,
+  section,
+  onPanel,
+  onSection,
   onClose,
 }: {
+  projectId: string;
   artifacts: Artifact[];
-  selectedAgent: string | null;
-  onSelectAgent: (agent: string) => void;
+  /** "progress", "sources", or the agent whose document is open. */
+  panel: string;
+  section?: string;
+  onPanel: (panel: string) => void;
+  onSection: (id: string | null) => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<TabId>("content");
   const [expanded, setExpanded] = useState(false);
-  const viewMode = useProjectsStore((s) => s.viewMode);
   // An intake turn is persisted but is not a document - it belongs above the composer as
   // a question, not in here as something to review. Sorted by the station's place on the
   // line rather than array order, which reflects whichever agent last wrote an artifact.
@@ -80,44 +93,69 @@ export function Inspector({
         (AGENT_STATIONS as string[]).indexOf(a.agent) -
         (AGENT_STATIONS as string[]).indexOf(b.agent),
     );
-  const selected = documents.find((a) => a.agent === selectedAgent) ?? null;
-  // Only a blueprint has an architecture to draw; switching stations must not strand the
-  // panel on a tab that no longer exists.
-  const hasDesign = selected !== null && artifactKind(selected.agent) === "blueprint";
-  const showRaw = viewMode === "developer";
-  const activeTab: TabId =
-    (tab === "design" && !hasDesign) || (tab === "raw" && !showRaw) ? "content" : tab;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const tabs: { id: TabId; label: string }[] = [
-    ...(hasDesign ? [{ id: "design" as const, label: "Design" }] : []),
-    { id: "content", label: "Requirements" },
-    // raw JSON is debug detail, not something a PM reading for the outcome needs
-    ...(showRaw ? [{ id: "raw" as const, label: "JSON" }] : []),
-  ];
+  const selected = documents.find((a) => a.agent === panel) ?? null;
+  const canTrace = documents.some((a) => a.agent === "distill");
+  const view =
+    panel === "sources" ? "sources" : panel === "trace" && canTrace ? "trace" : selected ? "document" : "progress";
+  const compact = !expanded && 2 + (canTrace ? 1 : 0) + documents.length >= COMPACT_AT;
 
   return (
     <aside
-      aria-label="Artifacts"
+      aria-label="Progress, sources and documents"
       className={cn(
-        "flex min-w-0 flex-col border-l border-line-subtle bg-canvas transition-[flex-basis,width] duration-200",
-        // half the screen by default - a fixed rem width left a wide viewport with a
-        // narrow reading column on one side and a big idle gutter on the other, which
-        // read as a layout bug rather than the comfortable-measure choice it was
-        expanded ? "w-[min(64rem,70vw)] shrink-0" : "min-w-[20rem] flex-1",
+        // shrinks before the thread does: the conversation keeps a readable column however
+        // wide the panel is asked to be, with the project list open or not
+        "flex min-w-[20rem] shrink flex-col border-l border-line-subtle bg-canvas transition-[width] duration-200",
+        // a steady width rather than half the screen: the reading column beside it keeps
+        // its measure, and the panel does not jump as documents arrive
+        expanded ? "w-[min(64rem,70vw)]" : "w-[clamp(22rem,34vw,38rem)]",
       )}
     >
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line-subtle px-3">
-        <h2 className="text-2xs font-semibold tracking-wide text-fg-subtle uppercase">Artifacts</h2>
+      <div className="flex h-12 shrink-0 items-center gap-1 border-b border-line-subtle px-2">
+        <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
+          <PanelTab
+            active={view === "progress"}
+            onClick={() => onPanel("progress")}
+            icon={<ListChecksIcon className="size-4" />}
+            label="Progress"
+            compact={compact}
+          />
+          <PanelTab
+            active={view === "sources"}
+            onClick={() => onPanel("sources")}
+            icon={<BooksIcon className="size-4" />}
+            label="Sources"
+            compact={compact}
+          />
+          {canTrace && (
+            <PanelTab
+              active={view === "trace"}
+              title="Each requirement from plan to demo"
+              onClick={() => onPanel("trace")}
+              icon={<FlowArrowIcon className="size-4" />}
+              label="Trace"
+              compact={compact}
+            />
+          )}
+          {documents.length > 0 && <span aria-hidden="true" className="mx-0.5 my-1.5 w-px shrink-0 bg-line-subtle" />}
+          {documents.map((a) => {
+            const meta = AGENT_META[a.agent];
+            return (
+              <PanelTab
+                key={a.agent}
+                active={a.agent === selected?.agent}
+                title={meta?.output}
+                className={cn(meta?.bg, meta?.fg)}
+                onClick={() => onPanel(a.agent)}
+                icon={meta ? <AgentFace agent={meta.face} className="size-4" /> : null}
+                label={meta?.name ?? a.agent}
+                compact={compact}
+              />
+            );
+          })}
+        </div>
         <IconButton
-          label={expanded ? "Collapse artifacts" : "Expand artifacts"}
+          label={expanded ? "Narrow the panel" : "Widen the panel"}
           size="sm"
           icon={
             expanded ? (
@@ -127,87 +165,26 @@ export function Inspector({
             )
           }
           onClick={() => setExpanded((v) => !v)}
-          className="ml-auto"
         />
         <IconButton
-          label="Close artifacts"
+          label="Close panel"
           size="sm"
           icon={<XIcon className="size-4" />}
           onClick={onClose}
         />
       </div>
 
-      {documents.length === 0 ? (
-        <p className="p-5 text-xs leading-relaxed text-fg-subtle">
-          Each station hands its work over here as it finishes — the scouting report from
-          Scout, the call sheet from Coach, the grade sheet from Ref, and the run of show
-          from Host.
-        </p>
-      ) : (
-        <>
-          <div className="flex gap-1 overflow-x-auto border-b border-line-subtle p-2">
-            {documents.map((a) => {
-              const meta = AGENT_META[a.agent];
-              const active = a.agent === selectedAgent;
-              return (
-                <button
-                  key={a.agent}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => onSelectAgent(a.agent)}
-                  className={cn(
-                    "flex shrink-0 items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-2xs font-medium transition-colors",
-                    active
-                      ? cn(meta?.bg, meta?.fg)
-                      : "text-fg-subtle hover:bg-sunken hover:text-fg-muted",
-                  )}
-                >
-                  {meta && <AgentFace agent={meta.face} className="size-4" />}
-                  {meta?.name ?? a.agent}
-                </button>
-              );
-            })}
-          </div>
-
-          {selected && (
-            <div className="flex-1 overflow-y-auto p-4">
-              <h3 className="text-sm font-semibold text-fg">
-                {str(selected.content, "title") ?? AGENT_META[selected.agent]?.output ?? selected.agent}
-              </h3>
-              <p className="tabular mt-0.5 text-2xs text-fg-subtle">
-                {new Date(selected.created_at).toLocaleString()}
-              </p>
-
-              <div
-                role="tablist"
-                aria-label="Artifact view"
-                className="mt-3 mb-4 flex gap-1 border-b border-line-subtle"
-              >
-                {tabs.map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === id}
-                    onClick={() => setTab(id)}
-                    className={cn(
-                      "-mb-px border-b-2 px-2.5 py-1.5 text-2xs font-medium transition-colors",
-                      activeTab === id
-                        ? "border-accent text-fg"
-                        : "border-transparent text-fg-subtle hover:text-fg-muted",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {activeTab === "design" && <DesignBody artifact={selected} />}
-              {activeTab === "content" && <ContentBody artifact={selected} viewMode={viewMode} />}
-              {activeTab === "raw" && showRaw && <GenericView content={selected.content} />}
-            </div>
-          )}
-        </>
+      {view === "progress" && <ProgressView projectId={projectId} documents={documents} onOpen={onPanel} />}
+      {view === "sources" && <SourcesView projectId={projectId} artifacts={documents} />}
+      {view === "trace" && <TraceView artifacts={documents} />}
+      {view === "document" && selected && (
+        <DocumentViewer
+          key={selected.agent}
+          projectId={projectId}
+          artifact={selected}
+          section={section}
+          onSection={onSection}
+        />
       )}
     </aside>
   );

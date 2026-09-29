@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -43,4 +44,17 @@ export function initTheme(): void {
   window.matchMedia(DARK_QUERY).addEventListener("change", () => {
     if (useTheme.getState().mode === "system") apply("system");
   });
+}
+
+function subscribeResolved(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => observer.disconnect();
+}
+
+/** The theme actually on screen, `system` resolved - what artwork picks its variant by. */
+export function useResolvedTheme(): "light" | "dark" {
+  return useSyncExternalStore(subscribeResolved, () =>
+    document.documentElement.dataset.theme === "dark" ? "dark" : "light",
+  );
 }

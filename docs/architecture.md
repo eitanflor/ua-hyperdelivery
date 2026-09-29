@@ -141,7 +141,11 @@ The single-table key layout is owned jointly by
 `src/infrastructure/repositories/keys.py` and `infra/stacks/storage_stack.py`. They must
 change together. Each agent's artifact is stored twice: `ARTIFACT#<agent>` (the latest
 version, what the console reads by default) and an immutable `ARTIFACT_VERSION#<agent>#v<NNNN>`
-history item per rerun - `ProjectRepository.list_artifact_versions` reads the latter.
+history item per rerun - `ProjectRepository.list_artifact_versions` reads the latter, and
+`GET /projects/{id}/artifacts/{agent}/versions` serves it so the console can show what
+changed between drafts. Decisions are `DECISION#<iso-ts>` items, read back oldest first by
+`GET /projects/{id}/decisions`. Browser uploads live in S3 under
+`projects/<id>/uploads/`, listed by `GET /projects/{id}/documents`.
 
 See [docs/decisions.md](./decisions.md) for why each of these shapes was chosen.
 

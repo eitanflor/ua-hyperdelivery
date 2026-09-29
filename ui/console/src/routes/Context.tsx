@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useContextStore } from "../store/useContextStore";
+import { personName } from "../lib/people";
 import { Button } from "../components/ui/Button";
 import { TextArea } from "../components/ui/Field";
 import { Spinner } from "../components/ui/Spinner";
@@ -40,9 +41,9 @@ function ContextForm({
       />
 
       <div className="mt-3 flex items-center justify-between">
-        <p className="text-2xs text-fg-subtle">
+        <p className="text-2xs text-fg-subtle" title={updatedBy ?? undefined}>
           {updatedBy
-            ? `Last updated by ${updatedBy}${
+            ? `Last updated by ${personName(updatedBy)}${
                 updatedAt ? ` on ${new Date(updatedAt).toLocaleString()}` : ""
               }`
             : "No context recorded yet."}
@@ -71,10 +72,10 @@ export function Context() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
-        <h1 className="stencil text-2xl tracking-tight text-fg">Context</h1>
-        <p className="mt-1 text-xs text-fg-muted">
-          The repo, database, design system or conventions every agent should already
-          know, instead of retyping it into chat every session. Shared by every project.
+        <h1 className="stencil text-2xl tracking-tight text-fg">Workspace notes</h1>
+        <p className="mt-1 text-sm text-fg-muted">
+          The repositories, databases, design system or conventions every crew member should
+          already know, so nobody retypes them into a chat. Shared by every project.
         </p>
 
         <div className="mt-6">

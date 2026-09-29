@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import {
+  ChatCircleDotsIcon,
+  KanbanIcon,
+  LockSimpleIcon,
+  MagnifyingGlassIcon,
+  RowsIcon,
+  SealCheckIcon,
+} from "@phosphor-icons/react";
+import { AgentFace } from "../components/agents/AgentFace";
 import { useProjectsStore } from "../store/useProjectsStore";
 import { PIPELINE, STATION_META, AGENT_META, stationIndex } from "../lib/pipeline";
 import type { Project, Station } from "../api/types";
 import { cn } from "../lib/cn";
+import { timeAgo } from "../lib/time";
+import { Artwork } from "../components/art/Artwork";
 
 const LAST_STATION_INDEX = PIPELINE.length - 1;
 
@@ -20,10 +30,37 @@ function groupOf(station: Station): Group {
 
 const TAB_LABEL: Record<"all" | Group, string> = {
   all: "All",
-  needsYou: "Needs you",
+  needsYou: "Waiting for approval",
   active: "Active",
-  done: "Done",
+  done: "Shipped",
 };
+
+type Tab = keyof typeof TAB_LABEL;
+
+function isTab(value: string | null): value is Tab {
+  return value !== null && value in TAB_LABEL;
+}
+
+const IDLE_DAYS = 7;
+
+/** Days since a crew stage last moved, when that is long enough to be worth saying - a
+ * project at a gate is waiting on a person, which the gate already says. */
+function idleDays(p: Project): number | null {
+  if (STATION_META[p.station].kind !== "agent" || p.pending_question) return null;
+  const days = Math.floor((Date.now() - Date.parse(p.updated_at)) / 86_400_000);
+  return days >= IDLE_DAYS ? days : null;
+}
+
+function Updated({ project }: { project: Project }) {
+  const idle = idleDays(project);
+  return idle === null ? (
+    <>{timeAgo(project.updated_at)}</>
+  ) : (
+    <span className="text-warning" title={`No crew activity for ${idle} days`}>
+      Idle {idle}d
+    </span>
+  );
+}
 
 function StationChip({ station }: { station: Station }) {
   const meta = STATION_META[station];
@@ -46,16 +83,19 @@ function ProgressBar({ station }: { station: Station }) {
   const index = stationIndex(station);
   const pct = Math.round((index / LAST_STATION_INDEX) * 100);
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-sunken">
-        <div
-          className={cn("h-full rounded-full", station === "done" ? "bg-success" : "bg-accent")}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-2xs text-fg-subtle tabular-nums">
-        {index}/{LAST_STATION_INDEX}
-      </span>
+    <div
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuetext={`${STATION_META[station].full}, ${pct}% along the line`}
+      title={`${pct}% along the line`}
+      className="h-1.5 w-24 overflow-hidden rounded-full bg-sunken"
+    >
+      <div
+        className={cn("h-full rounded-full", station === "done" ? "bg-success" : "bg-fg-muted")}
+        style={{ width: `${pct}%` }}
+      />
     </div>
   );
 }
@@ -69,6 +109,71 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+const BOARD_CAP = 30;
+
+/** The whole line at a glance: one column per stage, a card per project. Gate columns are
+ * tinted, because a project there is waiting on a person rather than the crew. */
+function Board({ projects }: { projects: Project[] }) {
+  return (
+    <div className="mt-4 flex gap-3 overflow-x-auto overscroll-x-contain pb-3">
+      {PIPELINE.map((station) => {
+        const meta = STATION_META[station];
+        const agent = meta.agent ? AGENT_META[meta.agent] : undefined;
+        const members = projects.filter((p) => p.station === station);
+        return (
+          <section
+            key={station}
+            aria-label={`${meta.full}: ${members.length}`}
+            className={cn(
+              "flex w-56 shrink-0 flex-col rounded-md border",
+              meta.kind === "gate" ? "border-accent-line bg-accent-bg/50" : "border-line-subtle bg-sunken/50",
+            )}
+          >
+            <header className="flex items-center gap-2 border-b border-line-subtle px-3 py-2">
+              {agent ? (
+                <AgentFace agent={agent.face} className={cn("size-4", agent.fg)} />
+              ) : meta.kind === "gate" ? (
+                <LockSimpleIcon weight="fill" className="size-3.5 text-accent-text" />
+              ) : (
+                <SealCheckIcon weight="fill" className="size-3.5 text-success" />
+              )}
+              <h2 className="stencil text-2xs text-fg">{meta.label}</h2>
+              <span className="tabular ml-auto text-2xs text-fg-subtle">{members.length}</span>
+            </header>
+            <ul className="flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto p-2">
+              {members.slice(0, BOARD_CAP).map((p) => (
+                <li key={p.id}>
+                  <Link
+                    to={`/projects/${p.id}`}
+                    className="block w-full rounded-sm border border-line-subtle bg-surface px-2.5 py-2 text-left transition-colors hover:border-line-strong"
+                  >
+                    <span className="block truncate text-xs text-fg">{p.name}</span>
+                    <span className="mt-0.5 flex items-center gap-1 text-2xs text-fg-subtle">
+                      {p.pending_question && (
+                        <>
+                          <ChatCircleDotsIcon className="size-3 text-warning" />
+                          <span className="text-warning">Question</span> ·
+                        </>
+                      )}
+                      <Updated project={p} />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+              {members.length > BOARD_CAP && (
+                <li className="px-1 py-1 text-2xs text-fg-subtle">
+                  +{members.length - BOARD_CAP} more - search to narrow
+                </li>
+              )}
+              {members.length === 0 && <li className="px-1 py-2 text-2xs text-fg-subtle">None</li>}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Every project, one row each - the view a producer running several lines at once
  * needs, as distinct from the single-project Workspace. */
 export function Portfolio() {
@@ -78,7 +183,22 @@ export function Portfolio() {
   const loading = useProjectsStore((s) => s.loading);
 
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<"all" | Group>("all");
+  // in the URL so Home's "View all" can land on the matching list
+  const [params, setParams] = useSearchParams();
+  const requested = params.get("tab");
+  const tab: Tab = isTab(requested) ? requested : "all";
+  const board = params.get("view") === "board";
+  const setParam = (key: string, value: string | null) =>
+    setParams(
+      (prev) => {
+        const out = new URLSearchParams(prev);
+        if (value === null) out.delete(key);
+        else out.set(key, value);
+        return out;
+      },
+      { replace: true },
+    );
+  const setTab = (next: Tab) => setParam("tab", next === "all" ? null : next);
 
   useEffect(() => {
     void loadProjects();
@@ -90,12 +210,15 @@ export function Portfolio() {
     [projectsById],
   );
 
+  // four numbers that add up to the total, named the way Home names them
   const counts = useMemo(() => {
-    const active = projects.filter((p) => p.station !== "done").length;
+    const questions = projects.filter(
+      (p) => STATION_META[p.station].kind === "agent" && Boolean(p.pending_question),
+    ).length;
     const needsYou = projects.filter((p) => groupOf(p.station) === "needsYou").length;
     const done = projects.filter((p) => p.station === "done").length;
-    const stagesComplete = projects.reduce((sum, p) => sum + stationIndex(p.station), 0);
-    return { active, needsYou, done, stagesComplete };
+    const inFlight = projects.length - questions - needsYou - done;
+    return { inFlight, needsYou, done, questions };
   }, [projects]);
 
   const rows = useMemo(() => {
@@ -107,17 +230,18 @@ export function Portfolio() {
   }, [projects, query, tab]);
 
   return (
+    <div className="h-full overflow-y-auto">
     <div className="mx-auto w-full max-w-5xl px-6 py-8">
-      <h1 className="stencil text-2xl tracking-tight text-fg">Project Portfolio</h1>
-      <p className="mt-1 text-xs text-fg-muted">
-        Status across {projects.length} project{projects.length === 1 ? "" : "s"} on the line.
+      <h1 className="stencil text-2xl tracking-tight text-fg">Portfolio</h1>
+      <p className="mt-1 text-sm text-fg-muted">
+        Every project on the line - {projects.length} in all.
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryCard label="Active projects" value={counts.active} />
-        <SummaryCard label="Needs you" value={counts.needsYou} />
-        <SummaryCard label="Done" value={counts.done} />
-        <SummaryCard label="Stages complete" value={counts.stagesComplete} />
+        <SummaryCard label="In flight" value={counts.inFlight} />
+        <SummaryCard label="Questions waiting" value={counts.questions} />
+        <SummaryCard label="Waiting for approval" value={counts.needsYou} />
+        <SummaryCard label="Shipped" value={counts.done} />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -135,11 +259,12 @@ export function Portfolio() {
             <button
               key={t}
               type="button"
+              aria-pressed={tab === t}
               onClick={() => setTab(t)}
               className={cn(
                 "h-8 rounded-sm px-2.5 text-2xs font-medium transition-colors",
                 tab === t
-                  ? "bg-accent-bg text-accent-text"
+                  ? "bg-sunken text-fg"
                   : "text-fg-subtle hover:bg-sunken hover:text-fg-muted",
               )}
             >
@@ -147,14 +272,40 @@ export function Portfolio() {
             </button>
           ))}
         </div>
+        <div role="radiogroup" aria-label="Show projects as" className="flex items-center rounded-sm border border-line p-0.5">
+          {(
+            [
+              [false, "Table", <RowsIcon key="t" className="size-3.5" />],
+              [true, "Board", <KanbanIcon key="b" className="size-3.5" />],
+            ] as const
+          ).map(([value, label, icon]) => (
+            <button
+              key={label}
+              type="button"
+              role="radio"
+              aria-checked={board === value}
+              onClick={() => setParam("view", value ? "board" : null)}
+              className={cn(
+                "flex h-7 items-center gap-1.5 rounded-[3px] px-2 text-2xs font-medium transition-colors",
+                board === value ? "bg-sunken text-fg" : "text-fg-subtle hover:text-fg-muted",
+              )}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {board ? (
+        <Board projects={rows} />
+      ) : (
       <div className="mt-4 overflow-hidden rounded-md border border-line-subtle">
         <table className="w-full text-left text-xs">
           <thead className="bg-sunken text-2xs text-fg-subtle uppercase">
             <tr>
               <th className="px-3 py-2 font-medium">Project</th>
-              <th className="px-3 py-2 font-medium">Station</th>
+              <th className="px-3 py-2 font-medium">Stage</th>
               <th className="px-3 py-2 font-medium">Progress</th>
               <th className="px-3 py-2 font-medium">Updated</th>
             </tr>
@@ -163,15 +314,18 @@ export function Portfolio() {
             {rows.map((p: Project) => (
               <tr
                 key={p.id}
-                role="link"
-                tabIndex={0}
-                onClick={() => navigate(`/projects/${p.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") navigate(`/projects/${p.id}`);
+                // the whole row is a mouse target; the name is the real link, so it opens in a
+                // new tab and is the one keyboard stop per row
+                onClick={(e) => {
+                  if (!(e.target as HTMLElement).closest("a")) void navigate(`/projects/${p.id}`);
                 }}
-                className="cursor-pointer bg-surface hover:bg-sunken focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="cursor-pointer bg-surface hover:bg-sunken"
               >
-                <td className="px-3 py-2.5 font-medium text-fg">{p.name}</td>
+                <td className="px-3 py-2.5 font-medium text-fg">
+                  <Link to={`/projects/${p.id}`} className="hover:underline">
+                    {p.name}
+                  </Link>
+                </td>
                 <td className="px-3 py-2.5">
                   <StationChip station={p.station} />
                 </td>
@@ -179,13 +333,14 @@ export function Portfolio() {
                   <ProgressBar station={p.station} />
                 </td>
                 <td className="px-3 py-2.5 text-fg-subtle">
-                  {new Date(p.updated_at).toLocaleDateString()}
+                  <Updated project={p} />
                 </td>
               </tr>
             ))}
             {rows.length === 0 && !loading && (
               <tr>
                 <td colSpan={4} className="px-3 py-8 text-center text-fg-subtle">
+                  <Artwork id="d6-column" className="mx-auto mb-3 block h-16 w-auto" />
                   No projects match.
                 </td>
               </tr>
@@ -193,6 +348,8 @@ export function Portfolio() {
           </tbody>
         </table>
       </div>
+      )}
+    </div>
     </div>
   );
 }

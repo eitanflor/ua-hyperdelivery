@@ -20,7 +20,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 
-from api.auth import get_current_user
+from api.auth import CurrentUser, get_current_user
 from api.schemas.project import (
     AdvanceRequest,
     AnswerRequest,
@@ -29,10 +29,12 @@ from api.schemas.project import (
     BuildsResponse,
     CreateProjectRequest,
     DecisionRequest,
+    DecisionResponse,
     MergeBuildResponse,
     PreviewResponse,
     ProjectResponse,
     RenameProjectRequest,
+    StoredDocumentResponse,
     StreamTicketResponse,
     UploadDocumentResponse,
 )
@@ -55,7 +57,7 @@ from orchestration.project_namer import ProjectNamer, heuristic_name
 from providers.documents.parsing import SUPPORTED_EXTENSIONS
 from providers.github.merge import resolve_and_merge
 from providers.github.pull_requests import read_pull_request
-from providers.storage.s3 import UploadedDocument, put_uploaded_document
+from providers.storage.s3 import UploadedDocument, list_uploaded_documents, put_uploaded_document
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(get_current_user)])
@@ -145,6 +147,7 @@ def _artifact_to_response(artifact: Artifact) -> ArtifactResponse:
     return ArtifactResponse(
         agent=artifact.agent,
         content=artifact.content,
+        version=artifact.version,
         created_at=artifact.created_at.isoformat(),
     )
 
@@ -362,6 +365,38 @@ def get_artifact(project_id: str, agent: str, request: Request) -> ArtifactRespo
     if artifact is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="artifact not found")
     return _artifact_to_response(artifact)
+
+
+@router.get("/{project_id}/artifacts/{agent}/versions", response_model=list[ArtifactResponse])
+def list_artifact_versions(project_id: str, agent: str, request: Request) -> list[ArtifactResponse]:
+    """Every saved version of one agent's artifact, oldest first - what changed between drafts."""
+    versions = request.app.state.project_repository.list_artifact_versions(project_id, agent)
+    if not versions:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="artifact not found")
+    return [_artifact_to_response(a) for a in versions]
+
+
+@router.get("/{project_id}/documents", response_model=list[StoredDocumentResponse])
+def list_documents(project_id: str, request: Request) -> list[StoredDocumentResponse]:
+    """Every document uploaded to a project, oldest first - what the crew was given to read.
+
+    Empty rather than an error when S3 is not configured: nothing can have been uploaded.
+    """
+    if request.app.state.project_repository.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    settings = get_settings()
+    if not (settings.s3_bucket and settings.s3_region):
+        return []
+    documents = list_uploaded_documents(settings.s3_bucket, project_id, settings.s3_region)
+    return [
+        StoredDocumentResponse(
+            key=d.key,
+            filename=d.filename,
+            size=d.size,
+            uploaded_at=d.uploaded_at.isoformat() if d.uploaded_at else None,
+        )
+        for d in documents
+    ]
 
 
 _UPLOAD_CHUNK_BYTES = 1024 * 1024
@@ -695,13 +730,13 @@ def _finish_if_requested(
 
     `None` for every other station or prompt, so both `/advance` endpoints fall through
     to their normal agent-invocation path unchanged. Raises if Showroom hasn't produced a
-    gap-free run of show yet, rather than silently invoking the agent on a phrase it was
+    gap-free demo script yet, rather than silently invoking the agent on a phrase it was
     never meant to see.
     """
     if project.station != Station.SHOWROOM or not _is_finish_phrase(prompt):
         return None
     if previous is None or _is_incomplete(previous.content):
-        detail = "Host hasn't produced a finished run of show yet"
+        detail = "Host hasn't produced a finished demo script yet"
         raise HTTPException(status.HTTP_409_CONFLICT, detail=detail)
     return repo.advance_after_artifact(project.id, agent)
 
@@ -960,11 +995,36 @@ def answer_question(project_id: str, payload: AnswerRequest, request: Request) -
     return _to_response(updated, _orchestration_mode(request))
 
 
+@router.get("/{project_id}/decisions", response_model=list[DecisionResponse])
+def list_decisions(project_id: str, request: Request) -> list[DecisionResponse]:
+    """Every gate decision on a project, oldest first - who signed what, and when."""
+    repo = request.app.state.project_repository
+    if repo.get_project(project_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="project not found")
+    return [
+        DecisionResponse(
+            station=decision.station,
+            approved=decision.approved,
+            signer=decision.signer,
+            comment=decision.comment,
+            decided_at=decision.decided_at.isoformat(),
+        )
+        for decision in repo.list_decisions(project_id)
+    ]
+
+
 @router.post("/{project_id}/decisions", response_model=ProjectResponse)
 def submit_decision(
-    project_id: str, payload: DecisionRequest, request: Request, background_tasks: BackgroundTasks
+    project_id: str,
+    payload: DecisionRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ProjectResponse:
     """Approve or reject the gate the project is held at, then release the execution.
+
+    The signer is the authenticated caller - never a name from the request body, since
+    the record this writes is the one the gate exists to produce.
 
     An approval at the G3 gate (`SHOWROOM_APPROVAL`) also merges every build Review
     opened before it completes - see `_merge_all_builds_or_fail` - and starts the local
@@ -991,7 +1051,7 @@ def submit_decision(
         project_id=project_id,
         station=project.station,
         approved=payload.approved,
-        signer=payload.signer,
+        signer=current_user.email or current_user.oid,
         comment=payload.comment,
     )
     if (sfn := request.app.state.state_machine_client) is not None and project.task_token:

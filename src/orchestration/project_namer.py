@@ -7,6 +7,7 @@ in.
 """
 
 import logging
+import re
 import threading
 
 from strands import Agent
@@ -21,6 +22,13 @@ _SYSTEM_PROMPT = (
     "punctuation, no quotes, no explanation)."
 )
 _MAX_NAME_LENGTH = 60
+_MAX_NAME_WORDS = 6
+# A vague brief ("hi") gets a chat reply instead of a name - "I'm ready to name software
+# projects. Please..." - which then sits in every list as the project's name.
+_NOT_A_NAME = re.compile(r"[.?!:\n]|^(i|i'm|i am|sure|here|please|hello|hi)\b", re.IGNORECASE)
+_TRAILING_FILLER = frozenset(
+    {"a", "an", "and", "at", "for", "from", "in", "of", "on", "or", "the", "to", "with"}
+)
 
 
 class ProjectNamer:
@@ -64,11 +72,17 @@ class ProjectNamer:
                 # project the process names - see the same reset in agent_runtime.factory.
                 agent.messages = []
                 name = str(agent(message)).strip().strip("\"'").strip()
-            if name:
+            if _looks_like_a_name(name):
                 return name[:_MAX_NAME_LENGTH]
+            logger.info("naming model replied with prose, not a name; using a heuristic name")
         except Exception:
             logger.exception("project naming failed, falling back to a heuristic name")
         return heuristic_name(message)
+
+
+def _looks_like_a_name(reply: str) -> bool:
+    """A few words with no sentence punctuation - what the prompt asks for, and not a chat reply."""
+    return 0 < len(reply.split()) <= _MAX_NAME_WORDS and not _NOT_A_NAME.search(reply)
 
 
 def heuristic_name(message: str) -> str:
@@ -76,6 +90,15 @@ def heuristic_name(message: str) -> str:
 
     Public so the API router can use it as the project's initial name before the (slower)
     model call finishes in the background - see `api.routers.projects.create_project`.
+    File paths and URLs are skipped - a name is shown everywhere, a local path should not
+    be - and a trailing "and" or "the" is dropped so the cut does not read as a typo.
     """
-    name = " ".join(message.strip().split()[:6]) or "Untitled Project"
+    words = [
+        word.strip(",;:")
+        for word in message.split()
+        if "/" not in word and "\\" not in word and not word.lower().startswith("http")
+    ][:_MAX_NAME_WORDS]
+    while words and words[-1].lower() in _TRAILING_FILLER:
+        words.pop()
+    name = " ".join(word for word in words if word) or "Untitled Project"
     return name[:_MAX_NAME_LENGTH]

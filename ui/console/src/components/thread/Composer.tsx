@@ -5,7 +5,7 @@ import { api, ApiError } from "../../api/client";
 import type { OpenQuestion } from "../../api/artifacts";
 import type { PlanStep } from "../../lib/plan";
 import { AGENT_META } from "../../lib/pipeline";
-import { composeAnswers } from "../../lib/composeAnswers";
+import { composeAnswers, mergeAnswers, toggleOption } from "../../lib/composeAnswers";
 import { Spinner } from "../ui/Spinner";
 import { cn } from "../../lib/cn";
 import { ACCEPTED_EXTENSIONS, withAttachments, type Attachment } from "../../lib/attachments";
@@ -24,11 +24,14 @@ export function Composer({
   questions: OpenQuestion[];
   plan: PlanStep[] | null;
 }) {
-  const [text, setText] = useState("");
+  const text = useProjectsStore((s) => s.composerDrafts[projectId] ?? "");
+  const setComposerDraft = useProjectsStore((s) => s.setComposerDraft);
+  const setText = (value: string) => setComposerDraft(projectId, value);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pickedAnswers, setPickedAnswers] = useState<Map<string, string[]>>(new Map());
+  const [typedAnswers, setTypedAnswers] = useState<Map<string, string>>(new Map());
   // answering is what closes the card: the artifact it came from is only rewritten once
   // the station finishes, so without this the questions sit there through the whole run
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
@@ -39,44 +42,39 @@ export function Composer({
   const label = AGENT_META[agent]?.name ?? agent;
 
   const openQuestions = questions.filter((q) => !answeredIds.has(q.id));
-  // a pick made against a question that is no longer being asked would otherwise still
-  // count towards `answeredCount`, enabling send with nothing current selected
-  const livePicked = new Map(
-    [...pickedAnswers].filter(([id]) => openQuestions.some((q) => q.id === id)),
-  );
-  const answeredCount = [...livePicked.values()].filter((picked) => picked.length > 0).length;
+  // limited to the questions still being asked, so an answer to one that has closed
+  // cannot count towards `answeredCount` and enable send with nothing current selected
+  const liveAnswers = mergeAnswers(openQuestions, pickedAnswers, typedAnswers);
+  const answeredCount = [...liveAnswers.values()].filter((answers) => answers.length > 0).length;
 
-  const toggleAnswer = (question: OpenQuestion, option: string) => {
-    setPickedAnswers((prev) => {
-      const next = new Map(prev);
-      const picked = next.get(question.id) ?? [];
-      if (picked.includes(option)) {
-        next.set(
-          question.id,
-          picked.filter((o) => o !== option),
-        );
-      } else {
-        next.set(question.id, question.multi_select ? [...picked, option] : [option]);
-      }
-      return next;
-    });
-  };
+  const toggleAnswer = (question: OpenQuestion, option: string) =>
+    setPickedAnswers((prev) => toggleOption(prev, question, option));
 
-  const submit = async (message: string, sentAttachments: Attachment[], answers: Map<string, string[]>) => {
+  const typeAnswer = (question: OpenQuestion, answer: string) =>
+    setTypedAnswers((prev) => new Map(prev).set(question.id, answer));
+
+  const submit = async (
+    message: string,
+    sentAttachments: Attachment[],
+    picked: Map<string, string[]>,
+    typed: Map<string, string>,
+  ) => {
     const closingIds = openQuestions.map((q) => q.id);
-    const combined = [composeAnswers(openQuestions, answers), message.trim()]
+    const combined = [composeAnswers(openQuestions, mergeAnswers(openQuestions, picked, typed)), message.trim()]
       .filter(Boolean)
       .join("\n\n");
     if ((!combined && sentAttachments.length === 0) || running) return;
     setText("");
     setAttachments([]);
     setPickedAnswers(new Map());
+    setTypedAnswers(new Map());
     if (closingIds.length > 0) setAnsweredIds((prev) => new Set([...prev, ...closingIds]));
     await advanceProject(projectId, agent, withAttachments(combined, sentAttachments));
     if (useProjectsStore.getState().error) {
       setText(message);
       setAttachments(sentAttachments);
-      setPickedAnswers(answers);
+      setPickedAnswers(picked);
+      setTypedAnswers(typed);
       if (closingIds.length > 0) {
         setAnsweredIds((prev) => {
           const next = new Set(prev);
@@ -87,7 +85,7 @@ export function Composer({
     }
   };
 
-  const send = () => submit(text, attachments, livePicked);
+  const send = () => submit(text, attachments, pickedAnswers, typedAnswers);
 
   const pickFile = () => fileInputRef.current?.click();
 
@@ -118,10 +116,15 @@ export function Composer({
         <PlanPanel steps={plan} running={running} questionsOpen={questions.length > 0} />
       )}
       <QuestionPrompt
+        key={openQuestions.map((q) => q.id).join()}
+        asker={label}
         questions={openQuestions}
         disabled={running}
-        picked={livePicked}
+        picked={pickedAnswers}
+        typed={typedAnswers}
         onToggle={toggleAnswer}
+        onType={typeAnswer}
+        askLink={`${window.location.origin}/answer/${projectId}`}
       />
       {(attachments.length > 0 || uploading || uploadError) && (
         <div className="mb-1.5 flex flex-wrap gap-1.5">
@@ -135,7 +138,7 @@ export function Composer({
                 type="button"
                 onClick={() => removeAttachment(a.key)}
                 aria-label={`Remove ${a.filename}`}
-                className="rounded-full p-0.5 hover:bg-canvas"
+                className="hit-area rounded-full p-0.5 hover:bg-canvas"
               >
                 <XIcon className="size-3" />
               </button>
@@ -172,6 +175,7 @@ export function Composer({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key !== "Enter" || e.shiftKey || e.metaKey || e.ctrlKey) return;
+            if (e.nativeEvent.isComposing) return;
             e.preventDefault();
             void send();
           }}
@@ -180,6 +184,9 @@ export function Composer({
           ref={fileInputRef}
           type="file"
           accept={ACCEPTED_EXTENSIONS}
+          // opened by the attach button; a second, unlabeled "Choose File" stop only confuses
+          tabIndex={-1}
+          aria-hidden="true"
           className="sr-only"
           onChange={(e) => void onFileSelected(e)}
         />
@@ -195,7 +202,7 @@ export function Composer({
                 onClick={pickFile}
                 disabled={uploading}
                 aria-label="Attach a document"
-                className="pointer-events-auto rounded p-0.5 text-fg-subtle transition-colors hover:text-fg disabled:opacity-35"
+                className="hit-area pointer-events-auto rounded p-0.5 text-fg-subtle transition-colors hover:text-fg disabled:opacity-35"
               >
                 <PaperclipIcon className="size-3.5" />
               </button>

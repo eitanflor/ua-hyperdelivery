@@ -11,6 +11,7 @@ ALL_PROJECTS_GSI2PK = "PROJECT"  # constant partition value - every STATE item c
 
 STATE_SK = "STATE"
 ARTIFACT_PREFIX = "ARTIFACT#"  # latest-only items; distinct from ARTIFACT_VERSION# below
+DECISION_PREFIX = "DECISION#"  # append-only; the ISO-timestamp suffix sorts them in time order
 
 GLOBAL_PK = "GLOBAL"  # partition for system-wide, not-per-project items
 CONTEXT_SK = "CONTEXT"
@@ -23,7 +24,7 @@ def project_pk(project_id: str) -> str:
 
 def decision_sk(decided_at_iso: str) -> str:
     """Sort key for an append-only decision audit record."""
-    return f"DECISION#{decided_at_iso}"
+    return f"{DECISION_PREFIX}{decided_at_iso}"
 
 
 def pending_gsi1pk(station: str) -> str:

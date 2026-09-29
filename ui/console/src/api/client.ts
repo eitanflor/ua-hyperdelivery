@@ -1,4 +1,14 @@
-import type { Artifact, Builds, DecisionRequest, GlobalContext, PreviewResponse, Project, Station } from "./types";
+import type {
+  Artifact,
+  Builds,
+  Decision,
+  DecisionRequest,
+  GlobalContext,
+  PreviewResponse,
+  Project,
+  Station,
+  StoredDocument,
+} from "./types";
 import { getIdToken } from "../auth/idToken";
 
 const API_BASE_URL: string =
@@ -160,6 +170,11 @@ export const api = {
   getArtifact: (projectId: string, agent: string) =>
     request<Artifact>(`/projects/${projectId}/artifacts/${agent}`),
 
+  listArtifactVersions: (projectId: string, agent: string) =>
+    request<Artifact[]>(`/projects/${projectId}/artifacts/${agent}/versions`),
+
+  listDocuments: (projectId: string) => request<StoredDocument[]>(`/projects/${projectId}/documents`),
+
   // Stores the raw file in S3 and hands back its key - the console never parses it
   // itself. `Content-Type` is deliberately left unset so the browser sets its own
   // multipart boundary (see `request()`, which always sends application/json).
@@ -196,6 +211,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify(decision),
     }),
+
+  listDecisions: (projectId: string) => request<Decision[]>(`/projects/${projectId}/decisions`),
 
   // Deployed-mode counterpart of the local advanceProject stream: answers Distill's
   // pending_question via the state machine's task token instead of invoking an agent

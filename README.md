@@ -143,21 +143,25 @@ resolved for `agent_invoker`/`persist_approval`/`persist_question`).
 **The console UI (`ui/console/`).** A React + Vite + TypeScript app is the real client
 for the console API, hosted in AWS on `ConsoleUiStack` (private S3 + CloudFront, no
 custom domain yet) alongside running locally via `pnpm dev`. The four agents are
-presented as a crew, each named for the job a
-person holds on the arc from raw talent to gameday - **Scout** measures the brief,
-**Coach** turns it into the work, **Ref** grades the build against it, **Host** sets up the
-walkthrough - each with its own face and identity color. The station is the place and the
-agent is the person working it, so the line reads `Combine -> Gate 1 -> Playbook -> Gate 2
--> Film Room -> Gate 3 -> Gameday`. The line itself is the primary navigation object in
-the top bar. The three approval gates are the loudest surface in the product: a gate shows
-the criteria being signed against, takes the signer from the Entra ID token rather than a
-typed name, and keeps every decision undoable for twelve seconds before it is sent. Light and
+presented as a crew with sports-staff names and plain job titles - **Scout** (requirements
+analyst), **Coach** (build planner), **Ref** (quality reviewer), **Host** (demo producer) -
+each with its own face and identity color. Everything around them is plain language, so
+the line reads `Requirements -> Gate 1 -> Plan -> Gate 2 -> Build check -> Gate 3 -> Demo`
+and each gate is named for what approving it means ("Approve the plan"). The line itself
+is the primary navigation object in the top bar. The three approval gates are the loudest
+surface in the product: a gate says what you are approving and what happens next, shows
+the criteria being signed against, records the signed-in user as the signer (the API takes
+it from the validated token, never from the request body), and keeps every decision
+undoable for twelve seconds before it is sent. Cleared gates show who signed, from the
+decision trail at `GET /projects/{id}/decisions`. Light and
 dark themes ship from one semantic token layer. Signs in via MSAL against the same Entra ID
 app registration the API validates against. Talks to the API directly over `fetch`
 (`ui/console/src/api/client.ts`), not through `sdk/python`. The crew names are a display
 layer only - the wire ids stay `distill`, `blueprint`, `review`, `showroom`. See
 [ui/console/README.md](ui/console/README.md) and
-[docs/console-redesign.md](docs/console-redesign.md).
+[docs/console-redesign.md](docs/console-redesign.md). The current UI/UX audit, the
+roadmap for non-technical users, and the research library behind both live in
+[docs/design/](docs/design/README.md).
 
 **Not started.** AgentCore Memory, Gateway and Identity; the Bedrock Knowledge Base; and
 the M365 integration. Distill's Snowflake Cortex integration and Blueprint/Review's

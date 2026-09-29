@@ -20,6 +20,7 @@ from infrastructure.repositories.keys import (
     ALL_PROJECTS_GSI2PK,
     ALL_PROJECTS_INDEX,
     ARTIFACT_PREFIX,
+    DECISION_PREFIX,
     PENDING_BY_STATION_INDEX,
     STATE_SK,
     artifact_sk,
@@ -143,6 +144,25 @@ class ProjectRepository:
         project.task_token = None
         self._table.put_item(Item=self._state_item(project))
         return decision
+
+    def list_decisions(self, project_id: str) -> list[Decision]:
+        """Return every decision recorded for a project, oldest first."""
+        kwargs: dict[str, Any] = {
+            "KeyConditionExpression": "pk = :pk AND begins_with(sk, :prefix)",
+            "ExpressionAttributeValues": {
+                ":pk": project_pk(project_id),
+                ":prefix": DECISION_PREFIX,
+            },
+        }
+        items: list[dict[str, Any]] = []
+        while True:
+            resp = self._table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            last_key = resp.get("LastEvaluatedKey")
+            if not last_key:
+                break
+            kwargs["ExclusiveStartKey"] = last_key
+        return [self._decision_from_item(project_id, item) for item in items]
 
     def clear_pending_question(self, project_id: str) -> None:
         """Release Distill's elicitation wait once the console API has resumed it."""
@@ -304,6 +324,17 @@ class ProjectRepository:
             "comment": decision.comment,
             "decided_at": decision.decided_at.isoformat(),
         }
+
+    @staticmethod
+    def _decision_from_item(project_id: str, item: dict[str, Any]) -> Decision:
+        return Decision(
+            project_id=project_id,
+            station=Station(item["station"]),
+            approved=bool(item["approved"]),
+            signer=item["signer"],
+            comment=item.get("comment"),
+            decided_at=item["decided_at"],
+        )
 
     @staticmethod
     def _project_from_item(item: dict[str, Any]) -> Project:

@@ -1,48 +1,54 @@
-import { CommandIcon, FileTextIcon, MagnifyingGlassIcon, SidebarSimpleIcon, SquaresFourIcon } from "@phosphor-icons/react";
-import { useNavigate } from "react-router";
+import type { ReactNode } from "react";
+import {
+  CommandIcon,
+  HouseIcon,
+  MagnifyingGlassIcon,
+  NotepadIcon,
+  QuestionIcon,
+  SidebarSimpleIcon,
+  SquaresFourIcon,
+} from "@phosphor-icons/react";
+import { Link, NavLink } from "react-router";
 import type { Project } from "../../api/types";
-import { useProjectsStore, type ViewMode } from "../../store/useProjectsStore";
 import { LineIndicator } from "./LineIndicator";
 import { UserMenu } from "./UserMenu";
 import { IconButton } from "../ui/IconButton";
-import { Badge } from "../ui/Badge";
 import { cn } from "../../lib/cn";
 
-const VIEW_MODES: { value: ViewMode; label: string }[] = [
-  { value: "developer", label: "Developer" },
-  { value: "pm", label: "PM" },
-];
-
-/** Developer sees the full trace behind every turn; PM sees only the synthesized reply
- * and the structured artifact - same data, less of the how. Global, not per-project: it
- * is how this person reads the console, not something about the work itself. */
-function ViewModeToggle() {
-  const viewMode = useProjectsStore((s) => s.viewMode);
-  const setViewMode = useProjectsStore((s) => s.setViewMode);
+/** A labeled destination. The label collapses to the icon on narrow screens but stays the
+ * accessible name, so nothing in the chrome is an unexplained glyph. */
+function NavItem({
+  to,
+  label,
+  icon,
+  end = false,
+  compact,
+}: {
+  to: string;
+  label: string;
+  icon: ReactNode;
+  end?: boolean;
+  /** On a project page the line needs the room, so labels wait for a wider screen. */
+  compact: boolean;
+}) {
   return (
-    <div
-      role="radiogroup"
-      aria-label="Detail level"
-      className="hidden items-center rounded-sm border border-line p-0.5 sm:flex"
+    <NavLink
+      end={end}
+      to={to}
+      aria-label={label}
+      title={label}
+      className={({ isActive }) =>
+        cn(
+          "flex h-8 items-center gap-1.5 rounded-sm px-2 text-2xs font-medium transition-colors",
+          isActive ? "bg-sunken text-fg" : "text-fg-subtle hover:bg-sunken hover:text-fg",
+        )
+      }
     >
-      {VIEW_MODES.map(({ value, label }) => (
-        <button
-          key={value}
-          type="button"
-          role="radio"
-          aria-checked={viewMode === value}
-          onClick={() => setViewMode(value)}
-          className={cn(
-            "rounded-[3px] px-2 py-1 text-2xs font-medium transition-colors",
-            viewMode === value
-              ? "bg-sunken text-fg"
-              : "text-fg-subtle hover:text-fg-muted",
-          )}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+      {icon}
+      <span aria-hidden="true" className={cn("hidden", compact ? "2xl:inline" : "lg:inline")}>
+        {label}
+      </span>
+    </NavLink>
   );
 }
 
@@ -54,14 +60,16 @@ export function TopBar({
   railOpen,
   onToggleRail,
   onOpenPalette,
+  onOpenHelp,
 }: {
   project: Project | null;
   needsYouCount: number;
   railOpen: boolean;
   onToggleRail: () => void;
   onOpenPalette: () => void;
+  onOpenHelp: () => void;
 }) {
-  const navigate = useNavigate();
+  const compact = project !== null;
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line-subtle bg-surface px-3">
       <IconButton
@@ -71,18 +79,18 @@ export function TopBar({
         onClick={onToggleRail}
       />
 
-      <a href="/" className="flex shrink-0 items-center gap-2">
+      <Link to="/" className="flex shrink-0 items-center gap-2">
         <img src="/ua-logo.png" alt="" className="size-6 object-contain" aria-hidden="true" />
         <span className="hidden text-xs font-semibold tracking-tight text-fg sm:inline">
           Hyperdelivery
         </span>
         <span className="sr-only">Hyperdelivery Console — home</span>
-      </a>
+      </Link>
 
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-3">
+      <div className="@container flex min-w-0 flex-1 items-center justify-center gap-3">
         {project && (
           <>
-            <span className="hidden min-w-0 truncate text-xs font-medium text-fg-muted lg:block">
+            <span className="hidden max-w-48 min-w-0 truncate text-xs font-medium text-fg-muted @min-[44rem]:block">
               {project.name}
             </span>
             <LineIndicator station={project.station} />
@@ -93,35 +101,47 @@ export function TopBar({
       <button
         type="button"
         onClick={onOpenPalette}
-        className="hidden h-8 items-center gap-2 rounded-sm border border-line px-2.5 text-2xs text-fg-subtle transition-colors hover:border-line-strong hover:text-fg-muted md:flex"
+        className="hidden h-8 shrink-0 items-center gap-2 rounded-sm border border-line bg-canvas px-2.5 text-xs text-fg-subtle transition-colors hover:border-line-strong hover:text-fg-muted md:flex md:w-44 lg:w-56 xl:w-64"
       >
-        <MagnifyingGlassIcon className="size-3.5" />
-        Search
-        <kbd className="ml-2 flex items-center gap-0.5 rounded-sm bg-sunken px-1 py-0.5 font-sans text-2xs text-fg-subtle">
-          <CommandIcon className="size-2.5" />K
+        <MagnifyingGlassIcon className="size-4 shrink-0" />
+        <span className="truncate">Search projects and actions</span>
+        <kbd className="ml-auto flex shrink-0 items-center gap-0.5 rounded-sm border border-line-subtle bg-surface px-1.5 py-0.5 font-sans text-2xs text-fg-subtle">
+          <CommandIcon className="size-3" />K
         </kbd>
       </button>
 
       {needsYouCount > 0 && (
-        <Badge tone="accent">
-          {needsYouCount} need{needsYouCount === 1 ? "s" : ""} you
-        </Badge>
+        <Link
+          to="/"
+          aria-label={`${needsYouCount} waiting for approval`}
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent-line bg-accent-bg px-2 py-0.5 text-2xs font-medium whitespace-nowrap text-accent-text transition-colors hover:border-accent"
+        >
+          <span className="tabular">{needsYouCount}</span> waiting
+          <span className={cn("hidden", compact ? "2xl:inline" : "lg:inline")}>for approval</span>
+        </Link>
       )}
 
-      <ViewModeToggle />
+      <nav aria-label="Main" className="flex shrink-0 items-center gap-0.5">
+        <NavItem to="/" end label="Home" icon={<HouseIcon className="size-4" />} compact={compact} />
+        <NavItem
+          to="/portfolio"
+          label="Portfolio"
+          icon={<SquaresFourIcon className="size-4" />}
+          compact={compact}
+        />
+        <NavItem
+          to="/context"
+          label="Workspace notes"
+          icon={<NotepadIcon className="size-4" />}
+          compact={compact}
+        />
+      </nav>
 
       <IconButton
-        label="Context"
-        icon={<FileTextIcon className="size-4" />}
+        label="Help"
+        icon={<QuestionIcon className="size-4" />}
         size="sm"
-        onClick={() => navigate("/context")}
-      />
-
-      <IconButton
-        label="Project portfolio"
-        icon={<SquaresFourIcon className="size-4" />}
-        size="sm"
-        onClick={() => navigate("/portfolio")}
+        onClick={onOpenHelp}
       />
 
       <UserMenu />

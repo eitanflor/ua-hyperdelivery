@@ -14,6 +14,31 @@ make hooks
 `make hooks` installs the pre-commit hooks. They are fast and mechanical; the real gate is
 `make check`.
 
+### Graft (agent context graph)
+
+Coding agents here read the repo through [graft](https://www.npmjs.com/package/@nanonets/graft),
+which indexes it into `graft/`. That folder is a local cache and is git-ignored, so build it
+once per clone:
+
+```bash
+npm i -g @nanonets/graft
+graft build
+```
+
+What is committed, per agent:
+
+| Agent | Instructions | MCP server | Hooks |
+|---|---|---|---|
+| Claude Code | `.claude/skills/graft/`, `AGENTS.md` | `.mcp.json` | `.claude/settings.json` |
+| Copilot in VS Code | `.github/copilot-instructions.md`, `AGENTS.md`, the graft skill | `.vscode/mcp.json` | `.github/hooks/graft.json` |
+| Cursor | `.cursor/rules/graft.mdc` | `.cursor/mcp.json` | run `graft init --agents cursor --no-global` |
+
+Cursor's `hooks.json` is not committed because `graft init` writes absolute paths into
+it. The VS Code hooks go through `.github/hooks/graft-vscode.cjs`, which adapts VS Code's
+hook payload to graft's Claude-format runner; leave `chat.useClaudeHooks` off or both sets
+will fire. In VS Code, trust the workspace and start the server from **MCP: List Servers**
+the first time.
+
 ### Behind the corporate proxy
 
 UA's network inspects TLS, which breaks `uv`'s bundled certificate store with
