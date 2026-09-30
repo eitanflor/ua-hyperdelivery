@@ -1,0 +1,8 @@
+# USD per million tokens, keyed by the `model_id` in config/agents/*.yaml. Bedrock on-demand,
+# global inference profile, from the AWS Pricing API (us-east-1) on 2026-09-30. A model with no
+# entry here still runs; its turns just report no cost.
+global.anthropic.claude-sonnet-5-5:
+  input_per_mtok: 2.00
+  output_per_mtok: 10.00
+  cache_read_per_mtok: 0.20
+  cache_write_per_mtok: 2.50

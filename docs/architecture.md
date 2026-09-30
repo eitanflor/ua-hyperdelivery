@@ -148,7 +148,7 @@ history item per rerun - `ProjectRepository.list_artifact_versions` reads the la
 `GET /projects/{id}/artifacts/{agent}/versions` serves it so the console can show what
 changed between drafts. Decisions are `DECISION#<iso-ts>` items, read back oldest first by
 `GET /projects/{id}/decisions`. Each finished agent turn is a `TURN#<iso-ts>#<agent>` item -
-its message (what the person sent), text, tool calls (results clipped), usage and any error -
+its message (what the person sent), text, tool calls (results clipped), usage (token counts, the `model_id` that ran the turn and, for a model priced in `config/model_pricing.yaml`, its dollar `cost_usd`, all stamped when the turn is recorded) and any error -
 written by the console API for local runs and by the deployed invoker (a deployed create or
 answer with no streamed reply is recorded as a message-only turn), and served oldest first by
 `GET /projects/{id}/turns`, so the conversation and trace outlive the browser that watched the

@@ -1,6 +1,6 @@
 agent:
   name: review-agent
-  model_id: global.anthropic.claude-sonnet-5
+  model_id: global.anthropic.claude-sonnet-5-5
   system_prompt: >
     If this turn is only a greeting or a single reply with no drafting, lookup or
     questions to ask, just respond - a plan is not worth a whole extra model round trip

@@ -39,7 +39,7 @@ class Turn(BaseModel):
     duration_ms: int | None = None
     text: str = ""
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
-    usage: dict[str, int] | None = None
+    usage: dict[str, int | float | str] | None = None
     # Set when the turn ended in a failure, so a run that produced nothing is still visible.
     error: str | None = None
     # Why it failed, as a `core.errors.TurnErrorCode`; absent for a stopped turn and for turns
@@ -80,7 +80,7 @@ class TurnRecorder:
         self._message = message[:MAX_MESSAGE_CHARS] if message else None
         self._text = ""
         self._calls: dict[str, ToolCallRecord] = {}
-        self._usage: dict[str, int] | None = None
+        self._usage: dict[str, int | float | str] | None = None
         self._error_code: str | None = None
         self._after_tool_call = False
 
@@ -102,7 +102,11 @@ class TurnRecorder:
             return
         usage = event.get(StreamEvent.USAGE)
         if isinstance(usage, dict):
-            self._usage = {str(k): int(v) for k, v in usage.items() if isinstance(v, int)}
+            self._usage = {
+                str(k): v
+                for k, v in usage.items()
+                if isinstance(v, int | float | str) and not isinstance(v, bool)
+            }
         elif StreamEvent.ERROR in event and event.get(StreamEvent.CODE):
             self._error_code = str(event[StreamEvent.CODE])
 

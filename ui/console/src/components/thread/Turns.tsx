@@ -30,6 +30,17 @@ const compactTokens = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 1,
 });
 
+/** Cents for a real spend; a turn under a cent says so rather than reading as free. */
+function formatCost(usd: number): string {
+  return usd < 0.01 ? "<$0.01" : `$${usd.toFixed(2)}`;
+}
+
+/** `global.anthropic.claude-sonnet-5-5` -> `claude-sonnet-5-5`: the region/provider prefix is
+ * routing, not which model it was. */
+function modelName(modelId: string): string {
+  return modelId.replace(/^[a-z]+\.anthropic\./, "");
+}
+
 export function UserTurn({ text }: { text: string }) {
   return (
     <div className="flex animate-rise justify-end">
@@ -47,28 +58,23 @@ export function UserTurn({ text }: { text: string }) {
  * The breakdown names cached tokens separately because they are most of the total and
  * almost none of the cost: without them "8 in" against a six-figure total reads as a bug.
  * The tooltip also carries what the thread itself has no room for: how long the turn
- * took and which model produced it. */
-function TokenCount({
-  usage,
-  durationMs,
-  model,
-}: {
-  usage: UsageEvent;
-  durationMs?: number;
-  model?: string;
-}) {
+ * took and which model produced it - the model the turn itself recorded, not whatever the
+ * agent runs on today. */
+function TokenCount({ usage, durationMs }: { usage: UsageEvent; durationMs?: number }) {
   const cached = usage.cache_read_tokens + usage.cache_write_tokens;
   const parts = [
     `${usage.input_tokens.toLocaleString()} in`,
     ...(cached > 0 ? [`${cached.toLocaleString()} cached`] : []),
     `${usage.output_tokens.toLocaleString()} out`,
+    ...(usage.cost_usd !== undefined ? [`$${usage.cost_usd.toFixed(6)}`] : []),
     ...(durationMs !== undefined ? [formatDuration(durationMs)] : []),
-    ...(model ? [model] : []),
+    ...(usage.model_id ? [modelName(usage.model_id)] : []),
   ];
   return (
     <Tooltip content={parts.join(" · ")}>
       <span className="tabular cursor-default font-mono text-2xs text-fg-subtle">
         {compactTokens.format(usage.total_tokens)} tok
+        {usage.cost_usd !== undefined && ` · ${formatCost(usage.cost_usd)}`}
       </span>
     </Tooltip>
   );
@@ -94,7 +100,7 @@ function Attribution({
       <AgentAvatar agent={agent} state={state} />
       <span className="stencil text-2xs text-fg-muted">{meta?.name ?? agent}</span>
       {meta && <span className="tabular font-mono text-2xs text-fg-subtle">{meta.number}</span>}
-      {usage && <TokenCount usage={usage} durationMs={durationMs} model={meta?.model} />}
+      {usage && <TokenCount usage={usage} durationMs={durationMs} />}
       {note && <span className="tabular text-2xs text-fg-subtle">{note}</span>}
     </div>
   );

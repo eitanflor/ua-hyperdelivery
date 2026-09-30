@@ -19,7 +19,7 @@ import httpx
 import truststore
 
 _AGENT_RUN_PATH = "/api/v2/cortex/agent:run"
-_ORCHESTRATION_MODEL = "claude-sonnet-4-5"
+_ORCHESTRATION_MODEL = "claude-sonnet-5"  # Cortex has no Sonnet 5.5 (SHOW CORTEX BASE MODELS)
 _STATUS_ERROR_THRESHOLD = 400
 _MAX_LOGGED_ERROR_CHARS = 500
 _TEXT_EVENT = "response.text"

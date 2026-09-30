@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   ChatCircleTextIcon,
   FileDocIcon,
@@ -10,8 +10,7 @@ import {
   ImageIcon,
   QuotesIcon,
 } from "@phosphor-icons/react";
-import { api } from "../../api/client";
-import type { Artifact, StoredDocument } from "../../api/types";
+import type { Artifact } from "../../api/types";
 import { list, type EvidenceLink, type EvidenceSource } from "../../api/artifacts";
 import { callSources } from "../../lib/narration";
 import { EVIDENCE_LABEL } from "../../lib/plainLabels";
@@ -55,19 +54,14 @@ const EVIDENCE_ICON: Record<EvidenceSource, React.ReactNode> = {
 
 /** Everything the crew was given or found - the answer to "what did Scout actually read?". */
 export function SourcesView({ projectId, artifacts }: { projectId: string; artifacts: Artifact[] }) {
-  const [documents, setDocuments] = useState<StoredDocument[] | null>(null);
+  // undefined until the first read lands; after that the last known list, refreshed behind it
+  const documents = useProjectsStore((s) => s.documentsByProject[projectId]);
+  const loadDocuments = useProjectsStore((s) => s.loadDocuments);
   const conversation = useProjectsStore((s) => s.conversationByProject[projectId] ?? NO_TURNS);
 
   useEffect(() => {
-    let live = true;
-    api.listDocuments(projectId).then(
-      (result) => live && setDocuments(result),
-      () => live && setDocuments([]),
-    );
-    return () => {
-      live = false;
-    };
-  }, [projectId]);
+    void loadDocuments(projectId);
+  }, [projectId, loadDocuments]);
 
   const read = callSources(conversation.flatMap((turn) => turn.toolCalls ?? []));
   const evidence = list<EvidenceLink>(artifacts.find((a) => a.agent === "distill")?.content ?? {}, "evidence");
@@ -81,7 +75,7 @@ export function SourcesView({ projectId, artifacts }: { projectId: string; artif
         <h3 id="sources-uploaded" className="text-2xs font-semibold tracking-wide text-fg-subtle uppercase">
           Uploaded
         </h3>
-        {documents === null ? (
+        {documents === undefined ? (
           <div role="status" aria-label="Loading documents" className="mt-2.5 space-y-2">
             {[0, 1].map((i) => (
               <span key={i} className="block h-10 animate-pulse rounded-sm bg-sunken" />

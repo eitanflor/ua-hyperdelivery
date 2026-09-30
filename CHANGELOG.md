@@ -10,6 +10,14 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- A turn's usage now carries its dollar cost (`cost_usd`) and the `model_id` that ran it beside
+  the token counts, and the console shows the cost next to the token total (`142K tok · $0.31`,
+  exact figure and model in the tooltip).
+  Rates live in `config/model_pricing.yaml`, keyed by model ID, and the cost is computed when
+  the turn is recorded, so a later price change does not rewrite history. A model with no
+  entry reports no cost rather than $0, and `tests/unit/test_pricing.py` fails if an agent
+  is moved to a model that has none. Turns recorded before this show tokens only.
+
 - Console UI checks: `vitest` in `ui/console` (`pnpm test`, `pnpm coverage`), covering the
   pure logic in `src/lib/`, `api/client.ts` (requests, errors, SSE parsing, the WebSocket opener)
   and `useProjectsStore` (recents, delete/rename, the undoable gate decision, local and deployed
@@ -26,6 +34,16 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Changed
 
+- The Sources tab immediately shows the last list of uploads read during this browser session
+  while refreshing it from S3 in the background on every open, instead of a loading skeleton.
+  An upload through the composer also starts a background refresh, and a read that began before
+  an upload can no longer overwrite the refresh that follows it.
+- The four station agents (Distill, Blueprint, Review, Showroom) now run on Claude Sonnet 5.5
+  (`global.anthropic.claude-sonnet-5-5`, was `global.anthropic.claude-sonnet-5`). Deployed
+  AgentCore runtimes pick this up only when redeployed with `scripts/deploy_agent.sh <agent>`.
+  The Snowflake Cortex Agent orchestration model moves to `claude-sonnet-5` (was
+  `claude-sonnet-4-5`); Cortex has no Sonnet 5.5, so it cannot match the Bedrock agents. The
+  project-namer stays on Haiku 4.5 - no Haiku 5 exists in Bedrock.
 - API errors now carry a stable `code` next to `detail`: `{"detail": "project not found",
   "code": "project_not_found"}`. `detail` is unchanged, so existing clients keep working. Each
   code has one HTTP status (`api/errors.py`), the routers document `ErrorResponse` in OpenAPI,

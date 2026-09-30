@@ -399,6 +399,7 @@ async def test_reports_the_turn_s_token_usage_before_the_result(
                 "cache_read_tokens": 110000,
                 "cache_write_tokens": 2379,
                 "total_tokens": 118500,
+                "model_id": "m",
             }
         },
         {"result": {"value": "ok"}},

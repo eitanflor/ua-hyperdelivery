@@ -17,6 +17,42 @@ Template for new entries:
 
 ---
 
+## 2026-09-30 - Each turn's cost and model are recorded when it runs
+- **Status**: Accepted
+- **Context**: The console showed only token counts, and named the model from a per-agent label
+  in the UI, which describes today's deployment rather than the turn - a turn from before a
+  model change would have been mislabeled.
+- **Decision**: The agent runtime adds `model_id` and, when the model has a rate in
+  `config/model_pricing.yaml`, `cost_usd` to the usage event, so both are stored with the turn.
+  A model with no rate reports no cost, not zero; a test fails if an agent is moved to an
+  unpriced model.
+- **Alternatives considered**: *Price at read time* - rejected: a rate change would rewrite the
+  cost of past turns. *A `pricing` block in each agent YAML* - rejected: four copies of one
+  rate. *A separate `model` field beside `usage`* - rejected: the price is only meaningful
+  against the model, and it would have added a stream event and a relay allow-list entry.
+- **Consequences**: `usage` now holds a string as well as numbers. Rates are copied from AWS
+  on-demand pricing and go stale silently; re-check them when the model changes. Turns recorded
+  before this show no cost and name no model.
+
+---
+
+## 2026-09-30 - Station agents on Sonnet 5.5; Snowflake Cortex stays on Sonnet 5
+- **Status**: Accepted
+- **Context**: The four station agents were on `global.anthropic.claude-sonnet-5` and were moved
+  to Sonnet 5.5 at the team's request; no reason beyond that is recorded here. Snowflake's
+  Cortex Agent, used for Distill's `snowflake_query`, names its own models, and
+  `SHOW CORTEX BASE MODELS` lists no Sonnet 5.5 - the newest Sonnet is `claude-sonnet-5`.
+- **Decision**: Bedrock agents use `global.anthropic.claude-sonnet-5-5`. Cortex uses
+  `claude-sonnet-5`, the newest it offers, up from `claude-sonnet-4-5`. The project namer stays
+  on Haiku 4.5: Bedrock has no newer Haiku.
+- **Alternatives considered**: *`claude-sonnet-5-5` on Cortex* - rejected: not offered, so
+  every Snowflake lookup would fail. *Leaving Cortex on 4.5* - rejected: 5 is available.
+- **Consequences**: Cortex and the agents run different Sonnet versions. Revisit when
+  Snowflake lists 5.5. Deployed runtimes pick up the change only when redeployed with
+  `scripts/deploy_agent.sh`.
+
+---
+
 ## 2026-09-30 - Vitest for console UI unit tests
 - **Status**: Accepted
 - **Context**: `ui/console` had no tests and `make check` never touched it, while `src/lib/`

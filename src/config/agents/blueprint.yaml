@@ -1,6 +1,6 @@
 agent:
   name: blueprint-agent
-  model_id: global.anthropic.claude-sonnet-5
+  model_id: global.anthropic.claude-sonnet-5-5
   # A brownfield blueprint names every file each unit touches, and at the default 8192 one
   # that had read eighteen files was truncated mid-tool-use (MaxTokensReachedException).
   max_tokens: 32768

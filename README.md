@@ -16,7 +16,7 @@ decisions (why things are built the way they are, kept up to date via the
 src/
 ├── agent_runtime/    # one composition root per agent (distill/, blueprint/, review/, showroom/) + shared factory.py
 ├── core/             # domain models per gate, the artifact gate in core/validation, delivery grouping, plus AgentName - depends on nothing else
-├── config/           # declarative {name}.yaml per agent + environment-backed Settings
+├── config/           # declarative {name}.yaml per agent, model_pricing.yaml (USD per 1M tokens) + environment-backed Settings
 ├── providers/        # adapters onto third-party SDKs (Strands agent builder, S3 fetch+parse)
 ├── mcp_clients/      # generic MCP client builders (Confluence/Jira over stdio)
 ├── tools/            # per-agent @tool functions - deterministic validators + the least-privilege policy layer

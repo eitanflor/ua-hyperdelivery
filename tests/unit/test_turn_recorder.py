@@ -27,6 +27,26 @@ def test_an_oversized_message_is_cut_to_the_limit() -> None:
     assert len(turn.message) == MAX_MESSAGE_CHARS
 
 
+def test_a_turn_keeps_the_model_that_ran_it_beside_its_counts() -> None:
+    recorder = _recorder()
+    recorder.feed({"usage": {"input_tokens": 5, "model_id": "global.anthropic.claude-sonnet-5"}})
+
+    turn = recorder.finish(START + timedelta(seconds=1))
+
+    assert turn.usage == {"input_tokens": 5, "model_id": "global.anthropic.claude-sonnet-5"}
+
+
+def test_a_turn_keeps_a_fractional_cost_beside_its_integer_token_counts() -> None:
+    recorder = _recorder()
+    recorder.feed({"usage": {"input_tokens": 5, "output_tokens": 7, "cost_usd": 0.0123}})
+
+    turn = recorder.finish(START + timedelta(seconds=1))
+
+    assert turn.usage == {"input_tokens": 5, "output_tokens": 7, "cost_usd": 0.0123}
+    assert turn.usage is not None
+    assert isinstance(turn.usage["input_tokens"], int)
+
+
 def test_a_turn_keeps_its_text_calls_usage_and_duration() -> None:
     recorder = _recorder()
     recorder.feed({"chunk": "Reading"})

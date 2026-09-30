@@ -84,7 +84,7 @@ class TurnResponse(BaseModel):
     duration_ms: int | None = None
     text: str
     tool_calls: list[ToolCallResponse]
-    usage: dict[str, int] | None = None
+    usage: dict[str, int | float | str] | None = None
     error: str | None = None
     error_code: str | None = None
 

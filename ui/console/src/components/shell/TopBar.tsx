@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import {
   CommandIcon,
-  HouseIcon,
   MagnifyingGlassIcon,
   NotepadIcon,
   QuestionIcon,
@@ -21,19 +20,16 @@ function NavItem({
   to,
   label,
   icon,
-  end = false,
   compact,
 }: {
   to: string;
   label: string;
   icon: ReactNode;
-  end?: boolean;
   /** On a project page the line needs the room, so labels wait for a wider screen. */
   compact: boolean;
 }) {
   return (
     <NavLink
-      end={end}
       to={to}
       aria-label={label}
       title={label}
@@ -122,7 +118,6 @@ export function TopBar({
       )}
 
       <nav aria-label="Main" className="flex shrink-0 items-center gap-0.5">
-        <NavItem to="/" end label="Home" icon={<HouseIcon className="size-4" />} compact={compact} />
         <NavItem
           to="/portfolio"
           label="Portfolio"

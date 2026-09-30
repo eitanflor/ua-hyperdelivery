@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ArrowUpIcon, PaperclipIcon, StopIcon, XIcon } from "@phosphor-icons/react";
 import { useProjectsStore } from "../../store/useProjectsStore";
-import { api, ApiError } from "../../api/client";
+import { ApiError } from "../../api/client";
 import type { OpenQuestion } from "../../api/artifacts";
 import type { PlanStep } from "../../lib/plan";
 import { AGENT_META } from "../../lib/pipeline";
@@ -37,6 +37,7 @@ export function Composer({
   const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const advanceProject = useProjectsStore((s) => s.advanceProject);
+  const uploadDocument = useProjectsStore((s) => s.uploadDocument);
   const cancelRun = useProjectsStore((s) => s.cancelRun);
   const running = useProjectsStore((s) => s.runningProjectId === projectId);
   const label = AGENT_META[agent]?.name ?? agent;
@@ -96,7 +97,7 @@ export function Composer({
     setUploadError(null);
     setUploading(true);
     try {
-      const uploaded = await api.uploadDocument(projectId, file);
+      const uploaded = await uploadDocument(projectId, file);
       setAttachments((prev) => [...prev, uploaded]);
     } catch (err) {
       setUploadError(err instanceof ApiError ? err.message : "upload failed");

@@ -28,8 +28,6 @@ export interface AgentMeta {
   role: string;
   /** What it hands to the next station, in the same language. */
   output: string;
-  /** Human-readable model name shown in the console. */
-  model: string;
   /** What the working line says while this agent is silent - in character, so a long
    * think reads as someone at work rather than a stalled spinner. Rotated, never random. */
   working: string[];
@@ -53,7 +51,6 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "scout",
     role: "Turns your idea or FSD into a clear list of what is needed, each point tied to where it came from, and says honestly what is still missing.",
     output: "Requirements brief",
-    model: "Claude Sonnet 5",
     working: ["Scouting", "Sizing it up", "Taking measurements", "Charting it out"],
     fg: "text-distill",
     bg: "bg-distill-bg",
@@ -65,7 +62,6 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "coach",
     role: "Turns the approved requirements into a build plan: the pieces of work to build, and the order to build them in.",
     output: "Build plan",
-    model: "Claude Sonnet 5",
     working: ["Drawing up the plan", "Game-planning", "Sequencing the work", "Whiteboarding"],
     fg: "text-blueprint",
     bg: "bg-blueprint-bg",
@@ -77,7 +73,6 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "ref",
     role: "Checks what got built against the requirements, flags the worst problems first, and can send a fix to Copilot when asked.",
     output: "Quality report",
-    model: "Claude Sonnet 5",
     working: ["Reviewing the tape", "Checking the call", "Weighing it up", "Looking for flags"],
     fg: "text-review",
     bg: "bg-review-bg",
@@ -89,7 +84,6 @@ export const AGENT_META: Record<string, AgentMeta> = {
     face: "host",
     role: "Prepares the walkthrough and the sample data to show the real thing working.",
     output: "Demo script",
-    model: "Claude Sonnet 5",
     working: ["Setting the stage", "Rehearsing", "Cueing it up", "Warming up the room"],
     fg: "text-showroom",
     bg: "bg-showroom-bg",

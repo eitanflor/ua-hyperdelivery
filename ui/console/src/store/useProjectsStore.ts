@@ -18,6 +18,7 @@ import type {
   PreviewResponse,
   Project,
   Station,
+  StoredDocument,
 } from "../api/types";
 
 const MAX_RECENTS = 30;
@@ -158,6 +159,9 @@ interface ProjectsState {
   /** Each project's unsent message, so a quote from a document can land in it. */
   composerDrafts: Record<string, string>;
   buildsByProject: Record<string, Builds>;
+  /** The last list of uploads the server gave for each project, so the Sources tab opens on
+   * it at once and refreshes behind it. Not persisted locally. */
+  documentsByProject: Record<string, StoredDocument[]>;
   previewByProject: Record<string, PreviewResponse>;
   loading: boolean;
   error: FriendlyError | null;
@@ -186,6 +190,11 @@ interface ProjectsState {
   loadPending: (station: Station) => Promise<void>;
   /** Reads the build pull requests once. `watchBuilds` is what keeps them fresh. */
   loadBuilds: (projectId: string) => Promise<void>;
+  /** Re-reads a project's uploads quietly, keeping the last known list if the read fails. */
+  loadDocuments: (projectId: string) => Promise<void>;
+  /** Uploads a file and refreshes the project's cached list, so Sources never shows a list
+   * that predates it. */
+  uploadDocument: (projectId: string, file: File) => Promise<Attachment>;
   /** Polls while any build is still moving; resolves the moment they all settle. */
   watchBuilds: (projectId: string) => () => void;
   // Idempotent and best-effort, same as the backend's own auto-preview after a merge -
@@ -242,6 +251,12 @@ interface ProjectSocket {
 }
 
 const projectSockets = new Map<string, Promise<ProjectSocket | null>>();
+
+// Reads of a project's uploads are numbered from one global sequence, so a slow one that began
+// before an upload - or before the project was deleted - cannot land later and overwrite what
+// came after. Global, so dropping a project's entry can never reissue a number still in flight.
+let documentReadSeq = 0;
+const latestDocumentRead = new Map<string, number>();
 
 // Events nobody is consuming pile up until a send flow attaches; a long-open thread must not
 // keep every chunk of every automatic run.
@@ -587,6 +602,7 @@ export const useProjectsStore = create<ProjectsState>()(
       turnsByProject: {},
       composerDrafts: {},
       buildsByProject: {},
+      documentsByProject: {},
       previewByProject: {},
       loading: false,
       error: null,
@@ -732,6 +748,35 @@ export const useProjectsStore = create<ProjectsState>()(
         } catch {
           // leave whatever was last known on screen
         }
+      },
+
+      // Not `guarded`, like loadBuilds: this runs on every open of the Sources tab. A failed
+      // read with nothing known yet reads as an empty list, as the tab always has.
+      loadDocuments: async (projectId) => {
+        const read = ++documentReadSeq;
+        latestDocumentRead.set(projectId, read);
+        const isLatest = () => latestDocumentRead.get(projectId) === read;
+        try {
+          const documents = await api.listDocuments(projectId);
+          if (isLatest()) {
+            set((state) => ({ documentsByProject: { ...state.documentsByProject, [projectId]: documents } }));
+          }
+        } catch {
+          if (isLatest()) {
+            set((state) =>
+              projectId in state.documentsByProject
+                ? state
+                : { documentsByProject: { ...state.documentsByProject, [projectId]: [] } },
+            );
+          }
+        }
+      },
+
+      uploadDocument: async (projectId, file) => {
+        const uploaded = await api.uploadDocument(projectId, file);
+        // also when the first read is still in flight: it began before this file existed
+        if (latestDocumentRead.has(projectId)) void get().loadDocuments(projectId);
+        return uploaded;
       },
 
       startPreview: async (projectId) => {
@@ -1295,6 +1340,7 @@ export const useProjectsStore = create<ProjectsState>()(
       deleteProject: (projectId) =>
         guarded(set, async () => {
           await api.deleteProject(projectId);
+          latestDocumentRead.delete(projectId); // a read still in flight is now stale
           set((state) => {
             const projects = { ...state.projects };
             delete projects[projectId];
@@ -1304,6 +1350,8 @@ export const useProjectsStore = create<ProjectsState>()(
             delete conversationByProject[projectId];
             const signaturesByProject = { ...state.signaturesByProject };
             delete signaturesByProject[projectId];
+            const documentsByProject = { ...state.documentsByProject };
+            delete documentsByProject[projectId];
             const pendingByStation = Object.fromEntries(
               Object.entries(state.pendingByStation).map(([station, pending]) => [
                 station,
@@ -1315,6 +1363,7 @@ export const useProjectsStore = create<ProjectsState>()(
               artifactsByProject,
               conversationByProject,
               signaturesByProject,
+              documentsByProject,
               pendingByStation,
               recentProjects: state.recentProjects.filter((p) => p.id !== projectId),
             };

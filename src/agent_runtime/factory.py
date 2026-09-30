@@ -20,9 +20,10 @@ from strands.hooks import (
 from strands.types.exceptions import MaxTokensReachedException
 from strands.types.tools import ToolResult
 
-from config.loader import load_agent_config
+from config.loader import load_agent_config, load_model_price
 from config.settings import get_settings
 from core.constants import StreamEvent, ToolStatus
+from core.domain.pricing import ModelPrice, cost_usd
 from core.errors import TurnErrorCode
 from infrastructure.observability.logging import configure_logging, project_id_var, session_id_var
 from infrastructure.observability.tracing import configure_tracing
@@ -138,6 +139,23 @@ def _usage_payload(result: object) -> dict[str, int] | None:
         "cache_write_tokens": usage.get("cacheWriteInputTokens", 0),
         "total_tokens": usage.get("totalTokens", 0),
     }
+
+
+def _stamped(event: dict[str, Any], model_id: str, price: ModelPrice | None) -> dict[str, Any]:
+    """`event`, if it is a usage event, with the `model_id` that ran the turn and its cost.
+
+    The model travels with the counts because the price is only meaningful against it, and
+    because a turn read back months later must name the model it ran on, not the current one.
+    `cost_usd` is left off for an unpriced model rather than reported as zero, which would
+    read as free.
+    """
+    usage = event.get(StreamEvent.USAGE)
+    if not isinstance(usage, dict):
+        return event
+    stamped: dict[str, Any] = {**usage, "model_id": model_id}
+    if price is not None:
+        stamped["cost_usd"] = cost_usd(price, usage)
+    return {StreamEvent.USAGE: stamped}
 
 
 class _ToolUseStream:
@@ -510,6 +528,7 @@ def create_app(
     configure_tracing()
 
     config = load_agent_config(agent_name)
+    price = load_model_price(config.model_id)
     app = BedrockAgentCoreApp()
     logger = logging.getLogger(agent_name)
 
@@ -530,7 +549,8 @@ def create_app(
         instead of being confused with the first), `{"thinking": {"seconds": float}}` every
         `_HEARTBEAT_SECONDS` that pass with nothing else to send, at most one
         `{"usage": {"input_tokens", "output_tokens", "cache_read_tokens",
-        "cache_write_tokens", "total_tokens"}}`, ending in `{"result": dict}` or
+        "cache_write_tokens", "total_tokens", "model_id", "cost_usd"?}}` (`cost_usd` only for
+        a model with a price in `config/model_pricing.yaml`), ending in `{"result": dict}` or
         `{"error": str}` - or, only when `force_structured_output` is False, nothing at
         all, meaning the turn finished without the agent choosing to draft anything. See
         LocalAgentClient, which is the only current consumer, for how these are read
@@ -598,7 +618,7 @@ def create_app(
                 force_structured_output=force_structured_output,
                 logger=logger,
             ):
-                yield closing_event
+                yield _stamped(closing_event, config.model_id, price)
         finally:
             project_id_var.reset(project_token)
 

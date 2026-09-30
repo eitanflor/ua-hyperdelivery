@@ -1,6 +1,6 @@
 agent:
   name: distill-agent
-  model_id: global.anthropic.claude-sonnet-5
+  model_id: global.anthropic.claude-sonnet-5-5
   # Reverted to the 8192 default once before (see AgentConfig.max_tokens) for the ~49s
   # latency cost, but a turn grounded in real Snowflake/S3 lookups still truncates
   # mid-artifact (MaxTokensReachedException) - same fix as blueprint.yaml.

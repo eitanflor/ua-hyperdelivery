@@ -113,13 +113,18 @@ export interface TurnRecord {
 /** Tokens the whole turn burned, accumulated across every model call the agent made.
  *
  * `input_tokens` is the *uncached* input only - with prompt caching on, most of the
- * prompt lands in the two cache counts instead, and only all five together add up. */
+ * prompt lands in the two cache counts instead, and only all five together add up.
+ * `cost_usd` is absent for a model with no price on the server and for turns recorded
+ * before costs existed - show tokens alone then, never $0. `model_id` is the model that ran
+ * the turn, absent on turns recorded before it was kept - name none rather than guess. */
 export interface UsageEvent {
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
   cache_write_tokens: number;
   total_tokens: number;
+  cost_usd?: number;
+  model_id?: string;
 }
 
 export interface AdvanceStreamEvent {
