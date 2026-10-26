@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyperDelivery - Graduation and handoff</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-nav a:hover{color:#1D1D1D!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
+.hd-crumb a:hover{text-decoration:underline!important}
+.gr-rec[open] .gr-caret{transform:rotate(90deg)}
+</style>
+</helmet>
+<div style="min-height: 1515px; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums; background: #F9F9F9">
+
+<header style="height:56px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D0D0D0;position:relative;z-index:20">
+  <a href="Main.dc.html" class="hd-ring" style="display:flex;align-items:center;gap:12px;color:#1D1D1D;text-decoration:none;flex:none">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+    <span style="font-size:16px;line-height:20px;font-weight:700">HyperDelivery</span>
+  </a>
+  <span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+  <details class="hd-pop" style="position:relative;flex:none">
+    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height:36px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 8px;border-radius:4px;color:#1D1D1D;font-size:14px;line-height:18px;white-space:nowrap">Merchandising
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg>
+    </summary>
+    <div class="hd-menu" style="left:0;right:auto">
+      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closeMenu}}" style="font-weight:700">Merchandising<span style="flex:1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Sourcing</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Wholesale</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">EDM</button>
+    </div>
+  </details>
+  <nav aria-label="Primary" class="hd-nav" style="display:flex;align-self:stretch;gap:24px">
+    <a href="Main.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Home</a>
+    <a href="Projects.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Projects</a>
+    <a href="Inbox.dc.html" aria-current="page" aria-label="Inbox, 4 waiting on you" style="display:flex;align-items:center;gap:6px;font-size:14px;line-height:18px;font-weight:700;color:#1D1D1D;text-decoration:none;white-space:nowrap;box-shadow:inset 0 -2px 0 #1D1D1D">Inbox<span aria-hidden="true" style="min-width:16px;height:16px;box-sizing:border-box;padding:0 4px;border-radius:999px;background:#DC0019;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;text-align:center">4</span></a>
+    <a href="Library.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Library</a>
+    <a href="Portfolio.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Portfolio</a>
+    <span aria-hidden="true" style="align-self:center;width:1px;height:20px;background:#D0D0D0"></span>
+    <a href="Admin.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Admin</a>
+  </nav>
+  <span style="flex:1"></span>
+  <div class="hd-right" style="display:flex;align-items:center;gap:16px;flex:none">
+    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border:0;border-radius:4px;background:#F0F0F0;color:#5F5F5F;font-family:inherit;font-size:14px;line-height:20px;text-align:left;flex:none;cursor:pointer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span style="flex:1;white-space:nowrap">Search projects and facts</span>
+      <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    </button>
+    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;flex:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
+    <details class="hd-pop" style="position:relative;flex:none">
+      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+      </summary>
+      <nav class="hd-menu" aria-label="Help">
+        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+        <hr>
+        <details class="hd-sub">
+          <summary class="hd-mi">Keyboard Shortcuts<span style="flex:1"></span><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></summary>
+          <dl style="margin:0;padding:4px 16px 8px;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:12px;line-height:18px;color:#5F5F5F">
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd></dt><dd style="margin:0">Search</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">/</kbd></dt><dd style="margin:0">Search This Table</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">J</kbd> <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">K</kbd></dt><dd style="margin:0">Next and Previous Item</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">@</kbd></dt><dd style="margin:0">Mention Someone</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">Esc</kbd></dt><dd style="margin:0">Close</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></dt><dd style="margin:0">Show Shortcuts</dd>
+          </dl>
+        </details>
+        <details class="hd-sub">
+          <summary class="hd-mi">What's New<span style="flex:1"></span><span style="padding:0 4px;border-radius:4px;background:#FE9000;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700">NEW</span></summary>
+          <ul style="margin:0;padding:4px 16px 8px;list-style:none;display:grid;gap:8px;font-size:12px;line-height:18px">
+            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
+          </ul>
+        </details>
+        <hr>
+        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex:1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+      </nav>
+    </details>
+    <details class="hd-pop" style="position:relative;flex:none">
+      <summary class="hd-ring" aria-label="Kim Patel, account" style="width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#3F4A55;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">KP</summary>
+      <div class="hd-menu">
+        <div style="padding:8px 16px 12px;display:flex;flex-direction:column">
+          <span style="font-size:14px;line-height:18px;font-weight:700">Kim Patel</span>
+          <span style="font-size:12px;line-height:18px;color:#5F5F5F">Engineering manager, Retail Systems</span>
+        </div>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex:1"></span><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;color:#5F5F5F">{{techLabel}}<sc-if value="{{techShown}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</header>
+
+<section style="background:#FFFFFF;border-bottom:1px solid #D0D0D0;padding:24px">
+  <nav aria-label="Breadcrumb" class="hd-crumb" style="display:flex;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F">
+    <a href="Inbox.dc.html" style="color:#5F5F5F;text-decoration:none">Inbox</a><span aria-hidden="true">/</span>
+    <a href="Project.dc.html" style="color:#5F5F5F;text-decoration:none">Store labor and traffic planner</a>
+  </nav>
+  <div style="margin-top:8px">
+    <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;line-height:18px;font-weight:700;color:#DC0019;white-space:nowrap"><span aria-hidden="true" style="width:12px;height:12px;background:#DC0019;flex:none"></span>Your Decision: Engineering Intake</span>
+  </div>
+  <div style="margin-top:8px;display:flex;align-items:center;gap:16px;min-height:40px">
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:700;white-space:nowrap">Hand Off to Retail Systems</h1>
+    <span style="height:24px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;background:#F0F0F0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap">T1 Team Prototype</span>
+  </div>
+  <div style="margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;column-gap:24px;row-gap:8px;font-size:14px;line-height:20px;color:#5F5F5F">
+    <span style="display:inline-flex;align-items:center;gap:8px">Business Owner <span style="display:inline-flex;align-items:center;gap:8px;color:#1D1D1D"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#2D6470;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">AR</span>Ana Ruiz</span></span>
+    <span>Decide By <span style="color:#1D1D1D">Fri Nov 6 (10 business days)</span></span>
+    <span>Intake <span style="color:#1D1D1D">1 of 2 places left this quarter</span></span>
+  </div>
+  <div role="img" aria-label="Discover done. What we're building signed by Ana Ruiz after 4 days. The plan signed after 3 days. The working prototype accepted after 1 day. Live with Retail ops, 24 people. The handoff to Retail Systems is waiting on you, decide by Nov 6." style="margin-top:24px;display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr);align-items:center;row-gap:8px">
+    <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">Discover</span><span></span>
+    <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">Plan</span><span></span>
+    <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">Build</span><span></span>
+    <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F;white-space:nowrap">Live with Retail ops, 24 people</span><span></span>
+    <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">T3 Production Handoff</span>
+
+    <span style="height:2px;background:#1D1D1D"></span>
+    <span style="width:12px;height:12px;background:#1D1D1D"></span>
+    <span style="height:2px;background:#1D1D1D"></span>
+    <span style="width:12px;height:12px;background:#1D1D1D"></span>
+    <span style="height:2px;background:#1D1D1D"></span>
+    <span style="width:12px;height:12px;background:#1D1D1D"></span>
+    <span style="height:4px;background:#1D1D1D"></span>
+    <span style="width:12px;height:12px;background:#DC0019"></span>
+    <span style="border-top:2px dashed #949494"></span>
+
+    <span></span>
+    <span style="justify-self:center;text-align:center;white-space:nowrap;font-size:12px;line-height:16px;font-weight:700">What We’re Building<br><span style="font-weight:400;color:#5F5F5F">4d, Ana</span></span>
+    <span></span>
+    <span style="justify-self:center;text-align:center;white-space:nowrap;font-size:12px;line-height:16px;font-weight:700">The Plan<br><span style="font-weight:400;color:#5F5F5F">3d, Ana</span></span>
+    <span></span>
+    <span style="justify-self:center;text-align:center;white-space:nowrap;font-size:12px;line-height:16px;font-weight:700">The Working Prototype<br><span style="font-weight:400;color:#5F5F5F">1d, Ana</span></span>
+    <span></span>
+    <span style="justify-self:center;text-align:center;white-space:nowrap;font-size:12px;line-height:16px;font-weight:700">Graduate<br><span style="font-weight:400;color:#5F5F5F">Your decision by Nov 6</span></span>
+    <span></span>
+  </div>
+</section>
+
+<main style="padding:32px 24px 56px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:16px;row-gap:24px;align-items:start">
+  <div style="grid-column:span 9;min-width:0;display:flex;flex-direction:column;gap:56px">
+
+    <section aria-labelledby="gr-ready" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:baseline;gap:16px">
+        <h2 id="gr-ready" style="margin:0;font-size:20px;line-height:24px;font-weight:700">Readiness</h2>
+        <span style="font-size:14px;line-height:20px;color:#5F5F5F">7 of 9 ready</span>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
+        <div role="group" aria-label="Filter checks" style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;background:#F9F9F9;border-bottom:1px solid #F0F0F0">
+          <sc-for list="{{filters}}" as="x" hint-placeholder-count="4">
+            <button type="button" class="{{x.focusCls}}" onClick="{{x.pick}}" aria-pressed="{{x.pressed}}" style="height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:0;border-radius:4px;background:{{x.bg}};color:{{x.fg}};box-shadow:{{x.ring}};font-family:inherit;font-size:14px;line-height:18px;font-weight:{{x.weight}};white-space:nowrap;cursor:pointer">
+              <sc-if value="{{x.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+              <sc-if value="{{x.hasGlyph}}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{x.glyphColor}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{x.glyph}}"></path></svg></sc-if>{{x.label}}<span style="font-weight:400;color:{{x.countColor}}">{{x.n}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:14px;line-height:20px">
+            <thead>
+              <tr style="height:40px">
+                <th scope="col" style="width:28%;box-sizing:border-box;padding:0 12px 0 16px;text-align:left;font-size:12px;line-height:16px;font-weight:700;color:#5F5F5F;border-bottom:1px solid #D0D0D0;white-space:nowrap">Check</th>
+                <th scope="col" style="width:22%;box-sizing:border-box;padding:0 12px;text-align:left;font-size:12px;line-height:16px;font-weight:700;color:#5F5F5F;border-bottom:1px solid #D0D0D0;white-space:nowrap">Owner</th>
+                <th scope="col" style="width:136px;box-sizing:border-box;padding:0 12px;text-align:left;font-size:12px;line-height:16px;font-weight:700;color:#5F5F5F;border-bottom:1px solid #D0D0D0;white-space:nowrap">State</th>
+                <th scope="col" style="box-sizing:border-box;padding:0 16px 0 12px;text-align:left;font-size:12px;line-height:16px;font-weight:700;color:#5F5F5F;border-bottom:1px solid #D0D0D0;white-space:nowrap">Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="c" hint-placeholder-count="9">
+                <tr style="height:44px">
+                  <td style="padding:8px 12px 8px 16px;border-bottom:{{c.rule}};font-weight:700">{{c.what}}</td>
+                  <td style="padding:0 12px;border-bottom:{{c.rule}};white-space:nowrap">
+                    <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                      <sc-if value="{{c.hasLogo}}" hint-placeholder-val="{{ true }}">
+                        <span data-tile="1" style="position:relative;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">
+                          <span data-mono="1" aria-hidden="true" style="font-size:12px;line-height:16px;font-weight:700;color:transparent">{{c.mono}}</span>
+                          <img src="{{c.logo}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position:absolute;top:4px;left:4px;width:16px;height:16px">
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{c.hasGlyph}}" hint-placeholder-val="{{ false }}"><span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.glyph}}"></path></svg></span></sc-if>
+                      <sc-if value="{{c.hasAvatar}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{c.avatarBg}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">{{c.initials}}</span></sc-if>
+                      <span style="overflow:hidden;text-overflow:ellipsis">{{c.owner}}</span>
+                    </span>
+                  </td>
+                  <td style="padding:0 12px;border-bottom:{{c.rule}};white-space:nowrap">
+                    <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:{{c.weight}};color:{{c.color}};white-space:nowrap"><sc-if value="{{c.hasIcon}}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icon}}"></path></svg></sc-if>{{c.state}}</span>
+                  </td>
+                  <td style="padding:8px 16px 8px 12px;border-bottom:{{c.rule}}">{{c.note}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="gr-decision-title" style="background:#FFFFFF;border:1px solid #1D1D1D;border-radius:8px;overflow:hidden">
+      <div style="height:40px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#1D1D1D;color:#FFFFFF">
+        <span aria-hidden="true" style="width:12px;height:12px;background:#DC0019;flex:none"></span>
+        <span style="font-size:14px;line-height:18px;font-weight:700;white-space:nowrap">Your Decision: Engineering Intake</span>
+        <span style="font-size:12px;line-height:18px;color:#D0D0D0;white-space:nowrap">Last of three signers</span>
+      </div>
+      <div style="padding:24px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <h2 id="gr-decision-title" style="margin:0;font-size:20px;line-height:24px;font-weight:700">Your Decision</h2>
+          <div role="radiogroup" aria-labelledby="gr-decision-title" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch">
+            <sc-for list="{{choices}}" as="o" hint-placeholder-count="3">
+              <button type="button" role="radio" id="gr-choice-{{o.id}}" class="{{o.focusCls}}" aria-checked="{{o.checked}}" tabindex="{{o.tabindex}}" onClick="{{o.pick}}" onKeyDown="{{choiceKey}}" style="text-align:left;padding:16px;border:0;border-radius:4px;background:#FFFFFF;box-shadow:{{o.ring}};display:flex;flex-direction:column;gap:4px;color:#1D1D1D;font-family:inherit;cursor:pointer">
+                <span style="display:flex;align-items:center;gap:8px">
+                  <span aria-hidden="true" style="width:16px;height:16px;box-sizing:border-box;border-radius:50%;border:{{o.radioRing}};display:inline-flex;align-items:center;justify-content:center;flex:none"><span style="width:8px;height:8px;border-radius:50%;background:{{o.dot}}"></span></span>
+                  <span style="font-size:16px;line-height:20px;font-weight:700">{{o.label}}</span>
+                </span>
+                <span style="padding-left:24px;font-size:14px;line-height:20px;color:#5F5F5F">{{o.text}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label for="gr-reasons" style="font-size:14px;line-height:18px">Reasons</label>
+          <textarea id="gr-reasons" aria-describedby="gr-reasons-help" style="width:100%;height:112px;box-sizing:border-box;padding:10px 16px;border:1px solid #5F5F5F;border-radius:4px;background:#FFFFFF;color:#1D1D1D;font-family:inherit;font-size:16px;line-height:24px;resize:none"></textarea>
+          <span id="gr-reasons-help" style="font-size:12px;line-height:20px;color:#5F5F5F">Required for a rejection; shared with the business owner.</span>
+        </div>
+        <sc-if value="{{notSigned}}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:8px">
+            <button type="button" class="hd-btn-primary" onClick="{{sign}}" style="height:44px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:999px;background:#1D1D1D;color:#FFFFFF;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Sign Decision</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{signed}}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="min-height:44px;display:flex;align-items:center;gap:16px">
+            <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;line-height:20px;font-weight:700;color:#00834B"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{signedLine}}</span>
+            <button type="button" onClick="{{undo}}" style="height:44px;padding:0;border:0;background:transparent;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;text-decoration:underline;text-underline-offset:3px;cursor:pointer">Undo</button>
+          </div>
+        </sc-if>
+      </div>
+    </section>
+  </div>
+
+  <aside style="grid-column:span 3;align-self:stretch;min-width:0;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:16px">
+    <section aria-labelledby="gr-pkg" style="display:flex;flex-direction:column;gap:16px">
+      <h2 id="gr-pkg" style="margin:0;font-size:16px;line-height:20px;font-weight:700">In the Package</h2>
+      <sc-for list="{{pkg}}" as="p" hint-placeholder-count="5">
+        <div style="display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:8px;align-items:start">
+          <sc-if value="{{p.isImg}}" hint-placeholder-val="{{ true }}">
+            <span data-tile="1" style="position:relative;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">
+              <span data-mono="1" aria-hidden="true" style="font-size:12px;line-height:16px;font-weight:700;color:transparent">{{p.mono}}</span>
+              <img src="{{p.logo}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position:absolute;top:4px;left:4px;width:16px;height:16px">
+            </span>
+          </sc-if>
+          <sc-if value="{{p.isGlyph}}" hint-placeholder-val="{{ false }}"><span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.glyph}}"></path></svg></span></sc-if>
+          <div style="min-width:0;display:flex;flex-direction:column">
+            <span style="font-size:12px;line-height:18px;color:#5F5F5F;white-space:nowrap">{{p.what}}</span>
+            <sc-if value="{{p.isText}}" hint-placeholder-val="{{ true }}"><span title="{{p.ref}}" style="font-size:14px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{p.ref}}</span></sc-if>
+            <sc-if value="{{p.isMono}}" hint-placeholder-val="{{ false }}"><span title="{{p.title}}" style="display:flex;align-items:center;gap:4px;padding:2px 0;font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;white-space:nowrap;overflow:hidden">{{p.ref}}<sc-if value="{{p.hasTo}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-label="to" role="img" style="flex:none"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>{{p.to}}</sc-if></span></sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+
+    <div style="height:1px;background:#F0F0F0"></div>
+
+    <section aria-labelledby="gr-signers" style="display:flex;flex-direction:column;gap:16px">
+      <h2 id="gr-signers" style="margin:0;font-size:16px;line-height:20px;font-weight:700">Who Signs Graduation</h2>
+      <sc-for list="{{signers}}" as="s" hint-placeholder-count="3">
+        <div style="display:grid;grid-template-columns:32px minmax(0,1fr) auto;column-gap:8px;align-items:center">
+          <span aria-hidden="true" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{s.bg}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">{{s.i}}</span>
+          <span style="min-width:0;display:flex;flex-direction:column">
+            <span style="font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{s.name}}</span>
+            <span style="font-size:12px;line-height:18px;color:#5F5F5F">{{s.role}}</span>
+          </span>
+          <span style="justify-self:end;white-space:nowrap">
+            <sc-if value="{{s.signed}}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#00834B;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{s.status}}</span></sc-if>
+            <sc-if value="{{s.waiting}}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:16px;font-weight:700;color:#1D1D1D;white-space:nowrap">You, now</span></sc-if>
+          </span>
+        </div>
+      </sc-for>
+    </section>
+
+    <div style="height:1px;background:#F0F0F0"></div>
+
+    <section aria-labelledby="gr-skips" style="display:flex;flex-direction:column;gap:8px">
+      <h2 id="gr-skips" style="margin:0;font-size:16px;line-height:20px;font-weight:700">What It Skips</h2>
+      <ul style="margin:0;padding-left:20px;font-size:14px;line-height:20px;display:flex;flex-direction:column;gap:4px">
+        <li>Real-time traffic counts: it reads the nightly feed</li>
+        <li>Writing schedules back to the workforce system</li>
+        <li>Factory House stores outside North America</li>
+      </ul>
+    </section>
+
+    <div style="height:1px;background:#F0F0F0"></div>
+
+    <details class="hd-sub gr-rec">
+      <summary class="hd-ring-in" style="min-height:36px;display:flex;align-items:center;gap:8px;margin:-4px -8px;padding:4px 8px;border-radius:4px">
+        <h2 style="margin:0;flex:1;font-size:16px;line-height:20px;font-weight:700">4 Signed Records</h2>
+        <svg class="gr-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9.5 6l6 6-6 6"></path></svg>
+      </summary>
+      <div style="position:relative;margin-top:16px;display:flex;flex-direction:column;gap:16px">
+        <span aria-hidden="true" style="position:absolute;left:3px;top:8px;bottom:24px;width:2px;background:#D0D0D0"></span>
+        <sc-for list="{{chain}}" as="d" hint-placeholder-count="4">
+          <div style="position:relative;display:grid;grid-template-columns:8px minmax(0,1fr) 24px;column-gap:8px;align-items:start">
+            <span aria-hidden="true" style="margin-top:6px;width:8px;height:8px;box-sizing:border-box;border:2px solid #1D1D1D;background:{{d.mark}}"></span>
+            <span style="min-width:0;display:flex;flex-direction:column">
+              <span style="font-size:14px;line-height:20px">{{d.what}}</span>
+              <span style="display:flex;gap:8px;font-size:12px;line-height:16px;color:#5F5F5F;white-space:nowrap"><span style="color:#1D1D1D">{{d.when}}</span><span style="font-family:'Chivo Mono',ui-monospace,monospace">{{d.hash}}</span></span>
+            </span>
+            <span title="{{d.whoName}}" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{d.avatarBg}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">{{d.who}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </details>
+  </aside>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1515}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { choice: 'code', filter: 'all', signed: false, tech: false };
+  }
+  componentDidMount() {
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+  }
+  renderVals() {
+    const ink = '#1D1D1D', muted = '#5F5F5F', green = '#00834B';
+    // One literal map; the publish script rewrites each path to its uploaded asset.
+    const LOGO = { jira: 'logos/jira.svg', confluence: 'logos/confluence.svg', github: 'logos/github.svg', microsoft: 'logos/microsoft.svg', microsoftteams: 'logos/microsoftteams.svg', snowflake: 'logos/snowflake.svg', amazonwebservices: 'logos/amazonwebservices.svg' };
+    const CHECK = 'M5 12.5l4.5 4.5L19 7.5', ARROW = 'M5 12h14M13 6l6 6-6 6', ALERT = 'M12 4L2.8 19.5h18.4zM12 10v4M12 16.75v.01';
+    const USERS = 'M9 5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 1 0 0-7zM2.5 20c.7-3.3 3.3-5.5 6.5-5.5s5.8 2.2 6.5 5.5M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.5 2.6 4 5.2';
+    const SHIELD = 'M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z';
+    const BOLT = 'M13 3L5 13.5h6l-1 7.5 8-10.5h-6z';
+    const FILE = 'M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5';
+    const closeMenu = (e) => { const d = e && e.currentTarget && e.currentTarget.closest('details'); if (d) d.open = false; };
+    const ST = {
+      passed: { state: 'Passed', color: green, icon: CHECK, hasIcon: true, weight: 700, group: 'passed' },
+      transfer: { state: 'On Transfer', color: ink, icon: ARROW, hasIcon: true, weight: 700, group: 'other' },
+      work: { state: 'Needs Work', color: ink, icon: ALERT, hasIcon: true, weight: 700, group: 'work' },
+      na: { state: 'Not Needed', color: muted, icon: '', hasIcon: false, weight: 400, group: 'other' }
+    };
+    const owner = { hasLogo: false, hasGlyph: false, hasAvatar: false, logo: '', mono: '', glyph: '', initials: '', avatarBg: '' };
+    const logo = (k, m) => Object.assign({}, owner, { hasLogo: true, logo: LOGO[k], mono: m });
+    const glyph = (g) => Object.assign({}, owner, { hasGlyph: true, glyph: g });
+    const person = (i, bg) => Object.assign({}, owner, { hasAvatar: true, initials: i, avatarBg: bg });
+    const checks = [
+      Object.assign({ what: 'Data classification', owner: 'Luis Romero', note: 'Internal; no personal data' }, person('LR', '#2E6A8E'), ST.passed),
+      Object.assign({ what: 'Entra sign-on', owner: 'Platform team', note: 'App registration, assignment required' }, logo('microsoft', 'M'), ST.passed),
+      Object.assign({ what: 'Snowflake role and governance', owner: 'Data Platform', note: 'Functional app role, semantic views, resource monitor' }, logo('snowflake', 'S'), ST.passed),
+      Object.assign({ what: 'Code owners', owner: 'Retail Systems', note: 'CODEOWNERS set to your team when the repo moves' }, logo('github', 'G'), ST.transfer),
+      Object.assign({ what: 'Accessibility, WCAG 2.2 AA', owner: 'Accessibility check', note: '2 contrast issues on the schedule grid' }, glyph(BOLT), ST.work),
+      Object.assign({ what: 'Secret and dependency scans, SBOM', owner: 'CodeQL, Dependabot', note: '0 high or critical; SBOM attached' }, logo('github', 'G'), ST.passed),
+      Object.assign({ what: 'Tests in CI', owner: 'GitHub Actions', note: '46 tests; acceptance criteria as browser tests' }, logo('github', 'G'), ST.passed),
+      Object.assign({ what: 'Runbook, logs and alerts', owner: 'Platform team', note: 'Alerts route to Retail Systems on transfer' }, glyph(USERS), ST.passed),
+      Object.assign({ what: 'SOX controls', owner: 'Controls team', note: 'No finance data in scope' }, glyph(SHIELD), ST.na)
+    ];
+    const f = this.state.filter;
+    const defs = [
+      { id: 'all', label: 'All', glyph: '', color: ink },
+      { id: 'passed', label: 'Passed', glyph: CHECK, color: green },
+      { id: 'work', label: 'Needs Work', glyph: ALERT, color: ink },
+      { id: 'other', label: 'On Transfer or Not Needed', glyph: ARROW, color: ink }
+    ];
+    const filters = defs.map((d) => {
+      const on = f === d.id;
+      return {
+        // Selected chips trade their status glyph for the 16 px check, as on every other filter bar.
+        label: d.label, on, hasGlyph: !on && !!d.glyph, glyph: d.glyph, glyphColor: d.color,
+        n: String(d.id === 'all' ? checks.length : checks.filter((c) => c.group === d.id).length),
+        pressed: on ? 'true' : 'false', bg: on ? ink : '#FFFFFF', fg: on ? '#FFFFFF' : ink, weight: on ? 700 : 400,
+        ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0', countColor: on ? '#D0D0D0' : muted,
+        // The chips sit on the #F9F9F9 toolbar band, where the plain ring is under 3:1.
+        focusCls: on ? 'hd-ring' : 'hd-ring-edge hd-chip',
+        pick: () => this.setState({ filter: d.id })
+      };
+    });
+    const ORDER = ['code', 'plan', 'reject'];
+    const choice = ORDER.indexOf(this.state.choice) >= 0 ? this.state.choice : 'code';
+    const pickChoice = (id, focus) => {
+      this.setState({ choice: id });
+      if (focus) setTimeout(() => { const el = document.getElementById('gr-choice-' + id); if (el) el.focus(); }, 0);
+    };
+    const choiceKey = (e) => {
+      const i = ORDER.indexOf(choice);
+      let n = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % ORDER.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i + ORDER.length - 1) % ORDER.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = ORDER.length - 1;
+      if (n < 0) return;
+      e.preventDefault();
+      pickChoice(ORDER[n], true);
+    };
+    const choices = [
+      { id: 'code', label: 'Accept the Code', text: 'Retail Systems adopts the repository and runs it.' },
+      { id: 'plan', label: 'Rebuild From the Plan', text: 'Rebuild from the plan, decisions and evidence; the prototype stays as a reference.' },
+      { id: 'reject', label: 'Reject With Reasons', text: 'Back to the business owner with what would change your answer.' }
+    ].map((o) => {
+      const on = choice === o.id;
+      return Object.assign(o, { checked: on ? 'true' : 'false', tabindex: on ? '0' : '-1', focusCls: on ? 'hd-ring-sel' : 'hd-ring-edge',
+        ring: on ? 'inset 0 0 0 2px #1D1D1D' : 'inset 0 0 0 1px #D0D0D0',
+        radioRing: on ? '2px solid #1D1D1D' : '1px solid #5F5F5F', dot: on ? ink : 'transparent', pick: () => pickChoice(o.id, false) });
+    });
+    const picked = choices.filter((o) => o.id === choice)[0];
+    const signed = !!this.state.signed;
+    const pk = (what, ref, o) => Object.assign({ what, ref, title: ref, isImg: false, isGlyph: false, logo: '', mono: '', glyph: '', isText: false, isMono: false, hasTo: false, to: '' }, o);
+    return {
+      logos: LOGO,
+      closeMenu,
+      techOn: this.state.tech ? 'true' : 'false', techShown: !!this.state.tech, techLabel: this.state.tech ? 'On' : 'Off',
+      toggleTech: () => this.setState({ tech: !this.state.tech }),
+      showMonogram: (e) => { const i = e.currentTarget; i.style.display = 'none'; const t = i.closest('[data-tile]'); const m = t && t.querySelector('[data-mono]'); if (m) m.style.color = '#444444'; },
+      choices, filters, choiceKey,
+      signed, notSigned: !signed, signedLine: 'Signed: ' + picked.label,
+      sign: () => this.setState({ signed: true }),
+      undo: () => this.setState({ signed: false }),
+      rows: (f === 'all' ? checks : checks.filter((c) => c.group === f)).map((c, i, a) => Object.assign({}, c, { rule: i === a.length - 1 ? '0' : '1px solid #F0F0F0' })),
+      pkg: [
+        pk('Jira epic', 'RETAIL-221', { isImg: true, logo: LOGO.jira, mono: 'J', isMono: true }),
+        pk('Confluence page', 'Store labor and traffic planner handoff', { isImg: true, logo: LOGO.confluence, mono: 'C', isText: true }),
+        pk('Repository transfer', 'ua-prototypes', { isImg: true, logo: LOGO.github, mono: 'G', isMono: true, hasTo: true, to: 'retail-systems', title: 'ua-prototypes to retail-systems' }),
+        pk('Dev container', 'devcontainer.json', { isGlyph: true, glyph: FILE, isMono: true }),
+        pk('Run cost, last 30 days', '$38', { isImg: true, logo: LOGO.amazonwebservices, mono: 'A', isText: true })
+      ],
+      chain: [
+        { when: 'Oct 9', what: 'What We’re Building signed', hash: '3f2a…7c', who: 'AR', whoName: 'Ana Ruiz', avatarBg: '#2D6470', mark: ink },
+        { when: 'Oct 13', what: 'The Plan signed', hash: '9c41…e0', who: 'AR', whoName: 'Ana Ruiz', avatarBg: '#2D6470', mark: ink },
+        { when: 'Oct 16', what: 'The Working Prototype accepted', hash: 'e07b…21', who: 'AR', whoName: 'Ana Ruiz', avatarBg: '#2D6470', mark: ink },
+        { when: 'Oct 22', what: 'Graduation requested', hash: '51dd…9a', who: 'AR', whoName: 'Ana Ruiz', avatarBg: '#2D6470', mark: '#FFFFFF' }
+      ],
+      signers: [
+        { i: 'AR', bg: '#2D6470', name: 'Ana Ruiz', role: 'Business owner', status: 'Signed Oct 22', signed: true, waiting: false },
+        { i: 'LR', bg: '#2E6A8E', name: 'Luis Romero', role: 'Data owner', status: 'Signed Oct 23', signed: true, waiting: false },
+        { i: 'KP', bg: '#3F4A55', name: 'Kim Patel', role: 'Engineering, Retail Systems', status: signed ? 'Signed Oct 26' : '', signed, waiting: !signed }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

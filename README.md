@@ -11,6 +11,10 @@ and [docs/decisions.md](docs/decisions.md) for the log of architecture/tradeoff
 decisions (why things are built the way they are, kept up to date via the
 `log-decision` skill). Conventions and the Definition of Done live in
 [AGENTS.md](AGENTS.md); setup and the gate are in [CONTRIBUTING.md](CONTRIBUTING.md).
+The proposal for the next phase, taking the EDM pilot to an enterprise platform under the UA-DLC
+process, is in [docs/ua-dlc/](docs/ua-dlc/README.md) (draft for leadership review). `make site`
+serves its standalone concept site from [docs/ua-dlc/site/](docs/ua-dlc/site/) at
+http://localhost:8766/: the plan as a page and a clickable canvas of the concept screens.
 
 ```
 src/
@@ -154,8 +158,9 @@ the criteria being signed against, records the signed-in user as the signer (the
 it from the validated token, never from the request body), and keeps every decision
 undoable for twelve seconds before it is sent. Cleared gates show who signed, from the
 decision trail at `GET /projects/{id}/decisions`. Light and
-dark themes ship from one semantic token layer. Signs in via MSAL against the same Entra ID
-app registration the API validates against. Talks to the API directly over `fetch`
+dark themes ship from one semantic token layer (today's console; the UA-DLC redesign is
+light only). Signs in via MSAL against the same Entra ID app registration the API
+validates against. Talks to the API directly over `fetch`
 (`ui/console/src/api/client.ts`), not through `sdk/python`. The crew names are a display
 layer only - the wire ids stay `distill`, `blueprint`, `review`, `showroom`. See
 [ui/console/README.md](ui/console/README.md) and
@@ -167,3 +172,14 @@ roadmap for non-technical users, and the research library behind both live in
 the M365 integration. Distill's Snowflake Cortex integration and Blueprint/Review's
 GitHub integration are already implemented. Add the remaining integrations as real use
 cases demand them, not speculatively.
+
+**Next (proposed, not yet approved).** The MVP plan's Phase 4 pilot, baseline and security
+close-out have not run. [docs/ua-dlc/](docs/ua-dlc/README.md) proposes three phases. Current
+State: today's line keeps running while the baseline is measured and every long-lead request is
+filed (weeks 1 and 2). The Final MVP: a short do-no-harm floor (Snowflake rows never stored outside
+Snowflake, no plaintext secrets, repositories only in a prototype GitHub organization and builds
+only in the sandbox account, writes only after approvals), then an orchestrator that hands
+Snowflake work to Cortex Code and coding to a sandboxed coding agent, built to MVP ready in
+week 14 and tried in a real testing pilot through week 22. Enterprise: identity, audit,
+budgets, evals, policy and the production stage, decided on pilot evidence and never holding up
+the Final MVP.

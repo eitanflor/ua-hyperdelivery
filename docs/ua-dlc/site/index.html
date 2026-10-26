@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>UA-DLC and HyperDelivery</title>
+<meta name="description" content="The UA-DLC plan and the HyperDelivery concept canvas.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -58 252.5 252.5'%3E%3Cpath fill='%231d1d1d' d='M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&amp;display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ink: #1d1d1d; --ink-2: #444444; --muted: #5f5f5f; --subtle: #8a8a8a;
+  --line: #e6e6e6; --line-2: #d0d0d0; --surface: #ffffff; --surface-2: #f9f9f9; --hover: #f0f0f0;
+  --focus: #0096fa;
+  --font: "Archivo", "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--surface-2); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 24px;
+  -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column;
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.bar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar-in, main, footer { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+.bar-in { height: 56px; display: flex; align-items: center; }
+.lockup { display: inline-flex; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; color: var(--ink); }
+.lockup .hair { width: 1px; height: 20px; background: currentColor; opacity: .3; }
+main { flex: 1 0 auto; padding-top: 72px; padding-bottom: 72px; }
+h1 { margin: 0; font-size: 48px; line-height: 56px; font-weight: 800; letter-spacing: -0.015em; }
+.intro { margin: 16px 0 0; max-width: 60ch; font-size: 18px; line-height: 28px; color: var(--muted); }
+.entries { margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.entry {
+  display: flex; flex-direction: column; min-height: 360px; background: var(--surface); border-radius: 12px;
+  color: var(--ink); text-decoration: none; overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line-2); transition: box-shadow 160ms ease-out, transform 160ms ease-out;
+}
+.entry:hover { box-shadow: 0 0 0 1px var(--ink), 0 12px 32px rgba(29, 29, 29, 0.08); transform: translateY(-2px); }
+.art { flex: 1 1 auto; background: var(--surface-2); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.art svg { width: 100%; max-width: 380px; height: auto; display: block; }
+.text { padding: 24px 28px 28px; }
+.kicker { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--subtle); }
+.title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; font-size: 28px; line-height: 36px; font-weight: 700; letter-spacing: -0.01em; }
+.title svg { flex: none; transition: transform 160ms ease-out; }
+.entry:hover .title svg { transform: translateX(4px); }
+.desc { margin: 8px 0 0; color: var(--muted); max-width: 46ch; }
+.note { margin: 32px 0 0; font-size: 14px; line-height: 20px; color: var(--muted); }
+footer { padding-bottom: 32px; font-size: 13px; line-height: 20px; color: var(--subtle); }
+code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+@media (max-width: 860px) {
+  .entries { grid-template-columns: 1fr; }
+  h1 { font-size: 36px; line-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry, .title svg { transition: none; }
+  .entry:hover { transform: none; }
+}
+</style>
+</head>
+<body>
+<header class="bar"><div class="bar-in">
+  <span class="lockup">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"/></svg>
+    <span class="hair" aria-hidden="true"></span>HyperDelivery
+  </span>
+</div></header>
+
+<main>
+  <h1>UA-DLC and HyperDelivery</h1>
+  <p class="intro">A governed way for Under Armour teammates to turn cross-functional ideas into working prototypes, built on UA's own data and decisions.</p>
+
+  <div class="entries">
+    <a class="entry" href="plan/index.html">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 380 200">
+          <rect x="0" y="8" width="380" height="184" rx="8" fill="#ffffff" stroke="#e6e6e6"/>
+          <rect x="24" y="32" width="150" height="12" rx="3" fill="#1d1d1d"/>
+          <rect x="24" y="56" width="300" height="6" rx="3" fill="#d0d0d0"/>
+          <rect x="24" y="70" width="260" height="6" rx="3" fill="#d0d0d0"/>
+          <rect x="24" y="104" width="64" height="20" rx="4" fill="#f0f0f0"/>
+          <rect x="92" y="104" width="160" height="20" rx="4" fill="#1d1d1d"/>
+          <rect x="256" y="104" width="100" height="20" rx="4" fill="#ffffff" stroke="#8a8a8a"/>
+          <text x="56" y="118" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="10" font-weight="600" fill="#444444">Today</text>
+          <text x="172" y="118" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="10" font-weight="600" fill="#ffffff">MVP</text>
+          <text x="306" y="118" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-size="10" font-weight="600" fill="#444444">Enterprise</text>
+          <rect x="24" y="148" width="320" height="6" rx="3" fill="#e6e6e6"/>
+          <rect x="24" y="162" width="220" height="6" rx="3" fill="#e6e6e6"/>
+        </svg>
+      </div>
+      <div class="text">
+        <div class="kicker">The Plan</div>
+        <div class="title">Read the Plan
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M4 11h13M12 6l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="desc">Why UA-DLC, the three phases from Current State to Enterprise, what each costs, and the decisions we need.</p>
+      </div>
+    </a>
+
+    <a class="entry" href="concepts/index.html">
+      <div class="art" aria-hidden="true">
+        <svg viewBox="0 0 380 200">
+          <rect x="0" y="8" width="380" height="184" rx="8" fill="#ececec"/>
+          <rect x="20" y="22" width="90" height="6" rx="3" fill="#1d1d1d"/>
+          <rect x="20" y="36" width="72" height="54" rx="2" fill="#ffffff" stroke="#d0d0d0"/>
+          <rect x="100" y="36" width="72" height="64" rx="2" fill="#ffffff" stroke="#0096fa" stroke-width="2"/>
+          <rect x="180" y="36" width="72" height="48" rx="2" fill="#ffffff" stroke="#d0d0d0"/>
+          <rect x="260" y="36" width="72" height="58" rx="2" fill="#ffffff" stroke="#d0d0d0"/>
+          <rect x="108" y="46" width="34" height="5" rx="2" fill="#1d1d1d"/>
+          <rect x="108" y="58" width="56" height="4" rx="2" fill="#d0d0d0"/>
+          <rect x="108" y="68" width="48" height="4" rx="2" fill="#d0d0d0"/>
+          <rect x="108" y="82" width="22" height="9" rx="2" fill="#1d1d1d"/>
+          <rect x="20" y="116" width="110" height="6" rx="3" fill="#1d1d1d"/>
+          <rect x="20" y="130" width="72" height="50" rx="2" fill="#ffffff" stroke="#d0d0d0"/>
+          <rect x="100" y="130" width="72" height="44" rx="2" fill="#ffffff" stroke="#d0d0d0"/>
+          <rect x="180" y="130" width="72" height="52" rx="2" fill="#ffffff" stroke="#d0d0d0"/>
+          <rect x="260" y="130" width="72" height="40" rx="2" fill="#ffffff" stroke="#d0d0d0"/>
+        </svg>
+      </div>
+      <div class="text">
+        <div class="kicker">The Concepts</div>
+        <div class="title">Open the Concept Canvas
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M4 11h13M12 6l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="desc">Every HyperDelivery concept screen on one canvas. Pan and zoom, then open any screen and click through it.</p>
+      </div>
+    </a>
+  </div>
+
+  <p class="note">Every name, project and number in the concepts is invented to show the design; none is a measured result.</p>
+</main>
+
+<footer>Draft for leadership review. The source is <code>docs/ua-dlc/</code> in the ua-hyperdelivery repository.</footer>
+</body>
+</html>

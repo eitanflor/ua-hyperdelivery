@@ -1,0 +1,624 @@
+<figure class="hda hda-current" id="hda-current" aria-labelledby="hda-current-title">
+<style>
+.hda { --k-bg: #ffffff; --k-surface: #f9f9f9; --k-ink: #1d1d1d; --k-muted: #5f5f5f; --k-line: #e6e6e6;
+  --k-control: #8a8a8a; --k-new: #fe9000; --k-gap: #b45309; --k-nd: #b4b4b4; --k-edge: #8f8f8f;
+  --k-hd: #4f46e5; --k-tl: #0d9488; --k-sl: #475569; --k-sk: #0ea5e9; --k-vi: #7c3aed; --k-am: #b45309;
+  --k-zn: #f4f4f4; --k-za: #f4f5fe; --k-zk: #eff7f5; --k-zg: #fbf7ee; --k-zs: #e8f6fc; --k-zv: #f3eefe;
+  --k-zsb: #f7f3fe; --k-zb: #eaf1fc; --k-zm: #efeffa; --k-zo: #fafafa;
+  --k-body: var(--body, 'Archivo', 'Helvetica Neue', Arial, sans-serif);
+  --k-mono: var(--mono, 'Geist Mono', ui-monospace, Menlo, monospace);
+  color-scheme: light; position: relative; margin: 24px 0 40px; color: var(--k-ink); font-family: var(--k-body);
+  font-size: 13px; line-height: 1.4; }
+.hda * { box-sizing: border-box; }
+.hda .hda-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  border-top: 2px solid var(--k-ink); padding-top: 12px; margin-bottom: 6px; }
+.hda .hda-title { font-weight: 700; font-size: 15px; line-height: 1.3; margin: 0; max-width: none; }
+.hda .hda-cap { color: var(--k-muted); font-size: 13.5px; line-height: 1.5; margin: 0 0 12px; max-width: none; }
+.hda .hda-phases { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.hda .hda-phases li { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; border: 1px solid var(--k-line); color: var(--k-muted);
+  margin: 0; max-width: none; }
+.hda .hda-phases li + li::before { content: ''; }
+.hda .hda-phases li.past { border-color: var(--k-control); color: var(--k-ink); }
+.hda .hda-phases li.cur { background: var(--k-ink); border-color: var(--k-ink); color: var(--k-bg); }
+.hda .hda-phases .sep { border: 0; padding: 0; height: auto; color: var(--k-control); font-weight: 400; }
+.hda button { font: inherit; cursor: pointer; margin: 0; }
+.hda .hda-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
+.hda .hda-bar-l { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--k-muted); }
+.hda .hda-seg, .hda .hda-ctl, .hda .hda-hl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.hda .hda-pill { font-size: 12.5px; font-weight: 600; height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--k-control); background: var(--k-bg); color: var(--k-ink); white-space: nowrap; }
+.hda .hda-pill[aria-pressed="true"] { background: var(--k-ink); color: var(--k-bg); border-color: var(--k-ink); }
+.hda .hda-ctl button { height: 30px; min-width: 30px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--k-line); background: var(--k-bg); color: var(--k-ink); font-size: 12.5px; font-weight: 600; }
+.hda .hda-ctl button:disabled { color: var(--k-muted); cursor: default; opacity: 0.55; }
+.hda .hda-stage { position: relative; }
+.hda .hda-exp { position: absolute; top: 8px; right: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px; font-size: 12px; background: rgba(255, 255, 255, 0.94); border-color: var(--k-line); }
+.hda .hda-exp:hover { border-color: var(--k-ink); }
+.hda .hda-exp svg { width: 13px; height: 13px; }
+.hda button:focus-visible, .hda .hda-scroll:focus-visible, .hda g.n:focus-visible,
+.hda .zl[tabindex]:focus-visible { outline: 2px solid var(--k-ink); outline-offset: 2px; }
+.hda .hda-scroll { overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--k-line);
+  border-radius: 8px; background: var(--k-bg); padding: 10px; }
+.hda .hda-svg { display: block; width: 100%; min-width: 720px; height: auto; font-family: var(--k-body);
+  -webkit-user-select: none; user-select: none; }
+.hda .z { stroke: none; }
+.hda .z.zn { fill: var(--k-zn); } .hda .z.za { fill: var(--k-za); } .hda .z.zk { fill: var(--k-zk); }
+.hda .z.zg { fill: var(--k-zg); } .hda .z.zs { fill: var(--k-zs); } .hda .z.zv { fill: var(--k-zv); }
+.hda .z.zsb { fill: var(--k-zsb); } .hda .z.zb { fill: var(--k-zb); } .hda .z.zm { fill: var(--k-zm); }
+.hda .z.zc { fill: var(--k-zo); stroke: var(--k-line); stroke-width: 1; }
+.hda .z.zo { fill: none; stroke: var(--k-control); stroke-width: 1; stroke-dasharray: 5 4; }
+.hda .z.zhd { fill: none; stroke: var(--k-ink); stroke-width: 1.25; }
+.hda .zl { fill: var(--k-muted); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; }
+.hda .zl.big { fill: var(--k-ink); font-size: 10.5px; }
+.hda .zl[tabindex] { cursor: pointer; }
+.hda .zl[tabindex]:hover { fill: var(--k-ink); text-decoration: underline; }
+.hda .zt { stroke-width: 4px; stroke-linejoin: round; paint-order: stroke; }
+.hda .e path { fill: none; stroke: var(--k-edge); stroke-width: 1.2; }
+.hda .e.dash path { stroke-dasharray: 4 3; }
+.hda .el rect { fill: var(--k-bg); stroke: var(--k-line); }
+.hda .el text { fill: var(--k-muted); font-size: 9.5px; }
+.hda g.n { cursor: pointer; }
+.hda g.n rect.b { fill: var(--k-bg); stroke: var(--k-nd); stroke-width: 1; }
+.hda g.n.new rect.b { stroke: var(--k-ink); stroke-width: 2; }
+.hda g.n.dash rect.b { stroke-dasharray: 4 3; }
+.hda g.n rect.acc { stroke: none; }
+.hda g.n .t { fill: var(--k-ink); font-size: 11.5px; font-weight: 600; }
+.hda g.n .s { fill: var(--k-muted); font-size: 9.5px; }
+.hda g.n.hd rect.acc { fill: var(--k-hd); } .hda g.n.tl rect.acc { fill: var(--k-tl); }
+.hda g.n.sl rect.acc { fill: var(--k-sl); } .hda g.n.sk rect.acc { fill: var(--k-sk); }
+.hda g.n.vi rect.acc { fill: var(--k-vi); } .hda g.n.ink rect.acc { fill: var(--k-ink); }
+.hda g.n.am rect.acc { fill: var(--k-am); }
+.hda g.n .gap { fill: var(--k-gap); }
+.hda g.n .gapx { fill: #ffffff; font-size: 7.5px; font-weight: 800; }
+.hda g.n:hover rect.b { stroke: var(--k-ink); stroke-width: 2; }
+.hda g.n.sel rect.b { stroke: var(--k-ink); stroke-width: 2.5; }
+.hda.is-dim g.n, .hda.is-dim .e, .hda.is-dim .el { opacity: 0.22; }
+.hda.is-dim g.n.lit, .hda.is-dim .e.lit, .hda.is-dim .el.lit { opacity: 1; }
+.hda .e.lit path { stroke: var(--k-ink); stroke-width: 1.7; }
+.hda .el.lit text { fill: var(--k-ink); }
+.hda .el.lit rect { stroke: var(--k-ink); }
+.hda g.n.now rect.b { stroke: var(--k-ink); stroke-width: 2.5; }
+.hda .hda-side { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-top: 14px; }
+.hda .hda-steps { flex: 1 1 300px; margin: 0; padding-left: 22px; font-size: 13.5px; }
+/* With a part or replay selected, the details dock to the viewport bottom so they stay in view under a tall diagram. */
+.hda.has-card .hda-panel > .hda-side { position: sticky; bottom: 0; z-index: 3; background: var(--k-bg);
+  border-top: 1px solid var(--k-line); padding: 10px 0; }
+.hda.has-card .hda-panel > .hda-side > .hda-steps,
+.hda.has-card .hda-panel > .hda-side > .hda-card { max-height: min(30vh, 260px); overflow-y: auto;
+  overscroll-behavior: contain; }
+.hda .hda-steps:empty { display: none; }
+.hda .hda-steps li { padding: 4px 6px; border-radius: 4px; color: var(--k-muted); cursor: pointer; max-width: none; }
+.hda .hda-steps li + li { margin-top: 2px; }
+.hda .hda-steps li.done { color: var(--k-ink); }
+.hda .hda-steps li.now { color: var(--k-ink); background: var(--k-surface); box-shadow: inset 2px 0 0 var(--k-ink);
+  font-weight: 600; }
+.hda .hda-card { flex: 1 1 280px; min-width: 0; border: 1px solid var(--k-line); border-radius: 8px;
+  padding: 12px 14px; font-size: 13px; }
+.hda .hda-card-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hda .hda-card-h b { font-size: 14.5px; }
+.hda .hda-new { display: inline-flex; align-items: center; height: 18px; padding: 0 5px; border-radius: 4px;
+  background: var(--k-new); color: var(--k-ink); font-family: var(--k-mono); font-size: 11px; font-weight: 600;
+  line-height: 1; letter-spacing: 0.02em; }
+.hda .hda-zone { color: var(--k-muted); font-size: 12px; margin: 2px 0 6px; }
+.hda .hda-card p { margin: 0 0 6px; max-width: none; }
+.hda .hda-card dl { margin: 8px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.hda .hda-card dt { color: var(--k-muted); } .hda .hda-card dd { margin: 0; min-width: 0; }
+.hda .hda-card code { font-family: var(--k-mono); font-size: 11.5px; background: var(--k-surface);
+  border: 1px solid var(--k-line); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+.hda .hda-card .hda-ev code { display: inline-block; margin: 0 4px 3px 0; }
+.hda .hda-conn { margin-top: 10px; border-top: 1px solid var(--k-line); padding-top: 8px; }
+.hda .hda-conn-h { color: var(--k-muted); font-size: 12px; margin-bottom: 4px; }
+.hda .hda-conn ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.hda .hda-conn li { margin: 0; max-width: none; color: var(--k-muted); }
+.hda .hda-conn button { border: 0; background: none; padding: 0; color: var(--k-ink); font-weight: 600;
+  text-decoration: underline; text-decoration-color: var(--k-control); text-underline-offset: 2px; }
+.hda .hda-conn .dir { display: inline-block; width: 18px; color: var(--k-muted); }
+.hda .hda-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 12px;
+  color: var(--k-muted); font-size: 12.5px; }
+.hda .hda-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.hda .hda-legend .hda-hl { margin-left: auto; gap: 6px; }
+.hda .hda-legend .hda-hl .hda-pill { height: 26px; font-size: 12px; padding: 0 10px; }
+.hda .sw { width: 16px; height: 11px; border-radius: 2px; display: inline-block; background: var(--k-bg); }
+.hda .sw.new { border: 2px solid var(--k-ink); }
+.hda .sw.old { border: 1px solid var(--k-nd); }
+.hda .sw.acc { width: 4px; height: 12px; border-radius: 1px; }
+.hda .sw.gap { width: 9px; height: 9px; border-radius: 50%; background: var(--k-gap); }
+.hda .sw.dash { width: 20px; height: 0; border-top: 1.5px dashed var(--k-ink); border-radius: 0; background: none; }
+.hda dialog.hda-dlg { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: var(--k-bg); color: var(--k-ink); overflow: hidden; }
+.hda dialog.hda-dlg::backdrop { background: rgba(29, 29, 29, 0.35); }
+.hda .hda-dlg-in { display: flex; flex-direction: column; height: 100%; padding: 14px 24px 18px; }
+.hda .hda-dlg-head { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--k-line);
+  padding-bottom: 12px; margin-bottom: 12px; }
+.hda .hda-dlg-head .hda-title { flex: 1 1 auto; }
+.hda .hda-dlg .hda-panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "svg side" "svg legend"; gap: 0 24px; }
+.hda .hda-dlg .hda-bar { grid-area: bar; }
+.hda .hda-dlg .hda-stage { grid-area: svg; min-height: 0; display: flex; flex-direction: column; }
+.hda .hda-dlg .hda-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.hda .hda-dlg .hda-svg { width: 100%; max-width: 1200px; height: auto; min-width: 0; margin: 0 auto; }
+.hda .hda-dlg .hda-side { grid-area: side; margin-top: 0; flex-direction: column; flex-wrap: nowrap; overflow-y: auto;
+  min-height: 0; align-content: flex-start; }
+.hda .hda-dlg .hda-steps, .hda .hda-dlg .hda-card { flex: 0 0 auto; }
+.hda.has-card .hda-dlg .hda-side { position: static; border-top: 0; padding: 0; }
+.hda.has-card .hda-dlg .hda-side > .hda-steps,
+.hda.has-card .hda-dlg .hda-side > .hda-card { max-height: none; overflow-y: visible; }
+.hda .hda-dlg .hda-legend { grid-area: legend; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--k-line); }
+.hda .hda-dlg .hda-legend .hda-hl { margin-left: 0; }
+.hda .hda-dlg .hda-exp { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .hda .e.now path { stroke-dasharray: 6 4; animation: hda-flow 0.9s linear infinite; }
+  .hda g.n, .hda .e, .hda .el { transition: opacity 0.2s ease; }
+}
+@keyframes hda-flow { to { stroke-dashoffset: -20; } }
+</style>
+<div class="hda-head">
+  <p class="hda-title" id="hda-current-title">Current State</p>
+  <ol class="hda-phases" aria-label="Phase"><li class="cur" aria-current="step">Today</li><li class="sep" aria-hidden="true">›</li><li>MVP</li><li class="sep" aria-hidden="true">›</li><li>Enterprise</li></ol>
+</div>
+<p class="hda-cap">What runs today on dev: a React console on CloudFront, a FastAPI console API on Lambda, a Step Functions line that waits on a person at three approvals, and four station agents on AgentCore Runtime calling Claude Sonnet 5.5 on Bedrock. Every connector uses one person&#x27;s tokens. Dashed lines are paths that exist in code but are not wired in the deployed setup, or that sit outside it.</p>
+<div class="hda-panel"></div>
+<noscript><p>This diagram needs JavaScript. The plan text describes the same parts.</p></noscript>
+<script>
+(function (D) {
+  var cs = document.currentScript;
+  var root = cs && cs.parentNode && cs.parentNode.closest ? cs.parentNode.closest('.hda') : null;
+  var V = 1;
+  if (!window.__hdArch || (window.__hdArch.v || 0) < V) {
+    window.__hdArch = (function () {
+      var NS = 'http://www.w3.org/2000/svg', seq = 0;
+      function el(tag, cls, parent, text) {
+        var n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text != null) n.textContent = text;
+        if (parent) parent.appendChild(n);
+        return n;
+      }
+      function sv(tag, attrs, parent) {
+        var n = document.createElementNS(NS, tag);
+        for (var k in attrs) n.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(n);
+        return n;
+      }
+      function stx(parent, x, y, cls, s, anchor) {
+        var t = sv('text', { x: x, y: y, 'class': cls }, parent);
+        if (anchor) t.setAttribute('text-anchor', anchor);
+        t.textContent = s;
+        return t;
+      }
+      // Orthogonal polyline with softened corners.
+      function pathD(pts) {
+        var r = 6, d = 'M' + pts[0][0] + ' ' + pts[0][1];
+        for (var i = 1; i < pts.length; i++) {
+          var p = pts[i];
+          if (i === pts.length - 1) { d += ' L' + p[0] + ' ' + p[1]; break; }
+          var a = pts[i - 1], b = pts[i + 1];
+          var l1 = Math.abs(p[0] - a[0]) + Math.abs(p[1] - a[1]), l2 = Math.abs(b[0] - p[0]) + Math.abs(b[1] - p[1]);
+          var rr = Math.min(r, l1 / 2, l2 / 2);
+          var ux = Math.sign(p[0] - a[0]), uy = Math.sign(p[1] - a[1]), vx = Math.sign(b[0] - p[0]), vy = Math.sign(b[1] - p[1]);
+          d += ' L' + (p[0] - ux * rr) + ' ' + (p[1] - uy * rr) + ' Q' + p[0] + ' ' + p[1] + ' ' + (p[0] + vx * rr) + ' ' + (p[1] + vy * rr);
+        }
+        return d;
+      }
+      var EXPAND = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+      function mount(root, D) {
+        var uid = 'hda' + (++seq) + '-' + D.key;
+        var panel = root.querySelector('.hda-panel');
+        if (!panel) return;
+        var nodeById = {}, zoneById = {};
+        D.nodes.forEach(function (n) { nodeById[n.id] = n; });
+        D.zones.forEach(function (z) { if (z.id) zoneById[z.id] = z; });
+        var SC = {};
+        D.scenarios.forEach(function (s) { SC[s.key] = s; });
+
+        // Bar: replays, step controls, expand.
+        var bar = el('div', 'hda-bar', panel), scBtns = [], btnPrev, btnPlay, btnNext;
+        if (D.scenarios.length) {
+          el('span', 'hda-bar-l', bar, 'Follow a Request');
+          var seg = el('div', 'hda-seg', bar);
+          seg.setAttribute('role', 'group');
+          seg.setAttribute('aria-label', 'Follow a request');
+          D.scenarios.forEach(function (s) {
+            var b = el('button', 'hda-pill', seg, s.label);
+            b.type = 'button';
+            b.setAttribute('aria-pressed', 'false');
+            b.setAttribute('data-sc', s.key);
+            scBtns.push(b);
+          });
+        }
+        var ctl = el('div', 'hda-ctl', bar);
+        function cbtn(label, aria) {
+          var b = el('button', '', ctl, label);
+          b.type = 'button';
+          if (aria) b.setAttribute('aria-label', aria);
+          return b;
+        }
+        if (D.scenarios.length) {
+          btnPrev = cbtn('‹', 'Previous step');
+          btnPlay = cbtn('Play');
+          btnNext = cbtn('›', 'Next step');
+        }
+        var btnClear = cbtn('Clear');
+        // Diagram, with the expand control pinned to its corner.
+        var stage = el('div', 'hda-stage', panel);
+        var btnExp = el('button', 'hda-pill hda-exp', stage);
+        btnExp.type = 'button';
+        btnExp.innerHTML = EXPAND + '<span>Expand</span>';
+        btnExp.setAttribute('aria-haspopup', 'dialog');
+        var scroll = el('div', 'hda-scroll', stage);
+        scroll.tabIndex = 0;
+        scroll.setAttribute('role', 'region');
+        scroll.setAttribute('aria-label', D.title + ', diagram');
+        var svg = sv('svg', { viewBox: '0 0 ' + D.vb[0] + ' ' + D.vb[1], 'class': 'hda-svg', role: 'group',
+          'aria-label': D.title }, scroll);
+        var defs = sv('defs', {}, svg);
+        var AR = uid + '-ar', AR_ON = uid + '-ar-on';
+        [[AR, '#8f8f8f'], [AR_ON, '#1d1d1d']].forEach(function (m) {
+          var mm = sv('marker', { id: m[0], viewBox: '0 0 8 8', refX: '7', refY: '4', markerWidth: '7', markerHeight: '7',
+            orient: 'auto-start-reverse' }, defs);
+          sv('path', { d: 'M0 0 L8 4 L0 8 z', fill: m[1] }, mm);
+        });
+        Object.keys(D.logos).forEach(function (k) {
+          var L = D.logos[k];
+          var sym = sv('symbol', { id: uid + '-lg-' + k, viewBox: L.vb }, defs);
+          sym.innerHTML = L.svg;
+          sym.setAttribute('style', 'color:' + (L.c || '#1d1d1d'));
+        });
+        var bg = sv('rect', { x: 0, y: 0, width: D.vb[0], height: D.vb[1], fill: 'transparent' }, svg);
+        var zoneLayer = sv('g', {}, svg), edgeLayer = sv('g', {}, svg), zoneText = sv('g', {}, svg),
+          nodeLayer = sv('g', {}, svg), labelLayer = sv('g', {}, svg);
+        var HALO = { zn: '--k-zn', za: '--k-za', zk: '--k-zk', zg: '--k-zg', zs: '--k-zs', zv: '--k-zv', zsb: '--k-zsb',
+          zb: '--k-zb', zm: '--k-zm', zc: '--k-zo', zo: '--k-bg', zhd: '--k-bg' };
+        var zoneLabelEls = {};
+        D.zones.forEach(function (z) {
+          var isHd = z.cls === 'zhd';
+          if (z.pts) sv('path', { d: pathD(z.pts.concat([z.pts[0]])) + ' Z', 'class': 'z ' + z.cls }, zoneLayer);
+          else sv('rect', { x: z.x, y: z.y, width: z.w, height: z.h, rx: isHd ? 10 : 7, 'class': 'z ' + z.cls }, zoneLayer);
+          if (!z.label) return;
+          var lx = z.lx != null ? z.lx : z.x + (isHd ? 12 : 10), ly = z.ly != null ? z.ly : z.y + (isHd ? 16 : 15);
+          var t = stx(zoneText, lx, ly, 'zl zt' + (isHd ? ' big' : ''), z.label.toUpperCase(), z.la || null);
+          t.style.stroke = 'var(' + (HALO[z.cls] || '--k-bg') + ')';
+          if (z.id && (z.note || D.zoneCards)) {
+            t.setAttribute('tabindex', '0');
+            t.setAttribute('role', 'button');
+            t.setAttribute('aria-label', z.name + (z.note ? ': ' + z.note : ''));
+            zoneLabelEls[z.id] = t;
+          }
+        });
+
+        var edgeEls = {}, labelEls = {}, edgeById = {};
+        D.edges.forEach(function (e) {
+          edgeById[e.id] = e;
+          var g = sv('g', { 'class': 'e' + (e.dashed ? ' dash' : ''), 'data-e': e.id }, edgeLayer);
+          g._paths = [];
+          e.ps.forEach(function (pts, i) {
+            var p = sv('path', { d: pathD(pts) }, g);
+            p._arrow = !e.na || !e.na[i];
+            if (p._arrow) p.setAttribute('marker-end', 'url(#' + AR + ')');
+            g._paths.push(p);
+          });
+          edgeEls[e.id] = g;
+          if (e.label && e.l) {
+            var lg = sv('g', { 'class': 'el', 'data-e': e.id }, labelLayer);
+            var r = sv('rect', { rx: 7, height: 14, y: e.l[1] - 7 }, lg);
+            var t = stx(lg, e.l[0], e.l[1] + 3.3, '', e.label, e.l[2] || 'middle');
+            lg._r = r; lg._t = t; lg._a = e.l[2] || 'middle'; lg._x = e.l[0]; lg._w = e.lw;
+            labelEls[e.id] = lg;
+          }
+        });
+
+        var nodeEls = {};
+        D.nodes.forEach(function (n) {
+          var cls = 'n' + (n.role ? ' ' + n.role : '') + (n.isNew ? ' new' : '') + (n.dashed ? ' dash' : '');
+          var g = sv('g', { 'class': cls, tabindex: '0', role: 'button', 'data-n': n.id,
+            'aria-label': n.name + (n.sub ? ', ' + n.sub : '') + (n.isNew ? '. ' + D.newLabel : '') + (n.gap ? '. Known gap' : '') }, nodeLayer);
+          sv('rect', { 'class': 'b', x: n.x, y: n.y, width: n.w, height: n.h, rx: 5 }, g);
+          if (n.role) sv('rect', { 'class': 'acc', x: n.x + (n.isNew ? 1.5 : 1), y: n.y + 5, width: 3, height: n.h - 10, rx: 1.5 }, g);
+          var tx = n.x + (n.role ? 11 : 9);
+          var lines = n.sl || (n.sub ? [n.sub] : []), tl = n.tl || [n.name];
+          var ty = n.y + (n.h - (13 * tl.length + 12 * lines.length)) / 2 + 11;
+          tl.forEach(function (s, i) { stx(g, tx, ty + 13 * i, 't', s); });
+          lines.forEach(function (s, i) { stx(g, tx, ty + 13 * tl.length + 12 * i, 's', s); });
+          var lx = n.x + n.w - 20;
+          if (n.logo === 'hd') {
+            sv('rect', { x: lx + 2.5, y: n.y + 7, width: 9, height: 9, rx: 1, fill: '#1d1d1d' }, g);
+          } else if (n.logo && D.logos[n.logo]) {
+            sv('use', { href: '#' + uid + '-lg-' + n.logo, x: lx, y: n.y + 5, width: 14, height: 14 }, g);
+          }
+          if (n.gap) {
+            var gx = n.logo ? lx - 8 : n.x + n.w - 11, gy = n.y + 12;
+            sv('circle', { 'class': 'gap', cx: gx, cy: gy, r: 4.5 }, g);
+            stx(g, gx, gy + 2.7, 'gapx', '!', 'middle');
+          }
+          var tt = sv('title', {}, g);
+          tt.textContent = n.name + (n.sub ? ', ' + n.sub : '');
+          nodeEls[n.id] = g;
+        });
+
+        function sizeLabels() {
+          Object.keys(labelEls).forEach(function (k) {
+            var lg = labelEls[k], w = lg._w || 0;
+            try { var m = lg._t.getComputedTextLength(); if (m > 0) w = m; } catch (err) { /* hidden: keep estimate */ }
+            if (!w) return;
+            var pad = 5, ww = w + pad * 2, x = lg._a === 'start' ? lg._x - pad : (lg._a === 'end' ? lg._x - ww + pad : lg._x - ww / 2);
+            lg._r.setAttribute('x', x); lg._r.setAttribute('width', ww);
+          });
+        }
+        sizeLabels();
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(sizeLabels);
+
+        // Below the diagram: steps and the details card. Then the legend.
+        var side = el('div', 'hda-side', panel);
+        var stepsEl = el('ol', 'hda-steps', side);
+        stepsEl.setAttribute('aria-label', 'Request steps');
+        var card = el('div', 'hda-card', side);
+        card.setAttribute('aria-live', 'polite');
+        var legend = el('div', 'hda-legend', panel);
+        function lgItem(swCls, text, color) {
+          var s = el('span', '', legend);
+          var i = el('i', 'sw ' + swCls, s);
+          i.setAttribute('aria-hidden', 'true');
+          if (color) i.style.background = 'var(' + color + ')';
+          s.appendChild(document.createTextNode(text));
+        }
+        if (D.newLabel && D.nodes.some(function (n) { return n.isNew; })) {
+          lgItem('new', D.newLabel);
+          lgItem('old', D.oldLabel);
+        }
+        if (D.nodes.some(function (n) { return n.gap; })) lgItem('gap', 'Known Gap');
+        if (D.dashLabel) lgItem('dash', D.dashLabel);
+        (D.roles || []).forEach(function (r) { lgItem('acc', r[1], '--k-' + r[0]); });
+        var hlBtns = [];
+        if (D.highlight && D.highlight.length) {
+          var hl = el('div', 'hda-hl', legend);
+          hl.setAttribute('role', 'group');
+          hl.setAttribute('aria-label', 'Highlight by phase');
+          el('span', 'hda-bar-l', hl, 'Highlight');
+          D.highlight.forEach(function (h) {
+            var b = el('button', 'hda-pill', hl, h[1]);
+            b.type = 'button';
+            b.setAttribute('aria-pressed', 'false');
+            b.setAttribute('data-ph', h[0]);
+            hlBtns.push(b);
+          });
+        }
+
+        // State: one dimming mode at a time (a replay, a selected part, or a phase).
+        var mode = null, current = null, step = -1, timer = null, sel = null, phase = null;
+        function dock(on) {
+          root.classList.toggle('has-card', on);
+          card.scrollTop = 0;
+        }
+        function setDefaultCard() {
+          card.innerHTML = '';
+          dock(false);
+          var h = el('div', 'hda-card-h', card);
+          el('b', '', h, D.cardTitle);
+          el('p', '', card, D.cardText);
+        }
+        function addRow(dl, k, v, code) {
+          if (!v || (v.length === 0)) return;
+          el('dt', '', dl, k);
+          var dd = el('dd', code ? 'hda-ev' : '', dl);
+          if (code) {
+            v.slice(0, 3).forEach(function (c) { el('code', '', dd, c); });
+            if (v.length > 3) dd.appendChild(document.createTextNode('and ' + (v.length - 3) + ' more'));
+          } else dd.textContent = v;
+        }
+        function showNode(id) {
+          var n = nodeById[id];
+          if (!n) return;
+          card.innerHTML = '';
+          dock(true);
+          var h = el('div', 'hda-card-h', card);
+          el('b', '', h, n.name);
+          if (n.isNew) el('span', 'hda-new', h, 'NEW');
+          var zn = zoneById[n.zone] ? zoneById[n.zone].name : '';
+          el('div', 'hda-zone', card, (n.phaseText ? n.phaseText + ' · ' : '') + zn);
+          el('p', '', card, n.what);
+          var dl = el('dl', '', card);
+          addRow(dl, 'Runs As', n.identity);
+          addRow(dl, 'Gap', n.gap);
+          addRow(dl, 'Evidence', n.evidence, true);
+          if (!dl.children.length) card.removeChild(dl);
+          var out = D.edges.filter(function (e) { return e.from === id; }), inn = D.edges.filter(function (e) { return e.to === id; });
+          if (out.length || inn.length) {
+            var c = el('div', 'hda-conn', card);
+            el('div', 'hda-conn-h', c, 'Connections');
+            var ul = el('ul', '', c);
+            out.concat(inn).forEach(function (e) {
+              var other = e.from === id ? e.to : e.from, li = el('li', '', ul);
+              var dir = el('span', 'dir', li, e.from === id ? '→' : '←');
+              dir.setAttribute('aria-label', e.from === id ? 'to' : 'from');
+              var b = el('button', '', li, nodeById[other].name);
+              b.type = 'button';
+              b.addEventListener('click', function () { select(other); });
+              if (e.label) li.appendChild(document.createTextNode(' · ' + e.label));
+              if (e.dashed) li.appendChild(document.createTextNode(' (dashed)'));
+            });
+          }
+          Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.toggle('sel', k === id); });
+        }
+        function showZone(id) {
+          var z = zoneById[id];
+          card.innerHTML = '';
+          dock(true);
+          var h = el('div', 'hda-card-h', card);
+          el('b', '', h, z.name);
+          if (z.note) el('p', '', card, z.note);
+          var members = D.nodes.filter(function (n) { return n.zone === id; });
+          if (members.length) {
+            var c = el('div', 'hda-conn', card);
+            el('div', 'hda-conn-h', c, 'Parts');
+            var ul = el('ul', '', c);
+            members.forEach(function (m) {
+              var b = el('button', '', el('li', '', ul), m.name);
+              b.type = 'button';
+              b.addEventListener('click', function () { select(m.id); });
+            });
+          }
+          Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove('sel'); });
+        }
+
+        function paint() {
+          var lit = {}, now = {}, litE = {}, nowE = {};
+          if (mode === 'path' && current) {
+            SC[current].steps.forEach(function (s, i) {
+              if (i > step) return;
+              s[1].forEach(function (n) { lit[n] = 1; if (i === step) now[n] = 1; });
+              s[2].forEach(function (e) { litE[e] = 1; if (i === step) nowE[e] = 1; });
+            });
+          } else if (mode === 'focus' && sel) {
+            lit[sel] = 1;
+            D.edges.forEach(function (e) {
+              if (e.from === sel || e.to === sel) { litE[e.id] = 1; lit[e.from] = 1; lit[e.to] = 1; }
+            });
+          } else if (mode === 'phase' && phase) {
+            D.nodes.forEach(function (n) { if (n.phase === phase) lit[n.id] = 1; });
+            D.edges.forEach(function (e) { if (lit[e.from] && lit[e.to]) litE[e.id] = 1; });
+          }
+          root.classList.toggle('is-dim', !!mode);
+          Object.keys(nodeEls).forEach(function (k) {
+            nodeEls[k].classList.toggle('lit', !!lit[k]);
+            nodeEls[k].classList.toggle('now', !!now[k]);
+          });
+          Object.keys(edgeEls).forEach(function (k) {
+            var g = edgeEls[k], on = !!litE[k];
+            g.classList.toggle('lit', on);
+            g.classList.toggle('now', !!nowE[k]);
+            g._paths.forEach(function (p) { if (p._arrow) p.setAttribute('marker-end', 'url(#' + (on ? AR_ON : AR) + ')'); });
+            if (labelEls[k]) labelEls[k].classList.toggle('lit', on);
+          });
+          Array.prototype.forEach.call(stepsEl.children, function (li, i) {
+            li.classList.toggle('done', i < step);
+            li.classList.toggle('now', i === step);
+            if (i === step) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+            if (i === step && stepsEl.scrollHeight > stepsEl.clientHeight) {
+              var lr = li.getBoundingClientRect(), sr = stepsEl.getBoundingClientRect();
+              if (lr.top < sr.top) stepsEl.scrollTop += lr.top - sr.top;
+              else if (lr.bottom > sr.bottom) stepsEl.scrollTop += lr.bottom - sr.bottom;
+            }
+          });
+          scBtns.forEach(function (b) { b.setAttribute('aria-pressed', mode === 'path' && b.getAttribute('data-sc') === current ? 'true' : 'false'); });
+          hlBtns.forEach(function (b) { b.setAttribute('aria-pressed', mode === 'phase' && b.getAttribute('data-ph') === phase ? 'true' : 'false'); });
+          var total = current ? SC[current].steps.length : 0;
+          if (btnPlay) {
+            btnPrev.disabled = mode !== 'path' || step <= 0;
+            btnNext.disabled = mode !== 'path' || step >= total - 1;
+            btnPlay.disabled = mode !== 'path';
+            btnPlay.textContent = timer ? 'Pause' : (mode === 'path' && step >= total - 1 ? 'Replay' : 'Play');
+          }
+          btnClear.disabled = !mode && !sel;
+        }
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        function go(i) {
+          if (mode !== 'path') return;
+          var steps = SC[current].steps;
+          step = Math.max(0, Math.min(steps.length - 1, i));
+          paint();
+          var s = steps[step];
+          if (s[1].length) showNode(s[1][s[1].length - 1]);
+        }
+        function clearAll() {
+          stop();
+          mode = null; current = null; step = -1; sel = null; phase = null;
+          stepsEl.innerHTML = '';
+          Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove('sel'); });
+          setDefaultCard();
+          paint();
+        }
+        function pick(key) {
+          clearAll();
+          if (!key) return;
+          mode = 'path'; current = key;
+          SC[key].steps.forEach(function (s, i) {
+            var li = el('li', '', stepsEl, s[0]);
+            li.addEventListener('click', function () { stop(); go(i); });
+          });
+          go(0);
+        }
+        function select(id) {
+          if (mode === 'path') { showNode(id); return; }
+          stop();
+          if (sel === id && mode === 'focus') { clearAll(); return; }
+          mode = 'focus'; sel = id; phase = null;
+          showNode(id);
+          paint();
+        }
+        function play() {
+          if (mode !== 'path') return;
+          if (timer) { stop(); paint(); return; }
+          if (step >= SC[current].steps.length - 1) go(0);
+          timer = setInterval(function () {
+            if (step >= SC[current].steps.length - 1) { stop(); paint(); return; }
+            go(step + 1);
+          }, 2600);
+          paint();
+        }
+        scBtns.forEach(function (b) {
+          b.addEventListener('click', function () { pick(b.getAttribute('aria-pressed') === 'true' ? null : b.getAttribute('data-sc')); });
+        });
+        hlBtns.forEach(function (b) {
+          b.addEventListener('click', function () {
+            var p = b.getAttribute('data-ph'), on = b.getAttribute('aria-pressed') === 'true';
+            clearAll();
+            if (!on) { mode = 'phase'; phase = p; paint(); }
+          });
+        });
+        if (btnPlay) {
+          btnPrev.addEventListener('click', function () { stop(); go(step - 1); });
+          btnNext.addEventListener('click', function () { stop(); go(step + 1); });
+          btnPlay.addEventListener('click', play);
+        }
+        btnClear.addEventListener('click', clearAll);
+        bg.addEventListener('click', function () { if (mode !== 'path') clearAll(); });
+        Object.keys(nodeEls).forEach(function (k) {
+          nodeEls[k].addEventListener('click', function () { select(k); });
+          nodeEls[k].addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(k); }
+          });
+        });
+        Object.keys(zoneLabelEls).forEach(function (k) {
+          var t = zoneLabelEls[k];
+          function z() { if (mode === 'focus') clearAll(); showZone(k); }
+          t.addEventListener('click', z);
+          t.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); z(); } });
+        });
+
+        // Expand: the same panel moves into a full-viewport dialog; Escape or Close puts it back.
+        var dlg = el('dialog', 'hda-dlg', root);
+        dlg.setAttribute('aria-labelledby', uid + '-dlg-title');
+        var dIn = el('div', 'hda-dlg-in', dlg), dHead = el('div', 'hda-dlg-head', dIn);
+        var dTitle = el('p', 'hda-title', dHead, D.title);
+        dTitle.id = uid + '-dlg-title';
+        var dClose = el('button', 'hda-pill', dHead, 'Close');
+        dClose.type = 'button';
+        var mark = document.createComment('hda-panel');
+        btnExp.addEventListener('click', function () {
+          if (typeof dlg.showModal !== 'function') return;
+          panel.parentNode.insertBefore(mark, panel);
+          dIn.appendChild(panel);
+          dlg.showModal();
+          sizeLabels();
+        });
+        dClose.addEventListener('click', function () { dlg.close(); });
+        dlg.addEventListener('close', function () {
+          if (mark.parentNode) { mark.parentNode.insertBefore(panel, mark); mark.parentNode.removeChild(mark); }
+          btnExp.focus();
+        });
+
+        setDefaultCard();
+        paint();
+        root.__hda = { select: select, pick: pick, clear: clearAll, expand: function () { btnExp.click(); } };
+      }
+      return { v: V, mount: mount };
+    })();
+  }
+  if (root && !root.__hdaMounted) { root.__hdaMounted = 1; window.__hdArch.mount(root, D); }
+})({"key":"current","vb":[832,878],"title":"Current State","zones":[{"cls":"zn","x":0,"y":0,"w":196,"h":82,"id":"microsoft","name":"Microsoft","note":"Sign-in only. No Teams, SharePoint or Graph.","label":"Microsoft"},{"cls":"zo","x":548,"y":6,"w":144,"h":80,"id":"outside","name":"Outside the deployed path","note":"Developer laptop mode and an unmerged experiment.","label":"Outside the deployed path"},{"cls":"zhd","x":0,"y":108,"w":832,"h":520,"label":"AWS us-east-1, dev only","lx":236},{"cls":"zc","x":8,"y":132,"w":440,"h":182,"pts":[[8,132],[448,132],[448,212],[166,212],[166,314],[8,314]],"id":"console","name":"Console","note":"AWS us-east-1, one account, dev environment only.","label":"Console","lx":76},{"cls":"zk","x":274,"y":226,"w":346,"h":188,"id":"orchestration","name":"Orchestration","note":"Step Functions runs the deployed line; the console API resumes it with task tokens.","label":"Orchestration","lx":446,"ly":248},{"cls":"zb","x":640,"y":132,"w":180,"h":388,"id":"data","name":"Data","note":"Two DynamoDB tables and one S3 bucket. The projects table and the bucket are retained on redeploy.","label":"Data"},{"cls":"za","x":8,"y":446,"w":624,"h":88,"id":"agents","name":"Station agents","note":"Four AgentCore Runtimes (ARM64 containers, public network mode) on one shared execution role. A fresh Strands agent per request, no memory.","label":"Station agents"},{"cls":"zv","x":640,"y":530,"w":180,"h":86,"id":"models","name":"Models","note":"Amazon Bedrock in us-east-1 through global inference profiles.","label":"Models"},{"cls":"zs","x":0,"y":660,"w":780,"h":86,"id":"connectors","name":"Connectors","note":"Every user acts through one person's GitHub, Atlassian and Snowflake tokens.","label":"Connectors","lx":280},{"cls":"zo","x":12,"y":774,"w":220,"h":98,"id":"outside","name":"Outside the deployed path","note":"Developer laptop mode and an unmerged experiment.","label":"Outside the deployed path","lx":46,"ly":791}],"nodes":[{"id":"entra","name":"Entra ID","sub":"Single-tenant app, ID token","zone":"microsoft","x":12,"y":30,"w":172,"h":40,"what":"MSAL sign-in in the browser. The console sends its ID token as the bearer; the API checks signature, audience and issuer against Entra's keys and reads oid, email and name. No API scope, no app roles, no groups.","identity":"The signed-in user. Used only to name the signer of a decision.","logo":"microsoft","gap":"Authentication only. Any signed-in user can approve, merge, delete or edit the shared context.","evidence":["ui/console/src/auth/msalConfig.ts:28","ui/console/src/auth/idToken.ts:14-15","src/api/auth.py:1-8","src/api/auth.py:56-86"]},{"id":"console_ui","name":"Console","sub":"React 19 + Vite, S3 + CloudFront","zone":"console","x":24,"y":156,"w":160,"h":40,"what":"The single-page app people use: start a project, answer questions, read documents, sign the three approvals, watch builds. Talks to the API with fetch, not the Python SDK. Polls builds every 15 seconds.","identity":"Runs in the user's browser with their Entra ID token.","logo":"hd","gap":"No hosted preview of what was built; the running app is not shown.","evidence":["infra/stacks/console_ui_stack.py:46-84","ui/console/package.json:16-17","ui/console/package.json:27","ui/console/src/api/client.ts:17-22","ui/console/src/store/useProjectsStore.ts:29"]},{"id":"console_api","name":"Console API","sub":"FastAPI on Lambda via Mangum, HTTP API","zone":"console","x":286,"y":150,"w":150,"h":52,"what":"Creates projects and starts the state machine, resumes Distill's question wait and the approval waits, writes the decision before releasing the token, merges every build PR on the third approval, reads build status from GitHub. ENVIRONMENT picks local or Step Functions mode. 29-second limit.","identity":"Its own Lambda role: read and write on both tables, start and resume the state machine. No Bedrock, no S3.","sl":["FastAPI on Lambda","via Mangum, HTTP API"],"gap":"Deployed Lambda gets no GITHUB_PAT or S3_BUCKET, so the third-approval merge and build status skip silently and uploads fail.","evidence":["infra/stacks/console_api_stack.py:55-100","src/api/lambda_handler.py:3-7","src/api/main.py:49-61","src/api/routers/projects.py:235-278","src/api/routers/projects.py:1083-1132","src/api/routers/projects.py:115-153"]},{"id":"ws_api","name":"Live updates","sub":"API Gateway WebSocket","zone":"console","x":24,"y":262,"w":130,"h":40,"what":"The console opens a project stream with a one-time ticket from the API; the agent invoker posts each streamed event to the watching connections. Locally the API streams over SSE instead.","identity":"Connect and disconnect Lambdas write the connections table; the invoker holds execute-api:ManageConnections.","evidence":["infra/stacks/orchestration_stack.py:134-221","src/api/routers/projects.py:323-333","ui/console/src/api/client.ts:310-314","src/orchestration/agent_invoker.py:158-184"]},{"id":"sfn","name":"Project line","sub":"Step Functions, hyperdelivery-project-line","zone":"orchestration","x":286,"y":256,"w":150,"h":52,"what":"Distill, then a choice: loop on Distill's questions or go on. Then wait for approval 1, Blueprint, wait for approval 2, Review, wait for approval 3, Showroom, then MarkDone writes station done.","identity":"State machine role, Lambda invoke and the MarkDone table write.","sl":["Step Functions,","hyperdelivery-project-line"],"gap":"A rejection goes to Fail and strands the project; Showroom finishes the project by itself.","evidence":["infra/stacks/orchestration_stack.py:285-291","infra/stacks/orchestration_stack.py:309-370","infra/stacks/orchestration_stack.py:333-357"]},{"id":"invoker","name":"Agent invoker","sub":"Lambda, 5-minute limit","zone":"orchestration","x":286,"y":362,"w":150,"h":40,"what":"Finds the station's runtime by name, adds the shared context, calls InvokeAgentRuntime and reads the SSE stream. Re-scores the artifact on the server, saves it as a new version, records the turn with tokens and cost, and broadcasts events to watchers.","identity":"Lambda role: InvokeAgentRuntime on hyperdelivery_* runtimes, both tables, WebSocket posts.","gap":"Five-minute Lambda against a 600-second agent turn, no retry or restart.","evidence":["infra/stacks/orchestration_stack.py:71-114","src/orchestration/agent_invoker.py:63-70","src/orchestration/agent_invoker.py:108-116","src/orchestration/agent_invoker.py:187-235"]},{"id":"waits","name":"Approval and question waits","sub":"Two Lambdas, task tokens","zone":"orchestration","x":484,"y":262,"w":128,"h":56,"what":"At each of the three approvals, and whenever Distill asks a question, a Lambda parks the task token and the pending marker on the project record and announces the wait. The execution sleeps until the console API sends success or failure.","identity":"Lambda roles: write on the projects table, publish to the topic.","tl":["Approval and","question waits"],"evidence":["infra/stacks/orchestration_stack.py:226-283","infra/stacks/orchestration_stack.py:408-452","src/orchestration/persist_approval.py:47-66","src/orchestration/persist_question.py:43-68"]},{"id":"sns","name":"Notifications topic","sub":"SNS","zone":"orchestration","x":484,"y":362,"w":136,"h":40,"what":"Receives a decision-needed message at every wait and execution status changes from EventBridge.","identity":"None; nothing subscribes.","gap":"No subscribers, so no one is told a decision is waiting.","evidence":["infra/stacks/orchestration_stack.py:63-67","infra/stacks/orchestration_stack.py:298-307","src/orchestration/persist_approval.py:61-65"]},{"id":"distill","name":"Distill","sub":"Shown as Scout. Requirements spec","zone":"agents","x":480,"y":470,"w":140,"h":52,"what":"Turns a brief, documents, a Jira ticket or Confluence pages into a structured spec. Detects UA FSD templates, searches past FSDs, checks named Snowflake objects, and asks clarifying questions before drafting. The only station that can stop and ask in deployed mode.","identity":"Shared AgentCore execution role; Snowflake PAT as a plain runtime environment variable.","sl":["Shown as Scout.","Requirements spec"],"logo":"claude","role":"am","evidence":["src/agent_runtime/distill/main.py:27-49","src/config/agents/distill.yaml:3","src/tools/distill.py:16-36"]},{"id":"blueprint","name":"Blueprint","sub":"Shown as Coach. Build plan","zone":"agents","x":176,"y":470,"w":140,"h":52,"what":"Turns the approved spec into units of work and delivery groups. Can create a repo from the template, read an existing repo, file one GitHub issue per unit and work Jira issues. Runs once per pass and always drafts.","identity":"Shared AgentCore execution role; GitHub PAT and Atlassian token if set.","logo":"claude","role":"am","gap":"Its GitHub writes land before approval 2; the prompt is the only gate.","evidence":["src/agent_runtime/blueprint/main.py:16-30","src/config/agents/blueprint.yaml:3","src/tools/github.py:24-49"]},{"id":"review","name":"Review","sub":"Shown as Ref. Build hand-off and grade","zone":"agents","x":24,"y":470,"w":140,"h":52,"what":"Plans delivery groups, hands each group to the Copilot coding agent as one pull request, reads code, diffs and checks, and writes the coverage report that approval 3 signs.","identity":"Shared AgentCore execution role; the same GitHub PAT.","sl":["Shown as Ref. Build","hand-off and grade"],"logo":"claude","role":"am","gap":"Dispatches and grades the same build; no independent reviewer.","evidence":["src/agent_runtime/review/main.py:19-32","src/config/agents/review.yaml:3","src/tools/github.py:71-118"]},{"id":"showroom","name":"Showroom","sub":"Shown as Host. Demo script","zone":"agents","x":328,"y":470,"w":140,"h":52,"what":"Writes a demo package (talk track and script) from the earlier artifacts in its prompt. No connectors.","identity":"Shared AgentCore execution role.","logo":"claude","role":"am","gap":"Text only: seed data is described, not loaded. No deck or running demo.","evidence":["src/agent_runtime/showroom/main.py:11-20","src/config/agents/showroom.yaml:3","src/core/domain/showroom.py:15-31"]},{"id":"bedrock","name":"Amazon Bedrock","sub":"Claude Sonnet 5.5, global profile","zone":"models","x":652,"y":552,"w":156,"h":52,"what":"All four agents use global.anthropic.claude-sonnet-5-5 through Strands with prompt caching. Haiku 4.5 names projects; Titan Text Embeddings v2 powers the past-FSD search. Cost per turn is priced from model_pricing.yaml.","identity":"AgentCore execution role: bedrock:InvokeModel and InvokeModelWithResponseStream.","logo":"amazonbedrock","evidence":["src/providers/agents/strands_factory.py:33-60","src/orchestration/project_namer.py:18","src/providers/storage/embeddings.py:19","src/config/model_pricing.yaml:4-8","scripts/iam/agentcore-execution-policy.json:70-75"]},{"id":"projects_table","name":"Projects table","sub":"DynamoDB, single-table design","zone":"data","x":652,"y":240,"w":156,"h":196,"what":"One partition per project: STATE (station, task token, pending question), latest and versioned artifacts, append-only decisions, turn records with tool calls, tokens and cost. A GLOBAL item holds the one shared context note. Two indexes: pending by station, all projects by update time.","identity":"Read and write from the console API, invoker and wait Lambdas; agents may only GetItem the GLOBAL partition through a resource policy.","logo":"database","gap":"No point-in-time recovery; deletes are hard deletes with no audit.","evidence":["infra/stacks/storage_stack.py:48-72","infra/stacks/storage_stack.py:92-107","src/infrastructure/repositories/keys.py:8-58","src/core/domain/turn.py:12-15"]},{"id":"connections_table","name":"Connections table","sub":"DynamoDB, TTL","zone":"data","x":652,"y":156,"w":156,"h":40,"what":"Who is watching which project over WebSocket, plus one-time stream tickets.","identity":"Written by the connect and disconnect Lambdas and the console API; read by the invoker.","logo":"database","evidence":["infra/stacks/orchestration_stack.py:118-132","src/infrastructure/repositories/connections_repository.py:50-62"]},{"id":"documents_bucket","name":"Documents bucket","sub":"S3, versioned","zone":"data","x":652,"y":470,"w":156,"h":40,"what":"documents/ holds input FSDs, fsds/ holds past FSDs and their embedding index, projects/ holds normalized Markdown and browser uploads.","identity":"Bucket policy lets the agents read documents/ and fsds/ and write projects/. The console Lambda has no grant.","logo":"database","gap":"Uploads land under projects/, which the agents cannot read in deployed mode. Normalized project files are written and never read back.","evidence":["infra/stacks/storage_stack.py:76-84","infra/stacks/storage_stack.py:108-125","src/providers/storage/s3.py:126-140"]},{"id":"github","name":"GitHub","sub":"Remote MCP server, classic PAT","zone":"connectors","x":250,"y":684,"w":150,"h":52,"what":"GitHub's hosted MCP server at api.githubcopilot.com with a per-station tool allow-list, plus a batch file reader. The console API also calls GitHub REST to poll pull requests and to squash-merge them on approval 3.","identity":"One person's classic personal access token.","sl":["Remote MCP server,","classic PAT"],"logo":"github","gap":"No GitHub App; HyperDelivery runs no CI check of its own before merging.","evidence":["src/mcp_clients/github.py:21-44","src/tools/github.py:126-151","src/providers/github/merge.py:266-279","src/providers/github/merge.py:297"]},{"id":"copilot","name":"Copilot coding agent","sub":"GitHub cloud agent","zone":"connectors","x":24,"y":684,"w":164,"h":40,"what":"Review assigns issues to it and calls create_pull_request_with_copilot once per delivery group; Copilot writes the code in GitHub Actions and opens the pull request.","identity":"The PAT owner's Copilot seat.","logo":"githubcopilot","gap":"Dependent groups can branch before their predecessor's code exists.","evidence":["src/tools/github.py:71-101","src/mcp_clients/github.py:23-35","src/config/agents/review.yaml:141-158"]},{"id":"atlassian","name":"Jira and Confluence","sub":"mcp-atlassian over stdio","zone":"connectors","x":420,"y":684,"w":162,"h":40,"what":"Community MCP server started with uvx inside the agent container. Distill reads Confluence and searches or reads Jira; Blueprint gets the Jira issue lifecycle (create, update, comment, transition).","identity":"One person's Atlassian email and API token.","logo":"atlassian","gap":"Server version not pinned; not passed to the deployed runtimes by the deploy script.","evidence":["src/tools/atlassian.py:14-93","src/mcp_clients/atlassian.py:43-60"]},{"id":"snowflake","name":"Snowflake Cortex Agent","sub":"agent:run, raw rows","zone":"connectors","x":590,"y":684,"w":180,"h":40,"what":"Distill asks a plain-language question; Snowflake's hosted agent picks the SHOW, DESCRIBE and SELECT statements and returns raw rows as text, one per line. Optional database and schema hints.","identity":"One person's Snowflake PAT; read-only by prompt only.","logo":"snowflake","gap":"Raw rows flow into the model and the stored turn; nothing in code enforces read-only.","evidence":["src/providers/storage/snowflake.py:1-30","src/tools/snowflake.py:18-75","scripts/deploy_agent.sh:37-46"]},{"id":"local_mode","name":"Local mode","sub":"make dev-all on a laptop","zone":"outside","x":560,"y":26,"w":120,"h":52,"what":"ENVIRONMENT=local: the console API calls the four agents on localhost ports 8080 to 8083 and streams over SSE, with no Step Functions. Every station can ask questions and be sent back, finishing takes an explicit phrase, and a laptop preview runs the target repo's own script after a merge.","identity":"The developer's own AWS credentials and .env tokens.","logo":"terminal","evidence":["src/orchestration/local_agent_client.py:1-24","src/api/routers/projects.py:643-654","src/api/routers/projects.py:559-624","src/infrastructure/local_preview.py:1-7"],"dashed":true},{"id":"harness_experiment","name":"Build harness experiment","sub":"Branch coding_agent_harness_test, unmerged","zone":"outside","x":24,"y":800,"w":196,"h":64,"what":"Reworks the build: an AgentCore harness microVM codes and tests, the API pushes the branch, and Amplify Hosting serves a preview per work branch. Not on dev.","identity":"Harness role with model access only; GitHub token used only in commands the API sends.","sl":["Branch coding_agent_harness_test,","unmerged"],"logo":"terminal","evidence":["origin/coding_agent_harness_test:infra/stacks/harness_stack.py:1-10","origin/coding_agent_harness_test:infra/stacks/preview_stack.py:1-7","origin/coding_agent_harness_test:src/providers/harness/client.py:1-7"],"dashed":true}],"edges":[{"id":"e-console_ui-entra","from":"console_ui","to":"entra","label":"MSAL sign-in","dashed":false,"ps":[[[60,156],[60,70]]],"l":[60,94],"lw":56.3},{"id":"e-console_ui-console_api","from":"console_ui","to":"console_api","label":"REST with ID token","dashed":false,"ps":[[[184,176],[286,176]]],"l":[235,176],"lw":81.5},{"id":"e-console_api-entra","from":"console_api","to":"entra","label":"checks token keys","dashed":false,"ps":[[[300,150],[300,50],[184,50]]],"l":[242,50],"lw":76.7},{"id":"e-console_ui-ws_api","from":"console_ui","to":"ws_api","label":"watch a project","dashed":false,"ps":[[[60,196],[60,262]]],"l":[60,229],"lw":63.1},{"id":"e-console_api-sfn","from":"console_api","to":"sfn","label":"start, resume waits","dashed":false,"ps":[[[340,202],[340,256]]],"l":[340,216],"lw":79},{"id":"e-console_api-projects_table","from":"console_api","to":"projects_table","label":"projects, decisions","dashed":false,"ps":[[[436,192],[632,192],[632,250],[652,250]]],"l":[530,192],"lw":78.6},{"id":"e-console_api-connections_table","from":"console_api","to":"connections_table","label":"stream tickets","dashed":false,"ps":[[[436,166],[652,166]]],"l":[560,166],"lw":58.6},{"id":"e-console_api-github","from":"console_api","to":"github","label":"build status, merge on approval 3 (no PAT on dev)","dashed":true,"ps":[[[430,150],[430,138],[826,138],[826,764],[340,764],[340,736]]],"l":[580,764],"lw":207.2},{"id":"e-console_api-documents_bucket","from":"console_api","to":"documents_bucket","label":"uploads (no bucket on dev)","dashed":true,"ps":[[[430,150],[430,138],[826,138],[826,490],[808,490]]],"l":[822,452,"end"],"lw":113.5},{"id":"e-console_api-bedrock","from":"console_api","to":"bedrock","label":"project naming (no grant on dev)","dashed":true,"ps":[[[430,150],[430,138],[826,138],[826,578],[808,578]]],"l":[822,622,"end"],"lw":135.6},{"id":"e-sfn-invoker","from":"sfn","to":"invoker","label":"run a station","dashed":false,"ps":[[[340,308],[340,362]]],"l":[340,335],"lw":51.5},{"id":"e-sfn-waits","from":"sfn","to":"waits","label":"3 approvals + Distill questions","dashed":false,"ps":[[[410,308],[410,332],[560,332],[560,318]]],"l":[485,332],"lw":125.1},{"id":"e-sfn-projects_table","from":"sfn","to":"projects_table","label":"MarkDone","dashed":false,"ps":[[[426,256],[426,232],[620,232],[620,262],[652,262]]],"l":[520,232],"lw":44.2},{"id":"e-waits-projects_table","from":"waits","to":"projects_table","label":"park task token","dashed":false,"ps":[[[612,290],[652,290]]]},{"id":"e-waits-sns","from":"waits","to":"sns","label":"decision needed","dashed":false,"ps":[[[596,318],[596,362]]],"l":[592,352,"end"],"lw":69.1},{"id":"e-invoker-distill","from":"invoker","to":"distill","label":"InvokeAgentRuntime","dashed":false,"ps":[[[360,402],[360,438],[550,438],[550,470]]],"l":[360,420],"lw":88.8},{"id":"e-invoker-blueprint","from":"invoker","to":"blueprint","label":"","dashed":false,"ps":[[[360,402],[360,438],[246,438],[246,470]]]},{"id":"e-invoker-review","from":"invoker","to":"review","label":"","dashed":false,"ps":[[[360,402],[360,438],[140,438],[140,470]]]},{"id":"e-invoker-showroom","from":"invoker","to":"showroom","label":"","dashed":false,"ps":[[[360,402],[360,438],[398,438],[398,470]]]},{"id":"e-invoker-projects_table","from":"invoker","to":"projects_table","label":"artifact, score, turn + cost","dashed":false,"ps":[[[436,396],[470,396],[470,420],[652,420]]],"l":[561,420],"lw":106.1},{"id":"e-invoker-ws_api","from":"invoker","to":"ws_api","label":"broadcast events","dashed":false,"ps":[[[286,382],[200,382],[200,282],[154,282]]],"l":[200,330],"lw":72.3},{"id":"e-distill-bedrock","from":"distill","to":"bedrock","label":"Sonnet 5.5","dashed":false,"ps":[[[632,524],[730,524],[730,552]]],"l":[681,524],"lw":46},{"id":"e-blueprint-bedrock","from":"blueprint","to":"bedrock","label":"","dashed":false,"ps":[[[632,524],[730,524],[730,552]]]},{"id":"e-review-bedrock","from":"review","to":"bedrock","label":"","dashed":false,"ps":[[[632,524],[730,524],[730,552]]]},{"id":"e-showroom-bedrock","from":"showroom","to":"bedrock","label":"","dashed":false,"ps":[[[632,524],[730,524],[730,552]]]},{"id":"e-distill-projects_table","from":"distill","to":"projects_table","label":"shared context (all agents)","dashed":false,"ps":[[[620,478],[636,478],[636,430],[652,430]]]},{"id":"e-distill-documents_bucket","from":"distill","to":"documents_bucket","label":"read FSDs, past-FSD search","dashed":false,"ps":[[[620,492],[652,492]]]},{"id":"e-distill-snowflake","from":"distill","to":"snowflake","label":"raw rows","dashed":false,"ps":[[[610,522],[610,684]]],"l":[610,600],"lw":37.2},{"id":"e-distill-atlassian","from":"distill","to":"atlassian","label":"read Confluence, Jira","dashed":false,"ps":[[[500,522],[500,684]]],"l":[500,560],"lw":89.6},{"id":"e-blueprint-atlassian","from":"blueprint","to":"atlassian","label":"Jira issue lifecycle","dashed":false,"ps":[[[300,522],[300,600],[450,600],[450,684]]],"l":[375,600],"lw":76.1},{"id":"e-blueprint-github","from":"blueprint","to":"github","label":"repo, files, issues","dashed":false,"ps":[[[260,522],[260,684]]],"l":[260,580],"lw":72.5},{"id":"e-review-github","from":"review","to":"github","label":"read code, PRs, checks","dashed":false,"ps":[[[150,522],[150,650],[230,650],[230,704],[250,704]]],"l":[150,596],"lw":99},{"id":"e-review-copilot","from":"review","to":"copilot","label":"one PR per delivery group","dashed":false,"ps":[[[60,522],[60,684]]],"l":[64,664,"start"],"lw":107.9},{"id":"e-copilot-github","from":"copilot","to":"github","label":"opens pull requests","dashed":false,"ps":[[[94,724],[94,748],[300,748],[300,736]]],"l":[197,748],"lw":81.9},{"id":"e-local_mode-console_api","from":"local_mode","to":"console_api","label":"ENVIRONMENT=local, agents on localhost","dashed":true,"ps":[[[620,78],[620,120],[400,120],[400,150]]],"l":[510,120],"lw":182.5},{"id":"e-harness_experiment-copilot","from":"harness_experiment","to":"copilot","label":"would replace","dashed":true,"ps":[[[36,800],[36,724]]],"l":[40,765,"start"],"lw":58.2}],"scenarios":[{"key":"today","label":"Today's Line","steps":[["A requester signs in with Entra ID and starts a project in the console. The console API creates it and starts the project line.",["console_ui","entra","console_api","sfn"],["e-console_ui-entra","e-console_ui-console_api","e-console_api-sfn"]],["The project line runs Distill through the agent invoker, which calls its AgentCore runtime and streams events to whoever is watching.",["sfn","invoker","distill","ws_api"],["e-sfn-invoker","e-invoker-distill","e-invoker-ws_api"]],["Distill reads the documents, Confluence pages and Jira tickets, and asks Snowflake's agent about named tables, which returns raw rows.",["distill","documents_bucket","atlassian","snowflake"],["e-distill-documents_bucket","e-distill-atlassian","e-distill-snowflake"]],["When Distill has questions, and at each approval, a wait Lambda parks the task token on the project record and posts to a topic nobody subscribes to.",["sfn","waits","projects_table","sns"],["e-sfn-waits","e-waits-projects_table","e-waits-sns"]],["The requester answers or signs Approval 1 in the console. The console API writes the decision, then resumes the line with the task token.",["console_ui","console_api","projects_table","sfn"],["e-console_ui-console_api","e-console_api-projects_table","e-console_api-sfn"]],["Blueprint drafts the build plan and can create the repository, file GitHub issues and work Jira issues with one person's tokens, before Approval 2.",["invoker","blueprint","github","atlassian"],["e-invoker-blueprint","e-blueprint-github","e-blueprint-atlassian"]],["After Approval 2, Review hands each delivery group to the Copilot coding agent, which opens one pull request per group.",["invoker","review","copilot","github"],["e-invoker-review","e-review-copilot","e-copilot-github"]],["At Approval 3 the console API would merge every build pull request, but on dev it has no GitHub token, so the merge is skipped.",["console_api","github"],["e-console_api-github"]],["Showroom writes the demo script, and MarkDone marks the project done.",["invoker","showroom","sfn","projects_table"],["e-invoker-showroom","e-sfn-projects_table"]]]}],"logos":{"amazonbedrock":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\" fill-rule=\"evenodd\"><path d=\"M13.05 15.513h3.08c.214 0 .389.177.389.394v1.82a1.704 1.704 0 011.296 1.661c0 .943-.755 1.708-1.685 1.708-.931 0-1.686-.765-1.686-1.708 0-.807.554-1.484 1.297-1.662v-1.425h-2.69v4.663a.395.395 0 01-.188.338l-2.69 1.641a.385.385 0 01-.405-.002l-4.926-3.086a.395.395 0 01-.185-.336V16.3L2.196 14.87A.395.395 0 012 14.555L2 14.528V9.406c0-.14.073-.27.192-.34l2.465-1.462V4.448c0-.129.062-.249.165-.322l.021-.014L9.77 1.058a.385.385 0 01.407 0l2.69 1.675a.395.395 0 01.185.336V7.6h3.856V5.683a1.704 1.704 0 01-1.296-1.662c0-.943.755-1.708 1.685-1.708.931 0 1.685.765 1.685 1.708 0 .807-.553 1.484-1.296 1.662v2.311a.391.391 0 01-.389.394h-4.245v1.806h6.624a1.69 1.69 0 011.64-1.313c.93 0 1.685.764 1.685 1.707 0 .943-.754 1.708-1.685 1.708a1.69 1.69 0 01-1.64-1.314H13.05v1.937h4.953l.915 1.18a1.66 1.66 0 01.84-.227c.931 0 1.685.764 1.685 1.707 0 .943-.754 1.708-1.685 1.708-.93 0-1.685-.765-1.685-1.708 0-.346.102-.668.276-.937l-.724-.935H13.05v1.806zM9.973 1.856L7.93 3.122V6.09h-.778V3.604L5.435 4.669v2.945l2.11 1.36L9.712 7.61V5.334h.778V7.83c0 .136-.07.263-.184.335L7.963 9.638v2.081l1.422 1.009-.446.646-1.406-.998-1.53 1.005-.423-.66 1.605-1.055v-1.99L5.038 8.29l-2.26 1.34v1.676l1.972-1.189.398.677-2.37 1.429V14.3l2.166 1.258 2.27-1.368.397.677-2.176 1.311V19.3l1.876 1.175 2.365-1.426.398.678-2.017 1.216 1.918 1.201 2.298-1.403v-5.78l-4.758 2.893-.4-.675 5.158-3.136V3.289L9.972 1.856zM16.13 18.47a.913.913 0 00-.908.92c0 .507.406.918.908.918a.913.913 0 00.907-.919.913.913 0 00-.907-.92zm3.63-3.81a.913.913 0 00-.908.92c0 .508.406.92.907.92a.913.913 0 00.908-.92.913.913 0 00-.908-.92zm1.555-4.99a.913.913 0 00-.908.92c0 .507.407.918.908.918a.913.913 0 00.907-.919.913.913 0 00-.907-.92zM17.296 3.1a.913.913 0 00-.907.92c0 .508.406.92.907.92a.913.913 0 00.908-.92.913.913 0 00-.908-.92z\"><\/path><\/g>","c":"#3D8FFF"},"atlassian":{"vb":"0 0 32 32","svg":"<g fill=\"currentColor\"><path d=\"M27.545 24.378 16.96 3.208c-.208-.458-.417-.541-.667-.541-.208 0-.458.083-.708.5-1.5 2.375-2.167 5.125-2.167 8 0 4.001 2.042 7.752 5.042 13.795.334.666.584.791 1.167.791h7.335c.541 0 .833-.208.833-.625 0-.208-.042-.333-.25-.75M12.168 14.377c-.834-1.25-1.084-1.334-1.292-1.334s-.333.083-.708.834L4.875 24.46c-.167.334-.208.459-.208.625 0 .334.291.667.916.667h7.46c.5 0 .875-.416 1.083-1.208.25-1 .334-1.876.334-2.917 0-2.917-1.292-5.751-2.292-7.251\"/><\/g>","c":"#1868DB"},"claude":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z\"/><\/g>","c":"#D97757"},"database":{"vb":"0 0 256 256","svg":"<g fill=\"currentColor\"><path d=\"M128,24C74.17,24,32,48.6,32,80v96c0,31.4,42.17,56,96,56s96-24.6,96-56V80C224,48.6,181.83,24,128,24Zm80,104c0,9.62-7.88,19.43-21.61,26.92C170.93,163.35,150.19,168,128,168s-42.93-4.65-58.39-13.08C55.88,147.43,48,137.62,48,128V111.36c17.06,15,46.23,24.64,80,24.64s62.94-9.68,80-24.64ZM69.61,53.08C85.07,44.65,105.81,40,128,40s42.93,4.65,58.39,13.08C200.12,60.57,208,70.38,208,80s-7.88,19.43-21.61,26.92C170.93,115.35,150.19,120,128,120s-42.93-4.65-58.39-13.08C55.88,99.43,48,89.62,48,80S55.88,60.57,69.61,53.08ZM186.39,202.92C170.93,211.35,150.19,216,128,216s-42.93-4.65-58.39-13.08C55.88,195.43,48,185.62,48,176V159.36c17.06,15,46.23,24.64,80,24.64s62.94-9.68,80-24.64V176C208,185.62,200.12,195.43,186.39,202.92Z\"/><\/g>","c":null},"github":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12\"/><\/g>","c":null},"githubcopilot":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"M23.922 16.997C23.061 18.492 18.063 22.02 12 22.02 5.937 22.02.939 18.492.078 16.997A.641.641 0 0 1 0 16.741v-2.869a.883.883 0 0 1 .053-.22c.372-.935 1.347-2.292 2.605-2.656.167-.429.414-1.055.644-1.517a10.098 10.098 0 0 1-.052-1.086c0-1.331.282-2.499 1.132-3.368.397-.406.89-.717 1.474-.952C7.255 2.937 9.248 1.98 11.978 1.98c2.731 0 4.767.957 6.166 2.093.584.235 1.077.546 1.474.952.85.869 1.132 2.037 1.132 3.368 0 .368-.014.733-.052 1.086.23.462.477 1.088.644 1.517 1.258.364 2.233 1.721 2.605 2.656a.841.841 0 0 1 .053.22v2.869a.641.641 0 0 1-.078.256Zm-11.75-5.992h-.344a4.359 4.359 0 0 1-.355.508c-.77.947-1.918 1.492-3.508 1.492-1.725 0-2.989-.359-3.782-1.259a2.137 2.137 0 0 1-.085-.104L4 11.746v6.585c1.435.779 4.514 2.179 8 2.179 3.486 0 6.565-1.4 8-2.179v-6.585l-.098-.104s-.033.045-.085.104c-.793.9-2.057 1.259-3.782 1.259-1.59 0-2.738-.545-3.508-1.492a4.359 4.359 0 0 1-.355-.508Zm2.328 3.25c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm-5 0c.549 0 1 .451 1 1v2c0 .549-.451 1-1 1-.549 0-1-.451-1-1v-2c0-.549.451-1 1-1Zm3.313-6.185c.136 1.057.403 1.913.878 2.497.442.544 1.134.938 2.344.938 1.573 0 2.292-.337 2.657-.751.384-.435.558-1.15.558-2.361 0-1.14-.243-1.847-.705-2.319-.477-.488-1.319-.862-2.824-1.025-1.487-.161-2.192.138-2.533.529-.269.307-.437.808-.438 1.578v.021c0 .265.021.562.063.893Zm-1.626 0c.042-.331.063-.628.063-.894v-.02c-.001-.77-.169-1.271-.438-1.578-.341-.391-1.046-.69-2.533-.529-1.505.163-2.347.537-2.824 1.025-.462.472-.705 1.179-.705 2.319 0 1.211.175 1.926.558 2.361.365.414 1.084.751 2.657.751 1.21 0 1.902-.394 2.344-.938.475-.584.742-1.44.878-2.497Z\"/><\/g>","c":null},"microsoft":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\" fill-rule=\"evenodd\"><path d=\"M11.49 2H2v9.492h9.492V2h-.002z\"><\/path><path d=\"M22 2h-9.492v9.492H22V2z\"><\/path><path d=\"M11.49 12.508H2V22h9.492v-9.492h-.002z\"><\/path><path d=\"M22 12.508h-9.492V22H22v-9.492z\"><\/path><\/g>","c":null},"snowflake":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"M24 3.459c0 .646-.418 1.18-1.141 1.18-.723 0-1.142-.534-1.142-1.18 0-.647.419-1.18 1.142-1.18.723 0 1.141.533 1.141 1.18zm-.228 0c0-.533-.38-.951-.913-.951s-.913.38-.913.95c0 .533.38.952.913.952.57 0 .913-.419.913-.951zm-1.37-.533h.495c.266 0 .456.152.456.38 0 .153-.076.229-.19.305l.19.266v.038h-.266l-.19-.266h-.229v.266h-.266zm.495.228h-.229v.267h.229c.114 0 .152-.038.152-.114.038-.077-.038-.153-.152-.153zM7.602 12.4c.038-.151.076-.304.076-.456 0-.114-.038-.228-.038-.342-.114-.343-.304-.647-.646-.838l-4.87-2.777c-.685-.38-1.56-.152-1.94.533-.381.685-.153 1.56.532 1.94l2.701 1.56-2.701 1.56c-.685.38-.913 1.256-.533 1.94.38.685 1.256.914 1.94.533l4.832-2.777c.343-.267.571-.533.647-.876zm1.332 2.626c-.266-.038-.57.038-.837.19l-4.832 2.777c-.685.38-.913 1.256-.532 1.94.38.686 1.255.914 1.94.533l2.701-1.56v3.12c0 .8.647 1.408 1.446 1.408.799 0 1.407-.647 1.407-1.408v-5.592c0-.761-.57-1.37-1.293-1.408zm4.946-6.088c.266.038.57-.038.837-.19l4.832-2.777c.685-.38.913-1.256.532-1.94-.38-.686-1.255-.914-1.94-.533l-2.701 1.56V1.975c0-.799-.647-1.408-1.446-1.408-.799 0-1.446.609-1.446 1.408V7.53c0 .76.609 1.37 1.332 1.407zM3.265 5.97l4.832 2.777c.266.152.533.19.837.19.723-.038 1.331-.684 1.331-1.407V1.975c0-.799-.646-1.408-1.407-1.408-.799 0-1.446.647-1.446 1.408v3.12l-2.701-1.56c-.685-.38-1.56-.152-1.94.533-.419.646-.19 1.521.494 1.902zm9.093 6.011a.412.412 0 00-.114-.266l-.57-.571a.346.346 0 00-.267-.114.412.412 0 00-.266.114l-.571.57a.411.411 0 00-.114.267c0 .076.038.19.114.267l.57.57a.345.345 0 00.267.114c.076 0 .19-.038.266-.114l.571-.57a.412.412 0 00.114-.267zm1.598.533L11.94 14.53c-.039.038-.153.114-.229.114h-.608a.411.411 0 01-.267-.114L8.82 12.514a.408.408 0 01-.076-.229v-.608c0-.076.038-.19.114-.267l2.016-2.016a.41.41 0 01.267-.114h.608a.41.41 0 01.267.114l2.016 2.016a.347.347 0 01.114.267v.608c-.076.077-.114.19-.19.229zm5.593 5.44l-4.832-2.777c-.266-.152-.57-.19-.837-.152-.723.038-1.332.684-1.332 1.408v5.554c0 .8.647 1.408 1.408 1.408.799 0 1.446-.647 1.446-1.408v-3.12l2.7 1.56c.686.38 1.561.152 1.941-.533.419-.646.19-1.521-.494-1.94zm2.549-7.533l-2.701 1.56 2.7 1.56c.686.38.914 1.256.533 1.94-.38.685-1.255.913-1.94.533l-4.832-2.778a1.644 1.644 0 01-.647-.798c-.037-.153-.076-.305-.076-.457 0-.114.039-.228.039-.342.114-.343.342-.647.646-.837l4.832-2.778c.685-.38 1.56-.152 1.94.533.457.609.19 1.484-.494 1.864\"/><\/g>","c":"#29B5E8"},"terminal":{"vb":"0 0 256 256","svg":"<g fill=\"currentColor\"><path d=\"M128,128a8,8,0,0,1-3,6.25l-40,32a8,8,0,1,1-10-12.5L107.19,128,75,102.25a8,8,0,1,1,10-12.5l40,32A8,8,0,0,1,128,128Zm48,24H136a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm56-96V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56ZM216,200V56H40V200H216Z\"/><\/g>","c":null}},"roles":[["am","Station Agent"]],"newLabel":"","oldLabel":"","dashLabel":"In Code, Not Wired on Dev","highlight":[],"cardTitle":"Current State on dev","cardText":"22 parts, 15 with a known gap. Select a part for what it does, what it runs as, its known gap and the code behind it."});
+</script>
+</figure>

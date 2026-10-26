@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>HyperDelivery Concepts</title>
+<meta name="description" content="Every HyperDelivery concept screen on one pan-and-zoom canvas.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -58 252.5 252.5'%3E%3Cpath fill='%231d1d1d' d='M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="bar">
+    <button class="icon-btn" id="sidebarToggle" type="button" aria-label="Show or Hide Boards" aria-controls="sidebar" aria-expanded="true" title="Show or Hide Boards">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="2.5" y="3.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M7 3.5v11" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <a class="brand" href="../index.html" title="UA-DLC and HyperDelivery">
+      <svg class="ua" width="30" height="18" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"/></svg>
+      <span class="hair" aria-hidden="true"></span>
+      <span class="brand-name">HyperDelivery Concepts</span>
+    </a>
+    <span class="spacer"></span>
+    <div class="group" role="group" aria-label="Zoom">
+      <button class="icon-btn" id="zoomOut" type="button" aria-label="Zoom Out" title="Zoom Out (-)">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <button class="zoom-read" id="zoomReset" type="button" title="Zoom to 100% (Shift+0)" aria-label="Zoom to 100%"><span id="zoomLabel">100%</span></button>
+      <button class="icon-btn" id="zoomIn" type="button" aria-label="Zoom In" title="Zoom In (+)">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M8 3v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <button class="btn" id="fitAll" type="button" title="Fit All (Shift+1)">Fit All</button>
+    <button class="btn" id="fitBoard" type="button" title="Fit Board (Shift+2)" disabled>Fit Board</button>
+    <span class="sep" aria-hidden="true"></span>
+    <details class="pop" id="shortcuts">
+      <summary class="icon-btn" aria-label="Keyboard Shortcuts" title="Keyboard Shortcuts">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1.75" y="4.25" width="14.5" height="9.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4.5 7.25h1M8.5 7.25h1M12.5 7.25h1M5.5 10.75h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </summary>
+      <div class="menu" role="dialog" aria-label="Keyboard Shortcuts">
+        <h2>Keyboard Shortcuts</h2>
+        <dl>
+          <dt>Pan</dt><dd>Drag, <kbd>Space</kbd> + drag, or scroll</dd>
+          <dt>Zoom</dt><dd>Pinch, or <kbd>Ctrl</kbd> or <kbd>Cmd</kbd> + scroll</dd>
+          <dt>Zoom In and Out</dt><dd><kbd>+</kbd> and <kbd>-</kbd></dd>
+          <dt>Fit All</dt><dd><kbd>Shift</kbd> + <kbd>1</kbd></dd>
+          <dt>Fit Board</dt><dd><kbd>Shift</kbd> + <kbd>2</kbd></dd>
+          <dt>Zoom to 100%</dt><dd><kbd>Shift</kbd> + <kbd>0</kbd></dd>
+          <dt>Next Board</dt><dd><kbd>]</kbd> or <kbd>&rarr;</kbd></dd>
+          <dt>Previous Board</dt><dd><kbd>[</kbd> or <kbd>&larr;</kbd></dd>
+          <dt>Use a Board</dt><dd>Double-click, or <kbd>Enter</kbd></dd>
+          <dt>Back to Canvas</dt><dd><kbd>Esc</kbd></dd>
+        </dl>
+      </div>
+    </details>
+    <a class="link" href="../plan/index.html">Read the Plan</a>
+  </header>
+
+  <aside class="sidebar" id="sidebar" aria-label="Boards">
+    <div class="side-head"><h1>Boards</h1><span class="count" id="boardCount"></span></div>
+    <nav class="side-list" id="boardList"></nav>
+    <p class="side-foot" id="sideFoot"></p>
+  </aside>
+
+  <main class="viewport" id="viewport" tabindex="0" aria-label="Concept canvas" aria-describedby="canvasHint">
+    <p class="sr-only" id="canvasHint">Use the board list or the arrow keys to move between boards. Press Enter to use a board and Escape to return to the canvas.</p>
+    <div class="world" id="world"></div>
+    <div class="status" id="status" role="status" hidden></div>
+  </main>
+
+  <div class="focus-bar" id="focusBar" hidden>
+    <span class="fb-title" id="focusTitle"></span>
+    <a class="fb-open" id="focusOpen" href="#" target="_blank" rel="noopener">Open
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <button class="fb-exit" id="focusExit" type="button">Back to Canvas <kbd>Esc</kbd></button>
+  </div>
+</div>
+<script src="viewer.js"></script>
+</body>
+</html>

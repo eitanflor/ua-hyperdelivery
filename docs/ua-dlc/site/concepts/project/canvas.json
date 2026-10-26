@@ -1,0 +1,272 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1330,
+      "title": "Home \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Inbox.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 848,
+      "title": "Inbox \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Projects.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 732,
+      "title": "Projects \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "FirstRun.dc.html": {
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 1126,
+      "title": "First run \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Start.dc.html": {
+      "x": 6080,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Start a project \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "ContextReview.dc.html": {
+      "x": 7600,
+      "y": 0,
+      "w": 1440,
+      "h": 1106,
+      "title": "Confirm what we heard \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Project.dc.html": {
+      "x": 9120,
+      "y": 0,
+      "w": 1440,
+      "h": 1607,
+      "title": "Project, step by step \u00b7 SKU productivity workbench \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Gate.dc.html": {
+      "x": 10640,
+      "y": 0,
+      "w": 1440,
+      "h": 1931,
+      "title": "Approval: the working prototype \u00b7 Wholesale sell-through tracker \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Activity.dc.html": {
+      "x": 0,
+      "y": 2611,
+      "w": 1440,
+      "h": 1612,
+      "title": "Activity: story, decisions, trace \u00b7 Tariff scenario planner \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Architecture.dc.html": {
+      "x": 1520,
+      "y": 2611,
+      "w": 1440,
+      "h": 1594,
+      "title": "Project architecture \u00b7 Tariff scenario planner \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Failures.dc.html": {
+      "x": 3040,
+      "y": 2611,
+      "w": 1440,
+      "h": 1371,
+      "title": "Needs attention \u00b7 Final MVP (budget card: Enterprise)",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "TeamsCards.dc.html": {
+      "x": 4560,
+      "y": 2611,
+      "w": 1440,
+      "h": 1228,
+      "title": "In Teams \u00b7 Final MVP"
+    },
+    "Library.dc.html": {
+      "x": 0,
+      "y": 4903,
+      "w": 1440,
+      "h": 990,
+      "title": "Library: what UA already knows \u00b7 Enterprise",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Portfolio.dc.html": {
+      "x": 1520,
+      "y": 4903,
+      "w": 1440,
+      "h": 1461,
+      "title": "Portfolio \u00b7 Enterprise",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Admin.dc.html": {
+      "x": 3040,
+      "y": 4903,
+      "w": 1440,
+      "h": 2420,
+      "title": "Admin: workspace guardrails \u00b7 Enterprise",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Graduation.dc.html": {
+      "x": 4560,
+      "y": 4903,
+      "w": 1440,
+      "h": 1515,
+      "title": "Graduation: the engineering manager's view \u00b7 Enterprise",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Huddle.dc.html": {
+      "x": 6080,
+      "y": 4903,
+      "w": 1280,
+      "h": 800,
+      "title": "Working session in Teams \u00b7 Enterprise"
+    },
+    "Lifecycle.dc.html": {
+      "x": 0,
+      "y": 8003,
+      "w": 1440,
+      "h": 1909,
+      "title": "How work moves \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "PlatformArchitecture.dc.html": {
+      "x": 1520,
+      "y": 8003,
+      "w": 1440,
+      "h": 1242,
+      "title": "How HyperDelivery is built \u00b7 Final MVP",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "SpineStates.dc.html": {
+      "x": 0,
+      "y": 10592,
+      "w": 1440,
+      "h": 1106,
+      "title": "The line \u00b7 Final MVP"
+    },
+    "DesignSystem.dc.html": {
+      "x": 1520,
+      "y": 10592,
+      "w": 1440,
+      "h": 6996,
+      "title": "HyperDelivery on Baselayer: brand and foundations \u00b7 Final MVP"
+    },
+    "DesignSystemComponents.dc.html": {
+      "x": 3040,
+      "y": 10592,
+      "w": 1440,
+      "h": 5842,
+      "title": "HyperDelivery on Baselayer: components \u00b7 Final MVP"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-25T21:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "row0": {
+      "x": 0,
+      "y": -620,
+      "text": "Every name, project and number on this canvas is invented to show the design; none is a measured result.",
+      "kind": "title1",
+      "maxW": 12080
+    },
+    "row1": {
+      "x": 0,
+      "y": -300,
+      "text": "Final MVP: start, decide, build",
+      "kind": "title1",
+      "maxW": 12080
+    },
+    "row2": {
+      "x": 0,
+      "y": 2311,
+      "text": "Final MVP: see it working, recover, reach people in Teams",
+      "kind": "title1",
+      "maxW": 6000
+    },
+    "row3": {
+      "x": 0,
+      "y": 4603,
+      "text": "Enterprise: govern and scale",
+      "kind": "title1",
+      "maxW": 7360
+    },
+    "row4": {
+      "x": 0,
+      "y": 7703,
+      "text": "Help, from the ? menu",
+      "kind": "title1",
+      "maxW": 2960
+    },
+    "row5": {
+      "x": 0,
+      "y": 10292,
+      "text": "Design system",
+      "kind": "title1",
+      "maxW": 4480
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Inbox.dc.html",
+    "Projects.dc.html",
+    "FirstRun.dc.html",
+    "Start.dc.html",
+    "ContextReview.dc.html",
+    "Project.dc.html",
+    "Gate.dc.html",
+    "Activity.dc.html",
+    "Architecture.dc.html",
+    "Failures.dc.html",
+    "TeamsCards.dc.html",
+    "Library.dc.html",
+    "Portfolio.dc.html",
+    "Admin.dc.html",
+    "Graduation.dc.html",
+    "Huddle.dc.html",
+    "Lifecycle.dc.html",
+    "PlatformArchitecture.dc.html",
+    "SpineStates.dc.html",
+    "DesignSystem.dc.html",
+    "DesignSystemComponents.dc.html"
+  ],
+  "pages": [],
+  "title": "HyperDelivery Concepts"
+}

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyperDelivery in Teams</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-nav a:hover{color:#1D1D1D!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
+.tm-ans:hover{background:#F5F5F5!important}
+.tm-link:hover{text-decoration:underline!important;text-underline-offset:3px}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1228px; box-sizing: border-box; display: flex; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums; background: #F9F9F9">
+
+  <nav aria-label="Teams apps" style="width:68px;flex:none;background:#F0F0F0;border-right:1px solid #D0D0D0;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:12px">
+    <img src="{{logos.microsoftteams}}" width="24" height="24" alt="Microsoft Teams" onError="{{showMonogram}}" style="margin-bottom:8px">
+    <sc-for list="{{rail}}" as="r" hint-placeholder-count="6">
+      <div style="position:relative;width:68px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;color:{{r.fg}}">
+        <span aria-hidden="true" style="position:absolute;left:0;top:8px;bottom:8px;width:3px;background:{{r.bar}}"></span>
+        <span style="width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;background:{{r.bg}}">
+          <sc-if value="{{r.isApp}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg></sc-if>
+          <sc-if value="{{r.isGlyph}}" hint-placeholder-val="{{ true }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.d}}"></path></svg></sc-if>
+        </span>
+        <span style="display:block;max-width:56px;font-size:12px;line-height:16px;font-weight:{{r.weight}};text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{r.label}}">{{r.label}}</span>
+      </div>
+    </sc-for>
+  </nav>
+
+  <div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column">
+    <div style="height:48px;flex:none;display:flex;align-items:center;gap:16px;padding:0 24px;background:#F0F0F0;border-bottom:1px solid #D0D0D0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"></path></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#949494" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"></path></svg>
+      <div style="flex:1;display:flex;justify-content:center">
+        <div style="width:520px;height:32px;box-sizing:border-box;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;line-height:20px;color:#5F5F5F"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>Search</div>
+      </div>
+      <span style="font-size:12px;line-height:18px;color:#5F5F5F">Under Armour</span>
+      <span aria-label="Maya Chen" role="img" style="width:32px;height:32px;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">MC</span>
+    </div>
+
+    <div style="padding:24px 24px 56px;display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:24px">
+
+      <section aria-label="Question in a chat with HyperDelivery" style="min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
+        <div style="height:48px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #F0F0F0">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+          <span style="font-size:14px;line-height:20px;font-weight:700">HyperDelivery</span>
+          <span style="align-self:stretch;display:flex;align-items:center;margin-left:8px;font-size:14px;line-height:20px;font-weight:700;box-shadow:inset 0 -2px 0 #5B5FC7">Chat</span>
+          <span style="margin-left:8px;font-size:14px;line-height:20px;color:#5F5F5F">About</span>
+          <span style="flex:1"></span>
+          <span style="font-size:12px;line-height:18px;color:#5F5F5F;white-space:nowrap">Dana Ortiz</span>
+        </div>
+        <div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:8px;background:#F9F9F9">
+          <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:18px"><span style="font-weight:700">HyperDelivery</span><span style="color:#5F5F5F">10:42 AM</span></div>
+          <div style="background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F">
+              <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">MC</span>SKU productivity workbench, Maya Chen's project
+            </div>
+            <h3 style="margin:0;font-size:16px;line-height:20px;font-weight:700">Should marked-down units count toward margin dollars per door?</h3>
+            <p style="margin:0;font-size:14px;line-height:20px;color:#5F5F5F">You own the markdown and margin policy. Your answer is cited in the project document.</p>
+            <span style="align-self:flex-start;height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.sharepoint}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Margin reporting standard, section 4</span>
+            <div role="group" aria-label="Answers" style="display:flex;flex-direction:column;gap:8px">
+              <button type="button" class="tm-ans hd-ring-edge" style="height:36px;padding:0 12px;border:0;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;text-align:left;cursor:pointer">Yes, at the marked-down price</button>
+              <button type="button" class="tm-ans hd-ring-edge" style="height:36px;padding:0 12px;border:0;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;text-align:left;cursor:pointer">No, full-price units only</button>
+              <button type="button" class="tm-ans hd-ring-edge" style="height:36px;padding:0 12px;border:0;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;text-align:left;cursor:pointer">Other</button>
+              <button type="button" class="tm-ans hd-ring-edge" style="height:36px;padding:0 12px;border:0;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;text-align:left;cursor:pointer">I don't know</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid #F0F0F0">
+              <button type="button" class="hd-ring" style="height:36px;padding:0 12px;border:0;border-radius:4px;background:#F0F0F0;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Not Me, Suggest Who</button>
+              <a href="Project.dc.html" class="tm-link hd-ring" style="height:36px;display:inline-flex;align-items:center;padding:0 12px;border-radius:4px;color:#5B5FC7;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Open Project</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Approval waiting on you" style="min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
+        <div style="height:48px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #F0F0F0">
+          <span role="img" aria-label="Maya Chen, Luis Romero and HyperDelivery" style="display:inline-flex;align-items:center;flex:none">
+            <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">MC</span>
+            <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#2E6A8E;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">LR</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="border-radius:4px;box-shadow:0 0 0 2px #FFFFFF"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+          </span>
+          <span style="font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">SKU workbench</span>
+          <span style="align-self:stretch;display:flex;align-items:center;margin-left:8px;font-size:14px;line-height:20px;font-weight:700;box-shadow:inset 0 -2px 0 #5B5FC7">Chat</span>
+          <span style="margin-left:8px;font-size:14px;line-height:20px;color:#5F5F5F">Files</span>
+        </div>
+        <div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:8px;background:#F9F9F9">
+          <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:18px"><span style="font-weight:700">HyperDelivery</span><span style="color:#5F5F5F">Yesterday 8:02 AM</span></div>
+          <div style="background:#FFFFFF;border:1px solid #1D1D1D;border-radius:8px;overflow:hidden">
+            <div style="height:40px;box-sizing:border-box;padding:0 16px;background:#1D1D1D;color:#FFFFFF;display:flex;align-items:center;gap:8px;white-space:nowrap">
+              <span aria-hidden="true" style="width:12px;height:12px;background:#DC0019;flex:none"></span>
+              <span style="font-size:14px;line-height:18px;font-weight:700">Your Approval: The Plan</span>
+              <span style="font-size:12px;line-height:18px;color:#D0D0D0;overflow:hidden;text-overflow:ellipsis">Second of three approvals</span>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <h3 style="margin:0;font-size:16px;line-height:20px;font-weight:700">Approve the Plan: SKU productivity workbench</h3>
+              <p style="margin:0;font-size:14px;line-height:20px;color:#5F5F5F">8 pieces. No data leaves Snowflake.</p>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px">
+                <span style="height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.snowflake}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Daily Product Margin</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#00834B;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Reviews passed</span>
+              </div>
+              <p style="margin:0;font-size:12px;line-height:18px;color:#5F5F5F">Only Maya can sign. Others see the status.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <button type="button" class="hd-ring" style="height:36px;padding:0 16px;border:0;border-radius:4px;background:#5B5FC7;color:#FFFFFF;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Review and Sign</button>
+                <button type="button" class="tm-ans hd-ring-edge" style="height:36px;padding:0 12px;border:0;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Ask a Question</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Card refreshed for everyone after signing" style="min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
+        <div style="height:48px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #F0F0F0">
+          <span role="img" aria-label="Maya Chen, Luis Romero and HyperDelivery" style="display:inline-flex;align-items:center;flex:none">
+            <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">MC</span>
+            <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#2E6A8E;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">LR</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="border-radius:4px;box-shadow:0 0 0 2px #FFFFFF"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+          </span>
+          <span style="font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">SKU workbench</span>
+          <span style="align-self:stretch;display:flex;align-items:center;margin-left:8px;font-size:14px;line-height:20px;font-weight:700;box-shadow:inset 0 -2px 0 #5B5FC7">Chat</span>
+          <span style="margin-left:8px;font-size:14px;line-height:20px;color:#5F5F5F">Files</span>
+        </div>
+        <div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:8px;background:#F9F9F9">
+          <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:18px"><span style="font-weight:700">HyperDelivery</span><span style="color:#5F5F5F">Yesterday 8:02 AM, updated 2:02 PM</span></div>
+          <div style="background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div role="img" aria-label="What we're building signed. The plan signed. Build in progress. The working prototype is next." style="display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,0.6fr);align-items:center">
+              <span style="height:2px;background:#1D1D1D"></span>
+              <span style="width:12px;height:12px;background:#1D1D1D"></span>
+              <span style="height:2px;background:#1D1D1D"></span>
+              <span style="width:12px;height:12px;background:#1D1D1D"></span>
+              <span style="height:4px;background:#1D1D1D"></span>
+              <span style="width:12px;height:12px;box-sizing:border-box;border:2px solid #949494;background:#FFFFFF"></span>
+              <span style="border-top:2px dashed #949494"></span>
+            </div>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#00834B;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Plan signed, build starting</span>
+            <h3 style="margin:0;font-size:16px;line-height:20px;font-weight:700">SKU productivity workbench</h3>
+            <dl style="margin:0;display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;font-size:14px;line-height:20px;align-items:center">
+              <dt style="color:#5F5F5F">Signed By</dt>
+              <dd style="margin:0;display:flex;align-items:center;gap:8px;min-width:0"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">MC</span>Maya Chen, Business owner</dd>
+              <dt style="color:#5F5F5F">When</dt>
+              <dd style="margin:0;white-space:nowrap">Oct 25, 2:02 PM</dd>
+              <dt style="color:#5F5F5F">Version</dt>
+              <dd style="margin:0;white-space:nowrap">Plan version 3</dd>
+              <dt style="color:#5F5F5F">Verified</dt>
+              <dd style="margin:0;display:flex;align-items:center;gap:8px"><img src="{{logos.microsoftteams}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Teams sign-in</dd>
+              <dt style="color:#5F5F5F">Time to Sign</dt>
+              <dd style="margin:0;font-weight:700;white-space:nowrap">1d 6h</dd>
+              <dt style="color:#5F5F5F;align-self:start">Next</dt>
+              <dd style="margin:0;display:flex;align-items:flex-start;gap:8px"><img src="{{logos.github}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none;margin-top:2px"><span>A repository and 8 Jira issues; first preview in 2 to 3 days</span></dd>
+            </dl>
+            <a href="Project.dc.html" class="tm-link hd-ring" style="align-self:flex-start;height:36px;display:inline-flex;align-items:center;padding:0 12px;margin-left:-12px;border-radius:4px;color:#5B5FC7;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Open Project</a>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Weekly digest in a team channel" style="min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
+        <div style="height:48px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #F0F0F0">
+          <span aria-hidden="true" style="width:32px;height:32px;border-radius:4px;background:#444444;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none">MP</span>
+          <span style="font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Merchandising Planning</span>
+          <span style="font-size:14px;line-height:20px;color:#5F5F5F">General</span>
+          <span style="flex:1"></span>
+          <span style="align-self:stretch;display:flex;align-items:center;font-size:14px;line-height:20px;font-weight:700;box-shadow:inset 0 -2px 0 #5B5FC7">Posts</span>
+        </div>
+        <div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:8px;background:#F9F9F9">
+          <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:18px"><span style="font-weight:700">HyperDelivery</span><span style="color:#5F5F5F">Fri 9:00 AM</span></div>
+          <div style="background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;padding:16px;display:flex;flex-direction:column">
+            <h3 style="margin:0 0 4px;font-size:16px;line-height:20px;font-weight:700">This Week Across UA</h3>
+            <div style="display:grid;grid-template-columns:48px minmax(0,1fr);column-gap:12px;align-items:start;padding:12px 0">
+              <span style="font-size:24px;line-height:30px;font-weight:700">4</span>
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:14px;line-height:20px;font-weight:700">Accepted</span><span style="display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#444444;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">EB</span>Licensee price-compliance check, Licensing, and 3 more</span></span>
+            </div>
+            <div style="display:grid;grid-template-columns:48px minmax(0,1fr);column-gap:12px;align-items:start;padding:12px 0;border-top:1px solid #F0F0F0">
+              <span style="font-size:24px;line-height:30px;font-weight:700">2</span>
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:14px;line-height:20px;font-weight:700">Went Live</span><span style="display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F"><span role="img" aria-label="Theo Grant and Leah Brooks" style="display:inline-flex;align-items:center;flex:none"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#444444;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">TG</span><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#444444;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">LB</span></span><span>Activation scorecard and Promo dependency monitor</span></span></span>
+            </div>
+            <div style="display:grid;grid-template-columns:48px minmax(0,1fr);column-gap:12px;align-items:start;padding:12px 0;border-top:1px solid #F0F0F0">
+              <span style="font-size:24px;line-height:30px;font-weight:700">11</span>
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:14px;line-height:20px;font-weight:700">Terms Confirmed</span><span style="display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F"><span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none"><img src="{{logos.snowflake}}" width="16" height="16" alt="" onError="{{showMonogram}}"></span><span>“Net demand” agreed by Supply Chain and Finance</span></span></span>
+            </div>
+            <div style="padding-top:12px;border-top:1px solid #F0F0F0">
+              <a href="Main.dc.html" class="tm-ans hd-ring-edge" style="height:36px;display:inline-flex;align-items:center;padding:0 12px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Open HyperDelivery</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Review and sign task module in Teams" style="grid-column:span 2;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;padding:32px;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden;background:#FFFFFF">
+        <div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column">
+          <div style="height:48px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #F0F0F0;font-size:14px;line-height:20px;font-weight:700">SKU workbench<span style="margin-left:8px;align-self:stretch;display:flex;align-items:center;box-shadow:inset 0 -2px 0 #5B5FC7">Chat</span></div>
+          <div style="flex:1;padding:16px;background:#F9F9F9;display:flex;flex-direction:column;gap:8px">
+            <div style="width:30%;height:12px;background:#D0D0D0"></div>
+            <div style="width:60%;height:120px;border-radius:8px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0"></div>
+            <div style="margin-top:16px;width:22%;height:12px;background:#D0D0D0"></div>
+            <div style="width:48%;height:72px;border-radius:8px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0"></div>
+          </div>
+        </div>
+        <div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(29,29,29,0.4)"></div>
+        <div role="dialog" aria-modal="true" aria-labelledby="tm-title" style="position:relative;width:100%;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15), 0 0 0 1px #D0D0D0;overflow:hidden">
+          <div style="height:48px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;border-bottom:1px solid #F0F0F0">
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+            <span style="font-size:14px;line-height:20px;font-weight:700">HyperDelivery</span>
+            <span style="font-size:14px;line-height:20px;color:#5F5F5F">Approve the Plan</span>
+            <span style="flex:1"></span>
+            <button type="button" class="hd-ring" aria-label="Close the approval dialog" style="width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:transparent;color:#1D1D1D;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></button>
+          </div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 296px">
+            <div style="padding:24px;display:flex;flex-direction:column;gap:16px;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px"><span aria-hidden="true" style="width:12px;height:12px;background:#DC0019;flex:none"></span><h2 id="tm-title" style="margin:0;font-size:20px;line-height:24px;font-weight:700">Approve the Plan and Start Building</h2></div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#F9F9F9;border-top:2px solid #FE9000;font-size:14px;line-height:20px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>
+                <span>Synthetic data, clickable preview.</span>
+              </div>
+              <dl style="margin:0;display:flex;flex-direction:column;font-size:14px;line-height:20px">
+                <div style="display:grid;grid-template-columns:136px minmax(0,1fr) auto;column-gap:12px;align-items:center;min-height:40px;padding:4px 0;border-bottom:1px solid #F0F0F0">
+                  <dt style="font-weight:700">What You'll Get</dt><dd style="margin:0">FW27 style table with flags and reasons</dd><a href="Project.dc.html" class="hd-ring" style="font-size:14px;line-height:20px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap">View</a>
+                </div>
+                <div style="display:grid;grid-template-columns:136px minmax(0,1fr) auto;column-gap:12px;align-items:center;min-height:40px;padding:4px 0;border-bottom:1px solid #F0F0F0">
+                  <dt style="font-weight:700">What It Skips</dt><dd style="margin:0">Wholesale, Factory House doors</dd><a href="Project.dc.html" class="hd-ring" style="font-size:14px;line-height:20px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap">View</a>
+                </div>
+                <div style="display:grid;grid-template-columns:136px minmax(0,1fr) auto;column-gap:12px;align-items:center;min-height:40px;padding:4px 0;border-bottom:1px solid #F0F0F0">
+                  <dt style="font-weight:700">What Data It Uses</dt><dd style="margin:0;display:flex;align-items:center;gap:8px"><img src="{{logos.snowflake}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Margin golden report, read-only</dd><a href="Project.dc.html" class="hd-ring" style="font-size:14px;line-height:20px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap">View</a>
+                </div>
+                <div style="display:grid;grid-template-columns:136px minmax(0,1fr);column-gap:12px;align-items:start;min-height:40px;padding:10px 0;border-bottom:1px solid #F0F0F0">
+                  <dt style="font-weight:700">After You Sign</dt>
+                  <dd style="margin:0;display:flex;flex-direction:column;gap:4px">
+                    <span style="display:flex;align-items:center;gap:8px"><img src="{{logos.github}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">A repository for the prototype</span>
+                    <span style="display:flex;align-items:center;gap:8px"><img src="{{logos.jira}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none"><span>8 Jira issues under <span style="white-space:nowrap">MERCH-1182</span></span></span>
+                  </dd>
+                </div>
+              </dl>
+              <label style="min-height:44px;display:flex;align-items:center;gap:12px;font-size:14px;line-height:20px"><input type="checkbox" checked style="width:16px;height:16px;margin:0;accent-color:#1D1D1D;flex:none"><span>I reviewed the plan and approve it for build.</span></label>
+            </div>
+            <div role="status" style="padding:24px;background:#F9F9F9;border-left:1px solid #F0F0F0;display:flex;flex-direction:column;gap:16px">
+              <span style="display:flex;align-items:center;gap:8px;font-size:14px;line-height:18px;font-weight:700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>Pending Signature</span>
+              <span style="font-size:16px;line-height:24px;font-weight:700">Signing in 12s. Nothing is recorded until then.</span>
+              <div aria-hidden="true" style="height:4px;background:#D0D0D0"><div style="height:4px;width:80%;background:#1D1D1D"></div></div>
+              <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F">
+                <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">MC</span>
+                <span style="display:flex;flex-direction:column"><span style="color:#1D1D1D">Maya Chen, Business owner</span><span>Plan version 3</span></span>
+              </div>
+              <button type="button" class="hd-btn-secondary hd-ring-ink" style="align-self:flex-start;height:36px;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border:0;border-radius:999px;background:#FFFFFF;color:#1D1D1D;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></svg>Undo</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1228}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const LOGO = { microsoftteams: 'logos/microsoftteams.svg', sharepoint: 'logos/sharepoint.svg', snowflake: 'logos/snowflake.svg', github: 'logos/github.svg', jira: 'logos/jira.svg' };
+    const idle = { fg: '#5F5F5F', bar: 'transparent', bg: 'transparent', weight: '400', isApp: false, isGlyph: true };
+    return {
+      logos: LOGO,
+      showMonogram: (e) => { const i = e.currentTarget; i.style.display = 'none'; if (i.previousElementSibling) i.previousElementSibling.style.color = '#444444'; },
+      rail: [
+        Object.assign({}, idle, { label: 'Activity', d: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0' }),
+        Object.assign({}, idle, { label: 'Chat', d: 'M4 5h16v11H8l-4 4z' }),
+        Object.assign({}, idle, { label: 'Teams', d: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a2.5 2.5 0 1 0 0-5M17 14c2.5.3 4 2.6 4 6' }),
+        Object.assign({}, idle, { label: 'Calendar', d: 'M4 6h16v14H4zM4 10h16M9 3v4M15 3v4' }),
+        Object.assign({}, idle, { label: 'OneDrive', d: 'M7 18h11a4 4 0 0 0 .5-8A6 6 0 0 0 7 9.5 4.3 4.3 0 0 0 7 18z' }),
+        { label: 'HyperDelivery', fg: '#1D1D1D', bar: '#5B5FC7', bg: '#FFFFFF', weight: '700', isApp: true, isGlyph: false, d: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

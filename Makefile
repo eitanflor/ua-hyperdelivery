@@ -1,5 +1,5 @@
 .PHONY: dev-distill dev-blueprint dev-review dev-showroom dev-all dev-stop dev-console dev-console-ui test lint \
-	format typecheck coverage check check-full check-fix hooks check-aws deploy build-fsd-index
+	format typecheck coverage check check-full check-fix hooks check-aws deploy build-fsd-index site site-plan
 
 ifneq (,$(wildcard .env))
 include .env
@@ -46,6 +46,19 @@ deploy: check-aws
 # is read-only on this bucket.
 build-fsd-index: check-aws
 	PYTHONPATH=src uv run python scripts/build_fsd_index.py
+
+# The UA-DLC plan and concept canvas as a static site (docs/ua-dlc/site). The canvas reads its
+# boards over HTTP, so open it from this server rather than from the file. Bound to this machine
+# only: the site is a draft, not for the rest of the network.
+site:
+	@echo "Plan:            http://localhost:8766/plan/"
+	@echo "Concept canvas:  http://localhost:8766/concepts/"
+	python3 -m http.server --bind 127.0.0.1 --directory docs/ua-dlc/site 8766
+
+# Rebuilds docs/ua-dlc/site/plan/index.html from enterprise-plan.md and plan/visuals/.
+site-plan:
+	@command -v pandoc >/dev/null 2>&1 || { echo "pandoc is required to build the plan page - brew install pandoc" >&2; exit 1; }
+	uv run python scripts/build_ua_dlc_plan.py
 
 test:
 	uv run pytest

@@ -1,0 +1,624 @@
+<figure class="hda hda-mvp" id="hda-mvp" aria-labelledby="hda-mvp-title">
+<style>
+.hda { --k-bg: #ffffff; --k-surface: #f9f9f9; --k-ink: #1d1d1d; --k-muted: #5f5f5f; --k-line: #e6e6e6;
+  --k-control: #8a8a8a; --k-new: #fe9000; --k-gap: #b45309; --k-nd: #b4b4b4; --k-edge: #8f8f8f;
+  --k-hd: #4f46e5; --k-tl: #0d9488; --k-sl: #475569; --k-sk: #0ea5e9; --k-vi: #7c3aed; --k-am: #b45309;
+  --k-zn: #f4f4f4; --k-za: #f4f5fe; --k-zk: #eff7f5; --k-zg: #fbf7ee; --k-zs: #e8f6fc; --k-zv: #f3eefe;
+  --k-zsb: #f7f3fe; --k-zb: #eaf1fc; --k-zm: #efeffa; --k-zo: #fafafa;
+  --k-body: var(--body, 'Archivo', 'Helvetica Neue', Arial, sans-serif);
+  --k-mono: var(--mono, 'Geist Mono', ui-monospace, Menlo, monospace);
+  color-scheme: light; position: relative; margin: 24px 0 40px; color: var(--k-ink); font-family: var(--k-body);
+  font-size: 13px; line-height: 1.4; }
+.hda * { box-sizing: border-box; }
+.hda .hda-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  border-top: 2px solid var(--k-ink); padding-top: 12px; margin-bottom: 6px; }
+.hda .hda-title { font-weight: 700; font-size: 15px; line-height: 1.3; margin: 0; max-width: none; }
+.hda .hda-cap { color: var(--k-muted); font-size: 13.5px; line-height: 1.5; margin: 0 0 12px; max-width: none; }
+.hda .hda-phases { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.hda .hda-phases li { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; border: 1px solid var(--k-line); color: var(--k-muted);
+  margin: 0; max-width: none; }
+.hda .hda-phases li + li::before { content: ''; }
+.hda .hda-phases li.past { border-color: var(--k-control); color: var(--k-ink); }
+.hda .hda-phases li.cur { background: var(--k-ink); border-color: var(--k-ink); color: var(--k-bg); }
+.hda .hda-phases .sep { border: 0; padding: 0; height: auto; color: var(--k-control); font-weight: 400; }
+.hda button { font: inherit; cursor: pointer; margin: 0; }
+.hda .hda-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
+.hda .hda-bar-l { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--k-muted); }
+.hda .hda-seg, .hda .hda-ctl, .hda .hda-hl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.hda .hda-pill { font-size: 12.5px; font-weight: 600; height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--k-control); background: var(--k-bg); color: var(--k-ink); white-space: nowrap; }
+.hda .hda-pill[aria-pressed="true"] { background: var(--k-ink); color: var(--k-bg); border-color: var(--k-ink); }
+.hda .hda-ctl button { height: 30px; min-width: 30px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--k-line); background: var(--k-bg); color: var(--k-ink); font-size: 12.5px; font-weight: 600; }
+.hda .hda-ctl button:disabled { color: var(--k-muted); cursor: default; opacity: 0.55; }
+.hda .hda-stage { position: relative; }
+.hda .hda-exp { position: absolute; top: 8px; right: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px; font-size: 12px; background: rgba(255, 255, 255, 0.94); border-color: var(--k-line); }
+.hda .hda-exp:hover { border-color: var(--k-ink); }
+.hda .hda-exp svg { width: 13px; height: 13px; }
+.hda button:focus-visible, .hda .hda-scroll:focus-visible, .hda g.n:focus-visible,
+.hda .zl[tabindex]:focus-visible { outline: 2px solid var(--k-ink); outline-offset: 2px; }
+.hda .hda-scroll { overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--k-line);
+  border-radius: 8px; background: var(--k-bg); padding: 10px; }
+.hda .hda-svg { display: block; width: 100%; min-width: 720px; height: auto; font-family: var(--k-body);
+  -webkit-user-select: none; user-select: none; }
+.hda .z { stroke: none; }
+.hda .z.zn { fill: var(--k-zn); } .hda .z.za { fill: var(--k-za); } .hda .z.zk { fill: var(--k-zk); }
+.hda .z.zg { fill: var(--k-zg); } .hda .z.zs { fill: var(--k-zs); } .hda .z.zv { fill: var(--k-zv); }
+.hda .z.zsb { fill: var(--k-zsb); } .hda .z.zb { fill: var(--k-zb); } .hda .z.zm { fill: var(--k-zm); }
+.hda .z.zc { fill: var(--k-zo); stroke: var(--k-line); stroke-width: 1; }
+.hda .z.zo { fill: none; stroke: var(--k-control); stroke-width: 1; stroke-dasharray: 5 4; }
+.hda .z.zhd { fill: none; stroke: var(--k-ink); stroke-width: 1.25; }
+.hda .zl { fill: var(--k-muted); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; }
+.hda .zl.big { fill: var(--k-ink); font-size: 10.5px; }
+.hda .zl[tabindex] { cursor: pointer; }
+.hda .zl[tabindex]:hover { fill: var(--k-ink); text-decoration: underline; }
+.hda .zt { stroke-width: 4px; stroke-linejoin: round; paint-order: stroke; }
+.hda .e path { fill: none; stroke: var(--k-edge); stroke-width: 1.2; }
+.hda .e.dash path { stroke-dasharray: 4 3; }
+.hda .el rect { fill: var(--k-bg); stroke: var(--k-line); }
+.hda .el text { fill: var(--k-muted); font-size: 9.5px; }
+.hda g.n { cursor: pointer; }
+.hda g.n rect.b { fill: var(--k-bg); stroke: var(--k-nd); stroke-width: 1; }
+.hda g.n.new rect.b { stroke: var(--k-ink); stroke-width: 2; }
+.hda g.n.dash rect.b { stroke-dasharray: 4 3; }
+.hda g.n rect.acc { stroke: none; }
+.hda g.n .t { fill: var(--k-ink); font-size: 11.5px; font-weight: 600; }
+.hda g.n .s { fill: var(--k-muted); font-size: 9.5px; }
+.hda g.n.hd rect.acc { fill: var(--k-hd); } .hda g.n.tl rect.acc { fill: var(--k-tl); }
+.hda g.n.sl rect.acc { fill: var(--k-sl); } .hda g.n.sk rect.acc { fill: var(--k-sk); }
+.hda g.n.vi rect.acc { fill: var(--k-vi); } .hda g.n.ink rect.acc { fill: var(--k-ink); }
+.hda g.n.am rect.acc { fill: var(--k-am); }
+.hda g.n .gap { fill: var(--k-gap); }
+.hda g.n .gapx { fill: #ffffff; font-size: 7.5px; font-weight: 800; }
+.hda g.n:hover rect.b { stroke: var(--k-ink); stroke-width: 2; }
+.hda g.n.sel rect.b { stroke: var(--k-ink); stroke-width: 2.5; }
+.hda.is-dim g.n, .hda.is-dim .e, .hda.is-dim .el { opacity: 0.22; }
+.hda.is-dim g.n.lit, .hda.is-dim .e.lit, .hda.is-dim .el.lit { opacity: 1; }
+.hda .e.lit path { stroke: var(--k-ink); stroke-width: 1.7; }
+.hda .el.lit text { fill: var(--k-ink); }
+.hda .el.lit rect { stroke: var(--k-ink); }
+.hda g.n.now rect.b { stroke: var(--k-ink); stroke-width: 2.5; }
+.hda .hda-side { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-top: 14px; }
+.hda .hda-steps { flex: 1 1 300px; margin: 0; padding-left: 22px; font-size: 13.5px; }
+/* With a part or replay selected, the details dock to the viewport bottom so they stay in view under a tall diagram. */
+.hda.has-card .hda-panel > .hda-side { position: sticky; bottom: 0; z-index: 3; background: var(--k-bg);
+  border-top: 1px solid var(--k-line); padding: 10px 0; }
+.hda.has-card .hda-panel > .hda-side > .hda-steps,
+.hda.has-card .hda-panel > .hda-side > .hda-card { max-height: min(30vh, 260px); overflow-y: auto;
+  overscroll-behavior: contain; }
+.hda .hda-steps:empty { display: none; }
+.hda .hda-steps li { padding: 4px 6px; border-radius: 4px; color: var(--k-muted); cursor: pointer; max-width: none; }
+.hda .hda-steps li + li { margin-top: 2px; }
+.hda .hda-steps li.done { color: var(--k-ink); }
+.hda .hda-steps li.now { color: var(--k-ink); background: var(--k-surface); box-shadow: inset 2px 0 0 var(--k-ink);
+  font-weight: 600; }
+.hda .hda-card { flex: 1 1 280px; min-width: 0; border: 1px solid var(--k-line); border-radius: 8px;
+  padding: 12px 14px; font-size: 13px; }
+.hda .hda-card-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hda .hda-card-h b { font-size: 14.5px; }
+.hda .hda-new { display: inline-flex; align-items: center; height: 18px; padding: 0 5px; border-radius: 4px;
+  background: var(--k-new); color: var(--k-ink); font-family: var(--k-mono); font-size: 11px; font-weight: 600;
+  line-height: 1; letter-spacing: 0.02em; }
+.hda .hda-zone { color: var(--k-muted); font-size: 12px; margin: 2px 0 6px; }
+.hda .hda-card p { margin: 0 0 6px; max-width: none; }
+.hda .hda-card dl { margin: 8px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.hda .hda-card dt { color: var(--k-muted); } .hda .hda-card dd { margin: 0; min-width: 0; }
+.hda .hda-card code { font-family: var(--k-mono); font-size: 11.5px; background: var(--k-surface);
+  border: 1px solid var(--k-line); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+.hda .hda-card .hda-ev code { display: inline-block; margin: 0 4px 3px 0; }
+.hda .hda-conn { margin-top: 10px; border-top: 1px solid var(--k-line); padding-top: 8px; }
+.hda .hda-conn-h { color: var(--k-muted); font-size: 12px; margin-bottom: 4px; }
+.hda .hda-conn ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.hda .hda-conn li { margin: 0; max-width: none; color: var(--k-muted); }
+.hda .hda-conn button { border: 0; background: none; padding: 0; color: var(--k-ink); font-weight: 600;
+  text-decoration: underline; text-decoration-color: var(--k-control); text-underline-offset: 2px; }
+.hda .hda-conn .dir { display: inline-block; width: 18px; color: var(--k-muted); }
+.hda .hda-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 12px;
+  color: var(--k-muted); font-size: 12.5px; }
+.hda .hda-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.hda .hda-legend .hda-hl { margin-left: auto; gap: 6px; }
+.hda .hda-legend .hda-hl .hda-pill { height: 26px; font-size: 12px; padding: 0 10px; }
+.hda .sw { width: 16px; height: 11px; border-radius: 2px; display: inline-block; background: var(--k-bg); }
+.hda .sw.new { border: 2px solid var(--k-ink); }
+.hda .sw.old { border: 1px solid var(--k-nd); }
+.hda .sw.acc { width: 4px; height: 12px; border-radius: 1px; }
+.hda .sw.gap { width: 9px; height: 9px; border-radius: 50%; background: var(--k-gap); }
+.hda .sw.dash { width: 20px; height: 0; border-top: 1.5px dashed var(--k-ink); border-radius: 0; background: none; }
+.hda dialog.hda-dlg { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: var(--k-bg); color: var(--k-ink); overflow: hidden; }
+.hda dialog.hda-dlg::backdrop { background: rgba(29, 29, 29, 0.35); }
+.hda .hda-dlg-in { display: flex; flex-direction: column; height: 100%; padding: 14px 24px 18px; }
+.hda .hda-dlg-head { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--k-line);
+  padding-bottom: 12px; margin-bottom: 12px; }
+.hda .hda-dlg-head .hda-title { flex: 1 1 auto; }
+.hda .hda-dlg .hda-panel { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "bar bar" "svg side" "svg legend"; gap: 0 24px; }
+.hda .hda-dlg .hda-bar { grid-area: bar; }
+.hda .hda-dlg .hda-stage { grid-area: svg; min-height: 0; display: flex; flex-direction: column; }
+.hda .hda-dlg .hda-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.hda .hda-dlg .hda-svg { width: 100%; max-width: 1200px; height: auto; min-width: 0; margin: 0 auto; }
+.hda .hda-dlg .hda-side { grid-area: side; margin-top: 0; flex-direction: column; flex-wrap: nowrap; overflow-y: auto;
+  min-height: 0; align-content: flex-start; }
+.hda .hda-dlg .hda-steps, .hda .hda-dlg .hda-card { flex: 0 0 auto; }
+.hda.has-card .hda-dlg .hda-side { position: static; border-top: 0; padding: 0; }
+.hda.has-card .hda-dlg .hda-side > .hda-steps,
+.hda.has-card .hda-dlg .hda-side > .hda-card { max-height: none; overflow-y: visible; }
+.hda .hda-dlg .hda-legend { grid-area: legend; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--k-line); }
+.hda .hda-dlg .hda-legend .hda-hl { margin-left: 0; }
+.hda .hda-dlg .hda-exp { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .hda .e.now path { stroke-dasharray: 6 4; animation: hda-flow 0.9s linear infinite; }
+  .hda g.n, .hda .e, .hda .el { transition: opacity 0.2s ease; }
+}
+@keyframes hda-flow { to { stroke-dashoffset: -20; } }
+</style>
+<div class="hda-head">
+  <p class="hda-title" id="hda-mvp-title">Final MVP: what runs at MVP ready</p>
+  <ol class="hda-phases" aria-label="Phase"><li class="past">Today</li><li class="sep" aria-hidden="true">›</li><li class="cur" aria-current="step">MVP</li><li class="sep" aria-hidden="true">›</li><li>Enterprise</li></ol>
+</div>
+<p class="hda-cap">At MVP ready (week 14), today&#x27;s console API, Step Functions line, data stores and Bedrock carry the new parts: one orchestrator with a broker and specialists, the coding agent in the sandbox account, previews, the project index and the new console. Parts marked New arrive in the Final MVP; dashed lines are a contract or an action taken only on request.</p>
+<div class="hda-panel"></div>
+<noscript><p>This diagram needs JavaScript. The plan text describes the same parts.</p></noscript>
+<script>
+(function (D) {
+  var cs = document.currentScript;
+  var root = cs && cs.parentNode && cs.parentNode.closest ? cs.parentNode.closest('.hda') : null;
+  var V = 1;
+  if (!window.__hdArch || (window.__hdArch.v || 0) < V) {
+    window.__hdArch = (function () {
+      var NS = 'http://www.w3.org/2000/svg', seq = 0;
+      function el(tag, cls, parent, text) {
+        var n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text != null) n.textContent = text;
+        if (parent) parent.appendChild(n);
+        return n;
+      }
+      function sv(tag, attrs, parent) {
+        var n = document.createElementNS(NS, tag);
+        for (var k in attrs) n.setAttribute(k, attrs[k]);
+        if (parent) parent.appendChild(n);
+        return n;
+      }
+      function stx(parent, x, y, cls, s, anchor) {
+        var t = sv('text', { x: x, y: y, 'class': cls }, parent);
+        if (anchor) t.setAttribute('text-anchor', anchor);
+        t.textContent = s;
+        return t;
+      }
+      // Orthogonal polyline with softened corners.
+      function pathD(pts) {
+        var r = 6, d = 'M' + pts[0][0] + ' ' + pts[0][1];
+        for (var i = 1; i < pts.length; i++) {
+          var p = pts[i];
+          if (i === pts.length - 1) { d += ' L' + p[0] + ' ' + p[1]; break; }
+          var a = pts[i - 1], b = pts[i + 1];
+          var l1 = Math.abs(p[0] - a[0]) + Math.abs(p[1] - a[1]), l2 = Math.abs(b[0] - p[0]) + Math.abs(b[1] - p[1]);
+          var rr = Math.min(r, l1 / 2, l2 / 2);
+          var ux = Math.sign(p[0] - a[0]), uy = Math.sign(p[1] - a[1]), vx = Math.sign(b[0] - p[0]), vy = Math.sign(b[1] - p[1]);
+          d += ' L' + (p[0] - ux * rr) + ' ' + (p[1] - uy * rr) + ' Q' + p[0] + ' ' + p[1] + ' ' + (p[0] + vx * rr) + ' ' + (p[1] + vy * rr);
+        }
+        return d;
+      }
+      var EXPAND = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+      function mount(root, D) {
+        var uid = 'hda' + (++seq) + '-' + D.key;
+        var panel = root.querySelector('.hda-panel');
+        if (!panel) return;
+        var nodeById = {}, zoneById = {};
+        D.nodes.forEach(function (n) { nodeById[n.id] = n; });
+        D.zones.forEach(function (z) { if (z.id) zoneById[z.id] = z; });
+        var SC = {};
+        D.scenarios.forEach(function (s) { SC[s.key] = s; });
+
+        // Bar: replays, step controls, expand.
+        var bar = el('div', 'hda-bar', panel), scBtns = [], btnPrev, btnPlay, btnNext;
+        if (D.scenarios.length) {
+          el('span', 'hda-bar-l', bar, 'Follow a Request');
+          var seg = el('div', 'hda-seg', bar);
+          seg.setAttribute('role', 'group');
+          seg.setAttribute('aria-label', 'Follow a request');
+          D.scenarios.forEach(function (s) {
+            var b = el('button', 'hda-pill', seg, s.label);
+            b.type = 'button';
+            b.setAttribute('aria-pressed', 'false');
+            b.setAttribute('data-sc', s.key);
+            scBtns.push(b);
+          });
+        }
+        var ctl = el('div', 'hda-ctl', bar);
+        function cbtn(label, aria) {
+          var b = el('button', '', ctl, label);
+          b.type = 'button';
+          if (aria) b.setAttribute('aria-label', aria);
+          return b;
+        }
+        if (D.scenarios.length) {
+          btnPrev = cbtn('‹', 'Previous step');
+          btnPlay = cbtn('Play');
+          btnNext = cbtn('›', 'Next step');
+        }
+        var btnClear = cbtn('Clear');
+        // Diagram, with the expand control pinned to its corner.
+        var stage = el('div', 'hda-stage', panel);
+        var btnExp = el('button', 'hda-pill hda-exp', stage);
+        btnExp.type = 'button';
+        btnExp.innerHTML = EXPAND + '<span>Expand</span>';
+        btnExp.setAttribute('aria-haspopup', 'dialog');
+        var scroll = el('div', 'hda-scroll', stage);
+        scroll.tabIndex = 0;
+        scroll.setAttribute('role', 'region');
+        scroll.setAttribute('aria-label', D.title + ', diagram');
+        var svg = sv('svg', { viewBox: '0 0 ' + D.vb[0] + ' ' + D.vb[1], 'class': 'hda-svg', role: 'group',
+          'aria-label': D.title }, scroll);
+        var defs = sv('defs', {}, svg);
+        var AR = uid + '-ar', AR_ON = uid + '-ar-on';
+        [[AR, '#8f8f8f'], [AR_ON, '#1d1d1d']].forEach(function (m) {
+          var mm = sv('marker', { id: m[0], viewBox: '0 0 8 8', refX: '7', refY: '4', markerWidth: '7', markerHeight: '7',
+            orient: 'auto-start-reverse' }, defs);
+          sv('path', { d: 'M0 0 L8 4 L0 8 z', fill: m[1] }, mm);
+        });
+        Object.keys(D.logos).forEach(function (k) {
+          var L = D.logos[k];
+          var sym = sv('symbol', { id: uid + '-lg-' + k, viewBox: L.vb }, defs);
+          sym.innerHTML = L.svg;
+          sym.setAttribute('style', 'color:' + (L.c || '#1d1d1d'));
+        });
+        var bg = sv('rect', { x: 0, y: 0, width: D.vb[0], height: D.vb[1], fill: 'transparent' }, svg);
+        var zoneLayer = sv('g', {}, svg), edgeLayer = sv('g', {}, svg), zoneText = sv('g', {}, svg),
+          nodeLayer = sv('g', {}, svg), labelLayer = sv('g', {}, svg);
+        var HALO = { zn: '--k-zn', za: '--k-za', zk: '--k-zk', zg: '--k-zg', zs: '--k-zs', zv: '--k-zv', zsb: '--k-zsb',
+          zb: '--k-zb', zm: '--k-zm', zc: '--k-zo', zo: '--k-bg', zhd: '--k-bg' };
+        var zoneLabelEls = {};
+        D.zones.forEach(function (z) {
+          var isHd = z.cls === 'zhd';
+          if (z.pts) sv('path', { d: pathD(z.pts.concat([z.pts[0]])) + ' Z', 'class': 'z ' + z.cls }, zoneLayer);
+          else sv('rect', { x: z.x, y: z.y, width: z.w, height: z.h, rx: isHd ? 10 : 7, 'class': 'z ' + z.cls }, zoneLayer);
+          if (!z.label) return;
+          var lx = z.lx != null ? z.lx : z.x + (isHd ? 12 : 10), ly = z.ly != null ? z.ly : z.y + (isHd ? 16 : 15);
+          var t = stx(zoneText, lx, ly, 'zl zt' + (isHd ? ' big' : ''), z.label.toUpperCase(), z.la || null);
+          t.style.stroke = 'var(' + (HALO[z.cls] || '--k-bg') + ')';
+          if (z.id && (z.note || D.zoneCards)) {
+            t.setAttribute('tabindex', '0');
+            t.setAttribute('role', 'button');
+            t.setAttribute('aria-label', z.name + (z.note ? ': ' + z.note : ''));
+            zoneLabelEls[z.id] = t;
+          }
+        });
+
+        var edgeEls = {}, labelEls = {}, edgeById = {};
+        D.edges.forEach(function (e) {
+          edgeById[e.id] = e;
+          var g = sv('g', { 'class': 'e' + (e.dashed ? ' dash' : ''), 'data-e': e.id }, edgeLayer);
+          g._paths = [];
+          e.ps.forEach(function (pts, i) {
+            var p = sv('path', { d: pathD(pts) }, g);
+            p._arrow = !e.na || !e.na[i];
+            if (p._arrow) p.setAttribute('marker-end', 'url(#' + AR + ')');
+            g._paths.push(p);
+          });
+          edgeEls[e.id] = g;
+          if (e.label && e.l) {
+            var lg = sv('g', { 'class': 'el', 'data-e': e.id }, labelLayer);
+            var r = sv('rect', { rx: 7, height: 14, y: e.l[1] - 7 }, lg);
+            var t = stx(lg, e.l[0], e.l[1] + 3.3, '', e.label, e.l[2] || 'middle');
+            lg._r = r; lg._t = t; lg._a = e.l[2] || 'middle'; lg._x = e.l[0]; lg._w = e.lw;
+            labelEls[e.id] = lg;
+          }
+        });
+
+        var nodeEls = {};
+        D.nodes.forEach(function (n) {
+          var cls = 'n' + (n.role ? ' ' + n.role : '') + (n.isNew ? ' new' : '') + (n.dashed ? ' dash' : '');
+          var g = sv('g', { 'class': cls, tabindex: '0', role: 'button', 'data-n': n.id,
+            'aria-label': n.name + (n.sub ? ', ' + n.sub : '') + (n.isNew ? '. ' + D.newLabel : '') + (n.gap ? '. Known gap' : '') }, nodeLayer);
+          sv('rect', { 'class': 'b', x: n.x, y: n.y, width: n.w, height: n.h, rx: 5 }, g);
+          if (n.role) sv('rect', { 'class': 'acc', x: n.x + (n.isNew ? 1.5 : 1), y: n.y + 5, width: 3, height: n.h - 10, rx: 1.5 }, g);
+          var tx = n.x + (n.role ? 11 : 9);
+          var lines = n.sl || (n.sub ? [n.sub] : []), tl = n.tl || [n.name];
+          var ty = n.y + (n.h - (13 * tl.length + 12 * lines.length)) / 2 + 11;
+          tl.forEach(function (s, i) { stx(g, tx, ty + 13 * i, 't', s); });
+          lines.forEach(function (s, i) { stx(g, tx, ty + 13 * tl.length + 12 * i, 's', s); });
+          var lx = n.x + n.w - 20;
+          if (n.logo === 'hd') {
+            sv('rect', { x: lx + 2.5, y: n.y + 7, width: 9, height: 9, rx: 1, fill: '#1d1d1d' }, g);
+          } else if (n.logo && D.logos[n.logo]) {
+            sv('use', { href: '#' + uid + '-lg-' + n.logo, x: lx, y: n.y + 5, width: 14, height: 14 }, g);
+          }
+          if (n.gap) {
+            var gx = n.logo ? lx - 8 : n.x + n.w - 11, gy = n.y + 12;
+            sv('circle', { 'class': 'gap', cx: gx, cy: gy, r: 4.5 }, g);
+            stx(g, gx, gy + 2.7, 'gapx', '!', 'middle');
+          }
+          var tt = sv('title', {}, g);
+          tt.textContent = n.name + (n.sub ? ', ' + n.sub : '');
+          nodeEls[n.id] = g;
+        });
+
+        function sizeLabels() {
+          Object.keys(labelEls).forEach(function (k) {
+            var lg = labelEls[k], w = lg._w || 0;
+            try { var m = lg._t.getComputedTextLength(); if (m > 0) w = m; } catch (err) { /* hidden: keep estimate */ }
+            if (!w) return;
+            var pad = 5, ww = w + pad * 2, x = lg._a === 'start' ? lg._x - pad : (lg._a === 'end' ? lg._x - ww + pad : lg._x - ww / 2);
+            lg._r.setAttribute('x', x); lg._r.setAttribute('width', ww);
+          });
+        }
+        sizeLabels();
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(sizeLabels);
+
+        // Below the diagram: steps and the details card. Then the legend.
+        var side = el('div', 'hda-side', panel);
+        var stepsEl = el('ol', 'hda-steps', side);
+        stepsEl.setAttribute('aria-label', 'Request steps');
+        var card = el('div', 'hda-card', side);
+        card.setAttribute('aria-live', 'polite');
+        var legend = el('div', 'hda-legend', panel);
+        function lgItem(swCls, text, color) {
+          var s = el('span', '', legend);
+          var i = el('i', 'sw ' + swCls, s);
+          i.setAttribute('aria-hidden', 'true');
+          if (color) i.style.background = 'var(' + color + ')';
+          s.appendChild(document.createTextNode(text));
+        }
+        if (D.newLabel && D.nodes.some(function (n) { return n.isNew; })) {
+          lgItem('new', D.newLabel);
+          lgItem('old', D.oldLabel);
+        }
+        if (D.nodes.some(function (n) { return n.gap; })) lgItem('gap', 'Known Gap');
+        if (D.dashLabel) lgItem('dash', D.dashLabel);
+        (D.roles || []).forEach(function (r) { lgItem('acc', r[1], '--k-' + r[0]); });
+        var hlBtns = [];
+        if (D.highlight && D.highlight.length) {
+          var hl = el('div', 'hda-hl', legend);
+          hl.setAttribute('role', 'group');
+          hl.setAttribute('aria-label', 'Highlight by phase');
+          el('span', 'hda-bar-l', hl, 'Highlight');
+          D.highlight.forEach(function (h) {
+            var b = el('button', 'hda-pill', hl, h[1]);
+            b.type = 'button';
+            b.setAttribute('aria-pressed', 'false');
+            b.setAttribute('data-ph', h[0]);
+            hlBtns.push(b);
+          });
+        }
+
+        // State: one dimming mode at a time (a replay, a selected part, or a phase).
+        var mode = null, current = null, step = -1, timer = null, sel = null, phase = null;
+        function dock(on) {
+          root.classList.toggle('has-card', on);
+          card.scrollTop = 0;
+        }
+        function setDefaultCard() {
+          card.innerHTML = '';
+          dock(false);
+          var h = el('div', 'hda-card-h', card);
+          el('b', '', h, D.cardTitle);
+          el('p', '', card, D.cardText);
+        }
+        function addRow(dl, k, v, code) {
+          if (!v || (v.length === 0)) return;
+          el('dt', '', dl, k);
+          var dd = el('dd', code ? 'hda-ev' : '', dl);
+          if (code) {
+            v.slice(0, 3).forEach(function (c) { el('code', '', dd, c); });
+            if (v.length > 3) dd.appendChild(document.createTextNode('and ' + (v.length - 3) + ' more'));
+          } else dd.textContent = v;
+        }
+        function showNode(id) {
+          var n = nodeById[id];
+          if (!n) return;
+          card.innerHTML = '';
+          dock(true);
+          var h = el('div', 'hda-card-h', card);
+          el('b', '', h, n.name);
+          if (n.isNew) el('span', 'hda-new', h, 'NEW');
+          var zn = zoneById[n.zone] ? zoneById[n.zone].name : '';
+          el('div', 'hda-zone', card, (n.phaseText ? n.phaseText + ' · ' : '') + zn);
+          el('p', '', card, n.what);
+          var dl = el('dl', '', card);
+          addRow(dl, 'Runs As', n.identity);
+          addRow(dl, 'Gap', n.gap);
+          addRow(dl, 'Evidence', n.evidence, true);
+          if (!dl.children.length) card.removeChild(dl);
+          var out = D.edges.filter(function (e) { return e.from === id; }), inn = D.edges.filter(function (e) { return e.to === id; });
+          if (out.length || inn.length) {
+            var c = el('div', 'hda-conn', card);
+            el('div', 'hda-conn-h', c, 'Connections');
+            var ul = el('ul', '', c);
+            out.concat(inn).forEach(function (e) {
+              var other = e.from === id ? e.to : e.from, li = el('li', '', ul);
+              var dir = el('span', 'dir', li, e.from === id ? '→' : '←');
+              dir.setAttribute('aria-label', e.from === id ? 'to' : 'from');
+              var b = el('button', '', li, nodeById[other].name);
+              b.type = 'button';
+              b.addEventListener('click', function () { select(other); });
+              if (e.label) li.appendChild(document.createTextNode(' · ' + e.label));
+              if (e.dashed) li.appendChild(document.createTextNode(' (dashed)'));
+            });
+          }
+          Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.toggle('sel', k === id); });
+        }
+        function showZone(id) {
+          var z = zoneById[id];
+          card.innerHTML = '';
+          dock(true);
+          var h = el('div', 'hda-card-h', card);
+          el('b', '', h, z.name);
+          if (z.note) el('p', '', card, z.note);
+          var members = D.nodes.filter(function (n) { return n.zone === id; });
+          if (members.length) {
+            var c = el('div', 'hda-conn', card);
+            el('div', 'hda-conn-h', c, 'Parts');
+            var ul = el('ul', '', c);
+            members.forEach(function (m) {
+              var b = el('button', '', el('li', '', ul), m.name);
+              b.type = 'button';
+              b.addEventListener('click', function () { select(m.id); });
+            });
+          }
+          Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove('sel'); });
+        }
+
+        function paint() {
+          var lit = {}, now = {}, litE = {}, nowE = {};
+          if (mode === 'path' && current) {
+            SC[current].steps.forEach(function (s, i) {
+              if (i > step) return;
+              s[1].forEach(function (n) { lit[n] = 1; if (i === step) now[n] = 1; });
+              s[2].forEach(function (e) { litE[e] = 1; if (i === step) nowE[e] = 1; });
+            });
+          } else if (mode === 'focus' && sel) {
+            lit[sel] = 1;
+            D.edges.forEach(function (e) {
+              if (e.from === sel || e.to === sel) { litE[e.id] = 1; lit[e.from] = 1; lit[e.to] = 1; }
+            });
+          } else if (mode === 'phase' && phase) {
+            D.nodes.forEach(function (n) { if (n.phase === phase) lit[n.id] = 1; });
+            D.edges.forEach(function (e) { if (lit[e.from] && lit[e.to]) litE[e.id] = 1; });
+          }
+          root.classList.toggle('is-dim', !!mode);
+          Object.keys(nodeEls).forEach(function (k) {
+            nodeEls[k].classList.toggle('lit', !!lit[k]);
+            nodeEls[k].classList.toggle('now', !!now[k]);
+          });
+          Object.keys(edgeEls).forEach(function (k) {
+            var g = edgeEls[k], on = !!litE[k];
+            g.classList.toggle('lit', on);
+            g.classList.toggle('now', !!nowE[k]);
+            g._paths.forEach(function (p) { if (p._arrow) p.setAttribute('marker-end', 'url(#' + (on ? AR_ON : AR) + ')'); });
+            if (labelEls[k]) labelEls[k].classList.toggle('lit', on);
+          });
+          Array.prototype.forEach.call(stepsEl.children, function (li, i) {
+            li.classList.toggle('done', i < step);
+            li.classList.toggle('now', i === step);
+            if (i === step) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+            if (i === step && stepsEl.scrollHeight > stepsEl.clientHeight) {
+              var lr = li.getBoundingClientRect(), sr = stepsEl.getBoundingClientRect();
+              if (lr.top < sr.top) stepsEl.scrollTop += lr.top - sr.top;
+              else if (lr.bottom > sr.bottom) stepsEl.scrollTop += lr.bottom - sr.bottom;
+            }
+          });
+          scBtns.forEach(function (b) { b.setAttribute('aria-pressed', mode === 'path' && b.getAttribute('data-sc') === current ? 'true' : 'false'); });
+          hlBtns.forEach(function (b) { b.setAttribute('aria-pressed', mode === 'phase' && b.getAttribute('data-ph') === phase ? 'true' : 'false'); });
+          var total = current ? SC[current].steps.length : 0;
+          if (btnPlay) {
+            btnPrev.disabled = mode !== 'path' || step <= 0;
+            btnNext.disabled = mode !== 'path' || step >= total - 1;
+            btnPlay.disabled = mode !== 'path';
+            btnPlay.textContent = timer ? 'Pause' : (mode === 'path' && step >= total - 1 ? 'Replay' : 'Play');
+          }
+          btnClear.disabled = !mode && !sel;
+        }
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        function go(i) {
+          if (mode !== 'path') return;
+          var steps = SC[current].steps;
+          step = Math.max(0, Math.min(steps.length - 1, i));
+          paint();
+          var s = steps[step];
+          if (s[1].length) showNode(s[1][s[1].length - 1]);
+        }
+        function clearAll() {
+          stop();
+          mode = null; current = null; step = -1; sel = null; phase = null;
+          stepsEl.innerHTML = '';
+          Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove('sel'); });
+          setDefaultCard();
+          paint();
+        }
+        function pick(key) {
+          clearAll();
+          if (!key) return;
+          mode = 'path'; current = key;
+          SC[key].steps.forEach(function (s, i) {
+            var li = el('li', '', stepsEl, s[0]);
+            li.addEventListener('click', function () { stop(); go(i); });
+          });
+          go(0);
+        }
+        function select(id) {
+          if (mode === 'path') { showNode(id); return; }
+          stop();
+          if (sel === id && mode === 'focus') { clearAll(); return; }
+          mode = 'focus'; sel = id; phase = null;
+          showNode(id);
+          paint();
+        }
+        function play() {
+          if (mode !== 'path') return;
+          if (timer) { stop(); paint(); return; }
+          if (step >= SC[current].steps.length - 1) go(0);
+          timer = setInterval(function () {
+            if (step >= SC[current].steps.length - 1) { stop(); paint(); return; }
+            go(step + 1);
+          }, 2600);
+          paint();
+        }
+        scBtns.forEach(function (b) {
+          b.addEventListener('click', function () { pick(b.getAttribute('aria-pressed') === 'true' ? null : b.getAttribute('data-sc')); });
+        });
+        hlBtns.forEach(function (b) {
+          b.addEventListener('click', function () {
+            var p = b.getAttribute('data-ph'), on = b.getAttribute('aria-pressed') === 'true';
+            clearAll();
+            if (!on) { mode = 'phase'; phase = p; paint(); }
+          });
+        });
+        if (btnPlay) {
+          btnPrev.addEventListener('click', function () { stop(); go(step - 1); });
+          btnNext.addEventListener('click', function () { stop(); go(step + 1); });
+          btnPlay.addEventListener('click', play);
+        }
+        btnClear.addEventListener('click', clearAll);
+        bg.addEventListener('click', function () { if (mode !== 'path') clearAll(); });
+        Object.keys(nodeEls).forEach(function (k) {
+          nodeEls[k].addEventListener('click', function () { select(k); });
+          nodeEls[k].addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(k); }
+          });
+        });
+        Object.keys(zoneLabelEls).forEach(function (k) {
+          var t = zoneLabelEls[k];
+          function z() { if (mode === 'focus') clearAll(); showZone(k); }
+          t.addEventListener('click', z);
+          t.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); z(); } });
+        });
+
+        // Expand: the same panel moves into a full-viewport dialog; Escape or Close puts it back.
+        var dlg = el('dialog', 'hda-dlg', root);
+        dlg.setAttribute('aria-labelledby', uid + '-dlg-title');
+        var dIn = el('div', 'hda-dlg-in', dlg), dHead = el('div', 'hda-dlg-head', dIn);
+        var dTitle = el('p', 'hda-title', dHead, D.title);
+        dTitle.id = uid + '-dlg-title';
+        var dClose = el('button', 'hda-pill', dHead, 'Close');
+        dClose.type = 'button';
+        var mark = document.createComment('hda-panel');
+        btnExp.addEventListener('click', function () {
+          if (typeof dlg.showModal !== 'function') return;
+          panel.parentNode.insertBefore(mark, panel);
+          dIn.appendChild(panel);
+          dlg.showModal();
+          sizeLabels();
+        });
+        dClose.addEventListener('click', function () { dlg.close(); });
+        dlg.addEventListener('close', function () {
+          if (mark.parentNode) { mark.parentNode.insertBefore(panel, mark); mark.parentNode.removeChild(mark); }
+          btnExp.focus();
+        });
+
+        setDefaultCard();
+        paint();
+        root.__hda = { select: select, pick: pick, clear: clearAll, expand: function () { btnExp.click(); } };
+      }
+      return { v: V, mount: mount };
+    })();
+  }
+  if (root && !root.__hdaMounted) { root.__hdaMounted = 1; window.__hdArch.mount(root, D); }
+})({"key":"mvp","vb":[832,866],"title":"Final MVP: what runs at MVP ready","zones":[{"cls":"zn","x":0,"y":0,"w":318,"h":80,"id":"id","name":"Identity and secrets","label":"Identity and secrets"},{"cls":"zn","x":334,"y":0,"w":498,"h":80,"id":"people","name":"People and surfaces","label":"People and surfaces"},{"cls":"zhd","x":0,"y":132,"w":832,"h":492,"label":"HyperDelivery on AWS","lx":236},{"cls":"zc","x":22,"y":154,"w":610,"h":98,"id":"ctl","name":"HyperDelivery on AWS: control plane","label":"Control plane","lx":156},{"cls":"zc","x":22,"y":548,"w":132,"h":66,"id":"ctl","name":"HyperDelivery on AWS: control plane","label":"Control plane"},{"cls":"zg","x":22,"y":262,"w":444,"h":74,"id":"guard","name":"HyperDelivery on AWS: guardrails and telemetry","label":"Guardrails and telemetry","lx":464,"la":"end"},{"cls":"za","x":22,"y":262,"w":610,"h":352,"pts":[[474,262],[632,262],[632,614],[162,614],[162,540],[22,540],[22,346],[474,346]],"id":"agt","name":"HyperDelivery on AWS: agent plane","label":"Agent plane","lx":494,"ly":277},{"cls":"zk","x":640,"y":320,"w":148,"h":168,"id":"kn","name":"HyperDelivery on AWS: knowledge and models","label":"Knowledge and models"},{"cls":"zv","x":0,"y":668,"w":166,"h":196,"id":"gh","name":"GitHub prototype organization","label":"GitHub prototype org"},{"cls":"zsb","x":172,"y":668,"w":162,"h":196,"id":"sb","name":"Sandbox AWS account","label":"Sandbox account","lx":194},{"cls":"zs","x":346,"y":668,"w":138,"h":196,"id":"sf","name":"Snowflake","label":"Snowflake"},{"cls":"zb","x":488,"y":668,"w":140,"h":196,"id":"at","name":"Atlassian Cloud","label":"Atlassian"},{"cls":"zm","x":668,"y":668,"w":164,"h":196,"id":"ms","name":"Microsoft 365","label":"Microsoft 365","lx":680}],"nodes":[{"id":"console","name":"Console","sub":"new console","zone":"people","x":346,"y":30,"w":124,"h":40,"what":"Where people start a project from scratch, a Jira ticket or pointed resources, answer questions, open the preview and its evidence, and sign. New in the Final MVP: the Baselayer look, tool chips, modern tables, the trace and decision timeline, the project's Architecture tab, the Inbox and feedback in the product.","identity":"The person, signed in with Entra ID; friendly users and pilot users are invited","logo":"hd","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"teams","name":"Teams","sub":"question and approval cards","zone":"people","x":482,"y":30,"w":148,"h":40,"what":"Questions are answered inside the card. Approval cards open the evidence in the console, where the signature happens. Email links to the console stand in until the Teams app is approved.","identity":"The HyperDelivery Teams app","logo":"microsoftteams","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"confpage","name":"Project page","sub":"Confluence, on request","zone":"people","x":672,"y":30,"w":152,"h":40,"what":"One Confluence page per project for the living document, created only when the requester presses Publish, in an allowlisted space. Comments and revisions come back as proposed facts for Confirm what we heard; the signed version stays in HyperDelivery.","identity":"Today's Atlassian client, its token in Secrets Manager","logo":"confluence","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"entra","name":"Entra ID","sub":"sign-in, delegated reads","zone":"id","x":172,"y":30,"w":130,"h":40,"what":"Signs people in today. In the Final MVP an invite-only group limits who can use it, and Microsoft 365 files are read with the delegated token of the person who pointed.","identity":"UA tenant, Conditional Access","logo":"microsoft","phase":"today","phaseText":"From today"},{"id":"secrets","name":"Secrets Manager","sub":"service keys, never in prompts","zone":"id","x":8,"y":30,"w":150,"h":40,"what":"Holds the keys that replace today's personal tokens: the prototype organization token, the Atlassian service token and the Snowflake service user's key. Only the broker and the build worker read them; the model never sees one.","identity":"Read by the broker and build worker roles only","logo":"amazonwebservices","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"api","name":"Console API","sub":"FastAPI, Entra token","zone":"ctl","x":32,"y":176,"w":112,"h":40,"what":"Validates the Entra token, serves the console, starts work, checks the signer matrix and records each signature before the gate is released.","identity":"Service role per environment","phase":"today","phaseText":"From today"},{"id":"sfn","name":"Step Functions","sub":"the line, three approvals","zone":"ctl","x":208,"y":176,"w":128,"h":40,"what":"Holds each project across days and parks it at every approval until someone signs. The Final MVP fixes today's breaks: a send-back loops to the right step instead of failing, every station can ask questions, the finish is explicit, and a failed step restarts. During a build it starts a build worker for each piece and waits on it.","identity":"State machine role, Standard workflow","phase":"today","phaseText":"From today"},{"id":"ddb","name":"DynamoDB","sub":"projects, decisions, facts","zone":"ctl","x":352,"y":176,"w":124,"h":40,"what":"System of record for projects, signed decisions with signer and hash, confirmed facts and pointed resources. The Final MVP turns on point-in-time recovery and conditional writes.","identity":"Table policy per service","phase":"today","phaseText":"From today"},{"id":"s3","name":"S3","sub":"artifacts, corpus, evidence","zone":"ctl","x":492,"y":176,"w":130,"h":40,"what":"Artifacts, evidence and each project's corpus, passed by reference instead of copied into turns. Today the corpus is written and never read; in the Final MVP it feeds the project index.","identity":"KMS key per environment","phase":"today","phaseText":"From today"},{"id":"worker","name":"Build worker","sub":"Fargate, one per piece","zone":"ctl","x":28,"y":570,"w":116,"h":40,"what":"Step Functions starts one for each piece of the signed plan and waits on it. It hands the coding agent's session a Git bundle, runs the turn, relays the stream to the console and prices it, then checks the returned commits and diff and pushes the branch.","identity":"Task role in HyperDelivery's account; a sandbox role that can only invoke one harness endpoint; the prototype organization token from Secrets Manager","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"orch","name":"Orchestrator","sub":"owns the main chat","zone":"agt","x":232,"y":380,"w":130,"h":40,"what":"The one assistant people talk to. It owns the conversation and the plan, decides what to hand off, and writes every word people read. Today's per-request Strands agent, promoted, on AgentCore Runtime.","identity":"No credentials; asks the broker","logo":"claude","role":"hd","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"stations","name":"Station agents","sub":"typed drafts at approvals","zone":"agt","x":494,"y":284,"w":130,"h":40,"what":"Today's four agents keep their typed outputs (Brief, plan, review, demo), re-scored by the server at each approval, and stop being chat personas. The Final MVP fixes review scoring so a report with no requirement met cannot pass.","identity":"Called by the orchestrator; no external writes","phase":"today","phaseText":"From today"},{"id":"broker","name":"Delegation broker","sub":"scope, budget, schema","zone":"agt","x":232,"y":486,"w":140,"h":40,"what":"Trusted code, not an agent. For each hand-off it sets the scope from server state, picks the credential, sets a budget, checks the signed gate token before any write, validates what comes back against its typed contract and writes the span.","identity":"Reads service keys from Secrets Manager; specialists never hold them","role":"ink","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"reader","name":"Resource reader","sub":"reads what people point at","zone":"agt","x":470,"y":486,"w":152,"h":40,"what":"A fresh-context agent that reads the recordings, files, tickets and pages people point at, and returns a digest with a locator for every statement. A file labeled above Internal is not indexed.","identity":"Microsoft 365 as the person who pointed; Jira and Confluence through an allowlisted service token","logo":"folder","role":"tl","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"reviewers","name":"Reviewers and QA","sub":"evidence agent, read-only","zone":"agt","x":268,"y":572,"w":142,"h":40,"what":"Brief critic, security and code review with a verifier, accessibility, the scope check and the evidence agent, which runs each acceptance criterion in the preview. The builder never grades its own work.","identity":"Read-only; a test viewer on the preview","role":"sl","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"gate","name":"Gate token","sub":"signed per approval","zone":"guard","x":32,"y":284,"w":104,"h":40,"what":"Issued when an approval is signed and bound to one project and step. It is the only key to creating a repository, pushing, filing in Jira and starting a build.","identity":"Signed by the approval service, checked by the broker","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"floor","name":"Write hook","sub":"the do-no-harm floor","zone":"guard","x":184,"y":284,"w":106,"h":40,"what":"A check on every tool call inside the agent's process that refuses any external write until the server has recorded the approval that allows it. Part of the two-week floor that keeps UA data and systems safe for pilot users.","identity":"Runs in the agent's process","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"traces","name":"Traces and cost","sub":"OpenTelemetry, CloudWatch","zone":"guard","x":312,"y":284,"w":142,"h":40,"what":"Every agent call and hand-off is a span with time, status and cost. It feeds the trace view, the decision timeline, and cost per turn and per project, shown from day one and not enforced.","identity":"Collector role","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"index","name":"Project index","sub":"Bedrock knowledge base","zone":"kn","x":650,"y":342,"w":128,"h":40,"what":"One managed knowledge base per project, fed from the S3 corpus and deleted with the project. Answers cite the page version, comment or timestamp.","identity":"Knowledge base id set by server state, never by the model","logo":"amazonbedrock","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"memory","name":"AgentCore Memory","sub":"conversation, per project","zone":"kn","x":650,"y":390,"w":128,"h":40,"what":"Conversation memory per project and person, and the short-term memory that lets a coding session survive a replaced microVM. Proposed facts wait here until a person confirms them.","identity":"Namespace per workspace and project","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"bedrock","name":"Amazon Bedrock","sub":"Claude models","zone":"kn","x":650,"y":438,"w":128,"h":40,"what":"Model calls for the orchestrator, specialists, reviewers and the coding agent. Today's four agents already call Claude Sonnet 5.5 here.","identity":"Runtime role","logo":"amazonbedrock","phase":"today","phaseText":"From today"},{"id":"cortex","name":"Cortex Code","sub":"data specialist, never rows","zone":"sf","x":350,"y":692,"w":132,"h":40,"what":"Today's Snowflake tool, re-scoped as the data specialist: it finds tables, profiles them, checks metrics against certified definitions and drafts queries inside Snowflake. It returns schema, counts, aggregates and query ids, never rows.","identity":"A dedicated service user with a grant-limited read-only role, replacing today's personal token","logo":"snowflake","role":"sk","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"semantic","name":"Semantic views","sub":"certified, golden reports","zone":"sf","x":350,"y":752,"w":132,"h":40,"what":"UA's certified semantic views and golden reports. Definitions stay in Snowflake; HyperDelivery adds no second semantic layer.","identity":"The workspace read role","logo":"snowflake","phase":"today","phaseText":"From today"},{"id":"repo","name":"Project repo","sub":"one branch, one PR","zone":"gh","x":8,"y":692,"w":150,"h":40,"what":"One repository per project in the prototype organization, and one pull request per build from hyperdelivery/<project> with a commit per piece. Nothing merges into a repository HyperDelivery did not create.","identity":"Pushed by the build worker with the organization token, never from the sandbox","logo":"github","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"actions","name":"Actions and scans","sub":"tests, CodeQL, secrets","zone":"gh","x":8,"y":752,"w":150,"h":40,"what":"Runs the tests and secret, dependency and code scanning on every pushed branch, outside the build session, then deploys the preview.","identity":"Repository workflows; no data credentials","logo":"github","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"coding","name":"Coding agent","sub":"AgentCore harness, in the sandbox","zone":"sb","x":180,"y":692,"w":146,"h":52,"what":"One harness session per project build, in a microVM in the sandbox account. It works through the signed plan piece by piece with the whole plan in its workspace, runs the tests and the preview build, and asks a person when two readings would build different things. One engine behind the Builder port.","identity":"Sandbox execution role; no GitHub credential; Git arrives and leaves as bundles","sl":["AgentCore harness,","in the sandbox"],"logo":"terminal","role":"vi","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"image","name":"Toolchain image","sub":"golden path, pinned","zone":"sb","x":180,"y":764,"w":146,"h":40,"what":"The container every session starts from: runtimes, test runners and linters, pinned by digest and rebuilt on the 7-day patch rule.","identity":"ECR in the sandbox account, pull only","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"preview","name":"Previews","sub":"synthetic data, test viewers","zone":"sb","x":180,"y":816,"w":146,"h":40,"what":"One hosted preview per build branch, redeployed after each piece and torn down at merge, never in the account that runs HyperDelivery. Only project members can open it.","identity":"Entra sign-in plus a project membership check","logo":"web-browser","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"jira","name":"Jira","sub":"tickets in, epic out","zone":"at","x":496,"y":692,"w":124,"h":40,"what":"A project can start from a ticket: its fields, comments, attachments and linked pages become a draft Brief. After the plan is signed, one epic with a sub-task per piece is filed.","identity":"Allowlisted service token for reads; writes only after Approval 2, with a gate token","logo":"jira","phase":"today","phaseText":"From today"},{"id":"confluence","name":"Confluence","sub":"pages and comments","zone":"at","x":496,"y":752,"w":124,"h":40,"what":"Pages people point at, read with their comments and revisions, which become proposed facts for someone to confirm.","identity":"Allowlisted service token, polled every few minutes","logo":"confluence","phase":"today","phaseText":"From today"},{"id":"files","name":"OneDrive and SharePoint","sub":"files by link","zone":"ms","x":676,"y":692,"w":148,"h":56,"what":"Files people paste a link to, read through Graph as the person who pointed. Never uploaded or copied whole; a snapshot refreshed on read.","identity":"Delegated Graph token of the person who pointed","tl":["OneDrive and","SharePoint"],"logo":"onedrive","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"},{"id":"recordings","name":"Teams recordings","sub":"transcripts, pulled once","zone":"ms","x":676,"y":758,"w":148,"h":40,"what":"Transcripts of meetings the person who pointed was invited to, pulled once at point time, never the video. Transcript files can be dropped in until the consent and tenant setting are in place.","identity":"Delegated token; needs admin consent and the transcript tenant setting","logo":"microsoftteams","isNew":true,"phase":"mvp","phaseText":"New in the Final MVP"}],"edges":[{"id":"e-console-api","from":"console","to":"api","label":"Entra token","dashed":false,"ps":[[[380,70],[380,106],[124,106],[124,176]]],"l":[380,88],"lw":48.2},{"id":"e-teams-api","from":"teams","to":"api","label":"answers, approvals","dashed":false,"ps":[[[540,70],[540,106],[124,106],[124,176]]],"l":[540,88],"lw":81.2},{"id":"e-entra-api","from":"entra","to":"api","label":"sign-in","dashed":false,"ps":[[[196,70],[196,94],[100,94],[100,176]]],"l":[148,94],"lw":28.3},{"id":"e-api-sfn","from":"api","to":"sfn","label":"start, sign","dashed":false,"ps":[[[144,192],[208,192]]],"l":[176,192],"lw":41},{"id":"e-api-orch","from":"api","to":"orch","label":"chat turn","dashed":false,"ps":[[[144,208],[154,208],[154,362],[242,362],[242,380]]],"l":[207,362],"lw":36.9},{"id":"e-api-gate","from":"api","to":"gate","label":"on signature","dashed":false,"ps":[[[84,216],[84,284]]],"l":[84,256],"lw":52},{"id":"e-sfn-ddb","from":"sfn","to":"ddb","label":"state, decisions","dashed":false,"ps":[[[330,216],[330,228],[420,228],[420,216]]],"l":[375,228],"lw":65.7},{"id":"e-sfn-s3","from":"sfn","to":"s3","label":"by reference","dashed":false,"ps":[[[318,216],[318,240],[556,240],[556,216]]],"l":[521,240],"lw":52},{"id":"e-sfn-orch","from":"sfn","to":"orch","label":"station task","dashed":false,"ps":[[[300,216],[300,380]]],"l":[300,366],"lw":48.3},{"id":"e-sfn-worker","from":"sfn","to":"worker","label":"one per piece","dashed":false,"ps":[[[218,216],[218,256],[172,256],[172,590],[144,590]]],"l":[172,455],"lw":56.3},{"id":"e-orch-stations","from":"orch","to":"stations","label":"drafts at approvals","dashed":false,"ps":[[[362,400],[540,400],[540,324]]],"l":[420,400],"lw":77.1},{"id":"e-orch-broker","from":"orch","to":"broker","label":"DelegationRequest","dashed":false,"ps":[[[300,420],[300,486]]],"l":[300,453],"lw":81.3},{"id":"e-orch-floor","from":"orch","to":"floor","label":"every tool call","dashed":false,"ps":[[[262,380],[262,324]]],"l":[262,346],"lw":57.2},{"id":"e-orch-traces","from":"orch","to":"traces","label":"spans, cost","dashed":false,"ps":[[[340,380],[340,324]]],"l":[340,346],"lw":48.2},{"id":"e-orch-bedrock","from":"orch","to":"bedrock","label":"model calls","dashed":false,"ps":[[[362,412],[576,412],[576,458],[650,458]]],"l":[613,458],"lw":47.5},{"id":"e-orch-index","from":"orch","to":"index","label":"retrieve, cite","dashed":false,"ps":[[[362,412],[576,412],[576,362],[650,362]]],"l":[613,362],"lw":51.3},{"id":"e-orch-memory","from":"orch","to":"memory","label":"conversation","dashed":false,"ps":[[[362,412],[650,412]]],"l":[613,412],"lw":54.5},{"id":"e-orch-confpage","from":"orch","to":"confpage","label":"publish on request","dashed":true,"ps":[[[362,388],[484,388],[484,120],[700,120],[700,70]]],"l":[592,120],"lw":77.2},{"id":"e-gate-broker","from":"gate","to":"broker","label":"unlocks writes","dashed":false,"ps":[[[84,324],[84,498],[232,498]]],"l":[122,498],"lw":59.7},{"id":"e-secrets-broker","from":"secrets","to":"broker","label":"service keys","dashed":false,"ps":[[[14,70],[14,514],[232,514]]],"l":[96,514],"lw":51.7},{"id":"e-broker-cortex","from":"broker","to":"cortex","label":"DataTask, DataFindings","dashed":false,"ps":[[[372,512],[440,512],[440,630],[412,630],[412,692]]],"l":[412,660],"lw":101.1},{"id":"e-cortex-semantic","from":"cortex","to":"semantic","label":"aggregates only","dashed":false,"ps":[[[416,732],[416,752]]],"l":[416,742],"lw":67},{"id":"e-broker-reader","from":"broker","to":"reader","label":"ResourceRef","dashed":false,"ps":[[[372,494],[470,494]]],"l":[421,494],"lw":55.5},{"id":"e-broker-reviewers","from":"broker","to":"reviewers","label":"check","dashed":false,"ps":[[[320,526],[320,572]]],"l":[320,549],"lw":25.3},{"id":"e-broker-coding","from":"broker","to":"coding","label":"BuildUnit, BuildResult","dashed":true,"ps":[[[244,526],[244,620],[316,620],[316,692]]],"l":[244,549],"lw":92.3},{"id":"e-broker-jira","from":"broker","to":"jira","label":"epic after Approval 2","dashed":false,"ps":[[[372,512],[440,512],[440,630],[530,630],[530,692]]],"l":[530,660],"lw":85.5},{"id":"e-worker-coding","from":"worker","to":"coding","label":"turn, Git bundles","dashed":false,"ps":[[[144,594],[190,594],[190,692]]],"l":[194,664,"start"],"lw":69.4},{"id":"e-image-coding","from":"image","to":"coding","label":"starts from","dashed":false,"ps":[[[253,764],[253,744]]],"l":[253,754],"lw":44.9},{"id":"e-worker-repo","from":"worker","to":"repo","label":"push, one PR","dashed":false,"ps":[[[144,606],[152,606],[152,692]]],"l":[148,640],"lw":56.7},{"id":"e-repo-actions","from":"repo","to":"actions","label":"every push","dashed":false,"ps":[[[83,732],[83,752]]],"l":[83,742],"lw":46},{"id":"e-actions-preview","from":"actions","to":"preview","label":"deploy preview","dashed":false,"ps":[[[158,772],[168,772],[168,836],[180,836]]],"l":[164,806,"end"],"lw":62.9},{"id":"e-reviewers-preview","from":"reviewers","to":"preview","label":"test viewer","dashed":false,"ps":[[[340,612],[340,836],[326,836]]],"l":[344,640,"start"],"lw":45},{"id":"e-reader-files","from":"reader","to":"files","label":"as the person","dashed":false,"ps":[[[610,526],[610,604],[662,604],[750,604],[750,692]]],"l":[706,604],"lw":56.7},{"id":"e-reader-recordings","from":"reader","to":"recordings","label":"transcript","dashed":false,"ps":[[[610,526],[610,604],[662,604],[662,778],[676,778]]],"l":[668,640],"lw":39.7},{"id":"e-reader-jira","from":"reader","to":"jira","label":"allowlisted reads","dashed":false,"ps":[[[560,526],[560,616],[638,616],[638,712],[620,712]]],"l":[560,570],"lw":69.9},{"id":"e-reader-confluence","from":"reader","to":"confluence","label":"","dashed":false,"ps":[[[560,526],[560,616],[638,616],[638,772],[620,772]]]},{"id":"e-confpage-reader","from":"confpage","to":"reader","label":"comments, revisions","dashed":false,"ps":[[[816,70],[816,518],[622,518]]],"l":[719,518],"lw":87.3},{"id":"e-reader-s3","from":"reader","to":"s3","label":"corpus","dashed":false,"ps":[[[622,494],[800,494],[800,190],[622,190]]],"l":[668,190],"lw":29.1},{"id":"e-s3-index","from":"s3","to":"index","label":"ingest","dashed":false,"ps":[[[622,204],[714,204],[714,342]]],"l":[714,290],"lw":25.6}],"scenarios":[{"key":"data","label":"Data Question","steps":[["Maya asks in the project chat for margin per door by franchise for FW27.",["console","api"],["e-console-api"]],["The API passes the turn to the orchestrator.",["api","orch"],["e-api-orch"]],["The orchestrator sends the broker a DelegationRequest for a data task.",["orch","broker"],["e-orch-broker"]],["The broker resolves the Merchandising data envelope, reads the service user's key from Secrets Manager, sets a budget and sends a DataTask.",["broker","secrets","cortex"],["e-secrets-broker","e-broker-cortex"]],["Cortex Code reads the certified semantic view inside Snowflake as the read-only service user.",["cortex","semantic"],["e-cortex-semantic"]],["DataFindings return: 3 views, 1 certified metric, weekly aggregates and query ids. No rows; the broker rejects anything finer than the envelope allows.",["broker","cortex"],["e-broker-cortex"]],["The orchestrator cites the finding in the Brief, and the span records time and cost.",["orch","traces"],["e-orch-traces"]]]},{"key":"build","label":"Build a Piece","steps":[["Maya and her approvers sign the plan in the console. The API records the decision, and a gate token is issued for this project and step.",["console","api","sfn","gate"],["e-console-api","e-api-sfn","e-api-gate"]],["The orchestrator asks for the build. The broker checks the gate token, files the Jira epic with a sub-task per piece, and assembles the BuildUnit for piece 1.",["orch","broker","gate","jira"],["e-orch-broker","e-gate-broker","e-broker-jira"]],["Step Functions starts a build worker for the piece and waits on it.",["sfn","worker"],["e-sfn-worker"]],["The worker hands the coding agent's session a Git bundle and opens its turn in the sandbox account. The signed plan, decisions and toolchain image are already in its workspace.",["worker","coding","image"],["e-worker-coding","e-broker-coding","e-image-coding"]],["The coding agent builds the piece and runs the tests and the preview build inside its session.",["coding"],[]],["The worker checks the returned commits and diff, pushes the branch and opens one pull request. Actions runs the tests and scans, then deploys the preview.",["worker","repo","actions","preview"],["e-worker-repo","e-repo-actions","e-actions-preview"]],["The evidence agent opens the preview as a test viewer and captures each acceptance criterion.",["reviewers","preview"],["e-broker-reviewers","e-reviewers-preview"]],["A BuildResult returns: commits, tests, files touched outside the plan, evidence and cost. The next piece starts.",["broker","orch","traces"],["e-broker-coding","e-orch-broker","e-orch-traces"]]]},{"key":"point","label":"Point at a Resource","steps":[["Jordan pastes a Teams recording link and a OneDrive folder into the chat.",["console","api"],["e-console-api"]],["The orchestrator registers both as project resources and asks the broker for a read.",["orch","broker"],["e-api-orch","e-orch-broker"]],["The resource reader fetches both with Jordan's delegated token, so Microsoft 365 decides what Jordan can read.",["reader","entra","files","recordings"],["e-broker-reader","e-reader-files","e-reader-recordings"]],["A digest returns: statements with timestamps, decisions, open questions and people.",["reader"],[]],["The corpus lands in S3 and is ingested into the project index, with a source locator on every chunk.",["s3","index"],["e-reader-s3","e-s3-index"]],["Jordan gets a Teams card to confirm three facts the recording raised.",["orch","api","teams"],["e-api-orch","e-teams-api"]],["Later answers cite the recording at 14:02 and the folder file by version.",["orch","index"],["e-orch-index"]]]}],"logos":{"amazonbedrock":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\" fill-rule=\"evenodd\"><path d=\"M13.05 15.513h3.08c.214 0 .389.177.389.394v1.82a1.704 1.704 0 011.296 1.661c0 .943-.755 1.708-1.685 1.708-.931 0-1.686-.765-1.686-1.708 0-.807.554-1.484 1.297-1.662v-1.425h-2.69v4.663a.395.395 0 01-.188.338l-2.69 1.641a.385.385 0 01-.405-.002l-4.926-3.086a.395.395 0 01-.185-.336V16.3L2.196 14.87A.395.395 0 012 14.555L2 14.528V9.406c0-.14.073-.27.192-.34l2.465-1.462V4.448c0-.129.062-.249.165-.322l.021-.014L9.77 1.058a.385.385 0 01.407 0l2.69 1.675a.395.395 0 01.185.336V7.6h3.856V5.683a1.704 1.704 0 01-1.296-1.662c0-.943.755-1.708 1.685-1.708.931 0 1.685.765 1.685 1.708 0 .807-.553 1.484-1.296 1.662v2.311a.391.391 0 01-.389.394h-4.245v1.806h6.624a1.69 1.69 0 011.64-1.313c.93 0 1.685.764 1.685 1.707 0 .943-.754 1.708-1.685 1.708a1.69 1.69 0 01-1.64-1.314H13.05v1.937h4.953l.915 1.18a1.66 1.66 0 01.84-.227c.931 0 1.685.764 1.685 1.707 0 .943-.754 1.708-1.685 1.708-.93 0-1.685-.765-1.685-1.708 0-.346.102-.668.276-.937l-.724-.935H13.05v1.806zM9.973 1.856L7.93 3.122V6.09h-.778V3.604L5.435 4.669v2.945l2.11 1.36L9.712 7.61V5.334h.778V7.83c0 .136-.07.263-.184.335L7.963 9.638v2.081l1.422 1.009-.446.646-1.406-.998-1.53 1.005-.423-.66 1.605-1.055v-1.99L5.038 8.29l-2.26 1.34v1.676l1.972-1.189.398.677-2.37 1.429V14.3l2.166 1.258 2.27-1.368.397.677-2.176 1.311V19.3l1.876 1.175 2.365-1.426.398.678-2.017 1.216 1.918 1.201 2.298-1.403v-5.78l-4.758 2.893-.4-.675 5.158-3.136V3.289L9.972 1.856zM16.13 18.47a.913.913 0 00-.908.92c0 .507.406.918.908.918a.913.913 0 00.907-.919.913.913 0 00-.907-.92zm3.63-3.81a.913.913 0 00-.908.92c0 .508.406.92.907.92a.913.913 0 00.908-.92.913.913 0 00-.908-.92zm1.555-4.99a.913.913 0 00-.908.92c0 .507.407.918.908.918a.913.913 0 00.907-.919.913.913 0 00-.907-.92zM17.296 3.1a.913.913 0 00-.907.92c0 .508.406.92.907.92a.913.913 0 00.908-.92.913.913 0 00-.908-.92z\"><\/path><\/g>","c":"#3D8FFF"},"amazonwebservices":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\" fill-rule=\"evenodd\"><path d=\"M6.763 11.212c0 .296.032.535.088.71.064.176.144.368.256.576.04.063.056.127.056.183 0 .08-.048.16-.152.24l-.503.335a.383.383 0 01-.208.072c-.08 0-.16-.04-.239-.112a2.47 2.47 0 01-.287-.375 6.18 6.18 0 01-.248-.471c-.622.734-1.405 1.101-2.347 1.101-.67 0-1.205-.191-1.596-.574-.39-.384-.59-.894-.59-1.533 0-.678.24-1.23.726-1.644.487-.415 1.133-.623 1.955-.623.272 0 .551.024.846.064.296.04.6.104.918.176v-.583c0-.607-.127-1.03-.375-1.277-.255-.248-.686-.367-1.3-.367-.28 0-.568.031-.863.103-.295.072-.583.16-.862.272a2.4 2.4 0 01-.28.104.488.488 0 01-.127.023c-.112 0-.168-.08-.168-.247v-.391c0-.128.016-.224.056-.28a.597.597 0 01.224-.167 4.577 4.577 0 011.005-.36 4.84 4.84 0 011.246-.151c.95 0 1.644.216 2.091.647.44.43.662 1.085.662 1.963v2.586h.016zm-3.24 1.214c.263 0 .534-.048.822-.144a1.78 1.78 0 00.758-.51 1.27 1.27 0 00.272-.512c.047-.191.08-.423.08-.694v-.335a6.66 6.66 0 00-.735-.136 6.02 6.02 0 00-.75-.048c-.535 0-.926.104-1.19.32-.263.215-.39.518-.39.917 0 .375.095.655.295.846.191.2.47.296.838.296zm6.41.862c-.144 0-.24-.024-.304-.08-.064-.048-.12-.16-.168-.311L7.586 6.726a1.398 1.398 0 01-.072-.32c0-.128.064-.2.191-.2h.783c.151 0 .255.025.31.08.065.048.113.16.16.312l1.342 5.284 1.245-5.284c.04-.16.088-.264.151-.312a.549.549 0 01.32-.08h.638c.152 0 .256.025.32.08.063.048.12.16.151.312l1.261 5.348 1.381-5.348c.048-.16.104-.264.16-.312a.52.52 0 01.311-.08h.743c.127 0 .2.065.2.2 0 .04-.009.08-.017.128a1.137 1.137 0 01-.056.2l-1.923 6.17c-.048.16-.104.263-.168.311a.51.51 0 01-.303.08h-.687c-.15 0-.255-.024-.32-.08-.063-.056-.119-.16-.15-.32L12.32 7.747l-1.23 5.14c-.04.16-.087.264-.15.32-.065.056-.177.08-.32.08l-.686.001zm10.256.215c-.415 0-.83-.048-1.229-.143-.399-.096-.71-.2-.918-.32-.128-.071-.215-.151-.247-.223a.563.563 0 01-.048-.224v-.407c0-.167.064-.247.183-.247.048 0 .096.008.144.024.048.016.12.048.2.08.271.12.566.215.878.279.32.064.63.096.95.096.502 0 .894-.088 1.165-.264a.86.86 0 00.415-.758.777.777 0 00-.215-.559c-.144-.151-.416-.287-.807-.415l-1.157-.36c-.583-.183-1.014-.454-1.277-.813a1.902 1.902 0 01-.4-1.158c0-.335.073-.63.216-.886.144-.255.335-.479.575-.654.24-.184.51-.32.83-.415.32-.096.655-.136 1.006-.136.175 0 .36.008.535.032.183.024.35.056.518.088.16.04.312.08.455.127.144.048.256.096.336.144a.69.69 0 01.24.2.43.43 0 01.071.263v.375c0 .168-.064.256-.184.256a.83.83 0 01-.303-.096 3.652 3.652 0 00-1.532-.311c-.455 0-.815.071-1.062.223-.248.152-.375.383-.375.71 0 .224.08.416.24.567.16.152.454.304.877.44l1.134.358c.574.184.99.44 1.237.767.247.327.367.702.367 1.117 0 .343-.072.655-.207.926a2.157 2.157 0 01-.583.703c-.248.2-.543.343-.886.447-.36.111-.734.167-1.142.167z\"><\/path><path d=\"M.378 15.475c3.384 1.963 7.56 3.153 11.877 3.153 2.914 0 6.114-.607 9.06-1.852.44-.2.814.287.383.607-2.626 1.94-6.442 2.969-9.722 2.969-4.598 0-8.74-1.7-11.87-4.526-.247-.223-.024-.527.272-.351zm23.531-.2c.287.36-.08 2.826-1.485 4.007-.215.184-.423.088-.327-.151l.175-.439c.343-.88.802-2.198.52-2.555-.336-.43-2.22-.207-3.074-.103-.255.032-.295-.192-.063-.36 1.5-1.053 3.967-.75 4.254-.399z\" fill=\"#F90\"><\/path><\/g>","c":"#232F3E"},"claude":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z\"/><\/g>","c":"#D97757"},"confluence":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path fill=\"currentColor\" d=\"M18 0a6 6 0 0 1 6 6v12a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6V6a6 6 0 0 1 6-6zm-7.032 12.217c-1.997 0-3.699.83-5.219 3.165l-.249.38c-.204.315-.25.427-.25.562s.068.247.317.404l2.565 1.594c.136.09.249.135.362.135.136 0 .227-.068.363-.27l.409-.628c.635-.966 1.202-1.28 1.928-1.28.636 0 1.384.18 2.315.63l2.677 1.256c.273.134.568.067.704-.247l1.27-2.783c.136-.315.045-.517-.272-.674-4.039-1.953-5.219-2.244-6.92-2.244m4.538-6.667c-.136 0-.227.067-.363.27l-.409.628c-.635.965-1.202 1.28-1.928 1.28-.636 0-1.384-.18-2.315-.63L7.813 5.843c-.272-.135-.567-.067-.703.247L5.84 8.872c-.136.314-.045.517.272.674 4.039 1.953 5.219 2.244 6.92 2.244 1.997 0 3.699-.83 5.219-3.165l.249-.382c.204-.314.25-.426.25-.56s-.068-.248-.317-.405l-2.565-1.593c-.136-.09-.249-.135-.362-.135\"/><\/g>","c":"#1868DB"},"folder":{"vb":"0 0 256 256","svg":"<g fill=\"currentColor\"><path d=\"M216,72H130.67L102.93,51.2a16.12,16.12,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V200a16,16,0,0,0,16,16H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72Zm0,128H40V64H93.33L123.2,86.4A8,8,0,0,0,128,88h88Z\"/><\/g>","c":null},"github":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12\"/><\/g>","c":null},"jira":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path fill=\"currentColor\" d=\"M18 0a6 6 0 0 1 6 6v12a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6V6a6 6 0 0 1 6-6zM4.321 12.434c0 1.782 1.425 3 3.412 3h1.319v1.326c0 2 1.188 3.433 2.959 3.433v-7.129c0-.369-.238-.63-.605-.63zm3.5-3.52c0 1.781 1.425 2.977 3.412 2.977h1.318v1.326c0 2 1.21 3.433 2.98 3.433V9.521c0-.369-.259-.608-.626-.608zm3.52-3.544c0 1.782 1.426 3 3.413 3h1.317v1.304c0 2 1.188 3.433 2.96 3.433V5.98c0-.348-.238-.609-.605-.609z\"/><\/g>","c":"#1868DB"},"microsoft":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\" fill-rule=\"evenodd\"><path d=\"M11.49 2H2v9.492h9.492V2h-.002z\"><\/path><path d=\"M22 2h-9.492v9.492H22V2z\"><\/path><path d=\"M11.49 12.508H2V22h9.492v-9.492h-.002z\"><\/path><path d=\"M22 12.508h-9.492V22H22v-9.492z\"><\/path><\/g>","c":null},"microsoftteams":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"M20.625 8.127q-.55 0-1.025-.205-.475-.205-.832-.563-.358-.357-.563-.832Q18 6.053 18 5.502q0-.54.205-1.02t.563-.837q.357-.358.832-.563.474-.205 1.025-.205.54 0 1.02.205t.837.563q.358.357.563.837.205.48.205 1.02 0 .55-.205 1.025-.205.475-.563.832-.357.358-.837.563-.48.205-1.02.205zm0-3.75q-.469 0-.797.328-.328.328-.328.797 0 .469.328.797.328.328.797.328.469 0 .797-.328.328-.328.328-.797 0-.469-.328-.797-.328-.328-.797-.328zM24 10.002v5.578q0 .774-.293 1.46-.293.685-.803 1.194-.51.51-1.195.803-.686.293-1.459.293-.445 0-.908-.105-.463-.106-.85-.329-.293.95-.855 1.729-.563.78-1.319 1.336-.756.557-1.67.861-.914.305-1.898.305-1.148 0-2.162-.398-1.014-.399-1.805-1.102-.79-.703-1.312-1.664t-.674-2.086h-5.8q-.411 0-.704-.293T0 16.881V6.873q0-.41.293-.703t.703-.293h8.59q-.34-.715-.34-1.5 0-.727.275-1.365.276-.639.75-1.114.475-.474 1.114-.75.638-.275 1.365-.275t1.365.275q.639.276 1.114.75.474.475.75 1.114.275.638.275 1.365t-.275 1.365q-.276.639-.75 1.113-.475.475-1.114.75-.638.276-1.365.276-.188 0-.375-.024-.188-.023-.375-.058v1.078h10.875q.469 0 .797.328.328.328.328.797zM12.75 2.373q-.41 0-.78.158-.368.158-.638.434-.27.275-.428.639-.158.363-.158.773 0 .41.158.78.159.368.428.638.27.27.639.428.369.158.779.158.41 0 .773-.158.364-.159.64-.428.274-.27.433-.639.158-.369.158-.779 0-.41-.158-.773-.159-.364-.434-.64-.275-.275-.639-.433-.363-.158-.773-.158zM6.937 9.814h2.25V7.94H2.814v1.875h2.25v6h1.875zm10.313 7.313v-6.75H12v6.504q0 .41-.293.703t-.703.293H8.309q.152.809.556 1.5.405.691.985 1.19.58.497 1.318.779.738.281 1.582.281.926 0 1.746-.352.82-.351 1.436-.966.615-.616.966-1.43.352-.815.352-1.752zm5.25-1.547v-5.203h-3.75v6.855q.305.305.691.452.387.146.809.146.469 0 .879-.176.41-.175.715-.48.304-.305.48-.715t.176-.879Z\"/><\/g>","c":"#5B5FC7"},"onedrive":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"M19.453 9.95q.961.058 1.787.468.826.41 1.442 1.066.615.657.966 1.512.352.856.352 1.816 0 1.008-.387 1.893-.386.885-1.049 1.547-.662.662-1.546 1.049-.885.387-1.893.387H6q-1.242 0-2.332-.475-1.09-.475-1.904-1.29-.815-.814-1.29-1.903Q0 14.93 0 13.688q0-.985.31-1.887.311-.903.862-1.658.55-.756 1.324-1.325.774-.568 1.711-.861.434-.129.85-.187.416-.06.861-.082h.012q.515-.786 1.207-1.413.691-.627 1.5-1.066.808-.44 1.705-.668.896-.229 1.845-.229 1.278 0 2.456.417 1.177.416 2.144 1.16.967.744 1.658 1.78.692 1.038 1.008 2.28zm-7.265-4.137q-1.325 0-2.52.544-1.195.545-2.04 1.565.446.117.85.299.405.181.792.416l4.78 2.86 2.731-1.15q.27-.117.545-.204.276-.088.58-.147-.293-.937-.855-1.705-.563-.768-1.319-1.318-.755-.551-1.658-.856-.902-.304-1.886-.304zM2.414 16.395l9.914-4.184-3.832-2.297q-.586-.351-1.23-.539-.645-.188-1.325-.188-.914 0-1.722.364-.809.363-1.412.978-.604.616-.955 1.436-.352.82-.352 1.723 0 .703.234 1.423.235.721.68 1.284zm16.711 1.793q.563 0 1.078-.176.516-.176.961-.516l-7.23-4.324-10.301 4.336q.527.328 1.13.504.604.175 1.237.175zm3.012-1.852q.363-.727.363-1.523 0-.774-.293-1.407t-.791-1.072q-.498-.44-1.166-.68-.668-.24-1.406-.24-.422 0-.838.1t-.815.252q-.398.152-.785.334-.386.181-.761.345Z\"/><\/g>","c":"#0078D4"},"snowflake":{"vb":"0 0 24 24","svg":"<g fill=\"currentColor\"><path d=\"M24 3.459c0 .646-.418 1.18-1.141 1.18-.723 0-1.142-.534-1.142-1.18 0-.647.419-1.18 1.142-1.18.723 0 1.141.533 1.141 1.18zm-.228 0c0-.533-.38-.951-.913-.951s-.913.38-.913.95c0 .533.38.952.913.952.57 0 .913-.419.913-.951zm-1.37-.533h.495c.266 0 .456.152.456.38 0 .153-.076.229-.19.305l.19.266v.038h-.266l-.19-.266h-.229v.266h-.266zm.495.228h-.229v.267h.229c.114 0 .152-.038.152-.114.038-.077-.038-.153-.152-.153zM7.602 12.4c.038-.151.076-.304.076-.456 0-.114-.038-.228-.038-.342-.114-.343-.304-.647-.646-.838l-4.87-2.777c-.685-.38-1.56-.152-1.94.533-.381.685-.153 1.56.532 1.94l2.701 1.56-2.701 1.56c-.685.38-.913 1.256-.533 1.94.38.685 1.256.914 1.94.533l4.832-2.777c.343-.267.571-.533.647-.876zm1.332 2.626c-.266-.038-.57.038-.837.19l-4.832 2.777c-.685.38-.913 1.256-.532 1.94.38.686 1.255.914 1.94.533l2.701-1.56v3.12c0 .8.647 1.408 1.446 1.408.799 0 1.407-.647 1.407-1.408v-5.592c0-.761-.57-1.37-1.293-1.408zm4.946-6.088c.266.038.57-.038.837-.19l4.832-2.777c.685-.38.913-1.256.532-1.94-.38-.686-1.255-.914-1.94-.533l-2.701 1.56V1.975c0-.799-.647-1.408-1.446-1.408-.799 0-1.446.609-1.446 1.408V7.53c0 .76.609 1.37 1.332 1.407zM3.265 5.97l4.832 2.777c.266.152.533.19.837.19.723-.038 1.331-.684 1.331-1.407V1.975c0-.799-.646-1.408-1.407-1.408-.799 0-1.446.647-1.446 1.408v3.12l-2.701-1.56c-.685-.38-1.56-.152-1.94.533-.419.646-.19 1.521.494 1.902zm9.093 6.011a.412.412 0 00-.114-.266l-.57-.571a.346.346 0 00-.267-.114.412.412 0 00-.266.114l-.571.57a.411.411 0 00-.114.267c0 .076.038.19.114.267l.57.57a.345.345 0 00.267.114c.076 0 .19-.038.266-.114l.571-.57a.412.412 0 00.114-.267zm1.598.533L11.94 14.53c-.039.038-.153.114-.229.114h-.608a.411.411 0 01-.267-.114L8.82 12.514a.408.408 0 01-.076-.229v-.608c0-.076.038-.19.114-.267l2.016-2.016a.41.41 0 01.267-.114h.608a.41.41 0 01.267.114l2.016 2.016a.347.347 0 01.114.267v.608c-.076.077-.114.19-.19.229zm5.593 5.44l-4.832-2.777c-.266-.152-.57-.19-.837-.152-.723.038-1.332.684-1.332 1.408v5.554c0 .8.647 1.408 1.408 1.408.799 0 1.446-.647 1.446-1.408v-3.12l2.7 1.56c.686.38 1.561.152 1.941-.533.419-.646.19-1.521-.494-1.94zm2.549-7.533l-2.701 1.56 2.7 1.56c.686.38.914 1.256.533 1.94-.38.685-1.255.913-1.94.533l-4.832-2.778a1.644 1.644 0 01-.647-.798c-.037-.153-.076-.305-.076-.457 0-.114.039-.228.039-.342.114-.343.342-.647.646-.837l4.832-2.778c.685-.38 1.56-.152 1.94.533.457.609.19 1.484-.494 1.864\"/><\/g>","c":"#29B5E8"},"terminal":{"vb":"0 0 256 256","svg":"<g fill=\"currentColor\"><path d=\"M128,128a8,8,0,0,1-3,6.25l-40,32a8,8,0,1,1-10-12.5L107.19,128,75,102.25a8,8,0,1,1,10-12.5l40,32A8,8,0,0,1,128,128Zm48,24H136a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm56-96V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56ZM216,200V56H40V200H216Z\"/><\/g>","c":null},"web-browser":{"vb":"0 0 256 256","svg":"<g fill=\"currentColor\"><path d=\"M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V88H40V56Zm0,144H40V104H216v96Z\"/><\/g>","c":null}},"roles":[["hd","Orchestrator"],["ink","Broker"],["tl","Resource reader"],["sl","Reviewers and QA"],["sk","Cortex Code"],["vi","Coding agent"]],"newLabel":"New in the Final MVP","oldLabel":"Running Today","dashLabel":"Contract or On Request","highlight":[["today","Today"],["mvp","MVP"]],"cardTitle":"Final MVP at MVP ready","cardText":"32 parts, 22 new in the Final MVP. Select a part for what it does, what it runs as and what it connects to."});
+</script>
+</figure>

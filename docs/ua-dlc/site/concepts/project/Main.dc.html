@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyperDelivery - Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-nav a:hover{color:#1D1D1D!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+</style>
+</helmet>
+<div style="min-height: 1330px; background: #F9F9F9; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
+
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 24px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D0D0D0; position: relative; z-index: 20">
+  <a href="Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 12px; color: #1D1D1D; text-decoration: none; flex: none">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+    <span style="font-size: 16px; line-height: 20px; font-weight: 700">HyperDelivery</span>
+  </a>
+  <span aria-hidden="true" style="width: 1px; height: 20px; background: #D0D0D0; flex: none"></span>
+  <details class="hd-pop" style="position: relative; flex: none">
+    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 4px; color: #1D1D1D; font-size: 14px; line-height: 18px; white-space: nowrap">Merchandising
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg>
+    </summary>
+    <div class="hd-menu" style="left: 0; right: auto">
+      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closeMenu}}" style="font-weight: 700">Merchandising<span style="flex: 1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Sourcing</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Wholesale</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">EDM</button>
+    </div>
+  </details>
+  <nav aria-label="Primary" class="hd-nav" style="display: flex; align-self: stretch; gap: 24px">
+    <a href="Main.dc.html" aria-current="page" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; font-weight: 700; color: #1D1D1D; text-decoration: none; box-shadow: inset 0 -2px 0 #1D1D1D">Home</a>
+    <a href="Projects.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Projects</a>
+    <a href="Inbox.dc.html" aria-label="{{inboxLabel}}" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Inbox<sc-if value="{{hasInboxCount}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="margin-left: 6px; min-width: 16px; height: 16px; box-sizing: border-box; padding: 0 4px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; text-align: center">{{inboxCount}}</span></sc-if></a>
+    <a href="Library.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Library</a>
+    <a href="Portfolio.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Portfolio</a>
+    <span aria-hidden="true" style="align-self: center; width: 1px; height: 20px; background: #D0D0D0"></span>
+    <a href="Admin.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Admin</a>
+  </nav>
+  <span style="flex: 1"></span>
+  <div class="hd-right" style="display: flex; align-items: center; gap: 16px; flex: none">
+    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width: 240px; height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; border: 0; border-radius: 4px; background: #F0F0F0; color: #5F5F5F; font-family: inherit; font-size: 14px; line-height: 20px; text-align: left">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span style="flex: 1; white-space: nowrap">Search projects and facts</span>
+      <kbd style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 2px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    </button>
+    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
+    <details class="hd-pop" open="{{helpOpen}}" style="position: relative; flex: none">
+      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+      </summary>
+      <nav class="hd-menu" aria-label="Help">
+        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+        <hr>
+        <details class="hd-sub">
+          <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>?</kbd></summary>
+          <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+            <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+            <dt><kbd>/</kbd></dt><dd style="margin: 0">Search This Table</dd>
+            <dt><kbd>J</kbd> <kbd>K</kbd></dt><dd style="margin: 0">Next and Previous Item</dd>
+            <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention Someone</dd>
+            <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+            <dt><kbd>?</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+          </dl>
+        </details>
+        <details class="hd-sub">
+          <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+          <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
+          </ul>
+        </details>
+        <hr>
+        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+      </nav>
+    </details>
+    <details class="hd-pop" style="position: relative; flex: none">
+      <summary class="hd-ring" aria-label="Maya Chen, account" style="width: 32px; height: 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #3D4B8C; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">MC</summary>
+      <div class="hd-menu">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">Maya Chen</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Business owner, Merchandising</span>
+        </div>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}<sc-if value="{{tech}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</header>
+
+<section style="background: #FFFFFF; border-bottom: 1px solid #D0D0D0; padding: 24px">
+  <div style="display: flex; align-items: center; gap: 16px; min-height: 40px">
+    <h1 style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; white-space: nowrap">Needs You</h1>
+    <span style="flex: 1"></span>
+    <a href="Inbox.dc.html" class="hd-ring" style="display: inline-block; margin: -12px 0; padding: 12px 0; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap">Open Inbox</a>
+  </div>
+  <p style="margin: 8px 0 0; font-size: 14px; line-height: 20px; color: #5F5F5F">{{needsSummary}}</p>
+</section>
+
+<main style="padding: 32px 24px 56px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; row-gap: 24px; align-items: start">
+
+  <div style="grid-column: span 9; min-width: 0; display: flex; flex-direction: column; gap: 56px">
+  <section aria-label="Waiting on you" style="min-width: 0; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden">
+    <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 64px 24px; text-align: center">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="0.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5"></path><path d="M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z"></path></svg>
+        <h2 style="margin: 8px 0 0; font-size: 16px; line-height: 20px; font-weight: 700">Nothing Waiting on You</h2>
+        <p style="margin: 0; max-width: 360px; font-size: 14px; line-height: 20px; color: #5F5F5F">New approvals and questions also arrive in Teams.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{notEmpty}}" hint-placeholder-val="{{ true }}">
+      <sc-for list="{{needs}}" as="n" hint-placeholder-count="4">
+        <div style="display: grid; grid-template-columns: 8px minmax(0, 1fr) 72px 184px; column-gap: 16px; align-items: center; padding: 16px 24px; border-bottom: {{n.rule}}">
+          <span aria-hidden="true" style="align-self: start; margin-top: 6px; width: 8px; height: 8px; background: #DC0019"></span>
+          <div style="min-width: 0">
+            <h3 style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">{{n.title}}</h3>
+            <p style="margin: 4px 0 0; font-size: 14px; line-height: 20px">{{n.project}} <span style="color: #5F5F5F">{{n.unblocks}}</span></p>
+            <div style="margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+              <span>{{n.role}}</span>
+              <sc-for list="{{n.chips}}" as="c" hint-placeholder-count="2">
+                <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap; max-width: 240px; overflow: hidden; text-overflow: ellipsis">
+                  <sc-if value="{{c.hasLogo}}" hint-placeholder-val="{{ true }}"><img src="{{c.logoUrl}}" width="16" height="16" alt="" onError="{{c.onErr}}" style="flex: none"></sc-if>
+                  <sc-if value="{{c.hasGlyph}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{c.glyph}}"></path></svg></sc-if>
+                  <span style="font-family: {{c.font}}">{{c.label}}</span>
+                </span>
+              </sc-for>
+            </div>
+            <sc-if value="{{n.isQuestion}}" hint-placeholder-val="{{ false }}">
+              <div role="radiogroup" aria-label="{{n.title}}" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px">
+                <sc-for list="{{n.options}}" as="o" hint-placeholder-count="3">
+                  <button type="button" role="radio" aria-checked="{{o.checked}}" tabindex="{{o.tab}}" onClick="{{o.pick}}" onKeyDown="{{radioKeys}}" class="{{o.cls}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 4px; background: {{o.bg}}; color: {{o.fg}}; box-shadow: {{o.ring}}; font-family: inherit; font-size: 14px; line-height: 18px; font-weight: {{o.fw}}; white-space: nowrap"><sc-if value="{{o.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{o.label}}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <div style="justify-self: end; display: flex; flex-direction: column; align-items: flex-end">
+            <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Waiting</span>
+            <span style="font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">{{n.wait}}</span>
+          </div>
+          <div style="justify-self: end; display: flex">
+            <sc-if value="{{n.isPrimary}}" hint-placeholder-val="{{ false }}">
+              <a href="{{n.href}}" class="hd-btn-primary hd-ring" style="height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; background: #1D1D1D; color: #FFFFFF; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">{{n.cta}}</a>
+            </sc-if>
+            <sc-if value="{{n.isSecondary}}" hint-placeholder-val="{{ true }}">
+              <a href="{{n.href}}" class="hd-btn-secondary hd-ring-ink" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">{{n.cta}}</a>
+            </sc-if>
+            <sc-if value="{{n.isQuestion}}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="hd-ring" aria-label="Not me: suggest who should answer the duplicate-check question" style="padding: 12px 0; border: 0; background: transparent; font-family: inherit; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap">Not Me, Suggest Who</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </sc-if>
+  </section>
+
+  <section aria-labelledby="mine" style="min-width: 0; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 16px">
+      <h2 id="mine" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">My Projects</h2>
+      <span style="flex: 1"></span>
+      <a href="Projects.dc.html" class="hd-ring" style="display: inline-block; margin: -12px 0; padding: 12px 0; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap">All 7 Projects</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch">
+      <sc-for list="{{projects}}" as="p" hint-placeholder-count="4">
+        <a href="Project.dc.html" class="hd-ring" style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; color: #1D1D1D; text-decoration: none">
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <h3 style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</h3>
+            <p style="margin: 0; font-size: 12px; line-height: 18px; color: #5F5F5F">{{p.meta}}, {{p.whoLabel}} <span style="color: #1D1D1D; white-space: nowrap">{{p.whoName}}</span></p>
+          </div>
+          <div role="img" aria-label="{{p.lineLabel}}" style="display: grid; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr); align-items: center; row-gap: 4px; width: 100%; max-width: 280px">
+            <sc-for list="{{p.parts}}" as="x" hint-placeholder-count="7">
+              <sc-if value="{{x.solid}}" hint-placeholder-val="{{ true }}"><span style="height: {{x.h}}; background: #1D1D1D"></span></sc-if>
+              <sc-if value="{{x.dashed}}" hint-placeholder-val="{{ false }}"><span style="border-top: 2px dashed #949494"></span></sc-if>
+              <sc-if value="{{x.notch}}" hint-placeholder-val="{{ false }}"><span style="width: 8px; height: 8px; box-sizing: border-box; background: {{x.bg}}; border: {{x.bd}}"></span></sc-if>
+            </sc-for>
+            <sc-for list="{{p.labels}}" as="l" hint-placeholder-count="7">
+              <span style="justify-self: center; min-height: 16px; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: {{l.fw}}; color: {{l.c}}">{{l.t}}</span>
+            </sc-for>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="display: inline-flex; align-items: center; gap: {{p.stGap}}; font-size: 14px; line-height: 20px; font-weight: {{p.stWeight}}; color: {{p.stColor}}; white-space: nowrap">
+              <sc-if value="{{p.stBolt}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M13 3L5 13.5h6l-1 7.5 8-10.5h-6z"></path></svg></sc-if>
+              {{p.status}}
+            </span>
+            <sc-if value="{{p.hasNext}}" hint-placeholder-val="{{ true }}"><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{p.next}}</span></sc-if>
+          </div>
+          <div style="margin-top: auto; height: 1px; background: #F0F0F0"></div>
+          <div style="display: flex; align-items: center; gap: 16px">
+            <span role="img" aria-label="{{p.sourcesLabel}}" style="display: flex; gap: 4px">
+              <sc-for list="{{p.tiles}}" as="t" hint-placeholder-count="3">
+                <span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">
+                  <span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">{{t.mono}}</span>
+                  <img src="{{t.logoUrl}}" width="16" height="16" alt="" onError="{{t.onErr}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px">
+                </span>
+              </sc-for>
+              <sc-if value="{{p.hasTileMore}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #F0F0F0; font-size: 12px; line-height: 16px; font-weight: 700">{{p.tileMore}}</span></sc-if>
+            </span>
+            <span style="flex: 1"></span>
+            <span role="img" aria-label="{{p.peopleLabel}}" style="display: inline-flex; align-items: center">
+              <sc-for list="{{p.avatars}}" as="a" hint-placeholder-count="3">
+                <span aria-hidden="true" style="margin-left: {{a.ml}}; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{a.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; box-shadow: 0 0 0 2px #FFFFFF">{{a.initials}}</span>
+              </sc-for>
+              <sc-if value="{{p.hasPeopleMore}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="margin-left: 0; min-width: 24px; height: 24px; box-sizing: border-box; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700; box-shadow: 0 0 0 2px #FFFFFF">{{p.peopleMore}}</span></sc-if>
+            </span>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+  </div>
+
+  <aside aria-labelledby="shipped" style="grid-column: span 3; min-width: 0; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+    <h2 id="shipped" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Shipped Across UA This Week</h2>
+    <sc-for list="{{shipped}}" as="s" hint-placeholder-count="2">
+      <div style="display: flex; gap: 8px; align-items: flex-start">
+        <span role="img" aria-label="{{s.ownerLabel}}" style="margin-top: -2px; width: 24px; height: 24px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{s.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{s.initials}}</span>
+        <div style="min-width: 0; display: flex; flex-direction: column">
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">{{s.name}}</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{s.meta}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </aside>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"empty":{"editor":"boolean","default":false},"help":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1330}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { answer: '', tech: false };
+  }
+  componentDidMount() {
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+  }
+  renderVals() {
+    const empty = this.props.empty ?? false;
+    const helpOpen = this.props.help ?? false;
+    const st = this.state;
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = {
+      snowflake: 'logos/snowflake.svg',
+      jira: 'logos/jira.svg',
+      confluence: 'logos/confluence.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      sharepoint: 'logos/sharepoint.svg',
+      github: 'logos/github.svg'
+    };
+    const MONO_LETTER = { snowflake: 'S', jira: 'J', confluence: 'C', microsoftteams: 'T', sharepoint: 'S', github: 'G' };
+    const showMonogram = (e) => { const i = e.currentTarget; i.style.display = 'none'; if (i.previousElementSibling) i.previousElementSibling.style.color = '#444444'; };
+    const closeMenu = (e) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; };
+    const INK = '#1D1D1D', RED = '#DC0019', MUTED = '#5F5F5F';
+    const MONO = "'Chivo Mono', ui-monospace, monospace";
+    const GLYPH = { external: 'M14 4h6v6M20 4l-9 9M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10' };
+    // One fill per person, the same on every artboard (north star 3.3); anyone else is #444444.
+    const PERSON = { 'Maya Chen': '#3D4B8C', 'Jordan Lee': '#2F6B5E', 'Dana Ortiz': '#6A4C8C', 'Luis Romero': '#2E6A8E', 'Omar Haddad': '#4A5560', 'Sam Kim': '#2F6F78', 'Priya Nair': '#3F5FA0', 'Rina Alvarez': '#6B5A4E', 'Kim Patel': '#3F4A55', 'Ana Ruiz': '#2D6470' };
+    const people = (list) => {
+      const shown = list.slice(0, 3).map((p) => ({ initials: p[0], name: p[1], bg: PERSON[p[1]] || '#444444', ml: '0' }));
+      const more = list.length - shown.length;
+      const names = list.slice(0, 3).map((p) => p[1]);
+      const label = more > 0 ? names.join(', ') + ' and ' + more + (more === 1 ? ' other' : ' others') : (names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]);
+      return { avatars: shown, hasPeopleMore: more > 0, peopleMore: '+' + more, peopleLabel: 'People: ' + label };
+    };
+    const tiles = (keys) => {
+      const shown = keys.slice(0, 3).map((k) => ({ logoUrl: LOGO[k], mono: MONO_LETTER[k], onErr: showMonogram }));
+      const more = keys.length - shown.length;
+      return { tiles: shown, hasTileMore: more > 0, tileMore: '+' + more };
+    };
+    const chip = (k, label, mono) => ({ hasLogo: true, hasGlyph: false, logoUrl: LOGO[k], glyph: '', label, font: mono ? MONO : 'inherit', onErr: showMonogram });
+    const gchip = (g, label) => ({ hasLogo: false, hasGlyph: true, logoUrl: '', glyph: GLYPH[g], label, font: 'inherit', onErr: showMonogram });
+
+    // The mini line: four stretches (Discover, Plan, Build, Live) with the three approvals between them.
+    const seg = (s) => ({ solid: s !== 'future', dashed: s === 'future', notch: false, h: s === 'current' ? '4px' : '2px', bg: '', bd: '' });
+    const notch = (s) => ({ solid: false, dashed: false, notch: true, h: '',
+      bg: s === 'signed' ? INK : (s === 'you' ? RED : '#FFFFFF'),
+      bd: s === 'upcoming' ? '2px solid #949494' : (s === 'other' ? '2px solid ' + INK : 'none') });
+    const line = (states, splits) => ({
+      parts: [seg(states[0]), notch(states[1]), seg(states[2]), notch(states[3]), seg(states[4]), notch(states[5]), seg(states[6])],
+      labels: ['', splits[0], '', splits[1], '', splits[2], ''].map((t) => {
+        const you = t === 'You';
+        return { t, fw: you ? '700' : '400', c: you ? RED : MUTED };
+      })
+    });
+    // The red notch and the red "You" carry the signal; the status line stays ink (HD-R1).
+    const status = (kind, text, next) => ({
+      status: text, next: next || '', hasNext: !!next,
+      stBolt: kind === 'live',
+      stColor: kind === 'live' ? '#00834B' : INK,
+      stWeight: kind === 'ink' ? '400' : '700',
+      stGap: kind === 'live' ? '4px' : '0'
+    });
+
+    const sku = Object.assign({ name: 'SKU productivity workbench', meta: 'Merchandising, T1 Team Prototype', whoLabel: 'requested by', whoName: 'Priya Nair',
+      sourcesLabel: 'Sources: Snowflake, Jira, Confluence and Teams' },
+      tiles(['snowflake', 'jira', 'confluence', 'microsoftteams']),
+      people([['PN', 'Priya Nair'], ['MC', 'Maya Chen'], ['LR', 'Luis Romero'], ['DO', 'Dana Ortiz']]));
+    const wholesale = Object.assign({ name: 'Wholesale sell-through tracker', meta: 'Wholesale, T1 Team Prototype', whoLabel: 'requested by', whoName: 'Jordan Lee',
+      sourcesLabel: 'Sources: Snowflake, SharePoint and GitHub' },
+      tiles(['snowflake', 'sharepoint', 'github']),
+      people([['JL', 'Jordan Lee'], ['MC', 'Maya Chen']]));
+    // The empty tweak shows the same projects after Maya's two approvals are signed, so no red notch remains.
+    const projects = [
+      Object.assign({}, sku, empty
+        ? Object.assign({ lineLabel: "What we're building signed after 5d 2h. The plan signed after 1d 4h. Build in progress." },
+            status('ink', 'The plan signed, building', 'Next: nothing needed from you'), line(['done', 'signed', 'done', 'signed', 'current', 'upcoming', 'future'], ['5d 2h', '1d 4h', '']))
+        : Object.assign({ lineLabel: "What we're building signed after 5d 2h. The plan is waiting on you. The working prototype upcoming." },
+            status('you', 'Your Approval: The Plan'), line(['done', 'signed', 'done', 'you', 'future', 'upcoming', 'future'], ['5d 2h', 'You', '']))),
+      Object.assign({}, wholesale, empty
+        ? Object.assign({ lineLabel: "What we're building signed after 3d. The plan signed after 2d 6h. Build in progress." },
+            status('ink', 'Building: version 4 in checks', 'Next: nothing needed from you'), line(['done', 'signed', 'done', 'signed', 'current', 'upcoming', 'future'], ['3d', '2d 6h', '']))
+        : Object.assign({ lineLabel: "What we're building signed after 3d. The plan signed after 2d 6h. The working prototype is waiting on you." },
+            status('you', 'Your Approval: The Working Prototype'), line(['done', 'signed', 'done', 'signed', 'done', 'you', 'future'], ['3d', '2d 6h', 'You']))),
+      Object.assign({ name: 'Activation scorecard', meta: 'Marketing, T1 Team Prototype', whoLabel: 'owner', whoName: 'Theo Grant',
+        lineLabel: 'All three approvals signed in 7 days. Live since Oct 23.',
+        sourcesLabel: 'Sources: SharePoint and Snowflake' },
+        status('live', 'Live, 22 people', 'Next: nothing needed from you'), line(['done', 'signed', 'done', 'signed', 'done', 'signed', 'current'], ['3d', '2d', '5h']),
+        tiles(['sharepoint', 'snowflake']),
+        people([['TG', 'Theo Grant'], ['MC', 'Maya Chen'], ['JL', 'Jordan Lee'], ['SK', 'Sam Kim']])),
+      Object.assign({ name: 'Product master quality monitor', meta: 'EDM, T0 Sandbox', whoLabel: 'owner', whoName: 'Priya Nair',
+        lineLabel: 'Discover in progress, waiting on Dana in Finance for one answer. What we are building is upcoming.',
+        sourcesLabel: 'Sources: Snowflake and Confluence' },
+        status('ink', 'Waiting on Dana in Finance, 2d', 'Next: nudge Dana or reassign'), line(['current', 'upcoming', 'future', 'upcoming', 'future', 'upcoming', 'future'], ['', '', '']),
+        tiles(['snowflake', 'confluence']),
+        people([['PN', 'Priya Nair'], ['MC', 'Maya Chen'], ['DO', 'Dana Ortiz']]))
+    ];
+
+    // The answer chips are one radio group: arrows, Home and End move the choice, one stop in the tab order.
+    const LABELS = ['Style', 'Style-Color', 'Article'];
+    const answer = st.answer;
+    const options = LABELS.map((label, i) => {
+      const on = answer === label;
+      const stop = answer ? on : i === 0;
+      return { label, on, checked: on ? 'true' : 'false', tab: stop ? '0' : '-1',
+        cls: on ? 'hd-btn-primary hd-ring' : 'hd-chip hd-ring-edge',
+        bg: on ? INK : '#FFFFFF', fg: on ? '#FFFFFF' : INK, ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0', fw: on ? '700' : '400',
+        pick: () => this.setState({ answer: on ? '' : label }) };
+    });
+    const radioKeys = (e) => {
+      const keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: 'first', End: 'last' };
+      const k = keys[e.key];
+      if (k === undefined) return;
+      e.preventDefault();
+      const radios = Array.prototype.slice.call(e.currentTarget.closest('[role=radiogroup]').querySelectorAll('[role=radio]'));
+      const at = radios.indexOf(e.currentTarget);
+      const n = radios.length;
+      const next = k === 'first' ? 0 : (k === 'last' ? n - 1 : (at + k + n) % n);
+      this.setState({ answer: LABELS[next] });
+      radios[next].focus();
+    };
+    const row = (o) => Object.assign({ isPrimary: false, isSecondary: false, isQuestion: false, options: [], href: '', cta: '' }, o);
+    const needs = [
+      row({ title: 'Your Approval: The Plan', project: 'SKU productivity workbench', unblocks: 'unblocks the build', role: 'Business owner, second of three approvals', wait: '1d 4h',
+        href: 'Project.dc.html', cta: 'Review and Sign', isPrimary: true, chips: [chip('jira', 'MERCH-1182', true), chip('microsoftteams', 'Also in Teams', false)] }),
+      row({ title: 'Your Approval: The Working Prototype', project: 'Wholesale sell-through tracker', unblocks: 'unblocks going live for 6 teammates', role: 'Business owner, last of three approvals', wait: '3h 10m',
+        href: 'Gate.dc.html', cta: 'Review and Sign', isSecondary: true, chips: [gchip('external', 'Preview version 4'), chip('snowflake', 'Numbers check passed', false)] }),
+      row({ title: 'Which level counts as one style for duplicate checks?', project: 'Product master quality monitor', unblocks: 'unblocks the brief', role: 'Question for Merchandising', wait: '42m',
+        isQuestion: true, options, chips: [chip('microsoftteams', 'Asked in Teams', false)] }),
+      row({ title: "Confirm What We Heard in Wednesday's Working Session", project: 'SKU productivity workbench', unblocks: 'unblocks the plan', role: 'You were in the room', wait: '20m',
+        href: 'ContextReview.dc.html', cta: 'Review Facts', isSecondary: true, chips: [chip('microsoftteams', 'Working session, Oct 21', false), chip('confluence', 'Brief page, 5 to review', false)] })
+    ].map((n, i, all) => Object.assign(n, { rule: i === all.length - 1 ? '0' : '1px solid #F0F0F0' }));
+
+    const inboxCount = empty ? 0 : 4;
+    return {
+      empty, notEmpty: !empty, helpOpen,
+      logos: LOGO, showMonogram, closeMenu, radioKeys,
+      tech: !!st.tech, techOn: st.tech ? 'true' : 'false', techWord: st.tech ? 'On' : 'Off',
+      toggleTech: () => this.setState({ tech: !st.tech }),
+      hasInboxCount: inboxCount > 0, inboxCount: String(inboxCount),
+      inboxLabel: inboxCount > 0 ? 'Inbox, ' + inboxCount + ' waiting on you' : 'Inbox',
+      needsSummary: empty ? 'Nothing waiting on you, 3 projects moving' : '2 approvals, 1 question, 1 confirmation, oldest first',
+      needs, projects,
+      shipped: [
+        { initials: 'TG', bg: '#444444', ownerLabel: 'Owner Theo Grant', name: 'Activation scorecard', meta: 'Marketing, accepted Oct 23, 4 functions contributed' },
+        { initials: 'HB', bg: '#56603A', ownerLabel: 'Owner Hana Brooks', name: 'Licensee price-compliance check', meta: 'Licensing, accepted Oct 21' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+<!-- cspell:words pandoc -->
+
 # Architecture & Tradeoff Decisions
 
 Append-only log. One entry per decision, most recent first. Entries below dated 2026-08-26
@@ -14,6 +16,383 @@ Template for new entries:
 - **Alternatives considered**: what else was on the table, and why they lost
 - **Consequences**: what this makes easier/harder, what to revisit and when
 ```
+
+---
+
+## 2026-10-26 - HyperDelivery runs in three phases: Current State, Final MVP, Enterprise
+- **Status**: Accepted for the plan (in `docs/ua-dlc/enterprise-plan.md`; supersedes the five stages
+  in "HyperDelivery is built working version first; enterprise hardening follows the MVP")
+- **Context**: The owner wants the project run by three high-level milestones: what runs today, a
+  fully usable Final MVP that a real testing pilot can try on varied use cases, and Enterprise.
+  Governance, logging, cost or budget enforcement, evals and scaling must not stand between the team
+  and that pilot. The five-stage roadmap (working version, tester loop, MVP gate, MVP, enterprise
+  hardening from week 19) had two MVP-like milestones and let hardening overlap the MVP build.
+- **Decision**: Weeks count from the day the borrowed engineers start. Current State keeps today's
+  line running for its users and ends with the baseline measured (week 2). The Final MVP builds to
+  the new design in weeks 1 to 14, starting with the do-no-harm floor, with friendly users from
+  week 8 and MVP ready in week 14, then runs a pilot with 8 to 12 users from at least three functions
+  in weeks 15 to 22, ending at the pilot readout. Enterprise hardens in weeks 23 to 36 (Enterprise
+  ready) and rolls out from week 37 (scale decision about week 52). Enterprise work never takes Final
+  MVP engineers before MVP ready, nothing in it is a precondition for the pilot, and long-lead
+  requests start in week 1. Cost is shown per turn and per project from day one and enforced only in
+  Enterprise.
+- **Alternatives considered**: *Keep the five stages* - rejected: two MVP-like milestones and an
+  overlapping hardening workstream blurred what the pilot needs and pulled enterprise work into the
+  build. *Harden first* (the earlier E0, or hardening in parallel with the same people) - rejected:
+  it delays the pilot evidence that decides whether Enterprise is worth funding, and the same
+  engineers would split their time.
+- **Consequences**: Funding runs in three tranches: the Final MVP now, Enterprise at the pilot
+  readout on pilot evidence, scale at the scale decision. The old MVP gate criteria and the stop rule
+  move to the pilot readout. Gates become milestones, and diagrams use the chips Today, MVP and
+  Enterprise. Earlier entries that cite stage numbers read: Stages 1 and 3 are the Final MVP, Stage 2
+  is its pilot, Stages 4 and 5 are Enterprise; "What lands in which phase" in
+  `docs/ua-dlc/platform-architecture.md` settles the items that moved to Enterprise (the second
+  coding engine, the Streamlit in Snowflake builder, Rovo and Work IQ readers, the Library across
+  projects, Portfolio).
+
+---
+
+## 2026-10-26 - Desktop and laptop only, light theme only, for now
+- **Status**: Accepted for the concept screens, the design docs and the plan page (amends the dark
+  parts of "HyperDelivery's look follows UA Baselayer" and "HyperDelivery carries the UA logo")
+- **Context**: The owner asked to drop the phone screens and treat HyperDelivery as a desktop,
+  laptop or PC tool only, and to focus on light mode, plan included. Phone layouts and dark variants
+  doubled what each screen needed to design, check and review.
+- **Decision**: HyperDelivery targets desktop and laptop browsers 1280 px wide and up; phone
+  layouts, phone headers and approve-from-a-phone flows are out of scope, and Teams means Teams on
+  the desktop. Light theme only: no dark tokens, variants or theme toggle in the boards, the design
+  docs or the plan page. The UA logo's white cut stays in the brand section as a brand asset only.
+- **Alternatives considered**: *Responsive and dark from day one* - rejected for now: a second
+  layout and a second palette to design, contrast-check and test before the pilot shows what users
+  need.
+- **Consequences**: The phone board is gone and the canvas has 22 artboards. Today's console keeps
+  its light and dark themes until it is redesigned. Revisit if pilot users need to work away from a
+  desk or ask for a dark theme.
+
+---
+
+## 2026-10-26 - Help lives behind a "?" in the top bar, not in the Library
+- **Status**: Accepted for the concept screens (in `docs/ua-dlc/ux-direction.md` and
+  `docs/ua-dlc/design-system.md`)
+- **Context**: "How HyperDelivery Works" was a section of the Library, so explaining the product
+  competed with UA's shared knowledge and was hard to find from other screens. The owner asked for it
+  as a "?" icon in the top header.
+- **Decision**: Every shell screen's top bar has a round "?" button just left of the avatar. It opens
+  a small menu: How Work Moves, How HyperDelivery Is Built, Keyboard Shortcuts, What's New and Ask the
+  Platform Team. The Library loses the section, and the two help pages carry "Help /" breadcrumbs.
+  The menu is a native disclosure with plain links, keyboard reachable, not `role="menu"`.
+- **Alternatives considered**: *Keep help in the Library* - rejected: the Library across projects
+  is an Enterprise feature, and help has to be one click away on every Final MVP screen.
+- **Consequences**: The menu is the one way between the two help pages; their sibling links are
+  removed. Keyboard Shortcuts and What's New need content before the console ships the menu.
+
+---
+
+## 2026-10-26 - "Which tool" guidance lives in the plan's matrices, not in the app
+- **Status**: Accepted for the plan and the concept screens
+- **Context**: Earlier concept screens told people when to use something else: an "Is This the
+  Right Tool?" card on first run, a "better home" triage panel on Start, Portfolio's "Where requests
+  went" and "Routed at intake", and a "To a better home" component. The owner called that a plan
+  question, not app copy, and asked for a simple comparison with Snowflake, Cortex Code, GitHub
+  Copilot, Palantir Foundry and AIP, Factory, Claude Code, agentic IDEs and Microsoft Copilot.
+- **Decision**: The plan's section 5 carries a complexity matrix (how far the result goes against
+  who builds) and a use-case matrix (use cases against tools: best fit, works, not for this), each
+  with a markdown-table fallback and facts sourced in `docs/ua-dlc/research/tool-landscape.md`;
+  anything about UA's own licenses is marked [confirm]. The app drops every routing card, panel,
+  metric and component.
+- **Alternatives considered**: *In-app routing at intake* - rejected for the app: advice about
+  other tools in front of every request adds friction before anyone has tried HyperDelivery, and its
+  rules would drift from the products it names. It may return later as a plan-approved feature.
+- **Consequences**: Portfolio shows a real portfolio metric in place of "Routed at intake". The
+  matrices are point-in-time and need a re-check when the products change. The exit ramp to other
+  tools stays as plan guidance.
+
+---
+
+## 2026-10-26 - The project tier "T2 MVP" is renamed "T2 Department app"
+- **Status**: Accepted (tier contract in `docs/ua-dlc/operating-model.md`)
+- **Context**: The tier contract called its third tier "T2 MVP", and the plan's second phase is now
+  the Final MVP. One word for both a project's tier and HyperDelivery's own phase invites confusion,
+  often in the same sentence.
+- **Decision**: The tier is "T2 Department app" ("T2 Department App" as a UI label). T0 Sandbox, T1
+  Team prototype and T3 Production handoff are unchanged. Tier codes stay; sentences that lean on a
+  code are rewritten in words.
+- **Alternatives considered**: None beyond keeping "T2 MVP", rejected for the clash with the phase
+  name.
+- **Consequences**: Docs, boards and research use the new name. No code names the tier yet, so
+  nothing else changes.
+
+---
+
+## 2026-10-26 - A standalone concept site lives in the repo, as static HTML
+- **Status**: Accepted (in `docs/ua-dlc/site/`)
+- **Context**: The concept canvas and the plan page existed only as claude.ai artifacts: outside
+  the repo, private, and needing a claude.ai account to open. The owner asked for a standalone copy
+  that opens and clicks like the design canvas, with the plan included.
+- **Decision**: `docs/ua-dlc/site/` holds a landing page, the rendered plan (`plan/index.html`,
+  generated and committed, rebuilt from `enterprise-plan.md` by `scripts/build_ua_dlc_plan.py` with
+  pandoc through `make site-plan`) and a canvas viewer (`concepts/index.html`) that lays out every
+  board from `canvas.json` as a live frame to pan, zoom, focus and open. The boards run on the canvas
+  runtime `support.js`, copied from the Design artifact type (it bundles React, MIT; provenance in
+  the site README). `make site` serves the folder with Python's `http.server` on port 8766.
+- **Alternatives considered**: *A Node or Vite app* - rejected: a dependency and a build step for a
+  review artifact. *Screenshots only* - rejected: not interactive. *claude.ai only* - rejected: not
+  in the repo, and every reader needs a claude.ai account.
+- **Consequences**: The boards are edited in the repo and nowhere else. `support.js` is vendored and
+  has to be re-copied by hand if the Design artifact type changes it; it and the generated plan page
+  are kept out of the spell check. pandoc is needed only to rebuild the plan page. The plan page
+  loads mermaid 11.4.1 from jsdelivr for its one remaining diagram, so that diagram needs a network
+  connection; everything else on the site works offline once served.
+
+---
+
+## 2026-10-26 - The coding agent runs in HyperDelivery's sandbox, on an AgentCore harness, with a swappable engine
+- **Status**: Accepted for the plan (supersedes the coding lanes in "An orchestrator hands work to
+  specialists through a broker and typed contracts", which made GitHub's cloud agent lane A in Stage 1).
+  Amended by "2026-10-26 - HyperDelivery runs in three phases: Current State, Final MVP, Enterprise":
+  Stage 1 below reads Final MVP and Stage 4 reads Enterprise; the sandbox account has a named
+  non-production fallback and is not on the Final MVP's critical path, which holds only the
+  prototype GitHub organization and the Snowflake service user.
+- **Context**: The owner wants to know where the coding agent runs: inside a predefined sandbox, not
+  GitHub Copilot's cloud agent opening a separate autopilot pull request for each issue, which builds
+  the plan in fragments with no shared workspace and moves integration, tests and evidence after the
+  fact. Amazon Bedrock AgentCore harness went GA on June 18, 2026 (a microVM per session, a custom
+  image, model chosen per call, commands run outside the model, immutable versions, lifecycle hooks
+  since September). The unmerged `coding_agent_harness_test` branch already builds on it: one session,
+  one branch and one pull request per project, with the API holding the token.
+- **Decision**: One coding lane from Stage 1: an AgentCore harness session in the sandbox AWS account
+  works through the signed plan piece by piece with the whole context in its workspace, commits per
+  piece after its own tests pass, and asks through `ask_user` when two readings differ. Step Functions
+  starts a short-lived build worker in HyperDelivery's account for each piece and waits on it; the
+  worker drives the harness turn, passes Git in and out as bundles so no GitHub credential enters the
+  sandbox, checks the diff, pushes the branch and opens one pull request per build. CI and the evidence
+  agent check the pushed branch and its preview, outside the session. The builder sits behind a
+  `Builder` port (`BuildUnit` in, `BuildResult` out), so the engine and model are swappable in the same
+  sandbox once a conformance suite passes. GitHub Copilot's cloud agent is no longer a lane; it stays
+  acceptable only on an engineering team's own repositories after a T3 handoff.
+- **Alternatives considered**: *Keep Copilot's cloud agent as lane A* - rejected: it runs outside our
+  sandbox on per-issue autopilot and needs a seated user's token. *Step Functions' own `InvokeHarness`
+  state for builds* - rejected for builds: it is request-response only, stops waiting at 900 s and
+  returns only the final text, so a pending `ask_user` question cannot be read from it. *Claude Agent
+  SDK on AgentCore Runtime as the default* - kept as the second engine: a hard dollar cap and more
+  control for more code to own (per-tool hooks are no longer the reason, since the harness has them).
+  *Run the builder in the account that runs HyperDelivery* - rejected by the do-no-harm floor.
+- **Consequences**: The sandbox account moves onto Stage 1's critical path for builds (needed by week 3,
+  with a named non-production fallback); Copilot seats leave the long-lead track; Stage 4 can use a GitHub
+  App installation token, which Copilot's cloud agent could not. The branch's current command passes
+  the GitHub token inside the command string, which AWS writes to CloudWatch Logs: search the dev log
+  group and rotate the token if it is there, and move to Git bundles before Stage 1. See
+  `docs/ua-dlc/research/agentcore-harness-coding.md`.
+
+---
+
+## 2026-10-26 - HyperDelivery carries the UA logo; the three-notch line becomes its product glyph
+- **Status**: Accepted for the concept screens and plan page (production use goes through UA Brand).
+  Amended by "2026-10-26 - Desktop and laptop only, light theme only, for now": the product has no
+  dark surface, so the white-on-dark logo appears only in the brand section, as a brand asset.
+- **Context**: The owner asked for the real UA logo so HyperDelivery reads as a UA product offering.
+  The internal Figma file "UA Brand Logos" holds the logo, lockups, monogram, signatures and brand
+  colors; Baselayer's own Token Reference opens with the UA logo followed by the product name.
+- **Decision**: The top bar starts with the product lockup: the small UA logo (copied from Figma as
+  SVG, never modified), a hairline, then "HyperDelivery". The three-notch line mark stays as
+  HyperDelivery's own glyph for the assistant avatar, the Teams app icon, app tiles and the favicon.
+  Black on light, white on dark, no recoloring or stretching, clear space at least half the logo's
+  height, at least 16 px tall, the registered cut only where Legal asks.
+- **Alternatives considered**: *Keep the three-notch mark alone in the chrome* - rejected: it reads as
+  a third-party tool. *The full UNDER ARMOUR horizontal lockup in the top bar* - rejected: too wide
+  for a 56 px bar and it competes with the product name; it stays for spec and print contexts.
+- **Consequences**: This reverses the round-4 note to leave the UA logo out until Brand approves a
+  lockup; Brand review is still needed before the console ships it.
+
+---
+
+## 2026-10-25 - HyperDelivery's look follows UA Baselayer
+- **Status**: Accepted (in `docs/ua-dlc/design-system.md`; supersedes the visual parts of the
+  "color from brand marks and specialist hues" entry below where they conflict). Amended by
+  "2026-10-26 - Desktop and laptop only, light theme only, for now": the dark values are set aside
+  and only the light theme is designed.
+- **Context**: The owner found the round-3 concept screens better with color but still not "a fully
+  polished SaaS product", with broken icons and uneven spacing, and asked for Under Armour's brand.
+  Six independent audits (taste, premium SaaS, Anthropic frontend-design, Impeccable, UI/UX Pro Max,
+  Baselayer and accessibility) found each screen built as its own page: four content widths, 30 font
+  sizes, 148 hex values, no shared shell. UA's web design system, Baselayer, already defines the
+  palette, type, spacing, grid, buttons and focus ring.
+- **Decision**: Baselayer is the visual source of truth: its role tokens with light and dark values, a
+  7-size type scale in two weights with Title Case for the UI's own words, the 8/16/24/32/56 rhythm,
+  the 12-column 1440 grid, 4 and 8 px radii plus pill buttons, Baselayer elevation and the `#0096FA`
+  focus ring. One 56 px top bar and one page header on every desktop screen, on a `#F9F9F9` canvas
+  with white panels. Red (`#DC0019`, Baselayer's critical role) means only "waiting on you"; the amber
+  caution and dark-red danger styles are retired. Color comes from what is real: brand marks in full
+  color, data series that are systems in the system's hue, people in their own fills, agent hues in
+  Layer 2 and 3. Archivo and Chivo Mono stand in for UA Text and UA Technical on the canvas.
+- **Alternatives considered**: *Keep HyperDelivery's own visual language* - rejected: the owner asked
+  for UA's brand, and drift was the main defect. *A left navigation rail* - rejected: it takes
+  200 to 240 px from the full-width line, tables and architecture canvas. *A blue data ramp on the
+  focus color* - rejected: it would confuse focus with data. *Keep amber and dark red for waits and
+  failures* - rejected: Baselayer has neither role, and a second warm color competes with red. *A
+  red sign button* - rejected: it would make approving look like the favored answer.
+- **Consequences**: Title Case for UI words reverses the sentence-case rule of round 3. Compact 36
+  and 32 px controls relax the 44 px rule on desktop. Third-party marks in product chips, any UA logo
+  lockup and the UA Text license for the canvas need Brand review. The console adopts the token names
+  in `index.css` when it is redesigned.
+
+---
+
+## 2026-10-25 - HyperDelivery interoperates with UA engineering's own AI-DLC tooling
+- **Status**: Proposed (to settle with UA engineering; see `docs/ua-dlc/research/ua-marketplace-alignment.md`)
+- **Context**: UA engineering's internal AI marketplace already implements an AI-DLC for engineers:
+  an ideation research skill with a scored intake, a separate Inception repository, and a 13-phase
+  Jira-to-PR construction pipeline with its own gates, evidence rules and phase-artifact schemas.
+- **Decision**: Reuse engineering's contracts where they fit instead of writing new ones (the
+  requirements-readiness check, the evidence rules, the Confluence sync rules) and hand work to
+  engineering in its format (AI-DLC context files in the handoff package). Keep HyperDelivery's own
+  audience, system of record and hash-bound approvals.
+- **Alternatives considered**: *Ignore engineering's tooling* - rejected: two incompatible lifecycles
+  at one company. *Adopt engineering's pipeline for business users* - rejected: it runs inside an
+  engineer's coding harness with files on disk, and has no business-facing approvals.
+- **Consequences**: Research scope, the intake gate's membership and the context-file fields need a
+  conversation with engineering before Stage 3.
+
+---
+
+## 2026-10-25 - HyperDelivery is built working version first; enterprise hardening follows the MVP
+- **Status**: Superseded by "2026-10-26 - HyperDelivery runs in three phases: Current State, Final
+  MVP, Enterprise". The do-no-harm floor and the long-lead track carry over; the five stages and
+  their gates do not.
+- **Context**: The first plan draft put a security floor, a signed threat model and Snowflake
+  containment ahead of any new feature work (E0), after a stakeholder review. The owner wants a
+  valid working version first, testers shaping it, then an MVP that is hardened, without the
+  enterprise work getting in front of feature maturity.
+- **Decision**: Five platform stages: a working version (weeks 1 to 8), a tester loop (8 to 12
+  invited testers, weeks 7 to 14), the MVP gate, the MVP (weeks 15 to 24), and enterprise hardening
+  (identity and roles, service identities instead of personal tokens, evals, reviews, QA, logging
+  and cost monitoring, policy, a production stage) as a separate workstream from week 19, then
+  scale. Only a do-no-harm floor goes first (invited testers, non-confidential data, Snowflake
+  through a broker that never returns rows, Secrets Manager, a prototype GitHub organization,
+  writes only after approvals, previews outside the HyperDelivery account, traces and cost). Every
+  slow request starts on day one in a long-lead track.
+- **Alternatives considered**: *Security floor first (the earlier E0)* - rejected: hardens a
+  product testers have not shaped and delays the evidence leadership needs. *No guardrails until
+  the MVP* - rejected: raw Snowflake rows, shared secrets and writes before approval are harms,
+  not red tape, and the approval gates are the product. *Harden in parallel from week 1 with the
+  same people* - rejected: the same two engineers would split their time and both tracks slip.
+- **Consequences**: Until the Enterprise gate, HyperDelivery serves invited testers on
+  non-confidential data, with sandbox previews and no production deploys, and individual
+  fine-grained GitHub tokens scoped to the prototype organization are tolerated. InfoSec is
+  informed in week 1, not asked to approve first. Revisit if InfoSec objects to the floor or if a
+  tester project needs confidential data before Stage 4.
+
+---
+
+## 2026-10-25 - An orchestrator hands work to specialists through a broker and typed contracts
+- **Status**: Accepted (design proposal in `docs/ua-dlc/platform-architecture.md`)
+- **Context**: The owner wants one main-chat agent that hands Snowflake work to Cortex Code and
+  coding to a sandboxed coding agent, each returning only what the session needs. Today the
+  Snowflake tool runs under a personal token, asks for raw rows and keeps results in the turn, and
+  the coding agent is dispatched directly with a classic token.
+- **Decision**: The existing Strands per-request agent becomes the orchestrator and the one voice.
+  Specialists (Cortex Code for data, a coding agent in two lanes, a resource reader, fresh-context
+  reviewers and QA) each cross one boundary. A small delegation broker in `tools/` mints the
+  per-call credential, sets the budget, validates the result against a versioned contract in
+  `core/domain/delegation.py`, and writes the trace span. Cortex Code returns schema, counts,
+  aggregates and query ids, never rows. Writes with side effects stay service tools behind the
+  signed approval. Stay on Strands.
+- **Alternatives considered**: *Specialists as chat personas the user talks to* - rejected: users
+  said they do not care which agent is doing what. *Let each specialist hold its own long-lived
+  credential* - rejected: anything that shares a credential shares its blast radius. *Move to
+  LangGraph now for durable human-in-the-loop* - rejected: Step Functions and the signed decision
+  record already provide it; revisit on the triggers in the architecture doc. *Adopt Strands Box
+  now* - rejected: a v0.1.0 local, macOS-first preview; Dogwood rules are used through AgentCore
+  Policy instead, in log-only mode first.
+- **Consequences**: Contracts become a drift-tested surface mirrored in the console, like the
+  stream protocol. Each delegation has a budget and a cost in the trace. Supersedes the plan's
+  "retire the Cortex coding-agent path": it is re-scoped as the data specialist.
+
+---
+
+## 2026-10-25 - UA-DLC keeps engineering's step names in a four-phase line
+- **Status**: Accepted (in `docs/ua-dlc/operating-model.md`)
+- **Context**: UA engineering proposed an Ideation, Inception and Construction variant with twelve
+  steps. UA-DLC had its own stage names. Two vocabularies would split the organization.
+- **Decision**: Use engineering's twelve step names verbatim as the spine, add Intake, Data
+  discovery, Automated QA and an Operation phase (Show, Operate, Learn, Renew or retire), keep the
+  three approvals named by the decision (after Stories, after Tickets, after Manual QA), and keep
+  Graduate optional. Phase names stay out of business screens.
+- **Alternatives considered**: *Adopt engineering's variant as-is* - rejected: no intake routing,
+  no data discovery before the Brief, nothing owns an app after Deploy. *Keep UA-DLC's own stage
+  names* - rejected: a second vocabulary for the same work.
+  *AWS AI-DLC's gate after every stage* - rejected: approvals would multiply; risk decides who
+  signs, not how many approvals.
+- **Consequences**: The `Station` enum does not change (Distill covers Intake to Stories, Blueprint
+  Tech Design to Tickets, Review Code to Manual QA, Showroom Show). Engineering's view on where its
+  gates sit is still to confirm.
+
+---
+
+## 2026-10-25 - Projects point at resources, indexed per project; Confluence is the shared space for now
+- **Status**: Accepted (design proposal in `docs/ua-dlc/platform-architecture.md`)
+- **Context**: Mandatory uploads lose context and copy files out of their permissions. The owner
+  wants people to point at a Teams recording, a OneDrive folder, a Jira ticket or a Confluence page,
+  and wants comments and revisions from a shared space to flow back in.
+- **Decision**: A link resolver reads what people point at as the person who pointed. Each project
+  gets its own Bedrock Managed Knowledge Base fed from the S3 corpus, with citations back to the page
+  version, comment or timestamp. AgentCore Memory holds conversation memory only; confirmed facts
+  and decisions stay in DynamoDB. For the working version and MVP, Confluence is the collaborative
+  space: its comments and revisions become proposed facts that only a person confirms, and the
+  signed version stays HyperDelivery's.
+- **Alternatives considered**: *Uploads only* - rejected: stale copies outside source permissions.
+  *Build a native co-editing space now (Yjs)* - rejected until a stated trigger: Confluence is
+  where engineering already works. *AgentCore Memory as the system of record for facts* -
+  rejected: facts need a signer, a hash and citations. *One shared index for all projects* -
+  rejected: per-project isolation and one-call deletion at expiry.
+- **Consequences**: Teams transcripts need an admin-consented scope and a tenant control that is
+  off by default, so meeting pointing lands after the Graph consents. The AWS copy of Microsoft 365
+  content sits outside Purview retention; Legal signs off in Stage 4.
+
+---
+
+## 2026-10-25 - Concept screens take color from brand marks and specialist hues; red stays reserved
+- **Status**: Accepted (in `docs/ua-dlc/ux-direction.md`)
+- **Context**: The owner found the monochrome concept screens lackluster and asked for real logos on
+  tool and model chips, a richer trace and modern data components, without AI-sounding copy.
+- **Decision**: Color comes from what is real: brand marks on neutral chips, one hue per specialist
+  in the detailed views only, a data-viz palette for charts, and tinted surfaces. Decision red
+  stays reserved for "waiting on you", and charts never use red.
+- **Alternatives considered**: *Stay monochrome* - rejected by the owner. *A colorful brand palette
+  across the console* - rejected: it would dilute the one red signal. *Color per stage* -
+  rejected: stage is already carried by the line's shape.
+- **Consequences**: Third-party marks in product chips need the Brand review, and Microsoft 365
+  marks are only licensed for diagrams and documentation today. Whether to buy Arc Pro, and lucide
+  versus Phosphor icons, are still open and get their own entries when decided.
+
+---
+
+## 2026-10-25 - Enterprise expansion planned as UA-DLC, staged by evidence gates
+- **Status**: Accepted; its staging is superseded by "2026-10-25 - HyperDelivery is built working
+  version first; enterprise hardening follows the MVP", itself superseded by "2026-10-26 -
+  HyperDelivery runs in three phases: Current State, Final MVP, Enterprise".
+- **Context**: HyperDelivery is moving from an EDM pilot toward a UA-wide tool. Early users said
+  they don't care which agent is doing what, the UA ideathon suggested the best context comes from
+  mixed teams, and the deployed pilot still has correctness, security and data-handling gaps
+  (`docs/ua-dlc/current-state.md`).
+- **Decision**: Plan the expansion as UA-DLC on HyperDelivery (`docs/ua-dlc/`): three standing
+  human approvals where risk decides who signs; a production path by risk tier, with low-risk apps
+  staying with their business team under a tier contract and sensitive or core work graduating to
+  engineering; rows staying in Snowflake; an outcome-first, single-voice console; and funding in
+  tranches behind Gate A and a Scale gate. Funding and the designs the plan names are still for
+  leadership to decide.
+- **Alternatives considered**: *Adopt AWS AI-DLC as-is* - rejected: built for developers in an
+  IDE, up to 30 gated stages, and its method excludes non-developer builders. *Keep the crew-led
+  console and add features* - rejected: contradicts the user feedback. *Send business users to a
+  vendor builder (Copilot Studio, Lovable, v0)* - rejected for now: no UA context, signed
+  decisions or golden-report grounding; kept as the plan's exit ramp. *One enterprise funding
+  ask* - rejected after a six-seat review of the first draft: no baseline, no stop rule.
+- **Consequences**: E0 closes the security floor and Snowflake containment before anything new is
+  built, which will supersede the 2026-08-29 "read-only by prompt" Snowflake choice when it ships.
+  Crew-centric design work is parked. Revisit at Gate A against measured results. (The staging is
+  superseded by "HyperDelivery is built working version first" above: the Snowflake containment
+  stays first, inside the do-no-harm floor; the rest of E0 moves to enterprise hardening, and Gate A
+  becomes the MVP gate.)
 
 ---
 
@@ -2467,7 +2846,9 @@ Template for new entries:
 
 ## 2026-08-27 - Console redesign: semantic token layer, light-default dual theme
 
-- **Status**: Accepted
+- **Status**: Accepted for today's console. The redesign proposed in `docs/ua-dlc/` is light only for
+  now ("2026-10-26 - Desktop and laptop only, light theme only, for now"), so the dark palette does
+  not carry into it.
 - **Context**: A three-lens audit ([docs/console-redesign.md](console-redesign.md)) scored
   the console 7/20 on technical quality. The root cause was one mismatch: the color tokens
   were authored for a dark surface (`--color-ua-fog` is 9.1:1 on `ua-black`) and then the

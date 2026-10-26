@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Accept the Working Prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-nav a:hover{color:#1D1D1D!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+</style>
+</helmet>
+<div style="min-height: 1931px; background: #F9F9F9; color: #1D1D1D; font-family: Archivo, Arial, sans-serif; font-variant-numeric: tabular-nums">
+
+<header style="height:56px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D0D0D0;position:relative;z-index:20">
+  <a href="Main.dc.html" class="hd-ring" style="display:flex;align-items:center;gap:12px;color:#1D1D1D;text-decoration:none;flex:none">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+    <span style="font-size:16px;line-height:20px;font-weight:700">HyperDelivery</span>
+  </a>
+  <span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+  <details class="hd-pop" style="position:relative;flex:none">
+    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height:36px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 8px;border-radius:4px;color:#1D1D1D;font-size:14px;line-height:18px">Merchandising<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg></summary>
+    <div class="hd-menu" style="left:0;right:auto">
+      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closeMenu}}" style="font-weight:700">Merchandising<span style="flex:1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Sourcing</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Wholesale</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">EDM</button>
+    </div>
+  </details>
+  <nav aria-label="Primary" class="hd-nav" style="display:flex;align-self:stretch;gap:24px">
+    <a href="Main.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Home</a>
+    <a href="Projects.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Projects</a>
+    <a href="Inbox.dc.html" aria-current="page" aria-label="Inbox, 4 waiting on you" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;font-weight:700;color:#1D1D1D;box-shadow:inset 0 -2px 0 #1D1D1D">Inbox<span aria-hidden="true" style="margin-left:6px;min-width:16px;height:16px;box-sizing:border-box;padding:0 4px;border-radius:999px;background:#DC0019;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;text-align:center">4</span></a>
+    <a href="Library.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Library</a>
+    <a href="Portfolio.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Portfolio</a>
+    <span aria-hidden="true" style="align-self:center;width:1px;height:20px;background:#D0D0D0"></span>
+    <a href="Admin.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Admin</a>
+  </nav>
+  <span style="flex:1"></span>
+  <div class="hd-right" style="display:flex;align-items:center;gap:16px;flex:none">
+    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border:0;border-radius:4px;background:#F0F0F0;color:#5F5F5F;font-family:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer;flex:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span style="flex:1">Search projects and facts</span>
+      <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    </button>
+    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;flex:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
+    <details class="hd-pop" style="position:relative;flex:none">
+      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle>
+          <path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+      </summary>
+      <nav class="hd-menu" aria-label="Help">
+        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+        <hr>
+        <details class="hd-sub">
+          <summary class="hd-mi">Keyboard Shortcuts<span style="flex:1"></span><kbd>?</kbd></summary>
+          <dl style="margin:0;padding:4px 16px 8px;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:12px;line-height:18px;color:#5F5F5F">
+            <dt><kbd>⌘K</kbd></dt><dd style="margin:0">Search</dd>
+            <dt><kbd>/</kbd></dt><dd style="margin:0">Search This Table</dd>
+            <dt><kbd>J</kbd> <kbd>K</kbd></dt><dd style="margin:0">Next and Previous Item</dd>
+            <dt><kbd>@</kbd></dt><dd style="margin:0">Mention Someone</dd>
+            <dt><kbd>Esc</kbd></dt><dd style="margin:0">Close</dd>
+            <dt><kbd>?</kbd></dt><dd style="margin:0">Show Shortcuts</dd>
+          </dl>
+        </details>
+        <details class="hd-sub">
+          <summary class="hd-mi">What's New<span style="flex:1"></span><span style="padding:0 4px;border-radius:4px;background:#FE9000;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700">NEW</span></summary>
+          <ul style="margin:0;padding:4px 16px 8px;list-style:none;display:grid;gap:8px;font-size:12px;line-height:18px">
+            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
+          </ul>
+        </details>
+        <hr>
+        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex:1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+      </nav>
+    </details>
+    <details class="hd-pop" style="position:relative;flex:none">
+      <summary class="hd-ring" aria-label="Maya Chen, account" style="width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">MC</summary>
+      <div class="hd-menu">
+        <div style="padding:8px 16px 12px;display:flex;flex-direction:column">
+          <span style="font-size:14px;line-height:18px;font-weight:700">Maya Chen</span>
+          <span style="font-size:12px;line-height:18px;color:#5F5F5F">Business owner, Merchandising</span>
+        </div>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex:1"></span><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;color:#5F5F5F">{{techLabel}}<sc-if value="{{tech}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</header>
+
+<section style="background: #FFFFFF; border-bottom: 1px solid #D0D0D0; padding: 24px">
+  <nav aria-label="Breadcrumb" style="display: flex; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+    <a href="Inbox.dc.html" style="color: #5F5F5F; text-decoration: none">Inbox</a><span aria-hidden="true">/</span>
+    <a href="Project.dc.html" title="Opens the sample project" style="color: #5F5F5F; text-decoration: none">Wholesale sell-through tracker</a>
+  </nav>
+  <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 18px; font-weight: 700; color: {{labelColor}}; white-space: nowrap"><span aria-hidden="true" style="width: 12px; height: 12px; background: {{labelNotch}}; flex: none"></span>{{decisionLabel}}</div>
+  <div style="margin-top: 8px; display: flex; align-items: center; gap: 16px; min-height: 40px">
+    <h1 style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; white-space: nowrap">Accept the Working Prototype</h1>
+    <span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap">T1 Team Prototype</span>
+    <span style="flex: 1"></span>
+  </div>
+  <div style="margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; font-size: 14px; line-height: 20px; color: #5F5F5F">
+    <span>Requested by <span style="color: #1D1D1D">Jordan Lee, Wholesale</span></span>
+    <span>Version <span style="color: #1D1D1D">4, built Oct 24</span></span>
+    <span>Who Can Open It <span style="color: #1D1D1D">Wholesale planning team, 6 people</span></span>
+  </div>
+  <div role="img" aria-label="{{line.label}}" style="margin-top: 24px; display: grid; grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr); align-items: center; row-gap: 8px">
+    <span style="justify-self: center; font-size: 12px; line-height: 18px; color: #5F5F5F">Discover</span><span></span>
+    <span style="justify-self: center; font-size: 12px; line-height: 18px; color: #5F5F5F">Plan</span><span></span>
+    <span style="justify-self: center; font-size: 12px; line-height: 18px; color: #5F5F5F">Build</span><span></span>
+    <span style="justify-self: center; font-size: 12px; line-height: 18px; color: #5F5F5F">Live</span>
+
+    <span style="height: 2px; background: #1D1D1D"></span>
+    <span style="width: 12px; height: 12px; background: #1D1D1D"></span>
+    <span style="height: 2px; background: #1D1D1D"></span>
+    <span style="width: 12px; height: 12px; background: #1D1D1D"></span>
+    <span style="display: block; {{line.buildStyle}}"></span>
+    <span style="width: 12px; height: 12px; background: {{line.notch}}"></span>
+    <span style="display: block; {{line.liveStyle}}"></span>
+
+    <span></span>
+    <span style="justify-self: center; text-align: center; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: 700">What We're Building<br><span style="font-weight: 400; color: #5F5F5F">3d, Maya</span></span>
+    <span></span>
+    <span style="justify-self: center; text-align: center; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: 700">The Plan<br><span style="font-weight: 400; color: #5F5F5F">2d 6h, Maya</span></span>
+    <span></span>
+    <span style="justify-self: center; text-align: center; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: 700">The Working Prototype<br><span style="font-weight: 400; color: #5F5F5F">{{line.sub}}</span></span>
+    <span></span>
+  </div>
+</section>
+
+<main style="padding: 32px 24px 56px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; align-items: stretch">
+
+  <div style="grid-column: span 9; min-width: 0; display: flex; flex-direction: column">
+    <sc-if value="{{showChanged}}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="changes" style="margin-bottom: 56px; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>
+          <h2 id="changes" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">3 Changes Since the Evidence for Version 3</h2>
+          <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">Review only the changes</span>
+        </div>
+        <div style="display: flex; flex-direction: column">
+          <div style="display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; column-gap: 16px; min-height: 40px; padding: 8px 0; box-sizing: border-box; border-top: 1px solid #F0F0F0; font-size: 14px; line-height: 20px">
+            <span style="justify-self: start; min-width: 20px; height: 20px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; white-space: nowrap">2</span><span>Added the channel partner filter</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; column-gap: 16px; min-height: 40px; padding: 8px 0; box-sizing: border-box; border-top: 1px solid #F0F0F0; font-size: 14px; line-height: 20px">
+            <span style="justify-self: start; min-width: 20px; height: 20px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; white-space: nowrap">5</span>
+            <span style="display: flex; align-items: center; gap: 8px">
+              <span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">X</span><img src="{{logos.excel}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px"></span>Export now keeps the current filters</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; column-gap: 16px; min-height: 40px; padding: 8px 0; box-sizing: border-box; border-top: 1px solid #F0F0F0; font-size: 14px; line-height: 20px">
+            <span style="justify-self: start; height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; font-weight: 600; white-space: nowrap">SCOPE</span><span>Removed "store-level detail" from what it skips</span>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <section aria-labelledby="ev" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 16px">
+        <h2 id="ev" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700; white-space: nowrap">Evidence, Criterion by Criterion</h2>
+        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #00834B; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>5 Met</span>
+        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #1D1D1D; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"></path></svg>1 Partly Met</span>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: #F9F9F9; font-size: 12px; line-height: 18px">
+          <span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">S</span><img src="{{logos.snowflake}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px"></span>
+          <span style="font-weight: 700">Approved data: Wholesale, aggregated</span>
+          <span style="color: #5F5F5F">Captured Oct 24, 18:20</span>
+        </div>
+        <sc-for list="{{criteria}}" as="r" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 136px minmax(0, 1fr) auto; align-items: center; column-gap: 24px; padding: 16px 24px; border-top: 1px solid #F0F0F0">
+            <div aria-hidden="true" style="width: 136px; height: 88px; box-sizing: border-box; padding: 4px; border-radius: 8px; background: #F0F0F0">
+              <div style="width: 128px; height: 80px; border-radius: 4px; background: #FFFFFF; overflow: hidden; color: #1D1D1D; font-size: 12px; line-height: 16px">
+                <sc-if value="{{r.isTable}}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; justify-content: space-between; padding: 2px 8px; background: #F9F9F9; border-bottom: 1px solid #F0F0F0; font-weight: 700; color: #5F5F5F"><span>Account</span><span>Sell-thru</span></div>
+                  <div style="display: flex; justify-content: space-between; padding: 2px 8px; border-bottom: 1px solid #F0F0F0"><span>Ridgeline</span><span style="font-weight: 700">61%</span></div>
+                  <div style="display: flex; justify-content: space-between; padding: 2px 8px; border-bottom: 1px solid #F0F0F0"><span>Summit Pro</span><span style="font-weight: 700">57%</span></div>
+                  <div style="display: flex; justify-content: space-between; padding: 2px 8px"><span>Bayfront</span><span style="font-weight: 700">44%</span></div>
+                </sc-if>
+                <sc-if value="{{r.isFilters}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 8px 6px">
+                    <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; background: #1D1D1D; color: #FFFFFF; font-weight: 700">Region</span>
+                    <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0">Partner</span>
+                    <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0">Franchise</span>
+                  </div>
+                  <div style="margin: 0 8px; border-top: 1px solid #F0F0F0; padding-top: 4px; display: flex; justify-content: space-between; color: #5F5F5F"><span>East, 14 accounts</span></div>
+                </sc-if>
+                <sc-if value="{{r.isHighlight}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 8px; background: #F0F0F0; border-bottom: 1px solid #FFFFFF; font-weight: 700"><span style="display: inline-flex; align-items: center; gap: 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path></svg>Northgate</span><span>38%</span></div>
+                  <div style="display: flex; justify-content: space-between; padding: 2px 8px; border-bottom: 1px solid #F0F0F0"><span>Ridgeline</span><span>61%</span></div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 8px; background: #F0F0F0; border-bottom: 1px solid #FFFFFF; font-weight: 700"><span style="display: inline-flex; align-items: center; gap: 4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path></svg>Coastal</span><span>36%</span></div>
+                  <div style="display: flex; justify-content: space-between; padding: 2px 8px"><span>Summit Pro</span><span>57%</span></div>
+                </sc-if>
+                <sc-if value="{{r.isFootprint}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: grid; grid-template-columns: 40px minmax(0, 1fr); height: 80px">
+                    <div style="display: flex; flex-direction: column">
+                      <span style="padding: 2px 8px; background: #F9F9F9; border-bottom: 1px solid #F0F0F0; font-weight: 700; color: #5F5F5F">ST</span>
+                      <span style="padding: 2px 8px; border-bottom: 1px solid #F0F0F0">61%</span>
+                      <span style="padding: 2px 8px; border-bottom: 1px solid #F0F0F0">57%</span>
+                      <span style="padding: 2px 8px">44%</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; box-shadow: inset 0 0 0 2px #1D1D1D; border-radius: 0 4px 4px 0">
+                      <span style="padding: 2px 8px; background: #F0F0F0; font-weight: 700">Footprint</span>
+                      <span style="height: 21px; display: flex; align-items: center; gap: 4px; padding: 0 8px"><span style="width: 44px; height: 6px; background: #1D1D1D"></span><span>1.2k</span></span>
+                      <span style="height: 21px; display: flex; align-items: center; gap: 4px; padding: 0 8px"><span style="width: 24px; height: 6px; background: #1D1D1D"></span><span>640</span></span>
+                      <span style="height: 18px; display: flex; align-items: center; gap: 4px; padding: 0 8px"><span style="width: 32px; height: 6px; background: #1D1D1D"></span><span>880</span></span>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{r.isExport}}" hint-placeholder-val="{{ false }}">
+                  <div style="height: 80px; box-sizing: border-box; padding: 6px 8px; background: #F0F0F0">
+                    <div style="height: 68px; box-sizing: border-box; padding: 4px 8px; border-radius: 4px; background: #FFFFFF; box-shadow: 0 0 0 1px #D0D0D0, 0 0 10px rgba(29,29,29,0.15); display: flex; flex-direction: column; gap: 2px">
+                      <span style="display: flex; align-items: center; gap: 4px; font-weight: 700"><img src="{{logos.excel}}" width="12" height="12" alt="" onError="{{showMonogram}}">Export view</span>
+                      <span style="color: #5F5F5F">CSV, filters kept</span>
+                      <span style="align-self: flex-end; height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 999px; background: #1D1D1D; color: #FFFFFF; font-weight: 700">Export</span>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{r.isSignin}}" hint-placeholder-val="{{ false }}">
+                  <div style="height: 80px; box-sizing: border-box; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px">
+                    <span style="display: flex; align-items: center; gap: 4px; color: #5F5F5F"><img src="{{logos.microsoft}}" width="12" height="12" alt="" onError="{{showMonogram}}">Microsoft</span>
+                    <span style="font-weight: 700">Sign in</span>
+                    <span style="border-bottom: 1px solid #5F5F5F; color: #5F5F5F">jlee@ua.com</span>
+                    <span style="align-self: flex-end; margin-top: 2px; height: 20px; display: inline-flex; align-items: center; padding: 0 8px; background: #0078D4; color: #FFFFFF">Next</span>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+            <div style="min-width: 0; display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span style="min-width: 20px; height: 20px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; white-space: nowrap">{{r.id}}</span>
+                <sc-if value="{{r.isMet}}" hint-placeholder-val="{{ true }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #00834B; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Met</span></sc-if>
+                <sc-if value="{{r.isPartly}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #1D1D1D; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"></path></svg>Partly Met</span></sc-if>
+              </div>
+              <div style="font-size: 16px; line-height: 24px">{{r.text}}</div>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap">
+                  <sc-if value="{{r.isLogo}}" hint-placeholder-val="{{ true }}"><span style="position: relative; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; flex: none"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">{{r.mono}}</span><img src="{{r.logoUrl}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position: absolute; top: 0; left: 0; width: 16px; height: 16px"></span></sc-if>
+                  <sc-if value="{{r.isGlyph}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z"></path></svg></sc-if>
+                  {{r.method}}</span>
+                <span>{{r.how}}</span>
+              </div>
+            </div>
+            <button type="button" class="hd-btn-ghost hd-ring" aria-label="{{r.playLabel}}" style="height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 4.8v14.4L19 12z"></path></svg>{{r.playText}}</button>
+          </div>
+        </sc-for>
+        <div style="display: grid; grid-template-columns: 136px minmax(0, 1fr); column-gap: 24px; padding: 16px 24px; border-top: 1px solid #F0F0F0">
+          <span></span>
+          <div style="min-width: 0; display: flex; flex-direction: column; gap: 8px">
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>Advice From Checks</span>
+            <div style="font-size: 16px; line-height: 24px">Large accounts take about 6 seconds to load</div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+              <span>Fine for a team prototype. Worth fixing before more people use it.</span>
+              <sc-if value="{{tech}}" hint-placeholder-val="{{ false }}"><span style="white-space: nowrap">Performance check, p95 6.2s on 40 accounts</span></sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="nums" style="margin-top: 56px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px">
+        <h2 id="nums" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700; white-space: nowrap">Numbers Check</h2>
+        <a href="Library.dc.html" class="hd-chip hd-ring-edge" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; text-decoration: none; font-size: 12px; line-height: 16px; white-space: nowrap">
+          <span style="position: relative; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; flex: none"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">S</span><img src="{{logos.snowflake}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position: absolute; top: 0; left: 0; width: 16px; height: 16px"></span>Daily Product Margin, certified golden report</a>
+        <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">Same filters: FW26, all regions</span>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden">
+        <div style="overflow-x: auto">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px">
+            <thead>
+              <tr style="height: 40px">
+                <th scope="col" style="padding: 0 12px 0 24px; text-align: left; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F; border-bottom: 1px solid #D0D0D0; white-space: nowrap">Figure</th>
+                <th scope="col" style="padding: 0 12px; text-align: right; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F; border-bottom: 1px solid #D0D0D0; white-space: nowrap">Prototype</th>
+                <th scope="col" style="padding: 0 12px; text-align: right; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F; border-bottom: 1px solid #D0D0D0; white-space: nowrap">Golden Report</th>
+                <th scope="col" style="width: 120px; padding: 0 24px 0 12px; text-align: right; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F; border-bottom: 1px solid #D0D0D0; white-space: nowrap">Variance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{numbers}}" as="n" hint-placeholder-count="3">
+                <tr style="height: 44px">
+                  <td style="padding: 0 12px 0 24px; border-bottom: 1px solid #F0F0F0">{{n.label}}</td>
+                  <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0; text-align: right; font-weight: 700">{{n.proto}}</td>
+                  <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0; text-align: right; font-weight: 700">{{n.golden}}</td>
+                  <td style="padding: 0 24px 0 12px; border-bottom: 1px solid #F0F0F0; text-align: right; white-space: nowrap"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #00834B"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{n.variance}}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 24px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+          <span>All 3 figures match the golden report. No rows were stored.</span>
+          <sc-if value="{{tech}}" hint-placeholder-val="{{ false }}"><span style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; white-space: nowrap">query 01b8…f3a2</span></sc-if>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="decision-title" style="z-index: 5; margin-top: 56px; background: #FFFFFF; border: 1px solid #1D1D1D; border-radius: 8px; overflow: hidden; {{dockStyle}}">
+      <div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: #1D1D1D; color: #FFFFFF">
+        <span aria-hidden="true" style="width: 12px; height: 12px; background: {{stripNotch}}; flex: none"></span>
+        <span id="decision-title" style="font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap">{{decisionLabel}}</span>
+        <span style="font-size: 12px; line-height: 18px; color: #D0D0D0; white-space: nowrap">Last of three approvals</span>
+      </div>
+      <sc-if value="{{showSigned}}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 24px; display: flex; align-items: flex-start; gap: 24px">
+          <div style="flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; row-gap: 4px">
+            <span style="font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">Signed</span>
+            <span style="font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">Version</span>
+            <span style="font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">Open To</span>
+            <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #3D4B8C; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">MC</span>Maya Chen, Business owner</span>
+            <span style="font-size: 14px; line-height: 24px; font-weight: 700">Version 4</span>
+            <span style="font-size: 14px; line-height: 24px; font-weight: 700">Wholesale planning team</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 18px; font-weight: 700; color: #00834B; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Signed Oct 25, 14:02</span>
+            <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">{{versionSub}}</span>
+            <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Until Jan 23, then renewable</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+            <button type="button" class="hd-btn-secondary hd-ring-ink" style="height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></svg>Withdraw Approval</button>
+            <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">Writes a new record; this one is kept</span>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{showPending}}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="padding: 24px; display: flex; align-items: center; gap: 24px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 14px; line-height: 20px; font-weight: 700">Signing in 5s. Nothing is recorded until then.</span>
+            <span style="height: 4px; background: #F0F0F0; display: block"><span style="display: block; width: 62%; height: 4px; background: #1D1D1D"></span></span>
+          </div>
+          <button type="button" onClick="{{undo}}" class="hd-btn-secondary hd-ring-ink" style="height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></svg>Undo</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{showDecide}}" hint-placeholder-val="{{ true }}">
+        <div style="padding: 24px; display: flex; flex-direction: column; gap: 16px">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <h2 style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">Accept Version 4 and Go Live for 90 Days</h2>
+            <p style="margin: 0; font-size: 14px; line-height: 20px; color: #5F5F5F">The wholesale planning team can open it for 90 days. You can renew it then.</p>
+            <sc-if value="{{tech}}" hint-placeholder-val="{{ false }}">
+              <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                <a href="Activity.dc.html" class="hd-chip hd-ring-edge" style="height: 24px; max-width: 320px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; text-decoration: none; font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden"><span style="position: relative; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; flex: none"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">G</span><img src="{{logos.github}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position: absolute; top: 0; left: 0; width: 16px; height: 16px"></span><span style="font-family: 'Chivo Mono', ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis">ua-prototypes/wholesale-sell-through</span></a>
+                <span>at <span style="font-family: 'Chivo Mono', ui-monospace, monospace; color: #1D1D1D">a3f9…c21</span></span>
+              </span>
+            </sc-if>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 24px">
+            <label style="flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 12px; font-size: 14px; line-height: 20px; cursor: pointer">
+              <input type="checkbox" checked="{{attested}}" onChange="{{toggleAttest}}" disabled="{{blocked}}" style="width: 16px; height: 16px; margin: 0; flex: none; accent-color: #1D1D1D">
+              <span>I reviewed the evidence and the numbers check, including the one criterion that is partly met.</span>
+            </label>
+            <div style="flex: none; display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <button type="button" onClick="{{approve}}" disabled="{{approveDisabled}}" aria-describedby="sign-why" class="{{approveCls}}" style="height: 44px; min-width: 96px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: {{approveBg}}; color: #FFFFFF; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: {{approveCursor}}">Sign and Accept</button>
+                <button type="button" class="hd-btn-secondary hd-ring-ink" style="height: 44px; min-width: 96px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer">Send Back</button>
+                <button type="button" style="height: 44px; padding: 0 8px; border: 0; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; cursor: pointer">Ask Someone</button>
+                <button type="button" style="height: 44px; padding: 0 8px; border: 0; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; cursor: pointer">Reassign</button>
+              </div>
+              <span id="sign-why" style="font-size: 12px; line-height: 18px; color: #5F5F5F; font-weight: {{reasonWeight}}">{{reason}}</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+  </div>
+
+  <aside aria-label="Before you sign" style="grid-column: span 3; min-width: 0; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px">
+    <div style="position: sticky; top: 16px; display: flex; flex-direction: column">
+      <sc-if value="{{blocked}}" hint-placeholder-val="{{ false }}">
+        <section aria-labelledby="open-items" style="padding: 16px; border-bottom: 1px solid #F0F0F0; display: flex; flex-direction: column; gap: 8px">
+          <h2 id="open-items" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Open Items</h2>
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>Open Decision, Blocks Approval</span>
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">Should accounts with no FW26 sales be hidden?</span>
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #2F6B5E; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">JL</span>Waiting on Jordan Lee, 1d</span>
+          <a href="Project.dc.html" style="align-self: flex-start; padding: 4px 0; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px">Jump to It</a>
+        </section>
+      </sc-if>
+
+      <section aria-labelledby="skips" style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+        <h2 id="skips" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">What This Prototype Skips</h2>
+        <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 20px">
+          <li>A live partner feed: it uses yesterday's <span style="white-space: nowrap">sell-through</span> snapshot</li>
+          <li>Excel export writes CSV, not a native workbook</li>
+          <li>Factory House doors</li>
+          <li>Access beyond the wholesale planning team</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="signers" style="padding: 16px; border-top: 1px solid #F0F0F0; display: flex; flex-direction: column; gap: 8px">
+        <h2 id="signers" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Who Signs, in Order</h2>
+        <div style="display: flex; flex-direction: column">
+          <div style="display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; padding: 8px 0">
+            <span title="Maya Chen" aria-hidden="true" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #3D4B8C; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">MC</span>
+            <span style="min-width: 0; display: flex; flex-direction: column">
+              <span style="font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Maya Chen (you)</span>
+              <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">Business owner</span>
+            </span>
+            <span style="justify-self: end; white-space: nowrap">
+              <sc-if value="{{youWaiting}}" hint-placeholder-val="{{ true }}"><span style="font-size: 12px; line-height: 16px; font-weight: 700; color: #1D1D1D; white-space: nowrap">You, now</span></sc-if>
+              <sc-if value="{{youSigned}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #00834B; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Signed 14:02</span></sc-if>
+            </span>
+          </div>
+          <div style="display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; column-gap: 12px; padding: 8px 0; border-top: 1px solid #F0F0F0">
+            <span aria-hidden="true" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #F0F0F0; color: #5F5F5F"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 20.5c.9-3.7 3.9-6 7.5-6s6.6 2.3 7.5 6"></path></svg></span>
+            <span style="min-width: 0; display: flex; flex-direction: column">
+              <span style="font-size: 14px; line-height: 20px">Engineering reviewer</span>
+              <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Not needed for a team prototype</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <sc-if value="{{showChanged}}" hint-placeholder-val="{{ false }}">
+        <section aria-labelledby="exact" style="padding: 16px; border-top: 1px solid #F0F0F0; display: flex; flex-direction: column; gap: 8px">
+          <h2 id="exact" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Exactly What You Sign</h2>
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">Version 4</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>Changed since the evidence</span>
+        </section>
+      </sc-if>
+    </div>
+  </aside>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","options":["ready","blocked","signed","changed"],"default":"ready"},"$preview":{"width":1440,"height":1931}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { attested: false, phase: null, tech: false };
+  }
+  componentDidMount() {
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+  }
+  componentWillUnmount() {
+    if (this.timer) clearTimeout(this.timer);
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+  }
+  renderVals() {
+    const st = this.state;
+    const variant = this.props.variant ?? 'ready';
+    // One literal path per mark; the publish script rewrites each to its uploaded asset.
+    const LOGO = { snowflake: 'logos/snowflake.svg', microsoft: 'logos/microsoft.svg', excel: 'logos/microsoftexcel.svg', github: 'logos/github.svg', microsoftteams: 'logos/microsoftteams.svg' };
+    const phase = st.phase ?? (variant === 'signed' ? 'signed' : 'decide');
+    const blocked = variant === 'blocked' && phase === 'decide';
+    const attested = st.attested;
+    const canApprove = !blocked && attested;
+    const signed = phase === 'signed';
+    const crop = (k) => ({ isTable: k === 'table', isFilters: k === 'filters', isHighlight: k === 'highlight', isFootprint: k === 'footprint', isExport: k === 'export', isSignin: k === 'signin' });
+    const ac = (id, text, method, how, logo, secs, k, partly) => Object.assign({
+      id, text, method, how,
+      isLogo: !!logo, isGlyph: !logo, logoUrl: logo ? LOGO[logo] : '', mono: method.charAt(0),
+      isMet: !partly, isPartly: !!partly,
+      playText: '0:' + secs,
+      playLabel: 'Play the evidence for criterion ' + id + ', ' + text + ', ' + Number(secs) + ' seconds'
+    }, crop(k));
+    const line = signed
+      ? { notch: '#1D1D1D', sub: '3h 10m, Maya',
+          buildStyle: 'height: 2px; background: #1D1D1D', liveStyle: 'height: 4px; background: #1D1D1D',
+          label: "Discover done. What we're building signed by Maya Chen after 3d. Plan done. The plan signed by Maya Chen after 2d 6h. Build done. The working prototype signed by Maya Chen after 3h 10m. Live in progress." }
+      : { notch: '#DC0019', sub: 'Open 3h 10m',
+          buildStyle: 'height: 4px; background: #1D1D1D', liveStyle: 'border-top: 2px dashed #949494',
+          label: "Discover done. What we're building signed by Maya Chen after 3d. Plan done. The plan signed by Maya Chen after 2d 6h. Build done. The working prototype is waiting on you, open 3h 10m. Live upcoming." };
+    return {
+      line,
+      logos: LOGO,
+      tech: st.tech,
+      techOn: st.tech ? 'true' : 'false',
+      techLabel: st.tech ? 'On' : 'Off',
+      toggleTech: () => this.setState({ tech: !this.state.tech }),
+      closeMenu: (e) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; },
+      showMonogram: (e) => { const i = e.currentTarget; i.style.display = 'none'; if (i.previousElementSibling) i.previousElementSibling.style.color = '#444444'; },
+      decisionLabel: signed ? 'Signed: The Working Prototype' : 'Your Approval: The Working Prototype',
+      labelColor: signed ? '#1D1D1D' : '#DC0019',
+      labelNotch: signed ? '#1D1D1D' : '#DC0019',
+      stripNotch: signed ? '#FFFFFF' : '#DC0019',
+      // Docked only while the decision still waits on the viewer; flush to the edge so rows never show beneath it.
+      dockStyle: signed ? 'position: static; box-shadow: none' : 'position: sticky; bottom: 0; box-shadow: 0 -8px 16px rgba(29,29,29,0.08)',
+      showDecide: phase === 'decide', showPending: phase === 'pending', showSigned: signed,
+      showChanged: variant === 'changed' && phase === 'decide',
+      versionSub: st.tech ? 'a3f9…c21' : 'Built Oct 24',
+      blocked, attested,
+      approveDisabled: !canApprove,
+      approveCls: canApprove ? 'hd-btn-primary hd-ring' : '',
+      approveBg: canApprove ? '#1D1D1D' : '#D0D0D0',
+      approveCursor: canApprove ? 'pointer' : 'not-allowed',
+      reason: blocked ? 'Unavailable while one decision is open.' : (attested ? 'Signing records your name, the version and the time.' : 'Confirm you reviewed the evidence to sign.'),
+      reasonWeight: blocked ? 700 : 400,
+      youWaiting: !signed, youSigned: signed,
+      toggleAttest: () => this.setState({ attested: !this.state.attested }),
+      approve: () => {
+        this.setState({ phase: 'pending' });
+        if (this.timer) clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.setState({ phase: 'signed' }), 5000);
+      },
+      undo: () => { if (this.timer) clearTimeout(this.timer); this.setState({ phase: 'decide' }); },
+      numbers: [
+        { label: 'FW26 sell-through, all accounts', proto: '57.4%', golden: '57.4%', variance: '0.0 pts' },
+        { label: 'Accounts below 40% after week 6', proto: '38', golden: '38', variance: '0' },
+        { label: 'Wholesale margin dollars, season to date', proto: '$41.82M', golden: '$41.82M', variance: '$0' }
+      ],
+      criteria: [
+        ac('1', 'Account planners see FW26 sell-through by account', 'Browser check', 'Against the approved plan', '', '24', 'table'),
+        ac('2', 'Filter by region, channel partner and franchise', 'Browser check', 'One screenshot per filter', '', '18', 'filters'),
+        ac('3', 'Highlight accounts below 40% sell-through after week 6', 'Wholesale view', '3 test accounts, aggregated', 'snowflake', '15', 'highlight'),
+        ac('4', 'Show shop-in-shop footprint next to sell-through', 'Store attributes view', 'Certified view, read-only', 'snowflake', '21', 'footprint'),
+        ac('5', 'Export the current view to Excel', 'Excel export', 'Writes CSV that opens in Excel, not a native workbook', 'excel', '09', 'export', true),
+        ac('6', 'Only the wholesale planning team can open it', 'Sign-in check', 'A member and a non-member', 'microsoft', '12', 'signin')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

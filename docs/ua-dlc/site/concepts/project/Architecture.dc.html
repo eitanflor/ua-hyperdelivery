@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tariff Planner Architecture</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-nav a:hover{color:#1D1D1D!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
+@keyframes hdflow{to{stroke-dashoffset:-24}}
+.hd-flow{animation:hdflow 1.2s linear infinite}
+@media (prefers-reduced-motion: reduce){.hd-flow{animation:none}}
+.hd-crumb a:hover{text-decoration:underline}
+</style>
+</helmet>
+<div style="min-height: 1594px; background: #F9F9F9; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
+
+<header style="height:56px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D0D0D0;position:relative;z-index:20">
+  <a href="Main.dc.html" class="hd-ring" style="display:flex;align-items:center;gap:12px;color:#1D1D1D;text-decoration:none;flex:none">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+    <span style="font-size:16px;line-height:20px;font-weight:700">HyperDelivery</span>
+  </a>
+  <span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+  <details class="hd-pop" style="position:relative;flex:none">
+    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height:36px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 8px;border-radius:4px;color:#1D1D1D;font-size:14px;line-height:18px;white-space:nowrap">Merchandising
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg>
+    </summary>
+    <div class="hd-menu" style="left:0;right:auto">
+      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closeMenu}}" style="font-weight:700">Merchandising<span style="flex:1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Sourcing</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Wholesale</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">EDM</button>
+    </div>
+  </details>
+  <nav aria-label="Primary" class="hd-nav" style="display:flex;align-self:stretch;gap:24px">
+    <a href="Main.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Home</a>
+    <a href="Projects.dc.html" aria-current="page" style="display:flex;align-items:center;font-size:14px;line-height:18px;font-weight:700;color:#1D1D1D;text-decoration:none;box-shadow:inset 0 -2px 0 #1D1D1D">Projects</a>
+    <a href="Inbox.dc.html" aria-label="Inbox, 4 waiting on you" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;gap:6px">Inbox<span aria-hidden="true" style="min-width:16px;height:16px;box-sizing:border-box;padding:0 4px;border-radius:999px;background:#DC0019;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;text-align:center">4</span></a>
+    <a href="Library.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Library</a>
+    <a href="Portfolio.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Portfolio</a>
+    <span aria-hidden="true" style="align-self:center;width:1px;height:20px;background:#D0D0D0"></span>
+    <a href="Admin.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Admin</a>
+  </nav>
+  <span style="flex:1"></span>
+  <div class="hd-right" style="display:flex;align-items:center;gap:16px;flex:none">
+    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border:0;border-radius:4px;background:#F0F0F0;color:#5F5F5F;font-family:inherit;font-size:14px;line-height:20px;text-align:left;flex:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span style="flex:1;white-space:nowrap">Search projects and facts</span>
+      <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    </button>
+    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;flex:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
+    <details class="hd-pop" style="position:relative;flex:none">
+      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/>
+          <path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"/><path d="M12 16.8v.2"/></svg>
+      </summary>
+      <nav class="hd-menu" aria-label="Help">
+        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+        <hr>
+        <details class="hd-sub">
+          <summary class="hd-mi">Keyboard Shortcuts<span style="flex:1"></span><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></summary>
+          <dl style="margin:0;padding:4px 16px 8px;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:12px;line-height:18px;color:#5F5F5F">
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd></dt><dd style="margin:0">Search</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">/</kbd></dt><dd style="margin:0">Search This Table</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">J</kbd> <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">K</kbd></dt><dd style="margin:0">Next and Previous Item</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">@</kbd></dt><dd style="margin:0">Mention Someone</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">Esc</kbd></dt><dd style="margin:0">Close</dd>
+            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></dt><dd style="margin:0">Show Shortcuts</dd>
+          </dl>
+        </details>
+        <details class="hd-sub">
+          <summary class="hd-mi">What's New<span style="flex:1"></span><span style="padding:0 4px;border-radius:4px;background:#FE9000;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700">NEW</span></summary>
+          <ul style="margin:0;padding:4px 16px 8px;list-style:none;display:grid;gap:8px;font-size:12px;line-height:18px">
+            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
+          </ul>
+        </details>
+        <hr>
+        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex:1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+      </nav>
+    </details>
+    <details class="hd-pop" style="position:relative;flex:none">
+      <summary class="hd-ring" aria-label="Omar Haddad, account" style="width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#4A5560;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">OH</summary>
+      <div class="hd-menu">
+        <div style="padding:8px 16px 12px;display:flex;flex-direction:column">
+          <span style="font-size:14px;line-height:18px;font-weight:700">Omar Haddad</span>
+          <span style="font-size:12px;line-height:18px;color:#5F5F5F">Engineering reviewer, Data Platform</span>
+        </div>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex:1"></span><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;color:#5F5F5F">{{techLabel}}<sc-if value="{{techCheck}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</header>
+
+<section style="background:#FFFFFF;border-bottom:1px solid #D0D0D0;padding:24px 24px 0">
+  <nav aria-label="Breadcrumb" class="hd-crumb" style="display:flex;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F">
+    <a href="Projects.dc.html" style="color:#5F5F5F;text-decoration:none">Projects</a><span aria-hidden="true">/</span>
+    <a href="Projects.dc.html" style="color:#5F5F5F;text-decoration:none">Sourcing</a>
+  </nav>
+  <div style="margin-top:8px;display:flex;align-items:center;gap:16px;min-height:40px">
+    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:700;white-space:nowrap">Tariff scenario planner</h1>
+    <span style="height:24px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;background:#F0F0F0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap">T1 Team Prototype</span>
+    <span style="flex:1"></span>
+    <span role="img" aria-label="Rina Alvarez, Luis Romero, Omar Haddad and 3 others" style="display:inline-flex;align-items:center">
+      <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#6B5A4E;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">RA</span>
+      <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#2E6A8E;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">LR</span>
+      <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#4A5560;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">OH</span>
+      <span aria-hidden="true" style="min-width:24px;height:24px;box-sizing:border-box;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#F0F0F0;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">+3</span>
+    </span>
+    <button type="button" class="hd-btn-secondary hd-ring-ink" style="height:36px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:999px;background:#FFFFFF;color:#1D1D1D;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Share</button>
+  </div>
+  <p style="margin:8px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;font-size:14px;line-height:20px;color:#5F5F5F">
+    <span style="display:inline-flex;align-items:center;gap:8px">Owner <span style="display:inline-flex;align-items:center;gap:8px;color:#1D1D1D"><span title="Rina Alvarez" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#6B5A4E;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">RA</span>Rina Alvarez</span></span>
+    <span style="display:inline-flex;align-items:center;gap:8px">Requested by <span style="display:inline-flex;align-items:center;gap:8px;color:#1D1D1D"><span title="Noah Park" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#444444;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">NP</span>Noah Park</span></span>
+    <span style="display:inline-flex;align-items:center;gap:8px">Jira
+      <a href="Project.dc.html" style="height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;text-decoration:none;font-size:12px;line-height:16px;white-space:nowrap">
+        <span style="position:relative;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex:none"><span aria-hidden="true" style="font-size:12px;line-height:16px;font-weight:700;color:transparent">J</span><img src="{{logos.jira}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position:absolute;top:0;left:0;width:16px;height:16px"></span><span style="font-family:'Chivo Mono',ui-monospace,monospace">SRC-412</span></a></span>
+  </p>
+  <div style="margin-top:24px">
+    <div role="img" aria-label="Discover done. What we're building signed by Rina, Luis and Omar after 3d 2h. Plan done. The plan signed by Rina, Luis and Omar after 5d 4h. Build in progress, 3 of 8 pieces. The working prototype and Live upcoming." style="display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr);align-items:center;row-gap:8px">
+      <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">Discover</span><span></span>
+      <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">Plan</span><span></span>
+      <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">Build, 3 of 8 pieces</span><span></span>
+      <span style="justify-self:center;font-size:12px;line-height:18px;color:#5F5F5F">Live</span>
+      <span style="height:2px;background:#1D1D1D"></span>
+      <span style="width:12px;height:12px;background:#1D1D1D"></span>
+      <span style="height:2px;background:#1D1D1D"></span>
+      <span style="width:12px;height:12px;background:#1D1D1D"></span>
+      <span style="height:4px;background:#1D1D1D"></span>
+      <span style="width:12px;height:12px;box-sizing:border-box;border:2px solid #949494;background:#FFFFFF"></span>
+      <span style="border-top:2px dashed #949494"></span>
+      <span></span>
+      <span style="justify-self:center;align-self:start;text-align:center;white-space:nowrap;font-size:12px;line-height:16px;font-weight:700">What We're Building<br><span style="font-weight:400;color:#5F5F5F">3d 2h, 3 signers</span></span>
+      <span></span>
+      <span style="justify-self:center;align-self:start;text-align:center;white-space:nowrap;font-size:12px;line-height:16px;font-weight:700">The Plan<br><span style="font-weight:400;color:#5F5F5F">5d 4h, 3 signers</span></span>
+      <span></span>
+      <span style="justify-self:center;align-self:start;text-align:center;white-space:nowrap;font-size:12px;line-height:16px;font-weight:700;color:#5F5F5F">The Working Prototype</span>
+      <span></span>
+    </div>
+  </div>
+  <nav aria-label="Project views" style="margin-top:24px;display:flex;gap:24px;height:44px">
+    <a href="Project.dc.html" class="hd-ring-in" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Document</a>
+    <a href="Project.dc.html" class="hd-ring-in" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Plan</a>
+    <a href="Project.dc.html" class="hd-ring-in" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Preview</a>
+    <a href="Project.dc.html" class="hd-ring-in" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Data</a>
+    <a href="Project.dc.html" class="hd-ring-in" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Sources<span style="margin-left:4px;font-size:12px;line-height:16px">6</span></a>
+    <a href="Project.dc.html" class="hd-ring-in" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Memory</a>
+    <a href="Activity.dc.html" class="hd-ring-in" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none;white-space:nowrap">Activity</a>
+    <a href="Architecture.dc.html" class="hd-ring-in" aria-current="page" style="height:44px;display:flex;align-items:center;font-size:14px;line-height:18px;font-weight:700;color:#1D1D1D;text-decoration:none;box-shadow:inset 0 -2px 0 #1D1D1D;white-space:nowrap">Architecture</a>
+  </nav>
+</section>
+
+<main style="padding: 24px 24px 56px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; row-gap: 24px; align-items: stretch">
+  <div style="grid-column: span 9; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; min-height: 36px">
+      <button type="button" role="switch" class="hd-ring" aria-checked="{{labelsOn}}" onClick="{{toggleLabels}}" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0; border: 0; border-radius: 16px; background: transparent; font-family: inherit; font-size: 14px; line-height: 18px; color: #1D1D1D; white-space: nowrap; cursor: pointer">
+        <span aria-hidden="true" style="position: relative; width: 56px; height: 32px; border-radius: 16px; background: {{labelsTrack}}; display: block; flex: none"><span style="position: absolute; top: 4px; left: {{labelsKnob}}; width: 24px; height: 24px; border-radius: 999px; background: #FFFFFF; display: block"></span></span>
+        Edge Labels
+      </button>
+      <span style="flex: 1"></span>
+      <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">Version 4, signed with the plan Oct 21</span>
+      <button type="button" class="hd-btn-ghost hd-ring" style="height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"></path></svg>Export SVG</button>
+    </div>
+
+    <section aria-labelledby="nfr-title" style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px">
+      <h2 id="nfr-title" style="margin: 0; flex: none; font-size: 14px; line-height: 18px; font-weight: 700">Requirements</h2>
+      <dl style="margin: 0; flex: 1 1 800px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+        <div style="min-width: 0; padding-left: 16px; border-left: 1px solid #F0F0F0"><dt style="font-size: 12px; line-height: 18px; color: #5F5F5F">Data refresh</dt><dd style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">Daily by 06:00</dd></div>
+        <div style="min-width: 0; padding-left: 16px; border-left: 1px solid #F0F0F0"><dt style="font-size: 12px; line-height: 18px; color: #5F5F5F">Page response</dt><dd style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">p95 under 3 s</dd></div>
+        <div style="min-width: 0; padding-left: 16px; border-left: 1px solid #F0F0F0"><dt style="font-size: 12px; line-height: 18px; color: #5F5F5F">Users</dt><dd style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">About 20 people</dd></div>
+        <div style="min-width: 0; padding-left: 16px; border-left: 1px solid #F0F0F0"><dt style="font-size: 12px; line-height: 18px; color: #5F5F5F">Cost cap</dt><dd style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">40 credits a month</dd></div>
+        <div style="min-width: 0; padding-left: 16px; border-left: 1px solid #F0F0F0"><dt style="font-size: 12px; line-height: 18px; color: #5F5F5F">Leaves Snowflake</dt><dd style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">Aggregates only</dd></div>
+      </dl>
+    </section>
+
+    <section aria-label="Architecture canvas" style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden">
+      <div style="min-height: 48px; box-sizing: border-box; padding: 8px 8px 8px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; border-bottom: 1px solid #F0F0F0">
+        <sc-if value="{{isReplay}}" hint-placeholder-val="{{ false }}"><p style="margin: 0; flex: 1 1 320px; min-width: 0; display: flex; align-items: baseline; gap: 12px; font-size: 14px; line-height: 20px"><b style="font-weight: 700; white-space: nowrap">{{stepLabel}}</b><span style="min-width: 0">{{stepText}}</span></p></sc-if>
+        <span style="flex: 1"></span>
+        <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">21 components, 15 flows</span>
+        <div style="display: flex; align-items: center; gap: 4px; padding: 2px; background: #FFFFFF; border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0; flex: none">
+          <button type="button" class="hd-btn-ghost hd-ring" aria-label="Zoom out" onClick="{{zoomOut}}" style="width: 32px; height: 32px; border: 0; border-radius: 999px; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; color: #1D1D1D; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
+          <span aria-live="polite" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; width: 40px; text-align: center; color: #1D1D1D">{{zoomLabel}}</span>
+          <button type="button" class="hd-btn-ghost hd-ring" aria-label="Zoom in" onClick="{{zoomIn}}" style="width: 32px; height: 32px; border: 0; border-radius: 999px; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; color: #1D1D1D; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+          <span style="width: 1px; height: 16px; background: #D0D0D0; display: block" aria-hidden="true"></span>
+          <button type="button" class="hd-btn-ghost hd-ring" aria-label="Fit to view" onClick="{{fit}}" style="width: 32px; height: 32px; border: 0; border-radius: 999px; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; color: #1D1D1D; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"></path></svg></button>
+        </div>
+      </div>
+      <div data-arch-viewport="true" style="flex: 1 1 0px; position: relative; min-height: {{vpH}}px; overflow: auto; display: flex; background-color: #FFFFFF; background-image: radial-gradient(#D0D0D0 1px, transparent 1px); background-size: 16px 16px">
+        <div style="position: relative; flex: none; margin: 0 auto auto; padding: 16px 0; width: {{sizerW}}; height: {{sizerH}}; overflow: hidden">
+        <div style="position: relative; width: 1202px; height: 740px; transform: {{worldTransform}}; transform-origin: 0 0">
+                <div aria-hidden="true" style="position: absolute; left: 24px; top: 16px; width: 448px; height: 92px; box-sizing: border-box; background: #F9F9F9; border: 1px solid #D0D0D0; border-radius: 8px"></div>
+                <div aria-hidden="true" style="position: absolute; left: 496px; top: 16px; width: 684px; height: 92px; box-sizing: border-box; background: #F9F9F9; border: 1px solid #5B5FC7; border-radius: 8px"></div>
+                <svg width="1178" height="440" viewBox="0 0 1178 440" aria-hidden="true" style="position: absolute; left: 12px; top: 152px; width: 1178px; height: 440px; overflow: visible"><path d="M 8 0.5 H 1170 A 7.5 7.5 0 0 1 1177.5 8 V 432 A 7.5 7.5 0 0 1 1170 439.5 H 720 A 7.5 7.5 0 0 1 712.5 432 V 171 A 7.5 7.5 0 0 0 705 163.5 H 8 A 7.5 7.5 0 0 1 0.5 156 V 8 A 7.5 7.5 0 0 1 8 0.5 Z" fill="#F9F9F9" stroke="#949494" stroke-width="1"></path></svg>
+                <div aria-hidden="true" style="position: absolute; left: 12px; top: 328px; width: 700px; height: 264px; box-sizing: border-box; background: #F9F9F9; border: 1px solid #29B5E8; border-radius: 8px"></div>
+                <div aria-hidden="true" style="position: absolute; left: 24px; top: 184px; width: 1154px; height: 124px; box-sizing: border-box; background: #FFFFFF; border-radius: 8px"></div>
+                <div aria-hidden="true" style="position: absolute; left: 732px; top: 328px; width: 212px; height: 172px; box-sizing: border-box; background: #FFFFFF; border-radius: 8px"></div>
+                <div aria-hidden="true" style="position: absolute; left: 24px; top: 448px; width: 680px; height: 132px; box-sizing: border-box; background: #FFFFFF; border-radius: 8px"></div>
+                <div aria-hidden="true" style="position: absolute; left: 24px; top: 632px; width: 684px; height: 92px; box-sizing: border-box; background: #F9F9F9; border: 1px solid #D0D0D0; border-radius: 8px"></div>
+                <div aria-hidden="true" style="position: absolute; left: 732px; top: 632px; width: 448px; height: 92px; box-sizing: border-box; background: #F9F9F9; border: 1px solid #181717; border-radius: 8px"></div>
+                <svg width="8" height="123" viewBox="0 0 8 123" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 126px; top: 96px; width: 8px; height: 123px; overflow: visible; fill: none; stroke: #5B5FC7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s1.op}}; filter: {{sg.s1.fx}}"><defs><marker id="dc-arrow-head-filled-1" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#5B5FC7" stroke="none" style="stroke: none; fill: #5B5FC7; fill: context-stroke"/></marker></defs><path d="M 4 0 L 4 119" marker-end="url(#dc-arrow-head-filled-1)"></path></svg>
+                <svg width="8" height="123" viewBox="0 0 8 123" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 362px; top: 96px; width: 8px; height: 123px; overflow: visible; fill: none; stroke: #5B5FC7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s2.op}}; filter: {{sg.s2.fx}}"><defs><marker id="dc-arrow-head-filled-2" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#5B5FC7" stroke="none" style="stroke: none; fill: #5B5FC7; fill: context-stroke"/></marker></defs><path d="M 4 0 L 4 119" marker-end="url(#dc-arrow-head-filled-2)"></path></svg>
+                <svg width="8" height="123" viewBox="0 0 8 123" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 598px; top: 97px; width: 8px; height: 123px; overflow: visible; fill: none; stroke: #5B5FC7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s3.op}}; filter: {{sg.s3.fx}}"><defs><marker id="dc-arrow-head-filled-3" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#5B5FC7" stroke="none" style="stroke: none; fill: #5B5FC7; fill: context-stroke"/></marker></defs><path d="M 4 123 L 4 4" marker-end="url(#dc-arrow-head-filled-3)"></path></svg>
+                <svg width="8" height="263" viewBox="0 0 8 263" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 834px; top: 97px; width: 8px; height: 263px; overflow: visible; fill: none; stroke: #5B5FC7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: {{sg.s4.op}}; filter: {{sg.s4.fx}}"><defs><marker id="dc-arrow-head-filled-4" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#5B5FC7" stroke="none" style="stroke: none; fill: #5B5FC7; fill: context-stroke"/></marker></defs><path d="M 4 263 L 4 4" marker-end="url(#dc-arrow-head-filled-4)"></path></svg>
+                <svg width="8" height="115" viewBox="0 0 8 115" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 1070px; top: 96px; width: 8px; height: 115px; overflow: visible; fill: none; stroke: #5B5FC7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s16.op}}; filter: {{sg.s16.fx}}"><defs><marker id="dc-arrow-head-filled-5" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#5B5FC7" stroke="none" style="stroke: none; fill: #5B5FC7; fill: context-stroke"/></marker></defs><path d="M 4 0 L 4 111" marker-end="url(#dc-arrow-head-filled-5)"></path></svg>
+                <svg width="8" height="60" viewBox="0 0 8 60" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 362px; top: 300px; width: 8px; height: 60px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s6stub.op}}; filter: {{sg.s6stub.fx}}"><path d="M 4 60 L 4 0"></path></svg>
+                <svg width="236" height="8" viewBox="0 0 236 8" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 130px; top: 296px; width: 236px; height: 8px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s6busL.op}}; filter: {{sg.s6busL.fx}}"><path d="M 236 4 L 0 4"></path></svg>
+                <svg width="236" height="8" viewBox="0 0 236 8" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 366px; top: 296px; width: 236px; height: 8px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s6busR.op}}; filter: {{sg.s6busR.fx}}"><path d="M 0 4 L 236 4"></path></svg>
+                <svg width="8" height="31" viewBox="0 0 8 31" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 126px; top: 269px; width: 8px; height: 31px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s6a.op}}; filter: {{sg.s6a.fx}}"><defs><marker id="dc-arrow-head-filled-6" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#29B5E8" stroke="none" style="stroke: none; fill: #29B5E8; fill: context-stroke"/></marker></defs><path d="M 4 31 L 4 4" marker-end="url(#dc-arrow-head-filled-6)"></path></svg>
+                <svg width="8" height="31" viewBox="0 0 8 31" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 362px; top: 269px; width: 8px; height: 31px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s6b.op}}; filter: {{sg.s6b.fx}}"><defs><marker id="dc-arrow-head-filled-7" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#29B5E8" stroke="none" style="stroke: none; fill: #29B5E8; fill: context-stroke"/></marker></defs><path d="M 4 31 L 4 4" marker-end="url(#dc-arrow-head-filled-7)"></path></svg>
+                <svg width="8" height="31" viewBox="0 0 8 31" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 598px; top: 269px; width: 8px; height: 31px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s6c.op}}; filter: {{sg.s6c.fx}}"><defs><marker id="dc-arrow-head-filled-8" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#29B5E8" stroke="none" style="stroke: none; fill: #29B5E8; fill: context-stroke"/></marker></defs><path d="M 4 31 L 4 4" marker-end="url(#dc-arrow-head-filled-8)"></path></svg>
+                <svg width="8" height="32" viewBox="0 0 8 32" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 126px; top: 488px; width: 8px; height: 32px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s7a.op}}; filter: {{sg.s7a.fx}}"><path d="M 4 32 L 4 0"></path></svg>
+                <svg width="8" height="32" viewBox="0 0 8 32" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 362px; top: 488px; width: 8px; height: 32px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s7b.op}}; filter: {{sg.s7b.fx}}"><path d="M 4 32 L 4 0"></path></svg>
+                <svg width="8" height="32" viewBox="0 0 8 32" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 598px; top: 488px; width: 8px; height: 32px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s7c.op}}; filter: {{sg.s7c.fx}}"><path d="M 4 32 L 4 0"></path></svg>
+                <svg width="236" height="8" viewBox="0 0 236 8" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 130px; top: 484px; width: 236px; height: 8px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s7busL.op}}; filter: {{sg.s7busL.fx}}"><path d="M 0 4 L 236 4"></path></svg>
+                <svg width="236" height="8" viewBox="0 0 236 8" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 366px; top: 484px; width: 236px; height: 8px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s7busR.op}}; filter: {{sg.s7busR.fx}}"><path d="M 236 4 L 0 4"></path></svg>
+                <svg width="8" height="79" viewBox="0 0 8 79" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 362px; top: 409px; width: 8px; height: 79px; overflow: visible; fill: none; stroke: #29B5E8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s7up.op}}; filter: {{sg.s7up.fx}}"><defs><marker id="dc-arrow-head-filled-9" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#29B5E8" stroke="none" style="stroke: none; fill: #29B5E8; fill: context-stroke"/></marker></defs><path d="M 4 79 L 4 4" marker-end="url(#dc-arrow-head-filled-9)"></path></svg>
+                <svg width="24" height="8" viewBox="0 0 24 8" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 956px; top: 240px; width: 24px; height: 8px; overflow: visible; fill: none; stroke: #5F5F5F; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s8a.op}}; filter: {{sg.s8a.fx}}"><path d="M 24 4 L 0 4"></path></svg>
+                <svg width="8" height="220" viewBox="0 0 8 220" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 952px; top: 244px; width: 8px; height: 220px; overflow: visible; fill: none; stroke: #5F5F5F; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s8b.op}}; filter: {{sg.s8b.fx}}"><path d="M 4 0 L 4 220"></path></svg>
+                <svg width="23" height="8" viewBox="0 0 23 8" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 933px; top: 460px; width: 23px; height: 8px; overflow: visible; fill: none; stroke: #5F5F5F; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s8c.op}}; filter: {{sg.s8c.fx}}"><defs><marker id="dc-arrow-head-filled-10" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#5F5F5F" stroke="none" style="stroke: none; fill: #5F5F5F; fill: context-stroke"/></marker></defs><path d="M 23 4 L 4 4" marker-end="url(#dc-arrow-head-filled-10)"></path></svg>
+                <svg width="47" height="8" viewBox="0 0 47 8" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 224px; top: 380px; width: 47px; height: 8px; overflow: visible; fill: none; stroke: #475569; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: {{sg.s9.op}}; filter: {{sg.s9.fx}}"><defs><marker id="dc-arrow-head-filled-11" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#475569" stroke="none" style="stroke: none; fill: #475569; fill: context-stroke"/></marker></defs><path d="M 0 4 L 43 4" marker-end="url(#dc-arrow-head-filled-11)"></path></svg>
+                <svg width="8" height="95" viewBox="0 0 8 95" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 126px; top: 569px; width: 8px; height: 95px; overflow: visible; fill: none; stroke: #949494; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: {{sg.s10.op}}; filter: {{sg.s10.fx}}"><defs><marker id="dc-arrow-head-filled-12" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#949494" stroke="none" style="stroke: none; fill: #949494; fill: context-stroke"/></marker></defs><path d="M 4 95 L 4 4" marker-end="url(#dc-arrow-head-filled-12)"></path></svg>
+                <svg width="8" height="95" viewBox="0 0 8 95" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 362px; top: 569px; width: 8px; height: 95px; overflow: visible; fill: none; stroke: #949494; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: {{sg.s11.op}}; filter: {{sg.s11.fx}}"><defs><marker id="dc-arrow-head-filled-13" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#949494" stroke="none" style="stroke: none; fill: #949494; fill: context-stroke"/></marker></defs><path d="M 4 95 L 4 4" marker-end="url(#dc-arrow-head-filled-13)"></path></svg>
+                <svg width="8" height="95" viewBox="0 0 8 95" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 598px; top: 569px; width: 8px; height: 95px; overflow: visible; fill: none; stroke: #949494; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: {{sg.s12.op}}; filter: {{sg.s12.fx}}"><defs><marker id="dc-arrow-head-filled-14" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#949494" stroke="none" style="stroke: none; fill: #949494; fill: context-stroke"/></marker></defs><path d="M 4 95 L 4 4" marker-end="url(#dc-arrow-head-filled-14)"></path></svg>
+                <svg width="8" height="387" viewBox="0 0 8 387" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 1070px; top: 277px; width: 8px; height: 387px; overflow: visible; fill: none; stroke: #181717; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: {{sg.s13.op}}; filter: {{sg.s13.fx}}"><defs><marker id="dc-arrow-head-filled-15" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#181717" stroke="none" style="stroke: none; fill: #181717; fill: context-stroke"/></marker></defs><path d="M 4 387 L 4 4" marker-end="url(#dc-arrow-head-filled-15)"></path></svg>
+                <svg width="8" height="31" viewBox="0 0 8 31" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 834px; top: 409px; width: 8px; height: 31px; overflow: visible; fill: none; stroke: #5F5F5F; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: {{sg.s15.op}}; filter: {{sg.s15.fx}}"><defs><marker id="dc-arrow-head-filled-16" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#5F5F5F" stroke="none" style="stroke: none; fill: #5F5F5F; fill: context-stroke"/></marker></defs><path d="M 4 31 L 4 4" marker-end="url(#dc-arrow-head-filled-16)"></path></svg>
+                <svg width="8" height="71" viewBox="0 0 8 71" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 834px; top: 592px; width: 8px; height: 71px; overflow: visible; fill: none; stroke: #949494; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: {{sg.s14.op}}; filter: {{sg.s14.fx}}"><defs><marker id="dc-arrow-head-filled-17" orient="auto" markerWidth="5" markerHeight="5" refX="2" refY="2" overflow="visible"><path d="M0 0 L4 2 L0 4 Z" fill="#949494" stroke="none" style="stroke: none; fill: #949494; fill: context-stroke"/></marker></defs><path d="M 4 0 L 4 67" marker-end="url(#dc-arrow-head-filled-17)"></path></svg>
+                <button type="button" class="{{nd.planners.cls}}" onClick="{{nd.planners.pick}}" aria-pressed="{{nd.planners.pressed}}" aria-label="Sourcing planners, People" style="position: absolute; left: 36px; top: 48px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.planners.bg}}; border: {{nd.planners.border}}; border-radius: 8px; box-shadow: {{nd.planners.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.planners.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.5"></circle><path d="M2.5 20c.7-3.3 3.3-5.5 6.5-5.5s5.8 2.2 6.5 5.5"></path><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.5 2.6 4 5.2"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.planners.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Sourcing planners</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Build, compare, save</span></span></button>
+                <button type="button" class="{{nd.finance.cls}}" onClick="{{nd.finance.pick}}" aria-pressed="{{nd.finance.pressed}}" aria-label="Finance reviewers, People" style="position: absolute; left: 272px; top: 48px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.finance.bg}}; border: {{nd.finance.border}}; border-radius: 8px; box-shadow: {{nd.finance.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.finance.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.5"></circle><path d="M2.5 20c.7-3.3 3.3-5.5 6.5-5.5s5.8 2.2 6.5 5.5"></path><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.5 2.6 4 5.2"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.finance.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Finance reviewers</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Review and export</span></span></button>
+                <button type="button" class="{{nd.excel.cls}}" onClick="{{nd.excel.pick}}" aria-pressed="{{nd.excel.pressed}}" aria-label="Excel, Output" style="position: absolute; left: 508px; top: 48px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.excel.bg}}; border: {{nd.excel.border}}; border-radius: 8px; box-shadow: {{nd.excel.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">E</span><img src="{{logos.microsoftexcel}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.excel.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.excel.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Excel</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Opens the CSV export</span></span></button>
+                <button type="button" class="{{nd.teams.cls}}" onClick="{{nd.teams.pick}}" aria-pressed="{{nd.teams.pressed}}" aria-label="Teams channel, Output" style="position: absolute; left: 744px; top: 48px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.teams.bg}}; border: {{nd.teams.border}}; border-radius: 8px; box-shadow: {{nd.teams.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">T</span><img src="{{logos.microsoftteams}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.teams.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.teams.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Teams channel</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Sourcing tariffs</span></span></button>
+                <button type="button" class="{{nd.entra.cls}}" onClick="{{nd.entra.pick}}" aria-pressed="{{nd.entra.pressed}}" aria-label="Entra ID group, Identity" style="position: absolute; left: 980px; top: 48px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.entra.bg}}; border: {{nd.entra.border}}; border-radius: 8px; box-shadow: {{nd.entra.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">E</span><img src="{{logos.microsoft}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.entra.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.entra.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Entra ID group</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">SG-Sourcing-Tariff</span></span></button>
+                <button type="button" class="{{nd.builder.cls}}" onClick="{{nd.builder.pick}}" aria-pressed="{{nd.builder.pressed}}" aria-label="Scenario Builder, App page" style="position: absolute; left: 36px; top: 220px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.builder.bg}}; border: {{nd.builder.border}}; border-radius: 8px; box-shadow: {{nd.builder.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.builder.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5h15A1.5 1.5 0 0 1 21 6v12a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6a1.5 1.5 0 0 1 1.5-1.5z"></path><path d="M3 9h18"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.builder.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Scenario Builder</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Set duty rates</span></span></button>
+                <button type="button" class="{{nd.compare.cls}}" onClick="{{nd.compare.pick}}" aria-pressed="{{nd.compare.pressed}}" aria-label="Compare, App page" style="position: absolute; left: 272px; top: 220px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.compare.bg}}; border: {{nd.compare.border}}; border-radius: 8px; box-shadow: {{nd.compare.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.compare.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5h15A1.5 1.5 0 0 1 21 6v12a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6a1.5 1.5 0 0 1 1.5-1.5z"></path><path d="M3 9h18"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.compare.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Compare</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Base against scenario</span></span></button>
+                <button type="button" class="{{nd.export.cls}}" onClick="{{nd.export.pick}}" aria-pressed="{{nd.export.pressed}}" aria-label="Export, App page" style="position: absolute; left: 508px; top: 220px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.export.bg}}; border: {{nd.export.border}}; border-radius: 8px; box-shadow: {{nd.export.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.export.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5h15A1.5 1.5 0 0 1 21 6v12a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6a1.5 1.5 0 0 1 1.5-1.5z"></path><path d="M3 9h18"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.export.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Export</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">CSV for Finance</span></span></button>
+                <button type="button" class="{{nd.weekly.cls}}" onClick="{{nd.weekly.pick}}" aria-pressed="{{nd.weekly.pressed}}" aria-label="Weekly summary, Scheduled job" style="position: absolute; left: 744px; top: 360px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.weekly.bg}}; border: {{nd.weekly.border}}; border-radius: 8px; box-shadow: {{nd.weekly.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.weekly.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.weekly.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Weekly summary</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Scheduled job</span></span></button>
+                <button type="button" class="{{nd.app.cls}}" onClick="{{nd.app.pick}}" aria-pressed="{{nd.app.pressed}}" aria-label="Team app, Team-apps environment" style="position: absolute; left: 980px; top: 212px; width: 188px; height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.app.bg}}; border: {{nd.app.border}}; border-radius: 8px; box-shadow: {{nd.app.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">T</span><img src="{{logos.amazonwebservices}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.app.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.app.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Team app</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: normal"><span style="font-family: 'Chivo Mono', ui-monospace, monospace">tariff-scenarios</span>, own deployment</span></span></button>
+                <button type="button" class="{{nd.monitor.cls}}" onClick="{{nd.monitor.pick}}" aria-pressed="{{nd.monitor.pressed}}" aria-label="Resource monitor, Guardrail" style="position: absolute; left: 36px; top: 360px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.monitor.bg}}; border: {{nd.monitor.border}}; border-radius: 8px; box-shadow: {{nd.monitor.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.monitor.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.monitor.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Resource monitor</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">40 credits a month</span></span></button>
+                <button type="button" class="{{nd.wh.cls}}" onClick="{{nd.wh.pick}}" aria-pressed="{{nd.wh.pressed}}" aria-label="App warehouse, Compute" style="position: absolute; left: 272px; top: 360px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.wh.bg}}; border: {{nd.wh.border}}; border-radius: 8px; box-shadow: {{nd.wh.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.wh.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3L5 13.5h6l-1 7.5 8-10.5h-6z"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.wh.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">App warehouse</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">X-Small, 60 s timeout</span></span></button>
+                <button type="button" class="{{nd.scen.cls}}" onClick="{{nd.scen.pick}}" aria-pressed="{{nd.scen.pressed}}" aria-label="Saved scenarios, App table" style="position: absolute; left: 744px; top: 440px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.scen.bg}}; border: {{nd.scen.border}}; border-radius: 8px; box-shadow: {{nd.scen.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.scen.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.scen.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Saved scenarios</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Chivo Mono', ui-monospace, monospace">scenarios</span></span></button>
+                <button type="button" class="{{nd.rates.cls}}" onClick="{{nd.rates.pick}}" aria-pressed="{{nd.rates.pressed}}" aria-label="Tariff rates, Approved view" style="position: absolute; left: 36px; top: 520px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.rates.bg}}; border: {{nd.rates.border}}; border-radius: 8px; box-shadow: {{nd.rates.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">T</span><img src="{{logos.snowflake}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.rates.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.rates.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Tariff rates</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Chivo Mono', ui-monospace, monospace">HTS_RATES_V</span></span></button>
+                <button type="button" class="{{nd.landed.cls}}" onClick="{{nd.landed.pick}}" aria-pressed="{{nd.landed.pressed}}" aria-label="Landed cost, Approved view" style="position: absolute; left: 272px; top: 520px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.landed.bg}}; border: {{nd.landed.border}}; border-radius: 8px; box-shadow: {{nd.landed.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">L</span><img src="{{logos.snowflake}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.landed.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.landed.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Landed cost</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Chivo Mono', ui-monospace, monospace">LANDED_COST_V</span></span></button>
+                <button type="button" class="{{nd.polines.cls}}" onClick="{{nd.polines.pick}}" aria-pressed="{{nd.polines.pressed}}" aria-label="PO volumes, Approved view" style="position: absolute; left: 508px; top: 520px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.polines.bg}}; border: {{nd.polines.border}}; border-radius: 8px; box-shadow: {{nd.polines.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">P</span><img src="{{logos.snowflake}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.polines.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.polines.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">PO volumes</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Chivo Mono', ui-monospace, monospace">PO_VOLUMES_V</span></span></button>
+                <button type="button" class="{{nd.htssync.cls}}" onClick="{{nd.htssync.pick}}" aria-pressed="{{nd.htssync.pressed}}" aria-label="Nightly HTS sync, Upstream" style="position: absolute; left: 36px; top: 664px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.htssync.bg}}; border: {{nd.htssync.border}}; border-radius: 8px; box-shadow: {{nd.htssync.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.htssync.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.htssync.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Nightly HTS sync</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">02:00, Data Platform</span></span></button>
+                <button type="button" class="{{nd.fx.cls}}" onClick="{{nd.fx.pick}}" aria-pressed="{{nd.fx.pressed}}" aria-label="Treasury FX rates, Upstream" style="position: absolute; left: 272px; top: 664px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.fx.bg}}; border: {{nd.fx.border}}; border-radius: 8px; box-shadow: {{nd.fx.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.fx.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.fx.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Treasury FX rates</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Month-end, Treasury</span></span></button>
+                <button type="button" class="{{nd.popipe.cls}}" onClick="{{nd.popipe.pick}}" aria-pressed="{{nd.popipe.pressed}}" aria-label="PO pipeline, Upstream" style="position: absolute; left: 508px; top: 664px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.popipe.bg}}; border: {{nd.popipe.border}}; border-radius: 8px; box-shadow: {{nd.popipe.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.popipe.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.popipe.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">PO pipeline</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">03:00, Data Platform</span></span></button>
+                <button type="button" class="{{nd.ops.cls}}" onClick="{{nd.ops.pick}}" aria-pressed="{{nd.ops.pressed}}" aria-label="Ops monitor, Run" style="position: absolute; left: 744px; top: 664px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.ops.bg}}; border: {{nd.ops.border}}; border-radius: 8px; box-shadow: {{nd.ops.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: {{nd.ops.glyph}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M7 17v-6M12 17V6M17 17v-9"></path></svg></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.ops.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Ops monitor</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Usage, errors, expiry</span></span></button>
+                <button type="button" class="{{nd.repo.cls}}" onClick="{{nd.repo.pick}}" aria-pressed="{{nd.repo.pressed}}" aria-label="tariff-scenarios, Build" style="position: absolute; left: 980px; top: 664px; width: 188px; height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: {{nd.repo.bg}}; border: {{nd.repo.border}}; border-radius: 8px; box-shadow: {{nd.repo.shadow}}; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer"><span style="position: relative; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">T</span><img src="{{logos.github}}" width="16" height="16" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; opacity: {{nd.repo.markOp}}"></span><span style="display: block; min-width: 0; flex: 1 1 auto"><b style="display: block; font-size: 14px; line-height: 20px; font-weight: 700; color: {{nd.repo.name}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">tariff-scenarios</b><span style="display: block; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Actions, CodeQL</span></span></button>
+                <div style="position: absolute; left: 36px; top: 24px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><span style="display: inline-flex; color: #1D1D1D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.5"></circle><path d="M2.5 20c.7-3.3 3.3-5.5 6.5-5.5s5.8 2.2 6.5 5.5"></path><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.5 2.6 4 5.2"></path></svg></span><b style="font-weight: 700; color: #1D1D1D">People</b><span style="color: #5F5F5F;">about 20 people</span></div>
+                <div style="position: absolute; left: 508px; top: 24px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{logos.microsoft}}" width="16" height="16" alt=""><b style="font-weight: 700; color: #1D1D1D">Microsoft 365</b><span style="color: #5F5F5F;">UA tenant</span></div>
+                <div style="position: absolute; left: 24px; top: 160px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{logos.amazonwebservices}}" width="16" height="16" alt=""><b style="font-weight: 700; color: #1D1D1D">Sandbox</b></div>
+                <div style="position: absolute; left: 141.5px; top: 160px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><span style="color: #5F5F5F;">AWS account, team-apps environment</span></div>
+                <div style="position: absolute; left: 24px; top: 336px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{logos.snowflake}}" width="16" height="16" alt=""><b style="font-weight: 700; color: #1D1D1D">Snowflake</b></div>
+                <div style="position: absolute; left: 141.5px; top: 336px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><span style="color: #5F5F5F;">UA_EDM account, rows stay inside</span></div>
+                <div style="position: absolute; left: 36px; top: 192px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><b style="font-weight: 700; color: #5F5F5F">Web app</b></div>
+                <div style="position: absolute; left: 141.5px; top: 192px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><span style="color: #5F5F5F; font-family: 'Chivo Mono', ui-monospace, monospace;">tariff-scenarios</span></div>
+                <div style="position: absolute; left: 744px; top: 336px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><b style="font-weight: 700; color: #5F5F5F">App data</b></div>
+                <div style="position: absolute; left: 36px; top: 456px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><b style="font-weight: 700; color: #5F5F5F">Approved views</b><span style="color: #5F5F5F; font-family: 'Chivo Mono', ui-monospace, monospace;">SOURCING.GOLDEN</span></div>
+                <div style="position: absolute; left: 36px; top: 640px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><b style="font-weight: 700; color: #1D1D1D">Data Platform</b></div>
+                <div style="position: absolute; left: 141.5px; top: 640px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><span style="color: #5F5F5F;">Already running, not built by this project</span></div>
+                <div style="position: absolute; left: 744px; top: 640px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><b style="font-weight: 700; color: #1D1D1D">Build and run</b></div>
+                <sc-if value="{{showLabels}}" hint-placeholder-val="{{ true }}">
+                  <div style="position: absolute; left: 141.5px; top: 121px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l1.fg}}; white-space: nowrap">SSO</div>
+                  <div style="position: absolute; left: 377.5px; top: 121px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l2.fg}}; white-space: nowrap">SSO</div>
+                  <div style="position: absolute; left: 613.5px; top: 121px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l3.fg}}; white-space: nowrap">CSV</div>
+                  <div style="position: absolute; left: 849.5px; top: 121px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l4.fg}}; white-space: nowrap">weekly post</div>
+                  <div style="position: absolute; left: 1085.5px; top: 121px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l5.fg}}; white-space: nowrap">members only</div>
+                  <div style="position: absolute; left: 377.5px; top: 334px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l6.fg}}; white-space: nowrap">aggregates at grain, never rows</div>
+                  <div style="position: absolute; left: 377.5px; top: 418px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l7.fg}}; white-space: nowrap">non-confidential views</div>
+                  <div style="position: absolute; left: 966px; top: 346px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l8.fg}}; white-space: nowrap">the only write</div>
+                  <div style="position: absolute; left: 230px; top: 362px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l9.fg}}; white-space: nowrap">limit</div>
+                  <div style="position: absolute; left: 141.5px; top: 603px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l10.fg}}; white-space: nowrap">nightly 02:00</div>
+                  <div style="position: absolute; left: 377.5px; top: 603px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l11.fg}}; white-space: nowrap">month-end</div>
+                  <div style="position: absolute; left: 613.5px; top: 603px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l12.fg}}; white-space: nowrap">nightly 03:00</div>
+                  <div style="position: absolute; left: 1085.5px; top: 449px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l13.fg}}; white-space: nowrap">deploy step</div>
+                  <div style="position: absolute; left: 849.5px; top: 603px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l14.fg}}; white-space: nowrap">usage, errors, expiry</div>
+                  <div style="position: absolute; left: 850px; top: 416px; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: {{lb.l15.fg}}; white-space: nowrap">Mondays 07:00</div>
+                </sc-if>
+        </div>
+      </div>
+      </div>
+    </section>
+  </div>
+
+  <aside aria-label="Replay and details" style="grid-column: span 3; min-width: 0; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+    <sc-if value="{{noDet}}" hint-placeholder-val="{{ true }}">
+      <section aria-labelledby="replay-title" style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px">
+          <h2 id="replay-title" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Replay a Flow</h2>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">{{scTotal}}</span>
+        </div>
+        <div role="radiogroup" aria-label="Flow" onKeyDown="{{chipsKey}}" style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{scenChips}}" as="c" hint-placeholder-count="3">
+            <button role="radio" type="button" class="hd-chip hd-ring-in" aria-checked="{{c.selected}}" tabindex="{{c.tab}}" onClick="{{c.pick}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 8px; border: 0; border-radius: 4px; background: {{c.bg}}; box-shadow: {{c.ring}}; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 18px; font-weight: {{c.weight}}; white-space: nowrap; cursor: pointer">
+              <sc-if value="{{c.hasLogo}}" hint-placeholder-val="{{ false }}"><img src="{{c.logo}}" width="16" height="16" alt=""></sc-if>
+              <sc-if value="{{c.hasGlyph}}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.glyph}}"></path></svg></sc-if>
+              {{c.label}}
+            </button>
+          </sc-for>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700">{{scTitle}}</p>
+        <ol style="margin: 0 -8px; padding: 0; list-style: none; display: flex; flex-direction: column">
+          <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+            <li>
+              <button type="button" class="hd-ring-in" onClick="{{s.pick}}" aria-current="{{s.current}}" style="font-family: inherit; width: 100%; text-align: left; border: 0; border-radius: 4px; background: {{s.rowBg}}; padding: 8px; display: flex; align-items: flex-start; gap: 8px; color: #1D1D1D; cursor: pointer">
+                <span style="width: 24px; height: 24px; flex: 0 0 auto; border-radius: 999px; box-sizing: border-box; background: {{s.numBg}}; color: {{s.numFg}}; box-shadow: {{s.numRing}}; font-size: 12px; line-height: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{s.num}}</span>
+                <span style="flex: 1 1 auto; min-width: 0; font-size: 14px; line-height: 20px; font-weight: {{s.weight}}; color: {{s.fg}}; padding-top: 2px">{{s.text}}</span>
+                <span style="flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding-top: 4px">
+                  <sc-if value="{{s.hasLogo}}" hint-placeholder-val="{{ true }}"><img src="{{s.logo}}" width="16" height="16" alt=""></sc-if>
+                  <sc-if value="{{s.hasGlyph}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.glyph}}"></path></svg></sc-if>
+                  <span style="font-size: 12px; line-height: 16px; color: #5F5F5F; min-width: 40px; text-align: right; white-space: nowrap">{{s.dur}}</span>
+                </span>
+              </button>
+            </li>
+          </sc-for>
+        </ol>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <button type="button" class="hd-btn-secondary hd-ring-ink" aria-label="Previous step" onClick="{{prev}}" disabled="{{prevDisabled}}" style="width: 36px; height: 36px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: {{prevRing}}; padding: 0; display: flex; align-items: center; justify-content: center; color: {{prevFg}}; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"></path></svg></button>
+          <button type="button" class="hd-btn-primary hd-ring" onClick="{{playToggle}}" style="height: 36px; min-width: 96px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; background: #1D1D1D; color: #FFFFFF; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; cursor: pointer">
+            <sc-if value="{{notPlaying}}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 4.8v14.4L19 12z"></path></svg></sc-if>
+            <sc-if value="{{isPlaying}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 5v14M15.5 5v14"></path></svg></sc-if>
+            {{playLabel}}
+          </button>
+          <button type="button" class="hd-btn-secondary hd-ring-ink" aria-label="Next step" onClick="{{next}}" disabled="{{nextDisabled}}" style="width: 36px; height: 36px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: {{nextRing}}; padding: 0; display: flex; align-items: center; justify-content: center; color: {{nextFg}}; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"></path></svg></button>
+          <span style="flex: 1 1 auto"></span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">{{stepShort}}</span>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{hasDet}}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="det-title" style="display: flex; flex-direction: column; gap: 16px">
+        <button type="button" class="hd-ring" onClick="{{backToReplay}}" style="align-self: flex-start; height: 32px; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: transparent; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"></path></svg>Back to Replay</button>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="position: relative; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D">
+            <sc-if value="{{det.hasLogo}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="font-size: 12px; line-height: 16px; font-weight: 700; color: transparent">{{det.mono}}</span><img src="{{det.logo}}" width="24" height="24" alt="" data-mono-color="#444444" onError="{{showMonogram}}" style="position: absolute; top: 8px; left: 8px; width: 24px; height: 24px"></sc-if>
+            <sc-if value="{{det.hasGlyph}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{det.glyph}}"></path></svg></sc-if>
+          </span>
+          <div style="display: flex; flex-direction: column; min-width: 0">
+            <h2 id="det-title" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">{{det.name}}</h2>
+            <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; overflow-wrap: anywhere">{{det.sub}}</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap">{{det.kind}}</span>
+          <span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap">{{det.tag}}</span>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 20px">{{det.what}}</p>
+        <sc-if value="{{det.hasSrc}}" hint-placeholder-val="{{ true }}">
+          <p style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">Traced to
+            <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap">
+              <sc-if value="{{det.srcIsLogo}}" hint-placeholder-val="{{ true }}"><img src="{{det.srcLogo}}" width="16" height="16" alt=""></sc-if>
+              <sc-if value="{{det.srcIsGlyph}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{det.srcGlyph}}"></path></svg></sc-if>
+              {{det.srcText}}
+            </span>
+          </p>
+        </sc-if>
+        <dl style="margin: 0; padding-top: 16px; border-top: 1px solid #F0F0F0; display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px 12px; font-size: 14px; line-height: 20px">
+          <dt style="font-size: 12px; line-height: 20px; color: #5F5F5F">Identity</dt><dd style="margin: 0; overflow-wrap: anywhere">{{det.identity}}</dd>
+          <dt style="font-size: 12px; line-height: 20px; color: #5F5F5F">Grain</dt><dd style="margin: 0">{{det.grain}}</dd>
+          <dt style="font-size: 12px; line-height: 20px; color: #5F5F5F">Owner</dt><dd style="margin: 0">{{det.owner}}</dd>
+          <dt style="font-size: 12px; line-height: 20px; color: #5F5F5F">Serves</dt><dd style="margin: 0">{{det.serves}}</dd>
+        </dl>
+        <div style="padding-top: 16px; border-top: 1px solid #F0F0F0; display: flex; flex-direction: column; gap: 8px">
+          <h3 style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 700">Connections</h3>
+          <sc-for list="{{conns}}" as="c" hint-placeholder-count="3">
+            <div style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 8px; font-size: 12px; line-height: 18px">
+              <span style="color: #5F5F5F">{{c.dir}}</span>
+              <span><b style="font-weight: 700">{{c.name}}</b> <span style="color: #5F5F5F">{{c.label}}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <div style="height: 1px; background: #F0F0F0; flex: none"></div>
+    <section aria-labelledby="legend-title" style="display: flex; flex-direction: column; gap: 12px">
+      <h2 id="legend-title" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Legend</h2>
+      <div role="list" style="display: grid; grid-template-columns: repeat(2, max-content); gap: 8px 24px; font-size: 12px; line-height: 16px; white-space: nowrap">
+        <span role="listitem" style="grid-column: span 2; display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; border-top: 2px solid #5F5F5F; display: block; flex: none"></span>Synchronous</span>
+        <span role="listitem" style="grid-column: span 2; display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; border-top: 2px dashed #949494; display: block; flex: none"></span>Scheduled or asynchronous</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 12px; box-sizing: border-box; border: 1px solid #29B5E8; border-radius: 4px; background: #F9F9F9; display: block; flex: none"></span>Snowflake account</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 12px; box-sizing: border-box; border: 1px solid #949494; border-radius: 4px; background: #F9F9F9; display: block; flex: none"></span>Sandbox account</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 4px; background: #5B5FC7; display: block; flex: none"></span>Microsoft 365</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 4px; background: #29B5E8; display: block; flex: none"></span>Data in Snowflake</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 4px; background: #475569; display: block; flex: none"></span>Guardrail</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 4px; background: #181717; display: block; flex: none"></span>Build and deploy</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 4px; background: #949494; display: block; flex: none"></span>Data Platform</span>
+        <span role="listitem" style="display: inline-flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 20px; height: 4px; background: #5F5F5F; display: block; flex: none"></span>Team app</span>
+      </div>
+    </section>
+  </aside>
+
+  <section aria-labelledby="dec-title" style="grid-column: span 12; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+      <h2 id="dec-title" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">Decisions Behind This Design</h2>
+      <a href="Activity.dc.html" style="font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; text-underline-offset: 3px; white-space: nowrap">All Decisions</a>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px">
+      <ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px">
+        <li style="display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; min-width: 0">
+          <a href="Activity.dc.html" aria-label="Decision D-1: 14 sourcing countries for FW27" style="align-self: start; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; text-decoration: none; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px">D-1</a>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <p style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700">14 sourcing countries for FW27</p>
+            <p style="margin: 0; font-size: 14px; line-height: 20px; color: #5F5F5F">They cover 93% of FW27 FOB spend, so volumes are read for those countries only.</p>
+            <p style="margin: 4px 0 0; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><span style="display: inline-flex"><span title="Rina Alvarez" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #6B5A4E; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">RA</span></span>Rina Alvarez, Oct 14</p>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; min-width: 0">
+          <a href="Activity.dc.html" aria-label="Decision D-2: Month-end FX rates from Treasury" style="align-self: start; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; text-decoration: none; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px">D-2</a>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <p style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700">Month-end FX rates from Treasury</p>
+            <p style="margin: 0; font-size: 14px; line-height: 20px; color: #5F5F5F">Finance closes on them, so scenarios match the close. Tariff models.xlsx is Confidential and was not indexed.</p>
+            <p style="margin: 4px 0 0; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><span style="display: inline-flex"><span title="Dana Ortiz" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #6A4C8C; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">DO</span></span>Dana Ortiz, Oct 15</p>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; min-width: 0">
+          <a href="Activity.dc.html" aria-label="Decision D-3: Tariff rates from the nightly HTS sync" style="align-self: start; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; text-decoration: none; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px">D-3</a>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <p style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700">Tariff rates from the nightly HTS sync</p>
+            <p style="margin: 0; font-size: 14px; line-height: 20px; color: #5F5F5F">It is the source Finance already reconciles against; customs broker sheets lag by weeks.</p>
+            <p style="margin: 4px 0 0; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><span style="display: inline-flex"><span title="Rina Alvarez" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #6B5A4E; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">RA</span><span title="Luis Romero" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #2E6A8E; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">LR</span></span>Rina Alvarez, Luis Romero, Oct 16</p>
+          </div>
+        </li>
+        <li style="display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; min-width: 0">
+          <a href="Activity.dc.html" aria-label="Decision D-4: Saved scenarios stay in the app" style="align-self: start; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; text-decoration: none; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px">D-4</a>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <p style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700">Saved scenarios stay in the app</p>
+            <p style="margin: 0; font-size: 14px; line-height: 20px; color: #5F5F5F">A team prototype does not write back to SAP. Scenarios live in the app’s own table in the team-apps environment and expire with it.</p>
+            <p style="margin: 4px 0 0; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><span style="display: inline-flex"><span title="Omar Haddad" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #4A5560; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">OH</span></span>Omar Haddad, Oct 20</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"scenario":{"editor":"enum","options":["compare","refresh","export"],"default":"compare"},"$preview":{"width":1440,"height":1594}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'explore', scenario: null, step: 0, playing: false, scale: null, fit: null, selected: null, labels: true, tech: false };
+    this.timer = null;
+    // The world is drawn at this size; the canvas opens scaled to fit its width.
+    this.world = { w: 1202, h: 740 };
+  }
+  componentDidMount() {
+    // Esc closes an open component first, then stops a replay. An open menu takes Esc for itself.
+    this.hdEsc = (e) => {
+      if (e.key !== 'Escape' || document.querySelector('details.hd-pop[open]')) return;
+      if (this.state.selected) { this.setState({ selected: null }); return; }
+      if (this.state.mode === 'replay') { this.stopTimer(); this.setState({ mode: 'explore', playing: false }); }
+    };
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    this.measure = () => {
+      const vp = document.querySelector('[data-arch-viewport]');
+      if (!vp || !vp.clientWidth) return;
+      const f = Math.max(0.4, Math.min(1, Math.floor((vp.clientWidth - 16) / this.world.w * 1000) / 1000));
+      if (f !== this.state.fit) this.setState({ fit: f });
+    };
+    document.addEventListener('keydown', this.hdEsc);
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+    window.addEventListener('resize', this.measure);
+    this.measure();
+    this.measureLater = setTimeout(this.measure, 50);
+  }
+  componentWillUnmount() {
+    if (this.timer) clearTimeout(this.timer);
+    clearTimeout(this.measureLater);
+    document.removeEventListener('keydown', this.hdEsc);
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+    window.removeEventListener('resize', this.measure);
+  }
+  stopTimer() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  tick(last) {
+    const next = this.state.step + 1;
+    if (next > last) { this.timer = null; this.setState({ playing: false }); return; }
+    if (next === last) { this.timer = null; this.setState({ step: next, playing: false }); return; }
+    this.setState({ step: next });
+    this.timer = setTimeout(() => this.tick(last), 1500);
+  }
+  togglePlay(last) {
+    this.stopTimer();
+    if (this.state.playing) { this.setState({ playing: false }); return; }
+    const start = this.state.mode !== 'replay' || this.state.step >= last ? 0 : this.state.step;
+    this.setState({ playing: true, mode: 'replay', step: start, selected: null });
+    this.timer = setTimeout(() => this.tick(last), 1500);
+  }
+  goTo(i) { this.stopTimer(); this.setState({ step: i, playing: false, mode: 'replay', selected: null }); }
+  renderVals() {
+    const st = this.state;
+    const ink = '#1D1D1D';
+    const px = (v) => v + 'px';
+    // One literal map; the publish script rewrites each path to its uploaded asset.
+    const LOGO = {
+      github: 'logos/github.svg',
+      jira: 'logos/jira.svg',
+      confluence: 'logos/confluence.svg',
+      microsoft: 'logos/microsoft.svg',
+      microsoftexcel: 'logos/microsoftexcel.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      onedrive: 'logos/onedrive.svg',
+      snowflake: 'logos/snowflake.svg',
+      amazonwebservices: 'logos/amazonwebservices.svg'
+    };
+    // Generic objects are inline glyphs from the icon set, not images.
+    const GLYPH = {"users": "M12.5 8.5a3.5 3.5 0 1 1-7 0a3.5 3.5 0 1 1 7 0z M2.5 20c.7-3.3 3.3-5.5 6.5-5.5s5.8 2.2 6.5 5.5 M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.5 2.6 4 5.2", "browser": "M4.5 4.5h15A1.5 1.5 0 0 1 21 6v12a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6a1.5 1.5 0 0 1 1.5-1.5z M3 9h18", "clock": "M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0z M12 7v5l3.5 2", "bolt": "M13 3L5 13.5h6l-1 7.5 8-10.5h-6z", "shield": "M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z", "chart": "M4 20h16M7 17v-6M12 17V6M17 17v-9", "download": "M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14", "file": "M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z M14 3v5h5", "database": "M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6 M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"};
+    const mk = (k) => GLYPH[k]
+      ? { hasLogo: false, logo: '', mono: '', hasGlyph: true, glyph: GLYPH[k] }
+      : { hasLogo: !!LOGO[k], logo: LOGO[k] || '', mono: k.charAt(0).toUpperCase(), hasGlyph: false, glyph: '' };
+    const showMonogram = (e) => { const i = e.currentTarget; i.style.display = 'none'; if (i.previousElementSibling) i.previousElementSibling.style.color = i.getAttribute('data-mono-color') || '#444444'; };
+
+    const N = [{"id": "planners", "name": "Sourcing planners", "sub": "Build, compare, save", "x": 36, "y": 48, "w": 188, "h": 48, "icon": "users", "hue": "#1D1D1D", "kind": "People", "tag": "About 15 people", "what": "Sourcing analysts who test duty changes by country and HTS chapter before a buy. Noah Park asked for the tool in SRC-412.", "identity": "Entra group SG-Sourcing-Tariff", "cls": "Sees Internal aggregates only", "grain": "Country by HTS chapter by week", "owner": "Rina Alvarez approves who joins", "serves": "Test a duty change before the buy", "src": ["jira", "SRC-412, Noah Park"]}, {"id": "finance", "name": "Finance reviewers", "sub": "Review and export", "x": 272, "y": 48, "w": 188, "h": 48, "icon": "users", "hue": "#1D1D1D", "kind": "People", "tag": "About 5 people", "what": "Finance partners who check scenarios against the month-end close and take the numbers into their own models. Dana Ortiz reviews first.", "identity": "Entra group SG-Sourcing-Tariff", "cls": "Sees Internal aggregates only", "grain": "Country by HTS chapter by week", "owner": "Rina Alvarez approves who joins", "serves": "Finance works from the same numbers", "src": ["microsoftteams", "Oct 9 review recording"]}, {"id": "excel", "name": "Excel", "sub": "Opens the CSV export", "x": 508, "y": 48, "w": 188, "h": 48, "icon": "microsoftexcel", "hue": "#5B5FC7", "kind": "Output", "tag": "Piece 4", "what": "The export is a CSV that opens in Excel, with the scenario name, filters and refresh time in the first rows. A native workbook is not in this version.", "identity": "The reviewer’s own download", "cls": "Internal, aggregates only", "grain": "Country by chapter by week, 364 lines", "owner": "Whoever exported it", "serves": "Excel export for Finance", "src": null}, {"id": "teams", "name": "Teams channel", "sub": "Sourcing tariffs", "x": 744, "y": 48, "w": 188, "h": 48, "icon": "microsoftteams", "hue": "#5B5FC7", "kind": "Output", "tag": "Weekly", "what": "One post each Monday listing the saved scenarios and their landed cost change, each linking back to the app.", "identity": "Incoming webhook, posted by the weekly job", "cls": "Internal, totals only", "grain": "One line per saved scenario", "owner": "Rina Alvarez", "serves": "Buyers see open scenarios without asking", "src": null}, {"id": "entra", "name": "Entra ID group", "sub": "SG-Sourcing-Tariff", "x": 980, "y": 48, "w": 188, "h": 48, "icon": "microsoft", "hue": "#5B5FC7", "kind": "Identity", "tag": "About 20 people", "what": "The one group that grants access. The team app lets in members only, so adding a named teammate in Entra is the only step.", "identity": "UA tenant, Conditional Access with MFA", "cls": "Membership only, no data", "grain": "One group", "owner": "Rina Alvarez, business owner", "serves": "Only Sourcing and Finance open the app", "src": null}, {"id": "builder", "name": "Scenario Builder", "sub": "Set duty rates", "x": 36, "y": 220, "w": 188, "h": 48, "icon": "browser", "hue": "#5F5F5F", "kind": "App page", "tag": "Pieces 1 and 2", "what": "Planners pick countries and HTS chapters, set a duty rate or a change, and name the scenario.", "identity": "The signed-in viewer; data through the app’s read-only service user", "cls": "Internal", "grain": "Country by HTS chapter", "owner": "Rina Alvarez", "serves": "Build a scenario from today’s rates", "src": null}, {"id": "compare", "name": "Compare", "sub": "Base against scenario", "x": 272, "y": 220, "w": 188, "h": 48, "icon": "browser", "hue": "#5F5F5F", "kind": "App page", "tag": "Piece 3", "what": "Shows today’s landed cost next to the scenario by country, chapter and week, with the change in dollars and percent.", "identity": "The signed-in viewer; data through the app’s read-only service user", "cls": "Internal aggregates", "grain": "Country by HTS chapter by week", "owner": "Rina Alvarez", "serves": "Compare two scenarios side by side", "src": ["confluence", "Landed cost method, v12"]}, {"id": "export", "name": "Export", "sub": "CSV for Finance", "x": 508, "y": 220, "w": 188, "h": 48, "icon": "browser", "hue": "#5F5F5F", "kind": "App page", "tag": "Piece 4", "what": "Writes the current comparison as a CSV that opens in Excel. Aggregates at the app’s grain only, never purchase-order lines.", "identity": "The signed-in viewer; data through the app’s read-only service user", "cls": "Internal aggregates", "grain": "Country by HTS chapter by week", "owner": "Rina Alvarez", "serves": "Excel export for Finance", "src": null}, {"id": "weekly", "name": "Weekly summary", "sub": "Scheduled job", "x": 744, "y": 360, "w": 188, "h": 48, "icon": "clock", "hue": "#5F5F5F", "kind": "Scheduled job", "tag": "Weekly", "what": "A scheduled job in the team app that totals the saved scenarios and posts one message to the Teams channel.", "identity": "The team app’s own role; reads its own table only", "cls": "Internal totals", "grain": "One line per saved scenario", "owner": "Rina Alvarez", "serves": "Buyers see open scenarios without asking", "src": null}, {"id": "app", "name": "Team app", "sub": "tariff-scenarios, own deployment", "x": 980, "y": 212, "w": 188, "h": 64, "icon": "amazonwebservices", "hue": "#5F5F5F", "kind": "Team-apps environment", "tag": "T1 Team Prototype", "what": "The planner runs as its own deployment in the sandbox account’s team-apps environment, built from the repository after approval 3, not from the build preview. A Streamlit web app; it reads Snowflake only through its read-only service user, at aggregate grain.", "identity": "Read-only service user TARIFF_APP_READ, key in Secrets Manager", "cls": "Internal aggregates only", "grain": "Pages read at country by chapter by week", "owner": "Rina Alvarez; Omar Haddad reviews changes", "serves": "One app for about 20 people", "src": ["confluence", "Plan, section 6"]}, {"id": "monitor", "name": "Resource monitor", "sub": "40 credits a month", "x": 36, "y": 360, "w": 188, "h": 48, "icon": "shield", "hue": "#475569", "kind": "Guardrail", "tag": "Cost cap", "what": "Warns at 75% and suspends the warehouse at 100% of 40 credits a month, so a runaway query cannot spend past the cap.", "identity": "Set by a Snowflake admin; notices go to Rina", "cls": "Metadata only", "grain": "Credits per month", "owner": "Data Platform", "serves": "Cost cap of 40 credits a month", "src": null}, {"id": "wh", "name": "App warehouse", "sub": "X-Small, 60 s timeout", "x": 272, "y": 360, "w": 188, "h": 48, "icon": "bolt", "hue": "#29B5E8", "kind": "Compute", "tag": "X-Small", "what": "TARIFF_APP_WH runs every query from the team app. It suspends after 60 seconds idle and stops any statement that runs past 60 seconds.", "identity": "Usage granted to the app’s read-only service user only", "cls": "Holds no data", "grain": "Queries at country by chapter by week", "owner": "Data Platform runs it; Sourcing pays", "serves": "p95 under 3 s for about 20 people", "src": null}, {"id": "scen", "name": "Saved scenarios", "sub": "scenarios", "x": 744, "y": 440, "w": 188, "h": 48, "icon": "database", "hue": "#5F5F5F", "kind": "App table", "tag": "The only write", "what": "The team app’s own table keeps each scenario’s name, owner, inputs and timestamps. It is the only table the app writes, and it expires with the app.", "identity": "The team app’s own role, own rows only", "cls": "Internal", "grain": "One row per scenario", "owner": "Rina Alvarez", "serves": "Save and reopen scenarios", "src": ["file", "Decision D-4, Oct 20"]}, {"id": "rates", "name": "Tariff rates", "sub": "HTS_RATES_V", "x": 36, "y": 520, "w": 188, "h": 48, "icon": "snowflake", "hue": "#29B5E8", "kind": "Approved view", "tag": "Non-confidential", "what": "SOURCING.GOLDEN.HTS_RATES_V: duty rates by country and HTS chapter from the nightly HTS sync, the source Finance reconciles against.", "identity": "SELECT for the app’s read-only service user", "cls": "Internal", "grain": "Country by HTS chapter by week", "owner": "Luis Romero, data owner", "serves": "Base rates for every scenario", "src": ["file", "Decision D-3, Oct 16"]}, {"id": "landed", "name": "Landed cost", "sub": "LANDED_COST_V", "x": 272, "y": 520, "w": 188, "h": 48, "icon": "snowflake", "hue": "#29B5E8", "kind": "Approved view", "tag": "Non-confidential", "what": "SOURCING.GOLDEN.LANDED_COST_V: FOB, freight, duty and FX per unit at country by chapter by week, built to the Landed cost method page with Treasury’s month-end rates. Published as non-confidential.", "identity": "SELECT for the app’s read-only service user", "cls": "Internal, non-confidential", "grain": "Country by HTS chapter by week", "owner": "Luis Romero, data owner", "serves": "Landed cost by country and chapter", "src": ["confluence", "Landed cost method, v12"]}, {"id": "polines", "name": "PO volumes", "sub": "PO_VOLUMES_V", "x": 508, "y": 520, "w": 188, "h": 48, "icon": "snowflake", "hue": "#29B5E8", "kind": "Approved view", "tag": "Non-confidential", "what": "SOURCING.GOLDEN.PO_VOLUMES_V: open and planned purchase-order quantities summed by country, HTS chapter and week for the 14 sourcing countries in scope. Published as non-confidential, with no PO lines.", "identity": "SELECT for the app’s read-only service user", "cls": "Internal, non-confidential", "grain": "Country by HTS chapter by week", "owner": "Luis Romero, data owner", "serves": "FW27 volumes for 14 countries", "src": ["confluence", "Sourcing country list"]}, {"id": "htssync", "name": "Nightly HTS sync", "sub": "02:00, Data Platform", "x": 36, "y": 664, "w": 188, "h": 48, "icon": "download", "hue": "#5F5F5F", "kind": "Upstream", "tag": "Not built here", "what": "Loads the harmonized tariff schedule and each night’s rate changes. Already running for Finance; this project only reads its output.", "identity": "Data Platform service user", "cls": "Public source, Internal once loaded", "grain": "HTS line by country by day", "owner": "Data Platform", "serves": "Rates fresh by 06:00", "src": null}, {"id": "fx", "name": "Treasury FX rates", "sub": "Month-end, Treasury", "x": 272, "y": 664, "w": 188, "h": 48, "icon": "file", "hue": "#5F5F5F", "kind": "Upstream", "tag": "Not built here", "what": "The month-end rates Treasury closes on, loaded once a month. Chosen over the spot rates in Tariff models.xlsx, which is Confidential and was not indexed.", "identity": "Data Platform service user", "cls": "Internal", "grain": "Currency by month", "owner": "Treasury, loaded by Data Platform", "serves": "Scenarios match the close", "src": ["onedrive", "Treasury FX policy.docx"]}, {"id": "popipe", "name": "PO pipeline", "sub": "03:00, Data Platform", "x": 508, "y": 664, "w": 188, "h": 48, "icon": "download", "hue": "#5F5F5F", "kind": "Upstream", "tag": "Not built here", "what": "Loads purchase orders from SAP into Snowflake each night and publishes the volumes view. Owned by Data Platform; this project reads only that view, never PO lines.", "identity": "Data Platform service user", "cls": "Confidential at the source; not read here", "grain": "PO line", "owner": "Data Platform", "serves": "Volumes refreshed daily", "src": null}, {"id": "ops", "name": "Ops monitor", "sub": "Usage, errors, expiry", "x": 744, "y": 664, "w": 188, "h": 48, "icon": "chart", "hue": "#5F5F5F", "kind": "Run", "tag": "Daily", "what": "HyperDelivery’s scheduled check on every live app. Reads usage, errors, spend and freshness, never rows, and warns the owner 14 days before the app’s renewal date.", "identity": "Read-only on the team app’s logs and the warehouse’s usage", "cls": "Metadata only", "grain": "One check a day", "owner": "Platform team", "serves": "Watches the 06:00 refresh and the cost cap", "src": null}, {"id": "repo", "name": "tariff-scenarios", "sub": "Actions, CodeQL", "x": 980, "y": 664, "w": 188, "h": 48, "icon": "github", "hue": "#181717", "kind": "Build", "tag": "ua-prototypes", "what": "ua-prototypes/tariff-scenarios. Every pull request runs tests and CodeQL; after approval 3 the Deploy step builds the team app from main and deploys it to the team-apps environment.", "identity": "Deploy role in the sandbox account, used only by the Deploy step", "cls": "Code only, no data", "grain": "One deploy per merge", "owner": "Omar Haddad, engineering reviewer", "serves": "Changes reach the app only through review", "src": ["github", "PR #3, checks passed"]}];
+    const byId = {};
+    N.forEach((n) => { byId[n.id] = n; });
+    // Logical edges share drawn segments (one-to-many and many-to-one buses).
+    const E = [{"id": "e1", "from": "planners", "to": "builder", "segs": ["s1"], "full": "Sign-in through Entra SSO", "grp": "e1"}, {"id": "e2", "from": "finance", "to": "compare", "segs": ["s2"], "full": "Sign-in through Entra SSO", "grp": "e2"}, {"id": "e3", "from": "export", "to": "excel", "segs": ["s3"], "full": "CSV that opens in Excel, aggregates only", "grp": "e3"}, {"id": "e15", "from": "scen", "to": "weekly", "segs": ["s15"], "full": "Reads the saved scenarios on Mondays at 07:00", "grp": "e15"}, {"id": "e4", "from": "weekly", "to": "teams", "segs": ["s4"], "full": "Weekly post through a webhook integration", "grp": "e4"}, {"id": "e16", "from": "entra", "to": "app", "segs": ["s16"], "full": "Sign-in lets in group members only", "grp": "e16"}, {"id": "e6a", "from": "wh", "to": "builder", "segs": ["s6stub", "s6busL", "s6a"], "full": "Aggregates at grain, never rows", "grp": "e6"}, {"id": "e6b", "from": "wh", "to": "compare", "segs": ["s6stub", "s6b"], "full": "Aggregates at grain, never rows", "grp": "e6"}, {"id": "e6c", "from": "wh", "to": "export", "segs": ["s6stub", "s6busR", "s6c"], "full": "Aggregates at grain, never rows", "grp": "e6"}, {"id": "e7a", "from": "rates", "to": "wh", "segs": ["s7a", "s7busL", "s7up"], "full": "Duty rates at country by chapter by week", "grp": "e7"}, {"id": "e7b", "from": "landed", "to": "wh", "segs": ["s7b", "s7up"], "full": "Landed cost at country by chapter by week", "grp": "e7"}, {"id": "e7c", "from": "polines", "to": "wh", "segs": ["s7c", "s7busR", "s7up"], "full": "Volumes at country by chapter by week, never PO lines", "grp": "e7"}, {"id": "e8", "from": "app", "to": "scen", "segs": ["s8a", "s8b", "s8c"], "full": "Scenario rows, the only write", "grp": "e8"}, {"id": "e9", "from": "monitor", "to": "wh", "segs": ["s9"], "full": "Warn at 75%, suspend at 100%", "grp": "e9"}, {"id": "e10", "from": "htssync", "to": "rates", "segs": ["s10"], "full": "Rate changes nightly at 02:00", "grp": "e10"}, {"id": "e11", "from": "fx", "to": "landed", "segs": ["s11"], "full": "Month-end rates (D-2)", "grp": "e11"}, {"id": "e12", "from": "popipe", "to": "polines", "segs": ["s12"], "full": "Purchase orders nightly at 03:00", "grp": "e12"}, {"id": "e13", "from": "repo", "to": "app", "segs": ["s13"], "full": "Deployed from main by the Deploy step after approval 3", "grp": "e13"}, {"id": "e14", "from": "account", "to": "ops", "segs": ["s14"], "full": "Usage, errors and expiry, metadata only", "grp": "e14"}];
+    const SEGCOLOR = {"s1": "#5B5FC7", "s2": "#5B5FC7", "s3": "#5B5FC7", "s4": "#5B5FC7", "s16": "#5B5FC7", "s6stub": "#29B5E8", "s6busL": "#29B5E8", "s6busR": "#29B5E8", "s6a": "#29B5E8", "s6b": "#29B5E8", "s6c": "#29B5E8", "s7a": "#29B5E8", "s7b": "#29B5E8", "s7c": "#29B5E8", "s7busL": "#29B5E8", "s7busR": "#29B5E8", "s7up": "#29B5E8", "s8a": "#5F5F5F", "s8b": "#5F5F5F", "s8c": "#5F5F5F", "s9": "#475569", "s10": "#949494", "s11": "#949494", "s12": "#949494", "s13": "#181717", "s15": "#5F5F5F", "s14": "#949494"};
+    const LABELEDGES = {"l1": ["e1"], "l2": ["e2"], "l3": ["e3"], "l4": ["e4"], "l5": ["e16"], "l6": ["e6a", "e6b", "e6c"], "l7": ["e7a", "e7b", "e7c"], "l8": ["e8"], "l9": ["e9"], "l10": ["e10"], "l11": ["e11"], "l12": ["e12"], "l13": ["e13"], "l14": ["e14"], "l15": ["e15"]};
+    const SC = {"compare": {"chip": "Compare Two Scenarios", "icon": "browser", "total": "2.8s end to end", "title": "Noah tests a 25% duty on Vietnam against today’s rates", "steps": [["Noah opens the app; Entra sign-in confirms he is in SG-Sourcing-Tariff", ["planners", "entra", "app", "builder"], ["e1", "e16"], "planners", "0.4s", "microsoft"], ["The team app connects to Snowflake as its read-only service user", ["app", "wh"], [], "app", "0.1s", "amazonwebservices"], ["In Scenario Builder he sets a 25% duty on Vietnam for HTS chapters 61 and 62", ["builder"], [], "builder", "0.2s", "browser"], ["The warehouse reads landed cost, rates and volumes from the approved views", ["wh", "rates", "landed", "polines"], ["e7a", "e7b", "e7c"], "wh", "1.2s", "bolt"], ["Compare shows FW27 landed cost up 6.8% for Vietnam, as aggregates only", ["wh", "compare"], ["e6b"], "compare", "0.6s", "browser"], ["Noah saves the scenario; one row lands in the app’s own table", ["app", "scen"], ["e8"], "scen", "0.3s", "database"]]}, "refresh": {"chip": "Nightly Refresh", "icon": "clock", "total": "Ready by 05:12", "title": "Fresh rates and volumes land before planners start at 06:00", "steps": [["At 02:00 the HTS sync loads 214 rate changes into HTS_RATES_V", ["htssync", "rates"], ["e10"], "htssync", "6m 12s", "download"], ["At 03:10 the PO pipeline loads yesterday’s purchase orders", ["popipe", "polines"], ["e12"], "popipe", "18m 40s", "download"], ["The landed cost view recomputes with month-end FX rates (D-2)", ["fx", "landed"], ["e11"], "landed", "4m 05s", "snowflake"], ["Data Platform certifies the refresh at 05:12, ahead of 06:00", ["rates", "landed", "polines"], [], "landed", "1m 30s", "snowflake"], ["The ops monitor checks freshness, errors and spend: all within limits", ["ops"], ["e14"], "ops", "40s", "chart"], ["On Mondays at 07:00 the weekly summary posts to the Teams channel", ["weekly", "scen", "teams"], ["e15", "e4"], "teams", "12s", "microsoftteams"]]}, "export": {"chip": "Export for Finance", "icon": "microsoftexcel", "total": "2.8s end to end", "title": "Dana in Finance exports Noah’s Vietnam scenario", "steps": [["Dana signs in through Entra as a Finance reviewer", ["finance", "entra", "app", "compare"], ["e2", "e16"], "finance", "0.4s", "microsoft"], ["Compare opens Noah’s saved scenario from the app’s own table", ["compare", "app", "scen"], [], "scen", "0.3s", "database"], ["Export asks the warehouse for the same aggregates at grain", ["export", "wh", "rates", "landed", "polines"], ["e7a", "e7b", "e7c", "e6c"], "wh", "1.4s", "bolt"], ["The CSV holds 364 aggregate lines and no purchase-order rows", ["export"], [], "export", "0.2s", "browser"], ["The download opens in Excel with the scenario and filters on top", ["export", "excel"], ["e3"], "excel", "0.5s", "microsoftexcel"], ["The ops monitor counts the export with the app’s daily usage", ["ops"], ["e14"], "ops", "Daily", "chart"]]}};
+
+    const scKey = st.scenario || this.props.scenario || 'compare';
+    const sc = SC[scKey] || SC.compare;
+    const steps0 = sc.steps.map((s) => ({ text: s[0], nodes: s[1], edges: s[2], focus: s[3], dur: s[4], mark: s[5] }));
+    const last = steps0.length - 1;
+    const step = Math.min(st.step, last);
+    const replay = st.mode === 'replay';
+
+    const activeN = {}, litN = {}, activeE = {}, doneE = {};
+    if (replay) {
+      steps0.forEach((s, i) => {
+        if (i < step) { s.edges.forEach((e) => { doneE[e] = true; }); s.nodes.forEach((n) => { litN[n] = true; }); }
+        if (i === step) { s.edges.forEach((e) => { activeE[e] = true; }); s.nodes.forEach((n) => { activeN[n] = true; litN[n] = true; }); }
+      });
+    }
+    const sel = replay ? null : st.selected;
+    const selE = {}, selN = {};
+    if (sel) {
+      selN[sel] = true;
+      E.forEach((e) => { if (e.from === sel || e.to === sel) { selE[e.id] = true; selN[e.from] = true; selN[e.to] = true; } });
+    }
+    // A logical edge is on (full strength), hot (glowing) or off (faded).
+    const edgeState = (id) => {
+      if (replay) return activeE[id] ? 'hot' : (doneE[id] ? 'on' : 'off');
+      if (sel) return selE[id] ? 'hot' : 'off';
+      return 'on';
+    };
+    const rank = { off: 0, on: 1, hot: 2 };
+    const segState = {};
+    E.forEach((e) => {
+      const s = edgeState(e.id);
+      e.segs.forEach((g) => { if (!segState[g] || rank[s] > rank[segState[g]]) segState[g] = s; });
+    });
+    const sg = {};
+    Object.keys(SEGCOLOR).forEach((g) => {
+      const s = segState[g] || 'on';
+      sg[g] = { op: s === 'off' ? '0.2' : '1', fx: s === 'hot' ? 'drop-shadow(0 0 3px ' + SEGCOLOR[g] + ')' : 'none' };
+    });
+    const lb = {};
+    Object.keys(LABELEDGES).forEach((l) => {
+      const on = LABELEDGES[l].some((e) => edgeState(e) !== 'off');
+      lb[l] = { fg: on ? ink : '#5F5F5F' };
+    });
+
+    const nd = {};
+    N.forEach((n) => {
+      let dim = false, ring = '';
+      if (replay) {
+        if (activeN[n.id]) ring = '0 0 0 2px ' + n.hue;
+        else if (!litN[n.id]) dim = true;
+      } else if (sel && !selN[n.id]) dim = true;
+      const isSel = sel === n.id;
+      nd[n.id] = {
+        cls: isSel ? 'hd-ring-ink' : 'hd-ring',
+        pressed: isSel ? 'true' : 'false',
+        bg: isSel ? '#F0F0F0' : '#FFFFFF',
+        border: isSel ? '1px solid #1D1D1D' : '1px solid #D0D0D0',
+        shadow: isSel ? 'inset 0 0 0 1px #1D1D1D' : (ring || 'none'),
+        // Inactive cards dim only their mark; their text stays readable.
+        glyph: dim ? '#949494' : ink, markOp: dim ? '0.35' : '1', name: dim ? '#5F5F5F' : ink,
+        pick: () => { this.stopTimer(); this.setState({ selected: st.selected === n.id ? null : n.id, mode: 'explore', playing: false }); }
+      };
+    });
+
+    const W = this.world.w, H = this.world.h;
+    const fit = st.fit || 0.86;
+    const scale = st.scale == null ? fit : st.scale;
+    const SCALES = [0.5, 0.625, 0.75, 0.875, 1, 1.15, 1.3];
+    const up = SCALES.find((v) => v > scale + 0.001);
+    const down = SCALES.slice().reverse().find((v) => v < scale - 0.001);
+
+    const steps = steps0.map((s, i) => {
+      const isCur = replay && i === step, isDone = replay && i < step;
+      const mark = mk(s.mark);
+      return {
+        num: String(i + 1), text: s.text, dur: s.dur,
+        hasLogo: mark.hasLogo, logo: mark.logo, hasGlyph: mark.hasGlyph, glyph: mark.glyph,
+        numBg: isCur || isDone ? ink : '#FFFFFF',
+        numFg: isCur || isDone ? '#FFFFFF' : '#5F5F5F',
+        numRing: isCur || isDone ? 'none' : 'inset 0 0 0 1px #D0D0D0',
+        rowBg: isCur ? '#F0F0F0' : 'transparent',
+        weight: isCur ? 700 : 400,
+        fg: isCur || isDone || !replay ? ink : '#5F5F5F',
+        current: isCur ? 'step' : 'false',
+        pick: () => this.goTo(i)
+      };
+    });
+
+    // The rail shows a component's details only while one is selected; otherwise it shows the replay.
+    const detId = sel || 'app';
+    const dn = byId[detId];
+    const nameOf = (id) => (id === 'account' ? 'Team-apps environment' : byId[id].name);
+    // Branches of one bus that meet at this card collapse into one row.
+    const GROUPFULL = { e6: 'Aggregates at grain, never rows', e7: 'Aggregates at country by chapter by week, from non-confidential views' };
+    const joinNames = (a) => (a.length < 2 ? a[0] : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
+    const rows = [], seen = {};
+    E.filter((e) => e.from === detId || e.to === detId).forEach((e) => {
+      const out = e.from === detId;
+      const key = e.grp + (out ? '>' : '<');
+      if (seen[key]) { seen[key].names.push(nameOf(out ? e.to : e.from)); seen[key].label = GROUPFULL[e.grp] || e.full; return; }
+      seen[key] = { dir: out ? 'To' : 'From', names: [nameOf(out ? e.to : e.from)], label: e.full };
+      rows.push(seen[key]);
+    });
+    const conns = rows.map((r) => ({ dir: r.dir, name: joinNames(r.names), label: r.label }));
+    const src = dn.src || null;
+    const det = Object.assign({
+      name: dn.name, sub: dn.sub, kind: dn.kind, tag: dn.tag, what: dn.what,
+      identity: dn.identity, cls: dn.cls, grain: dn.grain, owner: dn.owner, serves: dn.serves,
+      hasSrc: !!src, srcIsLogo: !!src && !GLYPH[src[0]], srcIsGlyph: !!src && !!GLYPH[src[0]],
+      srcLogo: src && LOGO[src[0]] ? LOGO[src[0]] : '', srcGlyph: src && GLYPH[src[0]] ? GLYPH[src[0]] : '', srcText: src ? src[1] : ''
+    }, mk(dn.icon));
+
+    const atFirst = !replay || step === 0, atLast = replay && step === last;
+    const sw = (on) => ({ track: on ? ink : '#949494', knob: on ? '28px' : '4px' });
+
+    const keys = ['compare', 'refresh', 'export'];
+    const pickFlow = (k) => {
+      this.stopTimer();
+      // Choosing the flow already shown stops its replay; another flow opens at its first step.
+      if (k === scKey && replay) { this.setState({ mode: 'explore', playing: false }); return; }
+      this.setState({ scenario: k, step: 0, playing: false, mode: 'replay', selected: null });
+    };
+    const chipsKey = (e) => {
+      const n = keys.length, cur = keys.indexOf(scKey);
+      let i = cur;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') i = (cur + 1) % n;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') i = (cur + n - 1) % n;
+      else if (e.key === 'Home') i = 0;
+      else if (e.key === 'End') i = n - 1;
+      else return;
+      e.preventDefault();
+      this.stopTimer();
+      this.setState({ scenario: keys[i], step: 0, playing: false, mode: 'replay', selected: null });
+      const radios = e.currentTarget.querySelectorAll('[role="radio"]');
+      if (radios[i]) radios[i].focus();
+    };
+
+    return {
+      logos: LOGO, showMonogram, nd, sg, lb,
+      closeMenu: (e) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; },
+      techOn: st.tech ? 'true' : 'false', techLabel: st.tech ? 'On' : 'Off', techCheck: !!st.tech,
+      toggleTech: () => this.setState({ tech: !st.tech }),
+      labelsOn: st.labels ? 'true' : 'false', labelsTrack: sw(st.labels).track, labelsKnob: sw(st.labels).knob,
+      toggleLabels: () => this.setState({ labels: !st.labels }),
+      showLabels: st.labels,
+      isReplay: replay,
+      stepLabel: 'Step ' + (step + 1) + ' of ' + (last + 1), stepText: steps0[step].text,
+      stepShort: replay ? 'Step ' + (step + 1) + ' of ' + (last + 1) : (last + 1) + ' steps',
+      sizerW: px(Math.round(W * scale)), sizerH: px(Math.round(H * scale)), worldTransform: 'scale(' + scale + ')',
+      vpH: Math.round(H * fit) + 32,
+      zoomOut: () => this.setState({ scale: down == null ? scale : down }),
+      zoomIn: () => this.setState({ scale: up == null ? scale : up }),
+      fit: () => this.setState({ scale: null }),
+      zoomLabel: Math.round(scale * 100) + '%',
+      scenChips: keys.map((k) => Object.assign({ label: SC[k].chip, selected: k === scKey ? 'true' : 'false', tab: k === scKey ? 0 : -1,
+        bg: k === scKey ? '#F0F0F0' : '#FFFFFF', ring: k === scKey ? 'inset 0 0 0 2px #1D1D1D' : 'inset 0 0 0 1px #D0D0D0', weight: k === scKey ? 700 : 400,
+        pick: () => pickFlow(k) }, mk(SC[k].icon))),
+      chipsKey,
+      scTitle: sc.title, scTotal: sc.total, steps,
+      prev: () => this.goTo(Math.max(0, step - 1)), next: () => this.goTo(Math.min(last, replay ? step + 1 : 0)),
+      prevDisabled: atFirst, nextDisabled: atLast,
+      prevRing: atFirst ? 'inset 0 0 0 1px #D0D0D0' : 'inset 0 0 0 1px #1D1D1D', prevFg: atFirst ? '#949494' : ink,
+      nextRing: atLast ? 'inset 0 0 0 1px #D0D0D0' : 'inset 0 0 0 1px #1D1D1D', nextFg: atLast ? '#949494' : ink,
+      playToggle: () => this.togglePlay(last),
+      isPlaying: st.playing, notPlaying: !st.playing, playLabel: st.playing ? 'Pause' : (replay && step === last ? 'Replay' : 'Play'),
+      det, conns, hasDet: !!sel, noDet: !sel,
+      backToReplay: () => this.setState({ selected: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

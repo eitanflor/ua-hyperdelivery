@@ -1,3 +1,5 @@
+<!-- cspell:words pandoc -->
+
 # Changelog
 
 Notable changes to the Hyperdelivery factory line. Format follows
@@ -9,6 +11,40 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 ## [Unreleased]
 
 ### Added
+
+- `docs/ua-dlc/`: the proposal for HyperDelivery's next phase under the UA-DLC process, as a
+  draft for leadership review. It holds the leadership plan with an ask in three tranches, milestones
+  and stop rules (`enterprise-plan.md`), the operating model (`operating-model.md`), the platform
+  architecture (`platform-architecture.md`), the UI/UX direction (`ux-direction.md`), a
+  file-referenced picture of the repo today (`current-state.md`) and the sourced research behind
+  it (`research/`, two rounds). The plan runs in three phases: Current State (baseline by week
+  2), the Final MVP (an orchestrator that hands Snowflake work to Cortex Code and coding to a
+  sandboxed coding agent, projects started from a Jira ticket or pointed resources, a per-project
+  index, with a short do-no-harm floor in weeks 1 and 2, then a pilot) and Enterprise; UA-DLC
+  keeps engineering's step names in a four-phase line. `design-system.md` sets HyperDelivery's look on UA Baselayer (tokens, type, the app
+  shell, components, icons), and the research folder adds a fourth round (more factory write-ups, UA
+  engineering's AI-DLC tooling, Baselayer, harness engineering) with an index of every source the owner
+  shared (`research/sources.md`); the architecture doc explains why Step Functions stays and where
+  LangGraph would fit, and the coding agent now runs in HyperDelivery's sandbox on an AgentCore harness
+  with a swappable engine instead of GitHub Copilot's cloud agent. Concept screens are published separately and linked from the folder README.
+  The README and the design library point to it; nothing in it changes code or the MVP plan of
+  record. See docs/decisions.md.
+
+- `docs/ua-dlc/`, round 7: the plan now runs in three phases instead of five stages. Current State
+  ends with the baseline measured in week 2; the Final MVP is built to MVP ready in week 14 and then
+  tried in a real testing pilot through week 22; Enterprise (governance, identity, audit, budgets,
+  evals, policy and the production stage) is decided at the pilot readout. Each phase has its own
+  architecture diagram, and enterprise work never holds up the Final MVP or its pilot. Guidance on
+  which tool to use moves out of the concept screens into the plan's complexity and use-case
+  matrices (sourced in `research/tool-landscape.md`). The design targets desktop and laptop browsers
+  in the light theme only, help moves behind a "?" in the top bar, Start is generic, Inbox and
+  Projects screens are added, and the tier "T2 MVP" becomes "T2 Department app". A standalone concept
+  site lives in `docs/ua-dlc/site/` (the plan page and a clickable canvas of the 22 concept screens,
+  static HTML): `make site` serves it, and `make site-plan` rebuilds the plan page with
+  `scripts/build_ua_dlc_plan.py` (needs pandoc). `current-state.md` is corrected against the code
+  (two DynamoDB tables, uploads failing on `dev`, agent runtimes outside CDK, the approval 3 merge),
+  and earlier research reports keep their findings with a note that maps their stage numbers to the
+  phases. See docs/decisions.md.
 
 - A turn's usage now carries its dollar cost (`cost_usd`) and the `model_id` that ran it beside
   the token counts, and the console shows the cost next to the token total (`142K tok · $0.31`,
@@ -34,6 +70,11 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Changed
 
+- Claude Code's graft wiring is refreshed for graft 0.25 (`.claude/settings.json`,
+  `.claude/helpers/`, `.claude/skills/graft/`): hook timeouts are now in seconds, as Claude Code
+  expects (the old values were milliseconds read as seconds), and new hooks cover the shell
+  pre-check, failed shell commands and session end. The Cursor, Copilot and AGENTS.md wiring is
+  unchanged.
 - The Sources tab immediately shows the last list of uploads read during this browser session
   while refreshing it from S3 in the background on every open, instead of a loading skeleton.
   An upload through the composer also starts a background refresh, and a read that began before

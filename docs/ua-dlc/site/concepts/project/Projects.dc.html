@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyperDelivery - Projects</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-nav a:hover{color:#1D1D1D!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+.hd-field:focus-within{border-color:#1D1D1D!important;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA}
+.hd-field input:focus{outline:none}
+.hd-field input::placeholder{color:#5F5F5F;opacity:1}
+.hd-trow{cursor:pointer}
+.hd-trow td:first-child{background:inherit}
+.hd-open{color:#1D1D1D;text-decoration:none}
+.hd-open:hover{color:#1D1D1D;text-decoration:underline;text-underline-offset:3px}
+.hd-open:focus-visible{outline:none}
+.hd-trow:has(.hd-open:focus-visible) td{box-shadow:inset 0 2px 0 #0096FA,inset 0 -2px 0 #0096FA!important}
+.hd-trow:has(.hd-open:focus-visible) td:first-child{box-shadow:inset 2px 0 0 #0096FA,inset 0 2px 0 #0096FA,inset 0 -2px 0 #0096FA!important}
+.hd-trow:has(.hd-open:focus-visible) td:last-child{box-shadow:inset -2px 0 0 #0096FA,inset 0 2px 0 #0096FA,inset 0 -2px 0 #0096FA!important}
+.hd-link{color:#1D1D1D;text-decoration:underline;text-underline-offset:3px}
+.hd-link:hover{color:#444444}
+.hd-sort{color:inherit}
+.hd-sort:hover{color:#1D1D1D!important}
+</style>
+</helmet>
+<div style="min-height: 732px; background: #F9F9F9; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
+
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 24px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D0D0D0; position: relative; z-index: 20">
+  <a href="Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 12px; color: #1D1D1D; text-decoration: none; flex: none">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
+    <span style="font-size: 16px; line-height: 20px; font-weight: 700">HyperDelivery</span>
+  </a>
+  <span aria-hidden="true" style="width: 1px; height: 20px; background: #D0D0D0; flex: none"></span>
+  <details class="hd-pop" style="position: relative; flex: none">
+    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 4px; color: #1D1D1D; font-size: 14px; line-height: 18px; white-space: nowrap">Merchandising
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg>
+    </summary>
+    <div class="hd-menu" style="left: 0; right: auto">
+      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closeMenu}}" style="font-weight: 700">Merchandising<span style="flex: 1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Sourcing</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Wholesale</button>
+      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">EDM</button>
+    </div>
+  </details>
+  <nav aria-label="Primary" class="hd-nav" style="display: flex; align-self: stretch; gap: 24px">
+    <a href="Main.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Home</a>
+    <a href="Projects.dc.html" aria-current="page" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; font-weight: 700; color: #1D1D1D; text-decoration: none; box-shadow: inset 0 -2px 0 #1D1D1D">Projects</a>
+    <a href="Inbox.dc.html" aria-label="{{inboxLabel}}" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Inbox<sc-if value="{{hasInboxCount}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="margin-left: 6px; min-width: 16px; height: 16px; box-sizing: border-box; padding: 0 4px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; text-align: center">{{inboxCount}}</span></sc-if></a>
+    <a href="Library.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Library</a>
+    <a href="Portfolio.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Portfolio</a>
+    <span aria-hidden="true" style="align-self: center; width: 1px; height: 20px; background: #D0D0D0"></span>
+    <a href="Admin.dc.html" style="display: flex; align-items: center; font-size: 14px; line-height: 18px; color: #5F5F5F; text-decoration: none">Admin</a>
+  </nav>
+  <span style="flex: 1"></span>
+  <div class="hd-right" style="display: flex; align-items: center; gap: 16px; flex: none">
+    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width: 240px; height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; border: 0; border-radius: 4px; background: #F0F0F0; color: #5F5F5F; font-family: inherit; font-size: 14px; line-height: 20px; text-align: left">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span style="flex: 1; white-space: nowrap">Search projects and facts</span>
+      <kbd style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 2px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    </button>
+    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
+    <details class="hd-pop" style="position: relative; flex: none">
+      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+      </summary>
+      <nav class="hd-menu" aria-label="Help">
+        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+        <hr>
+        <details class="hd-sub">
+          <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>?</kbd></summary>
+          <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+            <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+            <dt><kbd>/</kbd></dt><dd style="margin: 0">Search This Table</dd>
+            <dt><kbd>J</kbd> <kbd>K</kbd></dt><dd style="margin: 0">Next and Previous Item</dd>
+            <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention Someone</dd>
+            <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+            <dt><kbd>?</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+          </dl>
+        </details>
+        <details class="hd-sub">
+          <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+          <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
+          </ul>
+        </details>
+        <hr>
+        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+      </nav>
+    </details>
+    <details class="hd-pop" style="position: relative; flex: none">
+      <summary class="hd-ring" aria-label="Maya Chen, account" style="width: 32px; height: 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #3D4B8C; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">MC</summary>
+      <div class="hd-menu">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">Maya Chen</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Business owner, Merchandising</span>
+        </div>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}<sc-if value="{{tech}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</header>
+
+<section style="background: #FFFFFF; border-bottom: 1px solid #D0D0D0; padding: 24px">
+  <div style="display: flex; align-items: center; gap: 16px; min-height: 40px">
+    <h1 style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; white-space: nowrap">Projects</h1>
+  </div>
+  <p style="margin: 8px 0 0; font-size: 14px; line-height: 20px; color: #5F5F5F">7 projects, 2 waiting on you</p>
+</section>
+
+<main style="padding: 32px 24px 56px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; row-gap: 24px; align-items: start">
+  <section aria-label="Your projects" style="grid-column: 1 / -1; min-width: 0; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden">
+    <div style="display: flex; flex-wrap: wrap; row-gap: 8px; align-items: center; gap: 8px; padding: 12px 16px; background: #F9F9F9; border-bottom: 1px solid #F0F0F0">
+      <label class="hd-field" style="width: 240px; height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px; border: 1px solid #5F5F5F; border-radius: 4px; background: #FFFFFF; color: #5F5F5F; flex: none; cursor: text">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+        <input type="text" data-hd-search="1" aria-label="Search projects" aria-keyshortcuts="/" placeholder="Search projects" autocomplete="off" spellcheck="false" value="{{query}}" onChange="{{setQuery}}" onKeyDown="{{searchKey}}" style="flex: 1; min-width: 0; height: 34px; border: 0; padding: 0; font-family: inherit; font-size: 14px; line-height: 20px; background: transparent; color: #1D1D1D">
+        <sc-if value="{{noQuery}}" hint-placeholder-val="{{ true }}"><kbd aria-hidden="true" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 2px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">/</kbd></sc-if>
+        <sc-if value="{{hasQuery}}" hint-placeholder-val="{{ false }}"><button type="button" class="hd-btn-ghost" aria-label="Clear search" onClick="{{clearQuery}}" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 999px; background: transparent; color: #1D1D1D; cursor: pointer; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></button></sc-if>
+      </label>
+      <div role="group" aria-label="Show" style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+          <button type="button" class="{{f.cls}}" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 4px; background: {{f.bg}}; color: {{f.fg}}; box-shadow: {{f.ring}}; font-family: inherit; font-size: 14px; line-height: 18px; font-weight: {{f.fw}}; white-space: nowrap; cursor: pointer; flex: none"><sc-if value="{{f.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{f.label}}<span style="font-weight: 400; color: {{f.countFg}}">{{f.count}}</span></button>
+        </sc-for>
+      </div>
+      <span style="flex: 1"></span>
+      <a href="Failures.dc.html" class="hd-link hd-ring" style="display: inline-flex; align-items: center; gap: 8px; margin: -4px 0; padding: 12px 0; font-size: 14px; line-height: 20px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>Needs Attention</a>
+    </div>
+
+    <div data-hd-scroll="1" style="overflow-x: auto">
+      <table style="width: 100%; min-width: 1352px; table-layout: fixed; border-collapse: collapse; font-size: 14px; line-height: 20px">
+        <caption style="position: absolute; width: 1px; height: 1px; overflow: hidden; white-space: nowrap">{{caption}}</caption>
+        <thead>
+          <tr style="height: 40px">
+            <sc-for list="{{cols}}" as="h" hint-placeholder-count="8">
+              <th scope="col" aria-sort="{{h.ariaSort}}" style="width: {{h.width}}; position: {{h.pos}}; left: 0; z-index: {{h.z}}; box-sizing: border-box; padding: {{h.pad}}; text-align: {{h.align}}; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F; background: #FFFFFF; border-bottom: 1px solid #D0D0D0; box-shadow: {{h.edge}}; white-space: nowrap">
+                <sc-if value="{{h.sortable}}" hint-placeholder-val="{{ true }}">
+                  <button type="button" class="hd-sort hd-ring" onClick="{{h.pick}}" style="height: 32px; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; border-radius: 4px; background: transparent; font-family: inherit; font-size: 12px; line-height: 16px; font-weight: 700; color: {{h.fg}}; cursor: pointer">{{h.label}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{h.arrow}}"></path></svg></button>
+                </sc-if>
+                <sc-if value="{{h.plain}}" hint-placeholder-val="{{ false }}"><span>{{h.label}}</span></sc-if>
+              </th>
+            </sc-for>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+            <tr class="hd-row hd-trow" onClick="{{r.onRow}}" style="height: 44px; background: #FFFFFF">
+              <td style="position: sticky; left: 0; z-index: 1; padding: 4px 12px 4px 16px; border-bottom: 1px solid #F0F0F0; box-shadow: {{edge}}">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0">
+                  <span title="{{r.owner}}" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{r.ownerFill}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">{{r.ownerIni}}</span>
+                  <span style="display: flex; flex-direction: column; min-width: 0">
+                    <a href="{{r.href}}" class="hd-open" data-hd-item="1" style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</a>
+                    <span style="font-size: 12px; line-height: 16px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.ownerLine}}</span>
+                  </span>
+                </div>
+              </td>
+              <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0"><span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap">{{r.tier}}</span></td>
+              <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0">
+                <div role="img" aria-label="{{r.lineLabel}}" style="display: grid; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 0.6fr); align-items: center; row-gap: 4px; width: 156px; padding: 4px 0">
+                  <sc-for list="{{r.track}}" as="s" hint-placeholder-count="7"><span style="{{s.style}}"></span></sc-for>
+                  <sc-for list="{{r.marks}}" as="m" hint-placeholder-count="7"><span style="justify-self: center; min-height: 16px; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: {{m.weight}}; color: {{m.color}}">{{m.text}}</span></sc-for>
+                </div>
+              </td>
+              <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0; white-space: nowrap">
+                <span style="display: inline-flex; align-items: center; gap: 8px; max-width: 100%">
+                  <sc-if value="{{r.hasWaitAv}}" hint-placeholder-val="{{ true }}"><span title="{{r.waitName}}" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{r.waitFill}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">{{r.waitIni}}</span></sc-if>
+                  <span style="display: inline-flex; align-items: center; gap: 4px; color: {{r.waitColor}}; font-weight: {{r.waitWeight}}"><sc-if value="{{r.stale}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg></sc-if>{{r.wait}}</span>
+                </span>
+              </td>
+              <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0; white-space: nowrap">{{r.activity}}</td>
+              <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0">
+                <span style="display: flex; align-items: center; justify-content: flex-end; gap: 8px">
+                  <span aria-hidden="true" style="width: 48px; height: 8px; display: block"><span style="display: block; height: 8px; width: {{r.elapsedPct}}; background: #1D1D1D"></span></span>
+                  <span style="width: 32px; text-align: right; font-weight: 700">{{r.elapsed}}</span>
+                </span>
+              </td>
+              <td style="padding: 0 12px; border-bottom: 1px solid #F0F0F0; text-align: right; font-weight: 700">{{r.cost}}</td>
+              <td style="padding: 0 16px 0 12px; border-bottom: 1px solid #F0F0F0; white-space: nowrap">
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: {{r.statusColor}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{r.statusIcon}}"></path></svg>{{r.status}}</span>
+              </td>
+            </tr>
+          </sc-for>
+          <sc-if value="{{noRows}}" hint-placeholder-val="{{ false }}">
+            <tr>
+              <td colspan="8" style="padding: 0; border-bottom: 1px solid #F0F0F0">
+                <div style="position: sticky; left: 0; width: min(100%, 1390px); max-width: calc(100vw - 50px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 64px 24px; text-align: center">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="0.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+                  <h2 style="margin: 8px 0 0; font-size: 16px; line-height: 20px; font-weight: 700">No Projects Match</h2>
+                  <p style="margin: 0; max-width: 360px; font-size: 14px; line-height: 20px; color: #5F5F5F">Try a project name, an owner or a workspace.</p>
+                  <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{clearAll}}" style="margin-top: 8px; height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer">Clear Search</button>
+                </div>
+              </td>
+            </tr>
+          </sc-if>
+        </tbody>
+      </table>
+    </div>
+    <div style="height: 52px; box-sizing: border-box; display: flex; align-items: center; padding: 0 16px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+      <span role="status">{{footer}}</span>
+    </div>
+  </section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":732}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tech: false, filter: 'all', query: '', sortKey: 'activity', sortDir: 'desc', overflow: false };
+  }
+  componentDidMount() {
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    // / jumps to the table search, J and K move between projects, ? opens the shortcut list. Ignored while typing.
+    this.hdKeys = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+      const t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const key = e.key.toLowerCase();
+      if (e.key === '/') {
+        const box = document.querySelector('[data-hd-search]');
+        if (box) { e.preventDefault(); box.focus(); box.select(); }
+      } else if (key === 'j' || key === 'k') {
+        const items = Array.prototype.slice.call(document.querySelectorAll('[data-hd-item]'));
+        if (!items.length) return;
+        const at = items.findIndex((a) => a.closest('tr').contains(document.activeElement));
+        const next = at < 0 ? 0 : Math.max(0, Math.min(items.length - 1, at + (key === 'j' ? 1 : -1)));
+        e.preventDefault();
+        items[next].focus();
+        items[next].closest('tr').scrollIntoView({ block: 'nearest' });
+      } else if (e.key === '?') {
+        const help = document.querySelector('summary[aria-label="Help"]');
+        if (!help) return;
+        e.preventDefault();
+        const box = help.parentElement;
+        box.open = true;
+        const keys = box.querySelector('details.hd-sub');
+        if (keys) { keys.open = true; keys.querySelector('summary').focus(); }
+      }
+    };
+    // The pinned Project column gets its edge only while the table is wider than its panel.
+    this.hdFit = () => {
+      const box = document.querySelector('[data-hd-scroll]');
+      const over = !!box && box.scrollWidth > box.clientWidth + 1;
+      if (over !== this.state.overflow) this.setState({ overflow: over });
+    };
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+    document.addEventListener('keydown', this.hdKeys);
+    window.addEventListener('resize', this.hdFit);
+    this.hdFit();
+  }
+  componentWillUnmount() {
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+    document.removeEventListener('keydown', this.hdKeys);
+    window.removeEventListener('resize', this.hdFit);
+  }
+  renderVals() {
+    const st = this.state;
+    const INK = '#1D1D1D', MUTED = '#5F5F5F', RED = '#DC0019', OK = '#00834B';
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = { microsoftteams: 'logos/microsoftteams.svg' };
+    // One fill per person, the same on every artboard; anyone else is #444444.
+    const P = {
+      pn: { ini: 'PN', fill: '#3F5FA0', name: 'Priya Nair' }, mc: { ini: 'MC', fill: '#3D4B8C', name: 'Maya Chen' },
+      jl: { ini: 'JL', fill: '#2F6B5E', name: 'Jordan Lee' }, ra: { ini: 'RA', fill: '#6B5A4E', name: 'Rina Alvarez' },
+      lb: { ini: 'LB', fill: '#444444', name: 'Leah Brooks' }, tg: { ini: 'TG', fill: '#444444', name: 'Theo Grant' },
+      ar: { ini: 'AR', fill: '#2D6470', name: 'Ana Ruiz' }, do: { ini: 'DO', fill: '#6A4C8C', name: 'Dana Ortiz' },
+      oh: { ini: 'OH', fill: '#4A5560', name: 'Omar Haddad' }
+    };
+    const SEG = {
+      done: 'height:2px;background:#1D1D1D',
+      current: 'height:4px;background:#1D1D1D',
+      future: 'height:0;border-top:2px dashed #949494'
+    };
+    const NOTCH = {
+      signed: 'width:8px;height:8px;background:#1D1D1D',
+      you: 'width:8px;height:8px;background:#DC0019',
+      upcoming: 'width:8px;height:8px;box-sizing:border-box;border:2px solid #949494;background:#FFFFFF'
+    };
+    // parts: Discover, Plan, Build, Live; gates: [state, split] for the three approvals.
+    const line = (parts, gates) => {
+      const track = [], marks = [];
+      parts.forEach((s, i) => {
+        track.push({ style: SEG[s] });
+        marks.push({ text: '', weight: 400, color: MUTED });
+        if (i < 3) {
+          const g = gates[i];
+          const you = g[0] === 'you';
+          track.push({ style: NOTCH[g[0]] });
+          marks.push({ text: you ? 'You' : (g[1] || ''), weight: you ? 700 : 400, color: you ? RED : MUTED });
+        }
+      });
+      return { track, marks };
+    };
+    const SEARCH = 'M11 4.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 1 0 0-13zM20 20l-4.4-4.4', FILE = 'M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5',
+      PLAY = 'M7.5 4.8v14.4L19 12z', ALERT = 'M12 4L2.8 19.5h18.4zM12 10v4M12 16.75v.01', BOLT = 'M13 3L5 13.5h6l-1 7.5 8-10.5h-6z', ARROW = 'M5 12h14M13 6l6 6-6 6';
+    // The seven projects and values from Portfolio, seen by Maya Chen. ago: minutes since the last activity.
+    const DATA = [
+      { id: 'p1', name: 'Product master quality monitor', o: P.pn, ws: 'EDM', tier: 'T0 Sandbox', href: 'Project.dc.html',
+        ln: line(['current', 'future', 'future', 'future'], [['upcoming'], ['upcoming'], ['upcoming']]), lineLabel: 'Discover in progress, waiting on Dana in Finance for one answer. Three approvals upcoming.',
+        w: P.do, wait: 'Dana Ortiz, 2d', waitHours: 48, stale: true, mine: false, ago: 42, activity: '42m ago', elapsed: 4, cost: 1.9, status: 'Discovering', icon: SEARCH, live: false },
+      { id: 'p2', name: 'SKU productivity workbench', o: P.mc, ws: 'Merchandising', tier: 'T1 Team Prototype', href: 'Project.dc.html',
+        ln: line(['done', 'done', 'future', 'future'], [['signed', '5d 2h'], ['you'], ['upcoming']]), lineLabel: "What we're building signed after 5d 2h. The plan is waiting on you, open 1d 4h. The working prototype upcoming.",
+        w: P.mc, wait: 'You, 1d 4h', waitHours: 28, stale: false, mine: true, ago: 20, activity: '20m ago', elapsed: 7, cost: 4.1, status: 'Plan Ready to Sign', icon: FILE, live: false },
+      { id: 'p3', name: 'Wholesale sell-through tracker', o: P.jl, ws: 'Wholesale', tier: 'T1 Team Prototype', href: 'Gate.dc.html',
+        ln: line(['done', 'done', 'done', 'future'], [['signed', '3d'], ['signed', '2d 6h'], ['you']]), lineLabel: "What we're building signed after 3d. The plan signed after 2d 6h. The working prototype is waiting on you, open 3h 10m.",
+        w: P.mc, wait: 'You, 3h 10m', waitHours: 3.2, stale: false, mine: true, ago: 190, activity: '3h ago', elapsed: 9, cost: 5.6, status: 'Ready to Accept', icon: PLAY, live: false },
+      { id: 'p4', name: 'Tariff scenario planner', o: P.ra, ws: 'Sourcing', tier: 'T1 Team Prototype', href: 'Activity.dc.html',
+        ln: line(['done', 'done', 'current', 'future'], [['signed', '3d 2h'], ['signed', '5d 4h'], ['upcoming']]), lineLabel: "What we're building signed after 3d 2h and the plan after 5d 4h, each by Rina, Luis and Omar. Build in progress.",
+        w: P.oh, wait: 'Omar Haddad, 3h', waitHours: 3, stale: false, mine: false, ago: 180, activity: '3h ago', elapsed: 12, cost: 6.19, status: 'Piece 4 Needs a Look', icon: ALERT, live: false },
+      { id: 'p5', name: 'Promo dependency monitor', o: P.lb, ws: 'Pricing', tier: 'T1 Team Prototype', href: 'Project.dc.html',
+        ln: line(['done', 'done', 'done', 'done'], [['signed', '2d'], ['signed', '1d 2h'], ['signed', '6h']]), lineLabel: 'All three approvals signed. Live.',
+        w: null, wait: 'No one', waitHours: -1, stale: false, mine: false, ago: 4600, activity: 'Oct 22', elapsed: 6, cost: 3.2, status: 'Live, 23 people', icon: BOLT, live: true },
+      { id: 'p6', name: 'Activation scorecard', o: P.tg, ws: 'Marketing', tier: 'T1 Team Prototype', href: 'Project.dc.html',
+        ln: line(['done', 'done', 'done', 'done'], [['signed', '3d'], ['signed', '2d'], ['signed', '5h']]), lineLabel: 'All three approvals signed in 7 days. Live since Oct 23.',
+        w: null, wait: 'No one', waitHours: -1, stale: false, mine: false, ago: 3200, activity: 'Oct 23', elapsed: 7, cost: 2.8, status: 'Live, 22 people', icon: BOLT, live: true },
+      { id: 'p7', name: 'Store labor and traffic planner', o: P.ar, ws: 'Retail Operations', tier: 'T1 Team Prototype', href: 'Project.dc.html',
+        ln: line(['done', 'done', 'done', 'current'], [['signed', '4d'], ['signed', '3d'], ['signed', '1d']]), lineLabel: 'All three approvals signed. Live. Handoff to Retail Systems requested, decision pending.',
+        w: null, wait: 'Retail Systems', waitHours: -2, stale: false, mine: false, ago: 3300, activity: 'Oct 23', elapsed: 15, cost: 7.4, status: 'Handoff Requested', icon: ARROW, live: false }
+    ];
+
+    const filter = st.filter || 'all';
+    const query = st.query || '';
+    const q = query.trim().toLowerCase();
+    const matches = (r) => !q || [r.name, r.o.name, r.ws, r.tier, r.status, r.wait].join(' ').toLowerCase().indexOf(q) >= 0;
+    const inFilter = (r) => filter === 'all' || (filter === 'mine' && r.mine) || (filter === 'live' && r.live);
+    const { sortKey, sortDir } = st;
+    const val = (r) => sortKey === 'name' ? r.name : (sortKey === 'elapsed' ? r.elapsed : (sortKey === 'cost' ? r.cost : (sortKey === 'wait' ? r.waitHours : -r.ago)));
+    const shown = DATA.filter((r) => inFilter(r) && matches(r)).sort((a, b) => {
+      const x = val(a), y = val(b);
+      const c = typeof x === 'string' ? x.localeCompare(y) : x - y;
+      return sortDir === 'asc' ? c : -c;
+    });
+    const onRow = (e) => {
+      if (e.target.closest('a, button, input, summary, label')) return;
+      const link = e.currentTarget.querySelector('[data-hd-item]');
+      if (link) link.click();
+    };
+    const rows = shown.map((r) => ({
+      name: r.name, owner: r.o.name, ownerIni: r.o.ini, ownerFill: r.o.fill, ownerLine: r.o.name + ', ' + r.ws,
+      tier: r.tier, href: r.href, track: r.ln.track, marks: r.ln.marks, lineLabel: r.lineLabel,
+      hasWaitAv: !!r.w, waitIni: r.w ? r.w.ini : '', waitFill: r.w ? r.w.fill : '', waitName: r.w ? r.w.name : '',
+      wait: r.wait, stale: r.stale, waitColor: r.w || r.waitHours === -2 ? INK : MUTED, waitWeight: r.stale || r.mine ? 700 : 400,
+      activity: r.activity, elapsed: r.elapsed + 'd', elapsedPct: Math.round(r.elapsed / 15 * 100) + '%', cost: '$' + r.cost.toFixed(2),
+      status: r.status, statusIcon: r.icon, statusColor: r.live ? OK : INK, onRow
+    }));
+
+    const UPDOWN = 'M8 4v16M4.5 7.5L8 4l3.5 3.5M16 20V4M12.5 16.5L16 20l3.5-3.5', UP = 'M6 14.5l6-6 6 6', DOWN = 'M6 9.5l6 6 6-6';
+    const edge = st.overflow ? 'inset -1px 0 0 #D0D0D0' : 'none';
+    const col = (key, label, align, width, first) => {
+      const active = !!key && sortKey === key;
+      return {
+        label, align, width, sortable: !!key, plain: !key, fg: active ? INK : MUTED,
+        ariaSort: active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none',
+        arrow: active ? (sortDir === 'asc' ? UP : DOWN) : UPDOWN,
+        pos: first ? 'sticky' : 'static', z: first ? 2 : 'auto', pad: first ? '0 12px 0 16px' : (label === 'Status' ? '0 16px 0 12px' : '0 12px'), edge: first ? edge : 'none',
+        pick: () => this.setState({ sortKey: key, sortDir: active ? (sortDir === 'desc' ? 'asc' : 'desc') : (key === 'name' ? 'asc' : 'desc') })
+      };
+    };
+    const cols = [
+      col('name', 'Project', 'left', '300px', true), col('', 'Tier', 'left', '168px'), col('', 'The Line', 'left', '188px'), col('wait', 'Waiting On', 'left', '184px'),
+      col('activity', 'Last Activity', 'left', '128px'), col('elapsed', 'Elapsed', 'right', '120px'), col('cost', 'Cost', 'right', '88px'), col('', 'Status', 'left', '176px')
+    ];
+
+    const KINDS = [{ id: 'all', label: 'All', count: 7 }, { id: 'mine', label: 'Waiting on Me', count: 2 }, { id: 'live', label: 'Live', count: 2 }];
+    const filters = KINDS.map((k) => {
+      const on = filter === k.id;
+      return {
+        label: k.label, count: String(k.count), on, pressed: on ? 'true' : 'false',
+        cls: on ? 'hd-btn-primary hd-ring' : 'hd-chip hd-ring-edge',
+        bg: on ? INK : '#FFFFFF', fg: on ? '#FFFFFF' : INK, ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0', fw: on ? '700' : '400',
+        countFg: on ? '#D0D0D0' : MUTED,
+        pick: () => this.setState({ filter: k.id })
+      };
+    });
+    const sortNames = { name: 'project name', wait: 'waiting on', activity: 'last activity', elapsed: 'elapsed time', cost: 'cost' };
+
+
+    return {
+      logos: LOGO,
+      closeMenu: (e) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; },
+      tech: !!st.tech, techOn: st.tech ? 'true' : 'false', techWord: st.tech ? 'On' : 'Off',
+      toggleTech: () => this.setState({ tech: !this.state.tech }),
+      hasInboxCount: true, inboxCount: '4', inboxLabel: 'Inbox, 4 waiting on you',
+      query, hasQuery: query.length > 0, noQuery: query.length === 0,
+      setQuery: (e) => this.setState({ query: e.target.value }),
+      clearQuery: () => { this.setState({ query: '' }); const box = document.querySelector('[data-hd-search]'); if (box) box.focus(); },
+      searchKey: (e) => {
+        if (e.key !== 'Escape') return;
+        if (this.state.query) { e.preventDefault(); this.setState({ query: '' }); } else { e.currentTarget.blur(); }
+      },
+      clearAll: () => { this.setState({ query: '' }); const box = document.querySelector('[data-hd-search]'); if (box) box.focus(); },
+      filters, cols, rows, edge,
+      noRows: rows.length === 0,
+      caption: 'Your projects, ' + rows.length + ' shown, sorted by ' + sortNames[sortKey],
+      footer: rows.length === DATA.length ? '7 projects' : rows.length + ' of 7 projects'
+    };
+  }
+}
+</script>
+</body>
+</html>

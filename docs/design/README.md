@@ -1,3 +1,5 @@
+<!-- cspell:words Baselayer -->
+
 # Design library
 
 The UI/UX reference for the Hyperdelivery console: who it is for, what is wrong with it today,
@@ -19,6 +21,19 @@ to outlast any one redesign - add to it as the product grows.
 Earlier record: [docs/console-redesign.md](../console-redesign.md) - the August 2026 audit and
 redesign this library builds on. Its adjudications still hold unless
 [principles.md](principles.md) says otherwise.
+
+Proposed next direction: [docs/ua-dlc/ux-direction.md](../ua-dlc/ux-direction.md) (October 2026,
+not yet accepted) moves the console from a crew-led line to an outcome-first, single-voice
+experience after users said they don't care which agent is doing what, and takes color from brand
+marks on tool chips and a hue per specialist in the detailed views while red stays reserved for
+"waiting on you". Its visual language is specified in
+[docs/ua-dlc/design-system.md](../ua-dlc/design-system.md), "HyperDelivery on Baselayer": UA's
+internal Baselayer design system applied to a dense app, with light-theme role tokens, the red
+rule, the type scale, the app shell and component specs, for desktop and laptop browsers only. Its
+last section lists the changes this library will need if it is accepted; until then, the documents
+above stay the record. To click through the concept screens, run `make site` and open the canvas
+viewer at http://localhost:8766/concepts/ (source in
+[docs/ua-dlc/site/concepts/](../ua-dlc/site/concepts/)).
 
 ## Patterns
 

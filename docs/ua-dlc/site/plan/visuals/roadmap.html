@@ -1,0 +1,288 @@
+<figure class="pv-road" aria-labelledby="pv-road-title">
+<style>
+.pv-road { --bg: #ffffff; --surface: #f9f9f9; --ink: #1d1d1d; --muted: #5f5f5f; --line: #e6e6e6; --control: #8a8a8a;
+  --body: 'Archivo', 'Helvetica Neue', Arial, sans-serif; --mono: 'Geist Mono', ui-monospace, Menlo, monospace;
+  --mvp: #1d1d1d; --ent: #5b6b82; --cs: #8a8a8a; --ag: #4f46e5; --ex: #0d9488; --pi: #c27a0e;
+  --ll: #0ea5e9; --ll-bg: #e7f6fd; --tint: #f6f6f6; --lw: 236px; --band-h: 64px; --rail-h: 66px;
+  color-scheme: light; position: relative; margin: 20px 0 32px; container-type: inline-size;
+  font-family: var(--body); font-size: 13px; line-height: 1.35; color: var(--ink); }
+.pv-road * { box-sizing: border-box; }
+.pv-road .pv-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px;
+  border-top: 2px solid var(--ink); padding-top: 12px; margin-bottom: 14px; }
+.pv-road .pv-title { font-weight: 700; font-size: 15px; margin: 0; }
+.pv-road .pv-sub { color: var(--muted); font-size: 13px; flex: 1 1 260px; }
+.pv-road .pv-all { font: inherit; font-size: 12.5px; font-weight: 600; height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; align-self: center; }
+.pv-road .pv-all:hover { border-color: var(--control); }
+.pv-road button:focus-visible, .pv-road .pv-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.pv-road .pv-scroll { overflow-x: auto; overscroll-behavior-x: contain; border-bottom: 1px solid var(--line); }
+.pv-road .pv-grid { position: relative; display: grid; grid-template-columns: var(--lw) 1fr; min-width: 760px; padding-bottom: 8px; }
+.pv-road .pv-lab { position: sticky; left: 0; z-index: 3; background: var(--bg); padding: 3px 14px 3px 0;
+  min-height: 26px; display: flex; align-items: center; font-size: 12.5px; line-height: 1.25; }
+.pv-road .pv-trk { position: relative; z-index: 1; min-height: 26px; margin-right: 16px; }
+.pv-road [hidden] { display: none !important; }
+.pv-road .pv-side-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.pv-road .pv-overlay { position: absolute; top: 0; bottom: 0; left: var(--lw); right: 16px; z-index: 0; pointer-events: none; }
+.pv-road .pv-grid-lines { position: absolute; inset: 0; background-image: linear-gradient(to left, var(--line) 1px, transparent 1px);
+  background-size: calc(100% / 13) 100%; background-repeat: repeat-x; }
+.pv-road .pv-tint { position: absolute; top: 0; bottom: 0; background: var(--tint); }
+.pv-road .pv-div { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid #c9c9c9; }
+.pv-road .pv-line { position: absolute; top: calc(var(--band-h) + var(--rail-h) / 2); bottom: 0; width: 0;
+  border-left: 1px dashed var(--ink); opacity: 0.4; }
+/* phase band */
+.pv-road .pv-band { height: var(--band-h); }
+.pv-road .pv-cs { position: absolute; top: 2px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--cs);
+  background: repeating-linear-gradient(135deg, #b9b9b9 0 2px, #f1f1f1 2px 5px); }
+.pv-road .pv-csl { position: absolute; top: 1px; font-size: 11.5px; line-height: 16px; color: var(--muted); white-space: nowrap; }
+.pv-road .pv-csl b { color: var(--ink); font-weight: 700; }
+.pv-road .pv-pb { position: absolute; top: 22px; height: 38px; border-radius: 4px; padding: 4px 10px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; white-space: nowrap; }
+.pv-road .pv-pb b { font-size: 12.5px; font-weight: 700; line-height: 1.2; }
+.pv-road .pv-pb small { font-size: 11px; line-height: 1.3; opacity: 0.82; }
+.pv-road .pv-pb.mvp { background: var(--mvp); color: #ffffff; }
+.pv-road .pv-pb.ent { background: var(--ent); color: #ffffff; margin-left: 2px; }
+/* milestones */
+.pv-road .pv-rail { height: var(--rail-h); }
+.pv-road .pv-rl { position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #cfcfcf; }
+.pv-road .pv-ms { position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; padding: 0; border: 0;
+  background: var(--ink); transform: rotate(45deg); cursor: pointer; z-index: 2; }
+.pv-road .pv-ms.is-approx { background: var(--bg); box-shadow: inset 0 0 0 2px var(--ink); }
+.pv-road .pv-ms:hover, .pv-road .pv-ms.is-on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ink); }
+.pv-road .pv-msl { position: absolute; display: flex; flex-direction: column; white-space: nowrap; pointer-events: none;
+  line-height: 1.2; }
+.pv-road .pv-msl b { font-size: 12px; font-weight: 700; font-stretch: 94%; }
+.pv-road .pv-msl span { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.pv-road .pv-msl.up { top: 1px; }
+.pv-road .pv-msl.dn { bottom: 1px; flex-direction: column-reverse; }
+.pv-road .pv-msl.end { text-align: right; align-items: flex-end; }
+/* axis */
+.pv-road .pv-axis { min-height: 24px; height: 24px; border-bottom: 1px solid var(--line); }
+.pv-road .pv-axl { min-height: 24px; }
+.pv-road .pv-tick { position: absolute; top: 5px; transform: translateX(-50%); font-family: var(--mono); font-size: 10.5px;
+  color: var(--muted); white-space: nowrap; }
+.pv-road .pv-tick.first { transform: none; }
+.pv-road .pv-tick.last { transform: translateX(-100%); }
+/* sections */
+.pv-road .pv-group { grid-column: 1; position: sticky; left: 0; z-index: 3; padding: 14px 0 2px; background: var(--bg); }
+.pv-road .pv-group + .pv-gsp { padding: 14px 0 2px; }
+.pv-road .pv-toggle { position: sticky; left: 0; display: inline-flex; align-items: center; gap: 8px; height: 26px;
+  padding: 0 6px 0 0; border: 0; border-radius: 4px; background: var(--bg); color: var(--ink); cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap; max-width: var(--lw); }
+.pv-road .pv-toggle:hover { color: var(--ink); background: var(--surface); }
+.pv-road .pv-caret { width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg) translate(-2px, -2px); flex: 0 0 auto; margin: 0 1px 0 3px; }
+.pv-road .pv-toggle .pv-sw { width: 10px; height: 10px; }
+.pv-road .pv-toggle[aria-expanded="false"] .pv-caret { transform: rotate(-45deg) translate(-1px, -1px); }
+.pv-road .pv-n { font-family: var(--mono); font-weight: 500; letter-spacing: 0; color: var(--muted); }
+.pv-road .pv-sw { width: 14px; height: 8px; border-radius: 2px; display: inline-block; flex: 0 0 auto; }
+.pv-road .pv-total { color: var(--muted); }
+.pv-road .pv-bar { position: absolute; top: 50%; height: 12px; margin-top: -6px; padding: 0; border: 0; border-radius: 3px;
+  cursor: pointer; }
+.pv-road .pv-bar.big { height: 16px; margin-top: -8px; }
+.pv-road .pv-bar.mvp, .pv-road .pv-sw.ph { background: var(--mvp); }
+.pv-road .pv-bar.ent, .pv-road .pv-bar.en, .pv-road .pv-sw.en, .pv-road .pv-span.en { background: var(--ent); }
+.pv-road .pv-bar.ag, .pv-road .pv-sw.ag, .pv-road .pv-span.ag { background: var(--ag); }
+.pv-road .pv-bar.ex, .pv-road .pv-sw.ex, .pv-road .pv-span.ex { background: var(--ex); }
+.pv-road .pv-bar.pi, .pv-road .pv-sw.pi, .pv-road .pv-span.pi { background: var(--pi); }
+.pv-road .pv-span.ph { background: var(--mvp); }
+.pv-road .pv-bar.cs { box-shadow: inset 0 0 0 1px var(--cs); background: repeating-linear-gradient(135deg, #b9b9b9 0 2px, #f1f1f1 2px 5px); }
+.pv-road .pv-bar.ll, .pv-road .pv-sw.ll, .pv-road .pv-span.ll { box-shadow: inset 0 0 0 1px var(--ll);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ll) 55%, transparent) 0 2px, transparent 2px 6px), var(--ll-bg); }
+.pv-road .pv-span { position: absolute; top: 50%; height: 12px; margin-top: -6px; border-radius: 3px; opacity: 0.55; }
+.pv-road .pv-bar:hover, .pv-road .pv-bar.is-on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ink); }
+.pv-road .pv-bar.ll:hover, .pv-road .pv-bar.ll.is-on, .pv-road .pv-bar.cs:hover, .pv-road .pv-bar.cs.is-on {
+  box-shadow: inset 0 0 0 1px var(--ink), 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ink); }
+.pv-road .pv-wk { position: absolute; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 10px;
+  color: var(--muted); white-space: nowrap; pointer-events: none; }
+/* legend and card */
+.pv-road .pv-legend { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 12px; color: var(--muted); font-size: 12.5px; }
+.pv-road .pv-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.pv-road .pv-dia { width: 9px; height: 9px; background: var(--ink); transform: rotate(45deg); display: inline-block; margin: 0 2px; }
+.pv-road .pv-dia.o { background: var(--bg); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.pv-road .pv-tsw { width: 18px; height: 12px; background: var(--tint); box-shadow: inset 0 0 0 1px #d9d9d9; display: inline-block; }
+.pv-road .pv-card { position: absolute; z-index: 10; width: 300px; max-width: calc(100% - 16px); background: var(--bg);
+  border: 1px solid var(--ink); border-radius: 6px; padding: 10px 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  font-size: 13px; line-height: 1.45; }
+.pv-road .pv-card b { display: block; font-size: 14px; margin-bottom: 2px; }
+.pv-road .pv-card .pv-meta { color: var(--muted); font-family: var(--mono); font-size: 11.5px; margin-bottom: 6px; }
+.pv-road .pv-card p { margin: 0 0 6px; }
+.pv-road .pv-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+.pv-road .pv-card dt { color: var(--muted); } .pv-road .pv-card dd { margin: 0; }
+@media (prefers-reduced-motion: no-preference) { .pv-road .pv-bar, .pv-road .pv-ms { transition: box-shadow 0.16s ease; } }
+</style>
+<div class="pv-head">
+  <p class="pv-title" id="pv-road-title">Roadmap, week by week</p>
+  <span class="pv-sub">Weeks count from the day the borrowed engineers start. Select a bar or milestone for detail.</span>
+  <button type="button" class="pv-all" aria-pressed="false">Collapse All</button>
+</div>
+<div class="pv-scroll" tabindex="0" role="region" aria-label="Roadmap timeline">
+  <div class="pv-grid">
+<div class="pv-overlay" aria-hidden="true"><span class="pv-tint" style="left:0;width:42.3077%"></span><span class="pv-grid-lines"></span><span class="pv-div" style="left:42.3077%"></span><span class="pv-line" style="left:3.8462%"></span><span class="pv-line" style="left:15.3846%"></span><span class="pv-line" style="left:26.9231%"></span><span class="pv-line" style="left:42.3077%"></span><span class="pv-line" style="left:69.2308%"></span><span class="pv-line" style="left:100%"></span></div>
+<div class="pv-lab pv-side-label">Phase</div>
+<div class="pv-trk pv-band"><span class="pv-cs" style="left:0;width:3.8462%"></span><span class="pv-csl" style="left:calc(3.8462% + 7px)"><b>Current State</b> today's pilot, baseline W1–2</span><span class="pv-pb mvp" style="left:0;width:42.3077%"><b>Final MVP</b><small>Build W1–14 · Pilot W15–22</small></span><span class="pv-pb ent" style="left:42.3077%;width:57.6923%"><b>Enterprise</b><small>Hardening W23–36 · Rollout and scale W37–52</small></span></div>
+<div class="pv-lab pv-side-label">Milestones</div>
+<div class="pv-trk pv-rail"><span class="pv-rl" aria-hidden="true"></span><button type="button" class="pv-ms" style="left:3.8462%" aria-label="Baseline measured, end of week 2" data-t="Baseline measured" data-m="End of week 2" data-d="The baseline is measured, every long-lead request is filed and the do-no-harm floor is in place."></button><span class="pv-msl up" style="left:calc(3.8462% + 10px)"><b>Baseline measured</b><span>W2</span></span><button type="button" class="pv-ms" style="left:15.3846%" aria-label="Friendly users, week 8" data-t="Friendly users" data-m="Week 8" data-d="At least three friendly users start real, low-risk projects."></button><span class="pv-msl dn" style="left:calc(15.3846% + 10px)"><b>Friendly users</b><span>W8</span></span><button type="button" class="pv-ms" style="left:26.9231%" aria-label="MVP ready, week 14" data-t="MVP ready" data-m="Week 14" data-d="Fully usable end to end on AWS: at least three friendly users each reached an accepted working prototype."></button><span class="pv-msl up" style="left:calc(26.9231% + 10px)"><b>MVP ready</b><span>W14</span></span><button type="button" class="pv-ms" style="left:42.3077%" aria-label="Pilot readout, week 22" data-t="Pilot readout" data-m="Week 22" data-d="At least 3 accepted prototypes, 4 of 5 non-technical users reach a preview unaided, at least half start a second project, cycle time reported against the week-2 baseline, at least 5 use-case types tried; a stop rule applies. Tranche 2 is decided here."></button><span class="pv-msl dn" style="left:calc(42.3077% + 10px)"><b>Pilot readout</b><span>W22</span></span><button type="button" class="pv-ms" style="left:69.2308%" aria-label="Enterprise ready, week 36" data-t="Enterprise ready" data-m="Week 36" data-d="Per-user identity, no individual tokens, evals in CI, SIEM, enforced budgets, a production stage and signed reviews. Open to a second department."></button><span class="pv-msl up" style="left:calc(69.2308% + 10px)"><b>Enterprise ready</b><span>W36</span></span><button type="button" class="pv-ms is-approx" style="left:100%" aria-label="Scale decision, about week 52" data-t="Scale decision" data-m="About week 52" data-d="Scale, re-scope or take the exit ramp, on the scale decision criteria."></button><span class="pv-msl dn end" style="right:10px"><b>Scale decision</b><span>~W52</span></span></div>
+<div class="pv-lab pv-side-label pv-axl" aria-hidden="true">Week</div>
+<div class="pv-trk pv-axis" aria-hidden="true"><span class="pv-tick first" style="left:0">W1</span><span class="pv-tick" style="left:7.6923%">W4</span><span class="pv-tick" style="left:15.3846%">W8</span><span class="pv-tick" style="left:23.0769%">W12</span><span class="pv-tick" style="left:30.7692%">W16</span><span class="pv-tick" style="left:38.4615%">W20</span><span class="pv-tick" style="left:46.1538%">W24</span><span class="pv-tick" style="left:53.8462%">W28</span><span class="pv-tick" style="left:61.5385%">W32</span><span class="pv-tick" style="left:69.2308%">W36</span><span class="pv-tick" style="left:76.9231%">W40</span><span class="pv-tick" style="left:84.6154%">W44</span><span class="pv-tick" style="left:92.3077%">W48</span><span class="pv-tick last" style="left:100%">W52</span></div>
+<div class="pv-group"><button type="button" class="pv-toggle" aria-expanded="true" data-g="ph" id="pv-road-ph"><span class="pv-caret" aria-hidden="true"></span><i class="pv-sw ph" aria-hidden="true"></i>Phases<span class="pv-n">5</span></button></div><div class="pv-gsp" aria-hidden="true"></div>
+<div class="pv-lab" data-row="ph">Current State, baseline and requests</div><div class="pv-trk" data-row="ph"><button type="button" class="pv-bar cs big" style="left:0%;width:3.8462%" aria-label="Current State, baseline and requests, W1 to W2" data-t="Current State, baseline and requests" data-m="W1 to W2 · 2 weeks" data-s="Phases" data-d="Today&#x27;s EDM pilot stays as is for its current users. Measure the baseline and file every long-lead request in week 1." data-x="Baseline measured (week 2)"></button><span class="pv-wk" style="left:calc(3.8462% + 6px)">W1–2</span></div>
+<div class="pv-lab" data-row="ph">Final MVP build</div><div class="pv-trk" data-row="ph"><button type="button" class="pv-bar mvp big" style="left:0%;width:26.9231%" aria-label="Final MVP build, W1 to W14" data-t="Final MVP build" data-m="W1 to W14 · 14 weeks" data-s="Phases" data-d="Build to the new design until it is fully usable end to end, with friendly users from week 8." data-x="Friendly users (week 8), MVP ready (week 14)"></button><span class="pv-wk" style="left:calc(26.9231% + 6px)">W1–14</span></div>
+<div class="pv-lab" data-row="ph">Final MVP pilot with users</div><div class="pv-trk" data-row="ph"><button type="button" class="pv-bar mvp big" style="left:26.9231%;width:15.3846%" aria-label="Final MVP pilot with users, W15 to W22" data-t="Final MVP pilot with users" data-m="W15 to W22 · 8 weeks" data-s="Phases" data-d="8 to 12 users from at least three functions on real, low-risk work across a spread of use cases, in four two-week rounds." data-x="Pilot readout (week 22)"></button><span class="pv-wk" style="left:calc(42.3077% + 6px)">W15–22</span></div>
+<div class="pv-lab" data-row="ph">Enterprise hardening</div><div class="pv-trk" data-row="ph"><button type="button" class="pv-bar ent big" style="left:42.3077%;width:26.9231%" aria-label="Enterprise hardening, W23 to W36" data-t="Enterprise hardening" data-m="W23 to W36 · 14 weeks" data-s="Phases" data-d="Governance, identity, logging and audit, cost and budget enforcement, evals, policy, the production stage, reviews and sign-offs." data-x="Enterprise ready (week 36)"></button><span class="pv-wk" style="left:calc(69.2308% + 6px)">W23–36</span></div>
+<div class="pv-lab" data-row="ph">Enterprise rollout and scale</div><div class="pv-trk" data-row="ph"><button type="button" class="pv-bar ent big" style="left:69.2308%;width:30.7692%" aria-label="Enterprise rollout and scale, W37 to W52" data-t="Enterprise rollout and scale" data-m="W37 to W52 · 16 weeks" data-s="Phases" data-d="More departments, the features that only matter at scale, enablement and the long-term home." data-x="Scale decision (about week 52)"></button><span class="pv-wk" style="right:calc(30.7692% + 6px)">W37–52</span></div>
+<div class="pv-lab pv-total" data-sum="ph" hidden>5 rows, W1 to W52</div><div class="pv-trk" data-sum="ph" hidden><span class="pv-span ph" style="left:0%;width:100%"></span></div>
+<div class="pv-group"><button type="button" class="pv-toggle" aria-expanded="true" data-g="ag" id="pv-road-ag"><span class="pv-caret" aria-hidden="true"></span><i class="pv-sw ag" aria-hidden="true"></i>Final MVP, the line and agents<span class="pv-n">9</span></button></div><div class="pv-gsp" aria-hidden="true"></div>
+<div class="pv-lab" data-row="ag">Do-no-harm floor</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:0%;width:3.8462%" aria-label="Do-no-harm floor, W1 to W2" data-t="Do-no-harm floor" data-m="W1 to W2 · 2 weeks" data-s="Final MVP, the line and agents" data-d="Two weeks that keep UA data and systems safe for pilot users. Not enterprise hardening."></button><span class="pv-wk" style="left:calc(3.8462% + 6px)">W1–2</span></div>
+<div class="pv-lab" data-row="ag">Fix today&#x27;s workflow breaks</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:0%;width:7.6923%" aria-label="Fix today&#x27;s workflow breaks, W1 to W4" data-t="Fix today&#x27;s workflow breaks" data-m="W1 to W4 · 4 weeks" data-s="Final MVP, the line and agents" data-d="Send-back loops, questions at every station, an explicit finish and review scoring."></button><span class="pv-wk" style="left:calc(7.6923% + 6px)">W1–4</span></div>
+<div class="pv-lab" data-row="ag">Orchestrator owns the main chat</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:0%;width:7.6923%" aria-label="Orchestrator owns the main chat, W1 to W4" data-t="Orchestrator owns the main chat" data-m="W1 to W4 · 4 weeks" data-s="Final MVP, the line and agents" data-d="Station agents become producers of typed artifacts on one line with three approvals."></button><span class="pv-wk" style="left:calc(7.6923% + 6px)">W1–4</span></div>
+<div class="pv-lab" data-row="ag">Delegation broker and contracts</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:1.9231%;width:7.6923%" aria-label="Delegation broker and contracts, W2 to W5" data-t="Delegation broker and contracts" data-m="W2 to W5 · 4 weeks" data-s="Final MVP, the line and agents" data-d="The delegation broker and typed contracts in core."></button><span class="pv-wk" style="left:calc(9.6154% + 6px)">W2–5</span></div>
+<div class="pv-lab" data-row="ag">Cortex Code data specialist</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:1.9231%;width:9.6154%" aria-label="Cortex Code data specialist, W2 to W6" data-t="Cortex Code data specialist" data-m="W2 to W6 · 5 weeks" data-s="Final MVP, the line and agents" data-d="Discover, profile and check a metric against its certified definition, on a read-only service user."></button><span class="pv-wk" style="left:calc(11.5385% + 6px)">W2–6</span></div>
+<div class="pv-lab" data-row="ag">Coding harness in the sandbox (AgentCore)</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:1.9231%;width:9.6154%" aria-label="Coding harness in the sandbox (AgentCore), W2 to W6" data-t="Coding harness in the sandbox (AgentCore)" data-m="W2 to W6 · 5 weeks" data-s="Final MVP, the line and agents" data-d="One AgentCore harness session per build in the sandbox AWS account, behind the Builder port."></button><span class="pv-wk" style="left:calc(11.5385% + 6px)">W2–6</span></div>
+<div class="pv-lab" data-row="ag">Resource reader and project index</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:3.8462%;width:9.6154%" aria-label="Resource reader and project index, W3 to W7" data-t="Resource reader and project index" data-m="W3 to W7 · 5 weeks" data-s="Final MVP, the line and agents" data-d="Reads what people point at, with a per-project knowledge base and cited answers."></button><span class="pv-wk" style="left:calc(13.4615% + 6px)">W3–7</span></div>
+<div class="pv-lab" data-row="ag">Previews in the sandbox</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:7.6923%;width:7.6923%" aria-label="Previews in the sandbox, W5 to W8" data-t="Previews in the sandbox" data-m="W5 to W8 · 4 weeks" data-s="Final MVP, the line and agents" data-d="Previews in the sandbox account, with code in the prototype GitHub organization."></button><span class="pv-wk" style="left:calc(15.3846% + 6px)">W5–8</span></div>
+<div class="pv-lab" data-row="ag">Reviewers and evidence agent</div><div class="pv-trk" data-row="ag"><button type="button" class="pv-bar ag" style="left:11.5385%;width:11.5385%" aria-label="Reviewers and evidence agent, W7 to W12" data-t="Reviewers and evidence agent" data-m="W7 to W12 · 6 weeks" data-s="Final MVP, the line and agents" data-d="Fresh-context reviewers, the evidence agent and a scope check of each build, in shadow mode from week 8."></button><span class="pv-wk" style="left:calc(23.0769% + 6px)">W7–12</span></div>
+<div class="pv-lab pv-total" data-sum="ag" hidden>9 rows, W1 to W12</div><div class="pv-trk" data-sum="ag" hidden><span class="pv-span ag" style="left:0%;width:23.0769%"></span></div>
+<div class="pv-group"><button type="button" class="pv-toggle" aria-expanded="true" data-g="ex" id="pv-road-ex"><span class="pv-caret" aria-hidden="true"></span><i class="pv-sw ex" aria-hidden="true"></i>Final MVP, the experience<span class="pv-n">9</span></button></div><div class="pv-gsp" aria-hidden="true"></div>
+<div class="pv-lab" data-row="ex">Concept test</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:1.9231%;width:3.8462%" aria-label="Concept test, W2 to W3" data-t="Concept test" data-m="W2 to W3 · 2 weeks" data-s="Final MVP, the experience" data-d="The concept canvas, tested with business teammates from at least three functions, an engineer and a data steward."></button><span class="pv-wk" style="left:calc(5.7692% + 6px)">W2–3</span></div>
+<div class="pv-lab" data-row="ex">Console look, logos, tool chips</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:1.9231%;width:9.6154%" aria-label="Console look, logos, tool chips, W2 to W6" data-t="Console look, logos, tool chips" data-m="W2 to W6 · 5 weeks" data-s="Final MVP, the experience" data-d="The Baselayer look, the color and logo system and tool chips."></button><span class="pv-wk" style="left:calc(11.5385% + 6px)">W2–6</span></div>
+<div class="pv-lab" data-row="ex">Start from scratch, Jira or resources</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:3.8462%;width:7.6923%" aria-label="Start from scratch, Jira or resources, W3 to W6" data-t="Start from scratch, Jira or resources" data-m="W3 to W6 · 4 weeks" data-s="Final MVP, the experience" data-d="One generic start: from scratch, from a Jira ticket or from pointed resources."></button><span class="pv-wk" style="left:calc(11.5385% + 6px)">W3–6</span></div>
+<div class="pv-lab" data-row="ex">Modern data tables</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:5.7692%;width:7.6923%" aria-label="Modern data tables, W4 to W7" data-t="Modern data tables" data-m="W4 to W7 · 4 weeks" data-s="Final MVP, the experience" data-d="Modern data tables across the console."></button><span class="pv-wk" style="left:calc(13.4615% + 6px)">W4–7</span></div>
+<div class="pv-lab" data-row="ex">Trace and decision timeline</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:7.6923%;width:7.6923%" aria-label="Trace and decision timeline, W5 to W8" data-t="Trace and decision timeline" data-m="W5 to W8 · 4 weeks" data-s="Final MVP, the experience" data-d="The trace view and the decision timeline by person."></button><span class="pv-wk" style="left:calc(15.3846% + 6px)">W5–8</span></div>
+<div class="pv-lab" data-row="ex">Project architecture tab</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:13.4615%;width:7.6923%" aria-label="Project architecture tab, W8 to W11" data-t="Project architecture tab" data-m="W8 to W11 · 4 weeks" data-s="Final MVP, the experience" data-d="Each project&#x27;s Architecture tab."></button><span class="pv-wk" style="left:calc(21.1538% + 6px)">W8–11</span></div>
+<div class="pv-lab" data-row="ex">Teams cards and Inbox</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:15.3846%;width:11.5385%" aria-label="Teams cards and Inbox, W9 to W14" data-t="Teams cards and Inbox" data-m="W9 to W14 · 6 weeks" data-s="Final MVP, the experience" data-d="Question and approval cards in Teams, and a personal Inbox with assignment, delegation and reminders."></button><span class="pv-wk" style="left:calc(26.9231% + 6px)">W9–14</span></div>
+<div class="pv-lab" data-row="ex">Confirm what we heard, Confluence page</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:15.3846%;width:11.5385%" aria-label="Confirm what we heard, Confluence page, W9 to W14" data-t="Confirm what we heard, Confluence page" data-m="W9 to W14 · 6 weeks" data-s="Final MVP, the experience" data-d="Confirm what we heard, with the project&#x27;s Confluence page as the shared space, published on request."></button><span class="pv-wk" style="left:calc(26.9231% + 6px)">W9–14</span></div>
+<div class="pv-lab" data-row="ex">Friendly users and feedback in product</div><div class="pv-trk" data-row="ex"><button type="button" class="pv-bar ex" style="left:13.4615%;width:13.4615%" aria-label="Friendly users and feedback in product, W8 to W14" data-t="Friendly users and feedback in product" data-m="W8 to W14 · 7 weeks" data-s="Final MVP, the experience" data-d="At least three friendly users on real, low-risk projects. Feedback is captured in the product and fixes ship every week."></button><span class="pv-wk" style="left:calc(26.9231% + 6px)">W8–14</span></div>
+<div class="pv-lab pv-total" data-sum="ex" hidden>9 rows, W2 to W14</div><div class="pv-trk" data-sum="ex" hidden><span class="pv-span ex" style="left:1.9231%;width:25%"></span></div>
+<div class="pv-group"><button type="button" class="pv-toggle" aria-expanded="true" data-g="pi" id="pv-road-pi"><span class="pv-caret" aria-hidden="true"></span><i class="pv-sw pi" aria-hidden="true"></i>Final MVP, pilot<span class="pv-n">3</span></button></div><div class="pv-gsp" aria-hidden="true"></div>
+<div class="pv-lab" data-row="pi">Pilot onboarding, 8 to 12 users</div><div class="pv-trk" data-row="pi"><button type="button" class="pv-bar pi" style="left:26.9231%;width:3.8462%" aria-label="Pilot onboarding, 8 to 12 users, W15 to W16" data-t="Pilot onboarding, 8 to 12 users" data-m="W15 to W16 · 2 weeks" data-s="Final MVP, pilot" data-d="A 30-minute onboarding, weekly office hours and a Teams help channel."></button><span class="pv-wk" style="left:calc(30.7692% + 6px)">W15–16</span></div>
+<div class="pv-lab" data-row="pi">Four two-week pilot rounds</div><div class="pv-trk" data-row="pi"><button type="button" class="pv-bar pi" style="left:26.9231%;width:15.3846%" aria-label="Four two-week pilot rounds, W15 to W22" data-t="Four two-week pilot rounds" data-m="W15 to W22 · 8 weeks" data-s="Final MVP, pilot" data-d="Ship, watch, fix. At least five distinct use-case types tried."></button><span class="pv-wk" style="left:calc(42.3077% + 6px)">W15–22</span></div>
+<div class="pv-lab" data-row="pi">Use-case coverage and readout</div><div class="pv-trk" data-row="pi"><button type="button" class="pv-bar pi" style="left:38.4615%;width:3.8462%" aria-label="Use-case coverage and readout, W21 to W22" data-t="Use-case coverage and readout" data-m="W21 to W22 · 2 weeks" data-s="Final MVP, pilot" data-d="Results against the pilot readout criteria and the week-2 baseline, and the Enterprise scope ranked by pilot evidence."></button><span class="pv-wk" style="left:calc(42.3077% + 6px)">W21–22</span></div>
+<div class="pv-lab pv-total" data-sum="pi" hidden>3 rows, W15 to W22</div><div class="pv-trk" data-sum="pi" hidden><span class="pv-span pi" style="left:26.9231%;width:15.3846%"></span></div>
+<div class="pv-group"><button type="button" class="pv-toggle" aria-expanded="true" data-g="en" id="pv-road-en"><span class="pv-caret" aria-hidden="true"></span><i class="pv-sw en" aria-hidden="true"></i>Enterprise<span class="pv-n">13</span></button></div><div class="pv-gsp" aria-hidden="true"></div>
+<div class="pv-lab" data-row="en">Identity, roles, on-behalf-of, External OAuth</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:42.3077%;width:15.3846%" aria-label="Identity, roles, on-behalf-of, External OAuth, W23 to W30" data-t="Identity, roles, on-behalf-of, External OAuth" data-m="W23 to W30 · 8 weeks" data-s="Enterprise" data-d="Entra app roles, approver relations and approval rules per tier, reads on behalf of the user, Snowflake External OAuth."></button><span class="pv-wk" style="left:calc(57.6923% + 6px)">W23–30</span></div>
+<div class="pv-lab" data-row="en">GitHub App replaces individual tokens</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:42.3077%;width:9.6154%" aria-label="GitHub App replaces individual tokens, W23 to W27" data-t="GitHub App replaces individual tokens" data-m="W23 to W27 · 5 weeks" data-s="Enterprise" data-d="GitHub App installation tokens for every push and pull request, each limited to one repository."></button><span class="pv-wk" style="left:calc(51.9231% + 6px)">W23–27</span></div>
+<div class="pv-lab" data-row="en">Logging, audit, SIEM</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:42.3077%;width:17.3077%" aria-label="Logging, audit, SIEM, W23 to W31" data-t="Logging, audit, SIEM" data-m="W23 to W31 · 9 weeks" data-s="Enterprise" data-d="Structured logs, hash-chained audit to S3 Object Lock, forwarding to UA&#x27;s SIEM and dashboards."></button><span class="pv-wk" style="left:calc(59.6154% + 6px)">W23–31</span></div>
+<div class="pv-lab" data-row="en">Cost and budget enforcement</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:44.2308%;width:15.3846%" aria-label="Cost and budget enforcement, W24 to W31" data-t="Cost and budget enforcement" data-m="W24 to W31 · 8 weeks" data-s="Enterprise" data-d="Cost per workspace with enforced budgets and alerts, chargeback reporting and an Admin console."></button><span class="pv-wk" style="left:calc(59.6154% + 6px)">W24–31</span></div>
+<div class="pv-lab" data-row="en">Evals in CI, build conformance gate</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:44.2308%;width:17.3077%" aria-label="Evals in CI, build conformance gate, W24 to W32" data-t="Evals in CI, build conformance gate" data-m="W24 to W32 · 9 weeks" data-s="Enterprise" data-d="Golden sets and model-quality evals in CI with a floor; the build conformance suite becomes a gate."></button><span class="pv-wk" style="left:calc(61.5385% + 6px)">W24–32</span></div>
+<div class="pv-lab" data-row="en">Policy and approval rules</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:48.0769%;width:17.3077%" aria-label="Policy and approval rules, W26 to W34" data-t="Policy and approval rules" data-m="W26 to W34 · 9 weeks" data-s="Enterprise" data-d="AgentCore Policy on every agent tool call, first in log-only mode, then enforced."></button><span class="pv-wk" style="left:calc(65.3846% + 6px)">W26–34</span></div>
+<div class="pv-lab" data-row="en">Production stage, SLO, on-call</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:50%;width:17.3077%" aria-label="Production stage, SLO, on-call, W27 to W35" data-t="Production stage, SLO, on-call" data-m="W27 to W35 · 9 weeks" data-s="Enterprise" data-d="A production stage with a release pipeline and tested restore, on-call, an SLO and a service desk category."></button><span class="pv-wk" style="left:calc(67.3077% + 6px)">W27–35</span></div>
+<div class="pv-lab" data-row="en">InfoSec and AI governance sign-off</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:57.6923%;width:11.5385%" aria-label="InfoSec and AI governance sign-off, W31 to W36" data-t="InfoSec and AI governance sign-off" data-m="W31 to W36 · 6 weeks" data-s="Enterprise" data-d="The signed threat model, the InfoSec architecture review and the AI governance review."></button><span class="pv-wk" style="left:calc(69.2308% + 6px)">W31–36</span></div>
+<div class="pv-lab" data-row="en">Second engine behind the Builder port</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:50%;width:11.5385%" aria-label="Second engine behind the Builder port, W27 to W32" data-t="Second engine behind the Builder port" data-m="W27 to W32 · 6 weeks" data-s="Enterprise" data-d="A second coding engine in the same sandbox and image, chosen by the conformance suite."></button><span class="pv-wk" style="left:calc(61.5385% + 6px)">W27–32</span></div>
+<div class="pv-lab" data-row="en">Streamlit in Snowflake builder</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:53.8462%;width:11.5385%" aria-label="Streamlit in Snowflake builder, W29 to W34" data-t="Streamlit in Snowflake builder" data-m="W29 to W34 · 6 weeks" data-s="Enterprise" data-d="The Streamlit in Snowflake builder on the same Builder port."></button><span class="pv-wk" style="left:calc(65.3846% + 6px)">W29–34</span></div>
+<div class="pv-lab" data-row="en">Library and graduation</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:53.8462%;width:15.3846%" aria-label="Library and graduation, W29 to W36" data-t="Library and graduation" data-m="W29 to W36 · 8 weeks" data-s="Enterprise" data-d="Graduation from T0 to T1 with an owner, audience cap, expiry and kill switch, and the Library across projects."></button><span class="pv-wk" style="left:calc(69.2308% + 6px)">W29–36</span></div>
+<div class="pv-lab" data-row="en">Rovo and Work IQ read specialists</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:61.5385%;width:11.5385%" aria-label="Rovo and Work IQ read specialists, W33 to W38" data-t="Rovo and Work IQ read specialists" data-m="W33 to W38 · 6 weeks" data-s="Enterprise" data-d="Rovo and Work IQ as read-only specialists."></button><span class="pv-wk" style="left:calc(73.0769% + 6px)">W33–38</span></div>
+<div class="pv-lab" data-row="en">More departments</div><div class="pv-trk" data-row="en"><button type="button" class="pv-bar en" style="left:69.2308%;width:30.7692%" aria-label="More departments, W37 to W52" data-t="More departments" data-m="W37 to W52 · 16 weeks" data-s="Enterprise" data-d="More departments, each in its own workspace."></button><span class="pv-wk" style="right:calc(30.7692% + 6px)">W37–52</span></div>
+<div class="pv-lab pv-total" data-sum="en" hidden>13 rows, W23 to W52</div><div class="pv-trk" data-sum="en" hidden><span class="pv-span en" style="left:42.3077%;width:57.6923%"></span></div>
+<div class="pv-group"><button type="button" class="pv-toggle" aria-expanded="true" data-g="ll" id="pv-road-ll"><span class="pv-caret" aria-hidden="true"></span><i class="pv-sw ll" aria-hidden="true"></i>Long-lead track<span class="pv-n">10</span></button></div><div class="pv-gsp" aria-hidden="true"></div>
+<div class="pv-lab" data-row="ll">Prototype GitHub org</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:0%;width:5.7692%" aria-label="Prototype GitHub org, W1 to W3" data-t="Prototype GitHub org" data-m="W1 to W3 · 3 weeks" data-s="Long-lead track" data-d="Needed by week 3 for the coding agent&#x27;s first builds. On the critical path." data-o="GitHub org admins"></button><span class="pv-wk" style="left:calc(5.7692% + 6px)">W1–3</span></div>
+<div class="pv-lab" data-row="ll">Snowflake service user, read-only role</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:0%;width:3.8462%" aria-label="Snowflake service user, read-only role, W1 to W2" data-t="Snowflake service user, read-only role" data-m="W1 to W2 · 2 weeks" data-s="Long-lead track" data-d="Needed by week 2 for the floor. Synthetic data only until it lands. On the critical path." data-o="Data platform"></button><span class="pv-wk" style="left:calc(3.8462% + 6px)">W1–2</span></div>
+<div class="pv-lab" data-row="ll">Interim privacy scope for transcripts</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:0%;width:5.7692%" aria-label="Interim privacy scope for transcripts, W1 to W3" data-t="Interim privacy scope for transcripts" data-m="W1 to W3 · 3 weeks" data-s="Long-lead track" data-d="Needed by week 3. Transcripts stay off until it is agreed." data-o="Privacy and Legal"></button><span class="pv-wk" style="left:calc(5.7692% + 6px)">W1–3</span></div>
+<div class="pv-lab" data-row="ll">Entra app and Graph consents</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:0%;width:11.5385%" aria-label="Entra app and Graph consents, W1 to W6" data-t="Entra app and Graph consents" data-m="W1 to W6 · 6 weeks" data-s="Long-lead track" data-d="Needed by week 3 for pointing at OneDrive and SharePoint. Jira and Confluence pointing work without it." data-o="Entra and Microsoft 365 admins"></button><span class="pv-wk" style="left:calc(11.5385% + 6px)">W1–6</span></div>
+<div class="pv-lab" data-row="ll">Sandbox AWS account</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:0%;width:15.3846%" aria-label="Sandbox AWS account, W1 to W8" data-t="Sandbox AWS account" data-m="W1 to W8 · 8 weeks" data-s="Long-lead track" data-d="Builds need it from week 3; a named non-production account stands in until it lands." data-o="Cloud platform"></button><span class="pv-wk" style="left:calc(15.3846% + 6px)">W1–8</span></div>
+<div class="pv-lab" data-row="ll">Teams app</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:0%;width:19.2308%" aria-label="Teams app, W1 to W10" data-t="Teams app" data-m="W1 to W10 · 10 weeks" data-s="Long-lead track" data-d="Needed by week 10 for Teams cards. Email deep links until then." data-o="Microsoft 365 admins"></button><span class="pv-wk" style="left:calc(19.2308% + 6px)">W1–10</span></div>
+<div class="pv-lab" data-row="ll">Brand review</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:1.9231%;width:17.3077%" aria-label="Brand review, W2 to W10" data-t="Brand review" data-m="W2 to W10 · 9 weeks" data-s="Long-lead track" data-d="Logos in chips, red and typeface. Public UA identity only until it lands." data-o="UA Brand"></button><span class="pv-wk" style="left:calc(19.2308% + 6px)">W2–10</span></div>
+<div class="pv-lab" data-row="ll">InfoSec heads-up, threat model draft</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:0%;width:23.0769%" aria-label="InfoSec heads-up, threat model draft, W1 to W12" data-t="InfoSec heads-up, threat model draft" data-m="W1 to W12 · 12 weeks" data-s="Long-lead track" data-d="Shared in week 1; the sign-off lands in the Enterprise phase." data-o="Security architect"></button><span class="pv-wk" style="left:calc(23.0769% + 6px)">W1–12</span></div>
+<div class="pv-lab" data-row="ll">Snowflake reference design</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:5.7692%;width:17.3077%" aria-label="Snowflake reference design, W4 to W12" data-t="Snowflake reference design" data-m="W4 to W12 · 9 weeks" data-s="Long-lead track" data-d="Needed by week 23. The Final MVP&#x27;s read-only role continues for pilot users." data-o="Data platform"></button><span class="pv-wk" style="left:calc(23.0769% + 6px)">W4–12</span></div>
+<div class="pv-lab" data-row="ll">Privacy and Legal, meeting capture</div><div class="pv-trk" data-row="ll"><button type="button" class="pv-bar ll" style="left:13.4615%;width:25%" aria-label="Privacy and Legal, meeting capture, W8 to W20" data-t="Privacy and Legal, meeting capture" data-m="W8 to W20 · 13 weeks" data-s="Long-lead track" data-d="Needed by week 20. Live transcription stays off until it lands." data-o="Privacy and Legal"></button><span class="pv-wk" style="left:calc(38.4615% + 6px)">W8–20</span></div>
+<div class="pv-lab pv-total" data-sum="ll" hidden>10 rows, W1 to W20</div><div class="pv-trk" data-sum="ll" hidden><span class="pv-span ll" style="left:0%;width:38.4615%"></span></div>
+  </div>
+</div>
+<div class="pv-legend" aria-hidden="true">
+  <span><i class="pv-dia"></i>Milestone, with a dashed line down the chart</span>
+  <span><i class="pv-dia o"></i>Approximate</span>
+  <span><i class="pv-tsw"></i>Final MVP weeks</span>
+  <span><i class="pv-sw ll"></i>Requested from another team; the bar is the expected lead time</span>
+</div>
+<div class="pv-card" role="status" hidden></div>
+<script>
+(function () {
+  var root = document.currentScript.closest('.pv-road');
+  if (!root) return;
+  var card = root.querySelector('.pv-card');
+  var all = root.querySelector('.pv-all');
+  var pinned = null;
+  var SEL = '.pv-bar, .pv-ms';
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function setGroup(btn, open) {
+    var g = btn.getAttribute('data-g');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    root.querySelectorAll('[data-row="' + g + '"]').forEach(function (n) { n.hidden = !open; });
+    root.querySelectorAll('[data-sum="' + g + '"]').forEach(function (n) { n.hidden = open; });
+  }
+  function syncAll() {
+    var anyOpen = Array.prototype.some.call(root.querySelectorAll('.pv-toggle'), function (b) {
+      return b.getAttribute('aria-expanded') === 'true';
+    });
+    all.textContent = anyOpen ? 'Collapse All' : 'Expand All';
+    all.setAttribute('aria-pressed', anyOpen ? 'false' : 'true');
+  }
+  root.querySelectorAll('.pv-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setGroup(btn, btn.getAttribute('aria-expanded') !== 'true');
+      syncAll();
+      hide(true);
+    });
+  });
+  all.addEventListener('click', function () {
+    var open = all.textContent === 'Expand All';
+    root.querySelectorAll('.pv-toggle').forEach(function (b) { setGroup(b, open); });
+    syncAll();
+    hide(true);
+  });
+
+  function show(t) {
+    var d = t.dataset;
+    if (!d.t) return;
+    card.innerHTML = '';
+    card.appendChild(el('b', null, d.t));
+    card.appendChild(el('div', 'pv-meta', d.m));
+    if (d.d) card.appendChild(el('p', null, d.d));
+    var dl = el('dl');
+    [['Section', d.s], ['Ends with', d.x], ['Owner', d.o]].forEach(function (r) {
+      if (!r[1]) return;
+      dl.appendChild(el('dt', null, r[0]));
+      dl.appendChild(el('dd', null, r[1]));
+    });
+    if (dl.childNodes.length) card.appendChild(dl);
+    card.hidden = false;
+    var fr = root.getBoundingClientRect(), br = t.getBoundingClientRect();
+    var max = fr.width - card.offsetWidth - 8;
+    card.style.left = Math.max(8, Math.min(br.left - fr.left, max)) + 'px';
+    card.style.top = (br.bottom - fr.top + 10) + 'px';
+    root.querySelectorAll('.is-on').forEach(function (n) { n.classList.remove('is-on'); });
+    t.classList.add('is-on');
+  }
+  function hide(force) {
+    if (pinned && !force) return;
+    pinned = null;
+    card.hidden = true;
+    root.querySelectorAll('.is-on').forEach(function (n) { n.classList.remove('is-on'); });
+  }
+  root.addEventListener('pointerover', function (ev) {
+    var t = ev.target.closest(SEL);
+    if (t && !pinned && ev.pointerType === 'mouse') show(t);
+  });
+  root.addEventListener('pointerout', function (ev) {
+    var t = ev.target.closest(SEL);
+    if (t && ev.pointerType === 'mouse') hide(false);
+  });
+  root.addEventListener('click', function (ev) {
+    var t = ev.target.closest(SEL);
+    if (!t) { if (!ev.target.closest('.pv-card')) hide(true); return; }
+    if (pinned === t) { hide(true); return; }
+    pinned = t;
+    show(t);
+  });
+  root.addEventListener('focusin', function (ev) { var t = ev.target.closest(SEL); if (t) show(t); });
+  root.addEventListener('focusout', function (ev) { var t = ev.target.closest(SEL); if (t && pinned !== t) hide(false); });
+  root.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hide(true); });
+  root.querySelector('.pv-scroll').addEventListener('scroll', function () { hide(true); }, { passive: true });
+})();
+</script>
+</figure>
