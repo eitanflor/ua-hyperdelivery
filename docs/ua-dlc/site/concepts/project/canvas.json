@@ -2,12 +2,93 @@
   "v": 3,
   "attachments": {},
   "boards": {
+    "Compare.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 2536,
+      "title": "Compare the three variants",
+      "page": "compare",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "A_Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1142,
+      "title": "Home \u00b7 Variant A \u00b7 Top Bar",
+      "page": "a",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "A_Inbox.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 876,
+      "title": "Inbox \u00b7 Variant A \u00b7 Top Bar",
+      "page": "a",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "A_Projects.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 801,
+      "title": "Projects \u00b7 Variant A \u00b7 Top Bar",
+      "page": "a",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "A_Start.dc.html": {
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 1703,
+      "title": "New project \u00b7 SKU productivity workbench \u00b7 Variant A \u00b7 Top Bar",
+      "page": "a",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "A_Project.dc.html": {
+      "x": 6080,
+      "y": 0,
+      "w": 1440,
+      "h": 1812,
+      "title": "Project workspace \u00b7 SKU productivity workbench \u00b7 Variant A \u00b7 Top Bar",
+      "page": "a",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "A_Gate.dc.html": {
+      "x": 7600,
+      "y": 0,
+      "w": 1440,
+      "h": 1920,
+      "title": "Accept the working prototype \u00b7 Wholesale sell-through tracker \u00b7 Variant A \u00b7 Top Bar",
+      "page": "a",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "A_Graduation.dc.html": {
+      "x": 9120,
+      "y": 0,
+      "w": 1440,
+      "h": 1653,
+      "title": "Handoff: the Construction decision \u00b7 Activation scorecard \u00b7 Variant A \u00b7 Top Bar",
+      "page": "a",
+      "expand": "fill",
+      "is_interactive": true
+    },
     "Main.dc.html": {
       "x": 0,
       "y": 0,
       "w": 1440,
-      "h": 1330,
-      "title": "Home \u00b7 Final MVP",
+      "h": 1195,
+      "title": "Home \u00b7 Variant B \u00b7 Side Nav and Chat",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
@@ -15,8 +96,9 @@
       "x": 1520,
       "y": 0,
       "w": 1440,
-      "h": 848,
-      "title": "Inbox \u00b7 Final MVP",
+      "h": 647,
+      "title": "Inbox \u00b7 Variant B \u00b7 Side Nav and Chat",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
@@ -24,171 +106,261 @@
       "x": 3040,
       "y": 0,
       "w": 1440,
-      "h": 732,
-      "title": "Projects \u00b7 Final MVP",
-      "expand": "fill",
-      "is_interactive": true
-    },
-    "FirstRun.dc.html": {
-      "x": 4560,
-      "y": 0,
-      "w": 1440,
-      "h": 1126,
-      "title": "First run \u00b7 Final MVP",
+      "h": 800,
+      "title": "Projects \u00b7 Variant B \u00b7 Side Nav and Chat",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Start.dc.html": {
-      "x": 6080,
+      "x": 4560,
       "y": 0,
       "w": 1440,
-      "h": 900,
-      "title": "Start a project \u00b7 Final MVP",
-      "expand": "fill",
-      "is_interactive": true
-    },
-    "ContextReview.dc.html": {
-      "x": 7600,
-      "y": 0,
-      "w": 1440,
-      "h": 1106,
-      "title": "Confirm what we heard \u00b7 Final MVP",
+      "h": 1200,
+      "title": "New project: the first conversation \u00b7 SKU productivity workbench \u00b7 Variant B \u00b7 Side Nav and Chat",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Project.dc.html": {
-      "x": 9120,
+      "x": 6080,
       "y": 0,
       "w": 1440,
-      "h": 1607,
-      "title": "Project, step by step \u00b7 SKU productivity workbench \u00b7 Final MVP",
+      "h": 1200,
+      "title": "Project workspace, by stage \u00b7 SKU productivity workbench \u00b7 Variant B \u00b7 Side Nav and Chat",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Gate.dc.html": {
-      "x": 10640,
+      "x": 7600,
       "y": 0,
       "w": 1440,
-      "h": 1931,
-      "title": "Approval: the working prototype \u00b7 Wholesale sell-through tracker \u00b7 Final MVP",
+      "h": 1200,
+      "title": "Accept the working prototype \u00b7 Wholesale sell-through tracker \u00b7 Variant B \u00b7 Side Nav and Chat",
+      "page": "b",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "Graduation.dc.html": {
+      "x": 9120,
+      "y": 0,
+      "w": 1440,
+      "h": 1200,
+      "title": "Handoff: the Construction decision \u00b7 Activation scorecard \u00b7 Variant B \u00b7 Side Nav and Chat",
+      "page": "b",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "FirstRun.dc.html": {
+      "x": 0,
+      "y": 1880,
+      "w": 1440,
+      "h": 760,
+      "title": "First visit \u00b7 Final MVP",
+      "page": "b",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "ContextReview.dc.html": {
+      "x": 1520,
+      "y": 1880,
+      "w": 1440,
+      "h": 1200,
+      "title": "Confirm what we heard \u00b7 SKU productivity workbench \u00b7 Final MVP",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Activity.dc.html": {
       "x": 0,
-      "y": 2611,
+      "y": 3760,
       "w": 1440,
-      "h": 1612,
-      "title": "Activity: story, decisions, trace \u00b7 Tariff scenario planner \u00b7 Final MVP",
+      "h": 1400,
+      "title": "Timeline and trace \u00b7 Tariff scenario planner \u00b7 Final MVP",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Architecture.dc.html": {
       "x": 1520,
-      "y": 2611,
+      "y": 3760,
       "w": 1440,
-      "h": 1594,
+      "h": 1400,
       "title": "Project architecture \u00b7 Tariff scenario planner \u00b7 Final MVP",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Failures.dc.html": {
       "x": 3040,
-      "y": 2611,
+      "y": 3760,
       "w": 1440,
-      "h": 1371,
+      "h": 1666,
       "title": "Needs attention \u00b7 Final MVP (budget card: Enterprise)",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "TeamsCards.dc.html": {
       "x": 4560,
-      "y": 2611,
+      "y": 3760,
       "w": 1440,
-      "h": 1228,
-      "title": "In Teams \u00b7 Final MVP"
+      "h": 1329,
+      "title": "In Teams \u00b7 Final MVP",
+      "page": "b"
     },
     "Library.dc.html": {
       "x": 0,
-      "y": 4903,
+      "y": 6106,
       "w": 1440,
-      "h": 990,
+      "h": 1483,
       "title": "Library: what UA already knows \u00b7 Enterprise",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Portfolio.dc.html": {
       "x": 1520,
-      "y": 4903,
+      "y": 6106,
       "w": 1440,
-      "h": 1461,
+      "h": 1271,
       "title": "Portfolio \u00b7 Enterprise",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Admin.dc.html": {
       "x": 3040,
-      "y": 4903,
+      "y": 6106,
       "w": 1440,
-      "h": 2420,
+      "h": 2177,
       "title": "Admin: workspace guardrails \u00b7 Enterprise",
-      "expand": "fill",
-      "is_interactive": true
-    },
-    "Graduation.dc.html": {
-      "x": 4560,
-      "y": 4903,
-      "w": 1440,
-      "h": 1515,
-      "title": "Graduation: the engineering manager's view \u00b7 Enterprise",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "Huddle.dc.html": {
-      "x": 6080,
-      "y": 4903,
+      "x": 4560,
+      "y": 6106,
       "w": 1280,
       "h": 800,
-      "title": "Working session in Teams \u00b7 Enterprise"
+      "title": "Working session in Teams \u00b7 Enterprise",
+      "page": "b"
     },
     "Lifecycle.dc.html": {
       "x": 0,
-      "y": 8003,
+      "y": 8963,
       "w": 1440,
-      "h": 1909,
+      "h": 2038,
       "title": "How work moves \u00b7 Final MVP",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "PlatformArchitecture.dc.html": {
       "x": 1520,
-      "y": 8003,
+      "y": 8963,
       "w": 1440,
-      "h": 1242,
+      "h": 1215,
       "title": "How HyperDelivery is built \u00b7 Final MVP",
+      "page": "b",
       "expand": "fill",
       "is_interactive": true
     },
     "SpineStates.dc.html": {
       "x": 0,
-      "y": 10592,
+      "y": 11681,
       "w": 1440,
-      "h": 1106,
-      "title": "The line \u00b7 Final MVP"
+      "h": 1289,
+      "title": "The line \u00b7 Final MVP",
+      "page": "b"
     },
     "DesignSystem.dc.html": {
       "x": 1520,
-      "y": 10592,
+      "y": 11681,
       "w": 1440,
-      "h": 6996,
-      "title": "HyperDelivery on Baselayer: brand and foundations \u00b7 Final MVP"
+      "h": 7996,
+      "title": "HyperDelivery on Baselayer: brand and foundations \u00b7 Final MVP",
+      "page": "b"
     },
     "DesignSystemComponents.dc.html": {
       "x": 3040,
-      "y": 10592,
+      "y": 11681,
       "w": 1440,
-      "h": 5842,
-      "title": "HyperDelivery on Baselayer: components \u00b7 Final MVP"
+      "h": 7994,
+      "title": "HyperDelivery on Baselayer: components \u00b7 Final MVP",
+      "page": "b"
+    },
+    "C_Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1872,
+      "title": "Home \u00b7 Variant C \u00b7 Guided Path",
+      "page": "c",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "C_Inbox.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1084,
+      "title": "Inbox \u00b7 Variant C \u00b7 Guided Path",
+      "page": "c",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "C_Projects.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 793,
+      "title": "Projects \u00b7 Variant C \u00b7 Guided Path",
+      "page": "c",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "C_Start.dc.html": {
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 1200,
+      "title": "New project \u00b7 SKU productivity workbench \u00b7 Variant C \u00b7 Guided Path",
+      "page": "c",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "C_Project.dc.html": {
+      "x": 6080,
+      "y": 0,
+      "w": 1440,
+      "h": 1200,
+      "title": "Project workspace \u00b7 SKU productivity workbench \u00b7 Variant C \u00b7 Guided Path",
+      "page": "c",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "C_Gate.dc.html": {
+      "x": 7600,
+      "y": 0,
+      "w": 1440,
+      "h": 1200,
+      "title": "Accept the working prototype \u00b7 Wholesale sell-through tracker \u00b7 Variant C \u00b7 Guided Path",
+      "page": "c",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "C_Graduation.dc.html": {
+      "x": 9120,
+      "y": 0,
+      "w": 1440,
+      "h": 1200,
+      "title": "Handoff: the Construction decision \u00b7 Activation scorecard \u00b7 Variant C \u00b7 Guided Path",
+      "page": "c",
+      "expand": "fill",
+      "is_interactive": true
     }
   },
   "createdOnFiles": {
@@ -197,61 +369,133 @@
   },
   "designSystems": [],
   "launch": {
-    "view": "canvas"
+    "view": "canvas",
+    "page": "compare"
   },
   "notes": {
+    "compare-row0": {
+      "x": 0,
+      "y": -620,
+      "text": "Every name, project and number on this canvas is invented to show the design; none is a measured result.",
+      "kind": "title1",
+      "maxW": 13600,
+      "page": "compare"
+    },
+    "compare-row1": {
+      "x": 0,
+      "y": -300,
+      "text": "Three ways HyperDelivery could look",
+      "kind": "title1",
+      "maxW": 1440,
+      "page": "compare"
+    },
+    "a-row0": {
+      "x": 0,
+      "y": -620,
+      "text": "Every name, project and number on this canvas is invented to show the design; none is a measured result.",
+      "kind": "title1",
+      "maxW": 13600,
+      "page": "a"
+    },
+    "a-row1": {
+      "x": 0,
+      "y": -300,
+      "text": "A \u00b7 Top Bar: the core journey",
+      "kind": "title1",
+      "maxW": 10560,
+      "page": "a"
+    },
     "row0": {
       "x": 0,
       "y": -620,
       "text": "Every name, project and number on this canvas is invented to show the design; none is a measured result.",
       "kind": "title1",
-      "maxW": 12080
+      "maxW": 13600,
+      "page": "b"
     },
     "row1": {
       "x": 0,
       "y": -300,
-      "text": "Final MVP: start, decide, build",
+      "text": "B \u00b7 Side Nav and Chat: the core journey",
       "kind": "title1",
-      "maxW": 12080
+      "maxW": 10560,
+      "page": "b"
     },
     "row2": {
       "x": 0,
-      "y": 2311,
-      "text": "Final MVP: see it working, recover, reach people in Teams",
+      "y": 1580,
+      "text": "Final MVP: more of the journey (drawn in Variant B)",
       "kind": "title1",
-      "maxW": 6000
+      "maxW": 2960,
+      "page": "b"
     },
     "row3": {
       "x": 0,
-      "y": 4603,
-      "text": "Enterprise: govern and scale",
+      "y": 3460,
+      "text": "Final MVP: see it working, recover, reach people in Teams",
       "kind": "title1",
-      "maxW": 7360
+      "maxW": 6000,
+      "page": "b"
     },
     "row4": {
       "x": 0,
-      "y": 7703,
-      "text": "Help, from the ? menu",
+      "y": 5806,
+      "text": "Enterprise: govern and scale",
       "kind": "title1",
-      "maxW": 2960
+      "maxW": 5840,
+      "page": "b"
     },
     "row5": {
       "x": 0,
-      "y": 10292,
-      "text": "Design system",
+      "y": 8663,
+      "text": "Help, from the ? menu",
       "kind": "title1",
-      "maxW": 4480
+      "maxW": 2960,
+      "page": "b"
+    },
+    "row6": {
+      "x": 0,
+      "y": 11381,
+      "text": "Design system (Variant B)",
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "b"
+    },
+    "c-row0": {
+      "x": 0,
+      "y": -620,
+      "text": "Every name, project and number on this canvas is invented to show the design; none is a measured result.",
+      "kind": "title1",
+      "maxW": 13600,
+      "page": "c"
+    },
+    "c-row1": {
+      "x": 0,
+      "y": -300,
+      "text": "C \u00b7 Guided Path: the core journey",
+      "kind": "title1",
+      "maxW": 10560,
+      "page": "c"
     }
   },
   "order": [
+    "Compare.dc.html",
+    "A_Main.dc.html",
+    "A_Inbox.dc.html",
+    "A_Projects.dc.html",
+    "A_Start.dc.html",
+    "A_Project.dc.html",
+    "A_Gate.dc.html",
+    "A_Graduation.dc.html",
     "Main.dc.html",
     "Inbox.dc.html",
     "Projects.dc.html",
-    "FirstRun.dc.html",
     "Start.dc.html",
-    "ContextReview.dc.html",
     "Project.dc.html",
     "Gate.dc.html",
+    "Graduation.dc.html",
+    "FirstRun.dc.html",
+    "ContextReview.dc.html",
     "Activity.dc.html",
     "Architecture.dc.html",
     "Failures.dc.html",
@@ -259,14 +503,37 @@
     "Library.dc.html",
     "Portfolio.dc.html",
     "Admin.dc.html",
-    "Graduation.dc.html",
     "Huddle.dc.html",
     "Lifecycle.dc.html",
     "PlatformArchitecture.dc.html",
     "SpineStates.dc.html",
     "DesignSystem.dc.html",
-    "DesignSystemComponents.dc.html"
+    "DesignSystemComponents.dc.html",
+    "C_Main.dc.html",
+    "C_Inbox.dc.html",
+    "C_Projects.dc.html",
+    "C_Start.dc.html",
+    "C_Project.dc.html",
+    "C_Gate.dc.html",
+    "C_Graduation.dc.html"
   ],
-  "pages": [],
+  "pages": [
+    {
+      "id": "compare",
+      "name": "Compare and Vote"
+    },
+    {
+      "id": "a",
+      "name": "A \u00b7 Top Bar"
+    },
+    {
+      "id": "b",
+      "name": "B \u00b7 Side Nav and Chat"
+    },
+    {
+      "id": "c",
+      "name": "C \u00b7 Guided Path"
+    }
+  ],
   "title": "HyperDelivery Concepts"
 }

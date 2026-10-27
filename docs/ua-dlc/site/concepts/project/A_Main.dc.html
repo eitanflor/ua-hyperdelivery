@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyperDelivery - Home (Variant A)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+/* hd-shell:top start (Variant A: base rules, the app bar, menus, the Variant B tooltip, the loader) */
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-txt:hover{color:#444444!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent;border:0;padding:0;cursor:pointer}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:44px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+input::placeholder,textarea::placeholder{color:#5F5F5F}
+/* hd-shell:top (Variant A): the 56 px app bar, the same on every A board */
+.hd-tn{position:relative;height:56px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px;color:#5F5F5F;text-decoration:none;font-size:14px;line-height:18px;white-space:nowrap;cursor:pointer}
+.hd-tn:hover{color:#1D1D1D}
+.hd-tn[aria-current="page"]{color:#1D1D1D;font-weight:700}
+.hd-tn[aria-current="page"]::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;background:#1D1D1D}
+.hd-tn:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #0096FA,inset 0 0 0 4px #FFFFFF}
+.hd-find{width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;border-radius:4px;background:#F0F0F0;color:#5F5F5F;cursor:text}
+.hd-find:focus-within{background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA}
+.hd-find input{flex:1;min-width:0;height:34px;box-sizing:border-box;border:0;outline:none;padding:0;background:transparent;font-family:inherit;font-size:14px;line-height:20px;color:#1D1D1D}
+.hd-find input::-webkit-search-cancel-button{display:none}
+.hd-acct:hover,.hd-pop[open]>.hd-acct{box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #D0D0D0}
+/* "Drawn in Variant B": a real control that does not navigate; its tooltip shows on hover and focus, Esc hides it */
+.hd-tip-wrap{position:relative;display:inline-flex}
+.hd-off{cursor:default}
+.hd-tip{display:none;position:absolute;z-index:40;top:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 8px;border-radius:4px;background:#1D1D1D;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:400;white-space:nowrap;pointer-events:none}
+.hd-tip-l{top:50%;left:auto;right:calc(100% + 8px);transform:translateY(-50%)}
+.hd-off:hover+.hd-tip,.hd-off:focus-visible+.hd-tip{display:block}
+:root[data-hd-tipoff] .hd-tip{display:none!important}
+.hd-dots{display:inline-flex;align-items:center;gap:4px;flex:none}
+.hd-dots i{width:5px;height:5px;border-radius:999px;background:#444444;opacity:.3;animation:hd-dot 1.2s infinite}
+.hd-dots i:nth-child(2){animation-delay:.2s}.hd-dots i:nth-child(3){animation-delay:.4s}
+@keyframes hd-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hd-dots i{animation:none;opacity:.6}}
+/* hd-shell:top end */
+/* Home (Variant A): a dashboard of what waits on the viewer, a way to start, and the viewer's projects */
+.hd-compose:focus-within{box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-starter:hover{background:#F9F9F9!important}
+.hd-card:hover{border-color:#1D1D1D!important}
+.hd-pop[open]>.hd-btn-ghost{background:#F0F0F0}
+</style>
+</helmet>
+<div style="min-height: 1142px; background: #F9F9F9; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
+
+<!-- hd-shell:top start -->
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 24px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D0D0D0; position: relative; z-index: 20">
+  <a href="A_Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 12px; color: #1D1D1D; text-decoration: none; flex: none">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex: none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg>
+    <span aria-hidden="true" style="width: 1px; height: 20px; background: #D0D0D0; flex: none"></span>
+    <span style="font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">HyperDelivery</span>
+  </a>
+  <nav aria-label="Primary" style="display: flex; align-self: stretch; align-items: stretch; gap: 8px">
+    <sc-for list="{{topNav}}" as="n" hint-placeholder-count="4">
+      <sc-if value="{{n.live}}" hint-placeholder-val="{{ true }}">
+        <a href="{{n.href}}" class="hd-tn" aria-current="{{n.current}}" aria-label="{{n.aria}}">{{n.label}}<sc-if value="{{n.hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="min-width: 16px; height: 16px; box-sizing: border-box; padding: 0 4px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; text-align: center">{{n.count}}</span></sc-if></a>
+      </sc-if>
+      <sc-if value="{{n.off}}" hint-placeholder-val="{{ false }}">
+        <span class="hd-tip-wrap" style="align-items: stretch">
+          <a role="link" tabindex="0" aria-disabled="true" aria-describedby="{{n.tipId}}" class="hd-tn hd-off">{{n.label}}<sc-if value="{{n.hasTag}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{n.tag}}</span></sc-if></a>
+          <span role="tooltip" id="{{n.tipId}}" class="hd-tip">Drawn in Variant B</span>
+        </span>
+      </sc-if>
+    </sc-for>
+    <sc-if value="{{hasRoleNav}}" hint-placeholder-val="{{ false }}">
+      <span aria-hidden="true" style="align-self: center; width: 1px; height: 20px; background: #D0D0D0"></span>
+      <sc-for list="{{roleNav}}" as="n" hint-placeholder-count="0">
+        <span class="hd-tip-wrap" style="align-items: stretch">
+          <a role="link" tabindex="0" aria-disabled="true" aria-describedby="{{n.tipId}}" class="hd-tn hd-off">{{n.label}}</a>
+          <span role="tooltip" id="{{n.tipId}}" class="hd-tip">Drawn in Variant B</span>
+        </span>
+      </sc-for>
+    </sc-if>
+  </nav>
+  <span style="flex: 1"></span>
+  <div style="display: flex; align-items: center; gap: 16px; flex: none">
+    <div class="hd-find-box" onFocus="{{searchFocus}}" onBlur="{{searchBlur}}" style="position: relative; flex: none">
+      <label class="hd-find">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+        <input type="search" data-hd-search="1" aria-label="Search projects and facts" aria-keyshortcuts="Meta+K" placeholder="Search projects and facts" autocomplete="off" value="{{searchQ}}" onChange="{{onSearch}}" onKeyDown="{{searchKey}}">
+        <kbd aria-hidden="true" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 2px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+      </label>
+      <sc-if value="{{searchShow}}" hint-placeholder-val="{{ false }}">
+        <div class="hd-menu" style="top: 44px; left: 0; right: auto; width: 336px">
+          <div role="status" style="padding: 4px 16px 8px; font-size: 12px; line-height: 16px; color: #5F5F5F">{{searchCount}}</div>
+          <sc-for list="{{searchHits}}" as="h" hint-placeholder-count="2">
+            <sc-if value="{{h.live}}" hint-placeholder-val="{{ true }}">
+              <a class="hd-mi" href="{{h.href}}" style="height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px"><span style="font-weight: 700">{{h.name}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{h.meta}}</span></a>
+            </sc-if>
+            <sc-if value="{{h.off}}" hint-placeholder-val="{{ false }}">
+              <span class="hd-tip-wrap" style="display: block">
+                <a role="link" tabindex="0" aria-disabled="true" aria-describedby="{{h.tipId}}" class="hd-mi hd-off" style="height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px"><span style="font-weight: 700">{{h.name}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{h.meta}}</span></a>
+                <span role="tooltip" id="{{h.tipId}}" class="hd-tip hd-tip-l">Drawn in Variant B</span>
+              </span>
+            </sc-if>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+    <a href="A_Start.dc.html" class="hd-btn-primary hd-ring" aria-keyshortcuts="Meta+Shift+O" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 999px; background: #1D1D1D; color: #FFFFFF; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; flex: none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
+    <details class="hd-pop" open="{{helpOpen}}" style="position: relative; flex: none">
+      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+      </summary>
+      <nav class="hd-menu" aria-label="Help">
+        <span class="hd-tip-wrap" style="display: block"><a role="link" tabindex="0" aria-disabled="true" aria-describedby="hd-tip-h1" class="hd-mi hd-off">How Work Moves</a><span role="tooltip" id="hd-tip-h1" class="hd-tip hd-tip-l">Drawn in Variant B</span></span>
+        <span class="hd-tip-wrap" style="display: block"><a role="link" tabindex="0" aria-disabled="true" aria-describedby="hd-tip-h2" class="hd-mi hd-off">How HyperDelivery Is Built</a><span role="tooltip" id="hd-tip-h2" class="hd-tip hd-tip-l">Drawn in Variant B</span></span>
+        <hr>
+        <details class="hd-sub">
+          <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>⌘/</kbd></summary>
+          <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+            <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+            <dt><kbd>⌘⇧O</kbd></dt><dd style="margin: 0">Start a Project</dd>
+            <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention a Person or Source</dd>
+            <dt><kbd>⌘/</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+            <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+          </dl>
+        </details>
+        <details class="hd-sub">
+          <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+          <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
+          </ul>
+        </details>
+        <hr>
+        <span class="hd-tip-wrap" style="display: block"><a role="link" tabindex="0" aria-disabled="true" aria-describedby="hd-tip-h3" class="hd-mi hd-off">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a><span role="tooltip" id="hd-tip-h3" class="hd-tip hd-tip-l">Drawn in Variant B</span></span>
+      </nav>
+    </details>
+    <details class="hd-pop" style="position: relative; flex: none">
+      <summary class="hd-acct hd-ring" aria-label="{{me.aria}}" title="{{me.name}}" style="width: 32px; height: 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: {{me.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{me.initials}}</summary>
+      <div class="hd-menu">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{me.role}}</span>
+        </div>
+        <hr>
+        <div style="padding: 4px 16px; font-size: 12px; line-height: 16px; color: #5F5F5F">Workspace</div>
+        <sc-for list="{{workspaces}}" as="w" hint-placeholder-count="4">
+          <button type="button" class="hd-mi" aria-pressed="{{w.pressed}}" onClick="{{closeMenu}}" style="font-weight: {{w.fw}}">{{w.name}}<span style="flex: 1"></span><sc-if value="{{w.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+        </sc-for>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}</span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- hd-shell:top end -->
+
+<main>
+  <section aria-labelledby="hd-needs" style="background: #FFFFFF; border-bottom: 1px solid #D0D0D0; padding: 24px">
+    <div style="display: flex; align-items: center; gap: 16px; min-height: 40px">
+      <h1 id="hd-needs" style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; white-space: nowrap">Needs You</h1>
+      <span style="flex: 1"></span>
+      <a href="A_Inbox.dc.html" class="hd-ring" style="display: inline-block; margin: -12px 0; padding: 12px 0; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap">{{inboxLink}}</a>
+    </div>
+    <p style="margin: 8px 0 0; font-size: 14px; line-height: 20px; color: #5F5F5F">{{needsSummary}}</p>
+  </section>
+
+  <div style="padding: 24px 24px 56px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; row-gap: 56px; align-items: {{gridAlign}}">
+
+    <section aria-label="Waiting on you" style="grid-column: span 8; min-width: 0; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden">
+      <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+        <div style="box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 64px 24px; text-align: center">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="0.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z"></path></svg>
+          <h2 style="margin: 8px 0 0; font-size: 16px; line-height: 20px; font-weight: 700">Nothing Waiting on You</h2>
+          <p style="margin: 0; max-width: 360px; font-size: 14px; line-height: 20px; color: #5F5F5F">New approvals and questions also arrive in Teams.</p>
+        </div>
+      </sc-if>
+      <sc-if value="{{notEmpty}}" hint-placeholder-val="{{ true }}">
+        <ol style="margin: 0; padding: 0; list-style: none">
+          <sc-for list="{{needs}}" as="n" hint-placeholder-count="4">
+            <li style="display: grid; grid-template-columns: 14px minmax(0, 1fr) 72px 168px; column-gap: 16px; align-items: center; padding: 20px 24px; border-top: {{n.rule}}">
+              <span aria-hidden="true" style="align-self: start; margin-top: 6px; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center">
+                <sc-if value="{{n.open}}" hint-placeholder-val="{{ true }}"><span style="width: 8px; height: 8px; background: #DC0019"></span></sc-if>
+                <sc-if value="{{n.done}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00834B" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+              </span>
+              <div style="min-width: 0">
+                <h2 id="{{n.hid}}" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700; color: {{n.titleFg}}">{{n.title}}</h2>
+                <p style="margin: 4px 0 0; font-size: 14px; line-height: 20px">{{n.project}} <span style="color: #5F5F5F">{{n.unblocks}}</span></p>
+                <sc-if value="{{n.open}}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                    <span>{{n.waitLine}}</span>
+                    <sc-for list="{{n.chips}}" as="c" hint-placeholder-count="2">
+                      <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap">
+                        <sc-if value="{{c.hasLogo}}" hint-placeholder-val="{{ true }}"><img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none"></sc-if>
+                        <sc-if value="{{c.hasGlyph}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{c.glyph}}"></path></svg></sc-if>
+                        <span style="font-family: {{c.font}}">{{c.label}}</span>
+                      </span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{n.isAsk}}" hint-placeholder-val="{{ false }}">
+                  <div role="radiogroup" aria-labelledby="{{n.hid}}" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px">
+                    <sc-for list="{{n.options}}" as="o" hint-placeholder-count="3">
+                      <button type="button" role="radio" aria-checked="{{o.checked}}" tabindex="{{o.tab}}" onClick="{{o.pick}}" onKeyDown="{{o.key}}" class="{{o.cls}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 4px; background: {{o.bg}}; color: {{o.fg}}; box-shadow: {{o.ring}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: {{o.fw}}; white-space: nowrap; cursor: pointer"><sc-if value="{{o.on}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{o.label}}<sc-if value="{{o.hasHint}}" hint-placeholder-val="{{ false }}"><span style="font-weight: 400; color: {{o.hintFg}}">{{o.hint}}</span></sc-if></button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{n.done}}" hint-placeholder-val="{{ false }}">
+                  <div id="hd-q-done" role="status" tabindex="-1" class="hd-ring-in" style="margin-top: 8px; display: flex; flex-direction: column; gap: 2px; font-size: 14px; line-height: 20px">
+                    <b>{{n.doneTitle}}</b>
+                    <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{n.doneNote}}</span>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="justify-self: end; align-self: start; padding-top: 2px; display: flex; flex-direction: column; align-items: flex-end">
+                <sc-if value="{{n.open}}" hint-placeholder-val="{{ true }}">
+                  <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Waiting</span>
+                  <span style="font-size: 14px; line-height: 20px; white-space: nowrap">{{n.wait}}</span>
+                </sc-if>
+              </div>
+              <div style="justify-self: end; align-self: start; display: flex; flex-direction: column; align-items: flex-end; gap: 8px">
+                <sc-if value="{{n.isLink}}" hint-placeholder-val="{{ true }}">
+                  <a href="{{n.href}}" class="hd-btn-secondary hd-ring-ink" aria-label="{{n.ctaAria}}" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">{{n.cta}}</a>
+                </sc-if>
+                <sc-if value="{{n.isAsk}}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{n.send}}" disabled="{{n.cannotSend}}" aria-describedby="{{n.hid}}" class="{{n.sendCls}}" style="height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: {{n.sendFg}}; box-shadow: {{n.sendRing}}; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: {{n.sendCursor}}">Send Answer</button>
+                  <a href="A_Inbox.dc.html#q" class="hd-ring hd-txt" style="font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap">Not Me, Suggest Who</a>
+                </sc-if>
+                <sc-if value="{{n.done}}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{n.undo}}" class="hd-ring hd-txt" style="height: 36px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Undo</button>
+                </sc-if>
+              </div>
+            </li>
+          </sc-for>
+        </ol>
+      </sc-if>
+    </section>
+
+    <section aria-labelledby="hd-ask" style="grid-column: span 4; min-width: 0; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 id="hd-ask" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">What Do You Want to Make?</h2>
+      <div class="hd-compose" style="border-radius: 8px; box-shadow: inset 0 0 0 1px #949494; background: #FFFFFF">
+        <textarea id="hd-idea" rows="4" aria-labelledby="hd-ask" aria-describedby="hd-idea-hint" placeholder="Describe the problem, who has it, and what would help." value="{{draft}}" onChange="{{onDraft}}" style="display: block; width: 100%; min-height: 104px; box-sizing: border-box; border: 0; outline: none; resize: none; padding: 12px 14px 4px; background: transparent; border-radius: 8px 8px 0 0; font-family: inherit; font-size: 14px; line-height: 20px; color: #1D1D1D"></textarea>
+        <sc-if value="{{hasAttached}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 12px 0">
+            <sc-for list="{{attached}}" as="c" hint-placeholder-count="1">
+              <span style="height: 28px; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px 0 8px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap">
+                <img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">
+                <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><b>{{c.kind}}</b> {{c.title}}</span>
+                <button type="button" class="hd-iconbtn" onClick="{{c.remove}}" aria-label="{{c.removeLabel}}" style="width: 24px; height: 24px; flex: none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></button>
+              </span>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+          <details class="hd-pop" style="position: relative; flex: none">
+            <summary class="hd-iconbtn hd-ring" aria-label="Point at what you have" title="Point at what you have" style="width: 36px; height: 36px; box-shadow: inset 0 0 0 1px #D0D0D0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            </summary>
+            <div class="hd-menu" role="group" aria-label="Point at what you have" style="left: 0; right: auto; width: 296px">
+              <div style="padding: 4px 16px 8px; font-size: 12px; line-height: 16px; color: #5F5F5F">Read with your access. Nothing is copied out of Snowflake.</div>
+              <sc-for list="{{sources}}" as="s" hint-placeholder-count="6">
+                <button type="button" class="hd-mi" onClick="{{s.add}}" style="height: 40px">
+                  <img src="{{s.logo}}" width="18" height="18" alt="" style="flex: none">
+                  <span style="flex: 1">{{s.label}}</span>
+                  <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{s.hint}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </details>
+          <details class="hd-pop" style="position: relative; flex: none">
+            <summary class="hd-btn-ghost hd-ring" aria-label="{{composeWsAria}}" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; font-size: 14px; line-height: 18px; color: #1D1D1D; white-space: nowrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"></path></svg>
+              {{composeWs}}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg>
+            </summary>
+            <div class="hd-menu" role="group" aria-label="Workspace for the new project" style="left: 0; right: auto; width: 224px">
+              <div style="padding: 4px 16px 8px; font-size: 12px; line-height: 16px; color: #5F5F5F">Workspace</div>
+              <sc-for list="{{composeWorkspaces}}" as="w" hint-placeholder-count="4">
+                <button type="button" class="hd-mi" aria-pressed="{{w.pressed}}" onClick="{{w.pick}}" style="font-weight: {{w.fw}}">{{w.name}}<span style="flex: 1"></span><sc-if value="{{w.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+              </sc-for>
+            </div>
+          </details>
+          <span style="flex: 1"></span>
+          <sc-if value="{{canStart}}" hint-placeholder-val="{{ false }}">
+            <a href="A_Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">Start the Project</a>
+          </sc-if>
+          <sc-if value="{{cannotStart}}" hint-placeholder-val="{{ true }}">
+            <button type="button" disabled style="height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #949494; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: not-allowed">Start the Project</button>
+          </sc-if>
+        </div>
+      </div>
+      <span id="hd-idea-hint" style="margin-top: -8px; font-size: 12px; line-height: 18px; color: #5F5F5F">{{hint}}</span>
+      <div role="group" aria-labelledby="hd-starters-h" style="display: flex; flex-direction: column; gap: 8px">
+        <h3 id="hd-starters-h" style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 700">Starting Points</h3>
+        <sc-for list="{{starters}}" as="s" hint-placeholder-count="4">
+          <button type="button" class="hd-starter hd-ring-edge" onClick="{{s.pick}}" style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; border-radius: 8px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: inherit; font-size: 14px; line-height: 18px; color: #1D1D1D; text-align: left; cursor: pointer">
+            <sc-if value="{{s.hasLogo}}" hint-placeholder-val="{{ false }}"><img src="{{s.logo}}" width="18" height="18" alt="" style="flex: none"></sc-if>
+            <sc-if value="{{s.hasGlyph}}" hint-placeholder-val="{{ true }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{s.glyph}}"></path></svg></sc-if>
+            <span style="flex: 1">{{s.label}}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M9.5 6l6 6-6 6"></path></svg>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section aria-labelledby="hd-mine" style="grid-column: span 12; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: baseline; gap: 12px">
+        <h2 id="hd-mine" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">My Projects</h2>
+        <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">{{mineSummary}}</span>
+        <span style="flex: 1"></span>
+        <a href="A_Projects.dc.html" class="hd-ring" style="display: inline-block; margin: -12px 0; padding: 12px 0; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap">All 7 Projects</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; align-items: stretch">
+        <sc-for list="{{cards}}" as="p" hint-placeholder-count="5">
+          <sc-if value="{{p.live}}" hint-placeholder-val="{{ true }}">
+            <a href="{{p.href}}" class="hd-card hd-ring" aria-label="{{p.aria}}" style="min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; color: #1D1D1D; text-decoration: none">
+              <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                <span style="min-height: 40px; font-size: 16px; line-height: 20px; font-weight: 700">{{p.name}}</span>
+                <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{p.meta}}</span>
+              </span>
+              <span aria-hidden="true" style="display: grid; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr); align-items: center; row-gap: 4px; width: 100%">
+                <sc-for list="{{p.parts}}" as="x" hint-placeholder-count="7">
+                  <sc-if value="{{x.solid}}" hint-placeholder-val="{{ true }}"><span style="height: {{x.h}}; background: #1D1D1D"></span></sc-if>
+                  <sc-if value="{{x.dashed}}" hint-placeholder-val="{{ false }}"><span style="border-top: 2px dashed #949494"></span></sc-if>
+                  <sc-if value="{{x.notch}}" hint-placeholder-val="{{ false }}"><span style="width: 8px; height: 8px; box-sizing: border-box; background: {{x.bg}}; border: {{x.bd}}"></span></sc-if>
+                </sc-for>
+                <sc-for list="{{p.marks}}" as="l" hint-placeholder-count="7"><span style="justify-self: center; min-height: 16px; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: {{l.fw}}; color: {{l.c}}">{{l.t}}</span></sc-for>
+              </span>
+              <span style="display: flex; align-items: flex-start; gap: 6px; font-size: 14px; line-height: 20px; font-weight: {{p.stWeight}}; color: {{p.stColor}}">
+                <sc-if value="{{p.isWork}}" hint-placeholder-val="{{ false }}"><span style="height: 20px; display: inline-flex; align-items: center"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></span></sc-if>
+                <span>{{p.status}}</span>
+              </span>
+              <span style="margin-top: auto; padding-top: 12px; border-top: 1px solid #F0F0F0; display: flex; flex-direction: column; gap: 6px">
+                <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">Waiting On</span>
+                <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; min-width: 0">
+                  <sc-if value="{{p.hasWaitAv}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{p.waitFill}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{p.waitIni}}</span></sc-if>
+                  <span style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; color: {{p.waitColor}}">{{p.wait}}<sc-if value="{{p.hasWait2}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM12 7v5l3.5 2"></path></svg>{{p.wait2}}</span></sc-if></span>
+                </span>
+              </span>
+            </a>
+          </sc-if>
+          <sc-if value="{{p.off}}" hint-placeholder-val="{{ false }}">
+            <span class="hd-tip-wrap" style="display: flex; min-width: 0">
+              <a role="link" tabindex="0" aria-disabled="true" aria-describedby="{{p.tipId}}" aria-label="{{p.aria}}" class="hd-card hd-off hd-ring" style="flex: 1; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; color: #1D1D1D; text-decoration: none">
+                <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                  <span style="min-height: 40px; font-size: 16px; line-height: 20px; font-weight: 700">{{p.name}}</span>
+                  <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{p.meta}}</span>
+                </span>
+                <span aria-hidden="true" style="display: grid; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr); align-items: center; row-gap: 4px; width: 100%">
+                  <sc-for list="{{p.parts}}" as="x" hint-placeholder-count="7">
+                    <sc-if value="{{x.solid}}" hint-placeholder-val="{{ true }}"><span style="height: {{x.h}}; background: #1D1D1D"></span></sc-if>
+                    <sc-if value="{{x.dashed}}" hint-placeholder-val="{{ false }}"><span style="border-top: 2px dashed #949494"></span></sc-if>
+                    <sc-if value="{{x.notch}}" hint-placeholder-val="{{ false }}"><span style="width: 8px; height: 8px; box-sizing: border-box; background: {{x.bg}}; border: {{x.bd}}"></span></sc-if>
+                  </sc-for>
+                  <sc-for list="{{p.marks}}" as="l" hint-placeholder-count="7"><span style="justify-self: center; min-height: 16px; white-space: nowrap; font-size: 12px; line-height: 16px; font-weight: {{l.fw}}; color: {{l.c}}">{{l.t}}</span></sc-for>
+                </span>
+                <span style="display: flex; align-items: flex-start; gap: 6px; font-size: 14px; line-height: 20px; font-weight: {{p.stWeight}}; color: {{p.stColor}}">
+                  <sc-if value="{{p.isWork}}" hint-placeholder-val="{{ false }}"><span style="height: 20px; display: inline-flex; align-items: center"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></span></sc-if>
+                  <span>{{p.status}}</span>
+                </span>
+                <span style="margin-top: auto; padding-top: 12px; border-top: 1px solid #F0F0F0; display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">Waiting On</span>
+                  <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; min-width: 0">
+                    <sc-if value="{{p.hasWaitAv}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{p.waitFill}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{p.waitIni}}</span></sc-if>
+                    <span style="color: {{p.waitColor}}">{{p.wait}}</span>
+                  </span>
+                </span>
+              </a>
+              <span role="tooltip" id="{{p.tipId}}" class="hd-tip">Drawn in Variant B</span>
+            </span>
+          </sc-if>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"empty":{"editor":"boolean","default":false},"help":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1142}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tech: false, searchQ: '', searchOpen: false, draft: '', attached: [], ws: 'Merchandising', answer: '', sent: false };
+  }
+  componentDidMount() {
+    // hd-shell:top start (copy verbatim)
+    // hd-shell: menus close on Escape (focus returns to their button) and on a click outside; Escape also
+    // hides a "Drawn in Variant B" tooltip until the pointer or focus moves on.
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      if (esc) {
+        const a = document.activeElement;
+        this.hdTipEl = document.querySelector('.hd-tip-wrap:hover') || (a && a.closest ? a.closest('.hd-tip-wrap') : null);
+        document.documentElement.setAttribute('data-hd-tipoff', '');
+      }
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          d.querySelectorAll('details.hd-sub[open]').forEach((s) => { s.open = false; });
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    this.hdTipOn = (e) => {
+      const w = e.target.closest ? e.target.closest('.hd-tip-wrap') : null;
+      if (e.type === 'focusin' || w !== this.hdTipEl) document.documentElement.removeAttribute('data-hd-tipoff');
+    };
+    // hd-shell keys, as the Help menu lists them: Command K searches, Command Shift O starts a project,
+    // Command / opens the shortcut list.
+    this.hdSearch = () => {
+      const f = document.querySelector('[data-hd-search]');
+      if (f) { f.focus(); if (f.select) f.select(); }
+    };
+    this.hdShellKeys = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.defaultPrevented) return;
+      const key = (e.key || '').toLowerCase();
+      if (key === 'k' && !e.shiftKey) { e.preventDefault(); this.hdSearch(); return; }
+      if (key === 'o' && e.shiftKey) {
+        e.preventDefault();
+        const idea = document.getElementById('hd-idea');
+        if (idea) idea.focus(); else window.location.href = 'A_Start.dc.html';
+        return;
+      }
+      if (key === '/' || e.code === 'Slash') {
+        const help = document.querySelector('summary[aria-label="Help"]');
+        if (!help) return;
+        e.preventDefault();
+        help.parentElement.open = true;
+        const keys = help.parentElement.querySelector('details.hd-sub');
+        if (keys) { keys.open = true; keys.querySelector('summary').focus(); }
+      }
+    };
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+    document.addEventListener('keydown', this.hdShellKeys);
+    document.addEventListener('focusin', this.hdTipOn);
+    document.addEventListener('mouseover', this.hdTipOn);
+    // hd-shell:top end
+  }
+  componentWillUnmount() {
+    // hd-shell:top start (copy verbatim)
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+    document.removeEventListener('keydown', this.hdShellKeys);
+    document.removeEventListener('focusin', this.hdTipOn);
+    document.removeEventListener('mouseover', this.hdTipOn);
+    // hd-shell:top end
+  }
+  renderVals() {
+    const st = this.state;
+    const empty = this.props.empty ?? false;
+    const helpOpen = this.props.help ?? false;
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = {
+      snowflake: 'logos/snowflake.svg',
+      jira: 'logos/jira.svg',
+      confluence: 'logos/confluence.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      sharepoint: 'logos/sharepoint.svg',
+      onedrive: 'logos/onedrive.svg',
+      file: 'logos/file.svg'
+    };
+    const closeMenu = (e) => { const d = e && e.currentTarget && e.currentTarget.closest('details'); if (d) { d.open = false; const s = d.querySelector(':scope > summary'); if (s) s.focus(); } };
+    const focusLater = (sel) => setTimeout(() => { const el = document.querySelector(sel); if (el) el.focus(); }, 60);
+    const INK = '#1D1D1D', RED = '#DC0019', MUTED = '#5F5F5F', GREY = '#949494';
+    const answered = !empty && st.sent;
+
+    // hd-shell:top start. Same items, order and search index on every A board; only ACTIVE, INBOX_COUNT, the
+    // viewer (me, workspaces, FIND) and the role-gated rows change. A destination Variant A does not draw is a
+    // real control that does not navigate, with the "Drawn in Variant B" tooltip. Needs LOGO.microsoftteams,
+    // closeMenu and helpOpen above it.
+    const ACTIVE = 'home';
+    const INBOX_COUNT = empty ? 0 : (answered ? 3 : 4);
+    const topItem = (key, label, href, extra) => Object.assign({ label, href: href || '', live: !!href, off: !href, tipId: 'hd-tip-' + key,
+      current: key === ACTIVE ? 'page' : 'false', aria: label, hasCount: false, count: '', hasTag: false, tag: '' }, extra || {});
+    const topNav = [
+      topItem('home', 'Home', 'A_Main.dc.html'),
+      topItem('projects', 'Projects', 'A_Projects.dc.html'),
+      topItem('inbox', 'Inbox', 'A_Inbox.dc.html', INBOX_COUNT ? { hasCount: true, count: String(INBOX_COUNT), aria: 'Inbox, ' + INBOX_COUNT + ' waiting on you' } : {}),
+      topItem('library', 'Library', null, { hasTag: true, tag: 'Enterprise' })
+    ];
+    // Portfolio (sponsors and leads) and Admin (admins) only; a business owner never sees them.
+    const roleNav = [];
+    const me = { name: 'Maya Chen', initials: 'MC', bg: '#3D4B8C', role: 'Business owner, Merchandising',
+      aria: 'Maya Chen, Merchandising, account and workspace' };
+    const workspaces = ['Merchandising', 'Sourcing', 'Wholesale', 'EDM'].map((name, i) => ({ name, on: i === 0, pressed: i === 0 ? 'true' : 'false', fw: i === 0 ? '700' : '400' }));
+    // The projects this viewer can open, for the search box: a board in Variant A, or null.
+    const FIND = [
+      ['SKU productivity workbench', 'Merchandising, your approval: The Plan', 'A_Project.dc.html'],
+      ['Wholesale sell-through tracker', 'Wholesale, your approval: The Working Prototype', 'A_Gate.dc.html'],
+      ['Product master quality monitor', 'EDM, your answer: one question', 'A_Inbox.dc.html#q'],
+      ['Tariff scenario planner', 'Sourcing, building the prototype', null],
+      ['Activation scorecard', 'Marketing, handed off Oct 23', 'A_Graduation.dc.html'],
+      ['Promo dependency monitor', 'Pricing, handed off Oct 14', null],
+      ['Store labor forecast', 'Retail ops, handed off Oct 20', null]
+    ];
+    const q = st.searchQ.trim().toLowerCase();
+    const searchHits = q ? FIND.filter((f) => (f[0] + ' ' + f[1]).toLowerCase().indexOf(q) >= 0)
+      .map((f, i) => ({ name: f[0], meta: f[1], href: f[2] || '', live: !!f[2], off: !f[2], tipId: 'hd-tip-find-' + i })) : [];
+    const shell = {
+      topNav, roleNav, hasRoleNav: roleNav.length > 0, me, workspaces, closeMenu, logos: LOGO, helpOpen,
+      techOn: st.tech ? 'true' : 'false', techWord: st.tech ? 'On' : 'Off', toggleTech: () => this.setState({ tech: !st.tech }),
+      searchQ: st.searchQ, searchShow: st.searchOpen && !!q, searchHits,
+      searchCount: searchHits.length ? searchHits.length + (searchHits.length === 1 ? ' project' : ' projects') : 'No projects match "' + st.searchQ.trim() + '"',
+      onSearch: (e) => this.setState({ searchQ: e.target.value, searchOpen: true }),
+      searchKey: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ searchQ: '', searchOpen: false }); } },
+      searchFocus: () => { if (!this.state.searchOpen) this.setState({ searchOpen: true }); },
+      searchBlur: () => setTimeout(() => { const box = document.querySelector('.hd-find-box'); if (box && !box.contains(document.activeElement)) this.setState({ searchOpen: false }); }, 120)
+    };
+    // hd-shell:top end
+
+    // Waiting on you: the same items, words and order as the Inbox, oldest first.
+    const chip = (k, label, mono) => ({ hasLogo: true, hasGlyph: false, logo: LOGO[k], glyph: '', label, font: mono ? "'Chivo Mono', ui-monospace, monospace" : 'inherit' });
+    const gchip = (d, label) => ({ hasLogo: false, hasGlyph: true, logo: '', glyph: d, label, font: 'inherit' });
+    const PLAY = 'M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z', CRIT = 'M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM8.5 12l2.5 2.5 4.5-5';
+    // The question is answered in place with the Inbox's chips; Send Answer clears it from both.
+    const LABELS = [['Style', ''], ['Style-Color', 'Certified'], ['Article', '']];
+    const answer = st.answer;
+    const roving = (idx) => (e) => {
+      const map = { ArrowRight: idx + 1, ArrowDown: idx + 1, ArrowLeft: idx - 1, ArrowUp: idx - 1, Home: 0, End: LABELS.length - 1 };
+      if (!(e.key in map)) return;
+      e.preventDefault();
+      const j = (map[e.key] + LABELS.length) % LABELS.length;
+      this.setState({ answer: LABELS[j][0] });
+      const all = e.currentTarget.parentElement.querySelectorAll('[role="radio"]');
+      if (all[j]) all[j].focus();
+    };
+    const options = LABELS.map((l, i) => {
+      const on = answer === l[0];
+      return { label: l[0], hint: l[1], hasHint: !!l[1], hintFg: on ? '#D0D0D0' : MUTED, on, checked: on ? 'true' : 'false',
+        tab: (answer ? on : i === 0) ? 0 : -1, cls: on ? 'hd-ring' : 'hd-chip hd-ring-edge',
+        bg: on ? INK : '#FFFFFF', fg: on ? '#FFFFFF' : INK, ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0', fw: on ? '700' : '400',
+        pick: () => this.setState({ answer: l[0] }), key: roving(i) };
+    });
+    const NEEDS = [
+      { id: 'plan', title: 'Your Approval: The Plan', project: 'SKU productivity workbench', unblocks: 'unblocks the prototype', wait: '1d 4h',
+        waitLine: 'Second of three signers', chips: [chip('jira', 'MERCH-1182', true), chip('microsoftteams', 'Also in Teams')],
+        isLink: true, href: 'A_Project.dc.html', cta: 'Review and Sign' },
+      { id: 'proto', title: 'Your Approval: The Working Prototype', project: 'Wholesale sell-through tracker', unblocks: 'unblocks the handoff', wait: '3h 10m',
+        waitLine: 'Last of three signers', chips: [gchip(PLAY, 'Version 4, sandbox, dev data'), gchip(CRIT, '5 of 6 criteria met')],
+        isLink: true, href: 'A_Gate.dc.html', cta: 'Review and Sign' },
+      { id: 'q', title: 'Which level counts as one style for duplicate checks?', project: 'Product master quality monitor', unblocks: 'unblocks the brief', wait: '42m',
+        waitLine: 'Asked for Priya Nair, the owner', chips: [chip('microsoftteams', 'Also asked in Teams'), chip('snowflake', 'Product master, catalog details')], isAsk: true },
+      { id: 'facts', title: "Confirm What We Heard in Wednesday's Working Session", project: 'SKU productivity workbench', unblocks: 'feeds the prototype checks', wait: '20m',
+        waitLine: 'You were in the room', chips: [chip('microsoftteams', "Wednesday's working session")],
+        isLink: true, href: 'A_Inbox.dc.html#facts', cta: 'Review Facts' }
+    ];
+    const needs = (empty ? [] : NEEDS).map((n, i) => {
+      const done = n.id === 'q' && answered;
+      const ask = !!n.isAsk && !done;
+      return Object.assign({ isLink: false, href: '', cta: '' }, n, {
+        hid: 'hd-need-' + n.id, rule: i === 0 ? '0' : '1px solid #F0F0F0', open: !done, done, isAsk: ask, titleFg: done ? MUTED : INK,
+        ctaAria: n.cta + ': ' + n.project, options,
+        cannotSend: !answer, sendCls: answer ? 'hd-btn-secondary hd-ring-ink' : '', sendFg: answer ? INK : GREY,
+        sendRing: answer ? 'inset 0 0 0 1px #1D1D1D' : 'inset 0 0 0 1px #D0D0D0', sendCursor: answer ? 'pointer' : 'not-allowed',
+        send: () => { if (!this.state.answer) return; this.setState({ sent: true }); focusLater('#hd-q-done'); },
+        doneTitle: 'Answer sent: ' + answer, doneNote: 'The brief for Product master quality monitor can move on. Priya sees your answer in the project.',
+        undo: () => { this.setState({ sent: false }); focusLater('[aria-labelledby="hd-need-q"] [role="radio"][tabindex="0"]'); }
+      });
+    });
+    const openCount = needs.filter((n) => n.open).length;
+
+    // Start a project: the same composer, sources and starters as B's Home, in a panel.
+    const SOURCES = [
+      { key: 'microsoftteams', label: 'Teams Recording', hint: 'Meetings you attended', kind: 'Teams', title: 'Line review prep, Oct 21' },
+      { key: 'onedrive', label: 'OneDrive or SharePoint', hint: 'Files and folders', kind: 'OneDrive', title: 'FW27 SKU cuts.xlsx' },
+      { key: 'confluence', label: 'Confluence Page', hint: 'With its comments', kind: 'Confluence', title: 'Line review method' },
+      { key: 'jira', label: 'Jira Ticket', hint: 'With linked pages', kind: 'Jira', title: 'MERCH-1182' },
+      { key: 'snowflake', label: 'Snowflake Report', hint: 'Certified views', kind: 'Snowflake', title: 'Sell-through, golden report' },
+      { key: 'file', label: 'Upload a File', hint: 'Still works', kind: 'File', title: 'notes.docx' }
+    ];
+    const att = st.attached;
+    const ideaFocus = () => setTimeout(() => { const ta = document.getElementById('hd-idea'); if (ta) ta.focus(); }, 60);
+    const sources = SOURCES.map((s) => ({ logo: LOGO[s.key], label: s.label, hint: s.hint,
+      add: (e) => { closeMenu(e); if (att.indexOf(s.key) < 0) this.setState({ attached: att.concat([s.key]) }); } }));
+    const attached = att.map((k) => SOURCES.find((s) => s.key === k)).map((s) => ({ logo: LOGO[s.key], kind: s.kind, title: s.title,
+      removeLabel: 'Remove ' + s.kind + ' ' + s.title, remove: () => { this.setState({ attached: att.filter((k) => k !== s.key) }); ideaFocus(); } }));
+    const canStart = st.draft.trim().length > 0 || att.length > 0;
+    const composeWorkspaces = workspaces.map((w) => ({ name: w.name, on: st.ws === w.name, pressed: st.ws === w.name ? 'true' : 'false', fw: st.ws === w.name ? '700' : '400',
+      pick: (e) => { closeMenu(e); this.setState({ ws: w.name }); } }));
+    const GLYPH = {
+      measure: 'M4 19h16M6.5 15.5l3.5-4 3 2.5 4.5-6',
+      sheet: 'M5 4.5h14v15H5zM5 9.5h14M5 14.5h14M10 4.5v15',
+      compare: 'M7 4.5v15M17 4.5v15M4 9h6M14 14h6'
+    };
+    const STARTERS = [
+      { label: 'Track a Weekly Measure', glyph: 'measure', text: 'Each Monday our team pulls the same numbers from three reports into a spreadsheet. We want one place that shows them, flags what moved and lets us note why.' },
+      { label: 'Spreadsheet to App', glyph: 'sheet', text: 'We run this process in a shared spreadsheet that several people edit. We want it to be a small app with the same steps, real data and fewer copy-paste errors.' },
+      { label: 'Compare Scenarios', glyph: 'compare', text: 'Before we decide, we compare two or three scenarios side by side in separate models. We want one tool where we change the assumptions and see the results together.' },
+      { label: 'From a Jira Ticket', logo: 'jira', text: 'Start from MERCH-1182 and its linked pages.', attach: 'jira' }
+    ];
+    const starters = STARTERS.map((s) => ({ label: s.label, hasLogo: !!s.logo, logo: s.logo ? LOGO[s.logo] : '', hasGlyph: !s.logo, glyph: s.glyph ? GLYPH[s.glyph] : '',
+      pick: () => { this.setState({ draft: s.text, attached: s.attach && att.indexOf(s.attach) < 0 ? att.concat([s.attach]) : att }); ideaFocus(); } }));
+
+    // My projects: the viewer's five, each with the mini line and its split times, oldest wait on her first.
+    const seg = (s) => ({ solid: s !== 'future', dashed: s === 'future', notch: false, h: s === 'current' ? '4px' : '2px', bg: '', bd: '' });
+    const notch = (s) => ({ solid: false, dashed: false, notch: true, h: '', bg: s === 'signed' ? INK : (s === 'you' ? RED : '#FFFFFF'),
+      bd: s === 'upcoming' ? '2px solid ' + GREY : (s === 'other' ? '2px solid ' + INK : 'none') });
+    const line = (segs, gates) => {
+      const parts = [], marks = [];
+      segs.forEach((s, i) => {
+        parts.push(seg(s)); marks.push({ t: '', fw: '400', c: MUTED });
+        if (i < 3) {
+          const g = gates[i];
+          parts.push(notch(g[0]));
+          marks.push({ t: g[0] === 'you' ? 'You' : (g[1] || ''), fw: g[0] === 'you' ? '700' : '400', c: g[0] === 'you' ? INK : MUTED });
+        }
+      });
+      return { parts, marks };
+    };
+    const P = { mc: ['MC', '#3D4B8C', 'Maya Chen'], oh: ['OH', '#4A5560', 'Omar Haddad'], kp: ['KP', '#3F4A55', 'Kim Patel'] };
+    const CARDS = [
+      Object.assign({ name: 'SKU productivity workbench', meta: 'Merchandising, edited 20m ago', href: 'A_Project.dc.html' }, empty
+        ? Object.assign({ status: 'The plan is signed, building', isWork: true, mine: false, w: null, wait: 'Nothing waiting on you' }, line(['done', 'done', 'current', 'future'], [['signed', '5d 2h'], ['signed', '1d 4h'], ['upcoming']]))
+        : Object.assign({ status: 'Your approval: The Plan', mine: true, w: P.mc, wait: 'You, 1d 4h' }, line(['done', 'done', 'future', 'future'], [['signed', '5d 2h'], ['you'], ['upcoming']]))),
+      Object.assign({ name: 'Wholesale sell-through tracker', meta: 'Wholesale, edited 3h ago', href: 'A_Gate.dc.html' }, empty
+        ? Object.assign({ status: 'Handoff package ready', mine: false, w: null, wait: 'Nothing waiting on you' }, line(['done', 'done', 'done', 'current'], [['signed', '3d'], ['signed', '2d 6h'], ['signed']]))
+        : Object.assign({ status: 'Your approval: The Working Prototype', mine: true, w: P.mc, wait: 'You, 3h 10m' }, line(['done', 'done', 'done', 'future'], [['signed', '3d'], ['signed', '2d 6h'], ['you']]))),
+      Object.assign({ name: 'Product master quality monitor', meta: 'EDM, edited 42m ago', href: 'A_Inbox.dc.html#q' }, empty
+        ? { status: 'Waiting on Dana Ortiz for one answer', mine: false, w: null, wait: '', wait2: 'Dana, 2d' }
+        : { status: 'Your answer: one question', mine: true, w: P.mc, wait: 'You, 42m;', wait2: 'Dana, 2d' },
+        line(['current', 'future', 'future', 'future'], [['upcoming'], ['upcoming'], ['upcoming']])),
+      Object.assign({ name: 'Tariff scenario planner', meta: 'Sourcing, edited 3h ago', href: null, status: 'Building the prototype, piece 3 of 8', isWork: true, mine: false, w: P.oh, wait: 'Omar Haddad, 3h' },
+        line(['done', 'done', 'current', 'future'], [['signed', '3d 2h'], ['signed', '5d 4h'], ['upcoming']])),
+      Object.assign({ name: 'Activation scorecard', meta: 'Marketing, handed off Oct 23', href: 'A_Graduation.dc.html', status: 'Construction decision pending', mine: false, w: P.kp, wait: 'Kim Patel, 1d' },
+        line(['done', 'done', 'done', 'done'], [['signed', '3d 4h'], ['signed', '2d 1h'], ['signed', '1d 6h']]))
+    ];
+    // One red label per region: the first status that names the viewer is red, repeats are Bold ink.
+    const firstMine = CARDS.findIndex((c) => c.mine && !(c.name === 'Product master quality monitor' && answered));
+    const cards = CARDS.map((c, i) => {
+      const mine = c.mine && !(c.name === 'Product master quality monitor' && answered);
+      const status = mine || !answered || c.name !== 'Product master quality monitor' ? c.status : 'Waiting on Dana Ortiz for one answer';
+      const wait = c.name === 'Product master quality monitor' && answered ? '' : c.wait;
+      return { name: c.name, meta: c.meta, href: c.href || '', live: !!c.href, off: !c.href, tipId: 'hd-tip-card-' + i,
+        parts: c.parts, marks: c.marks, status, isWork: !!c.isWork, stWeight: mine ? '700' : '400', stColor: i === firstMine ? RED : INK,
+        hasWaitAv: !!c.w && !!wait, waitIni: c.w ? c.w[0] : '', waitFill: c.w ? c.w[1] : '', wait: wait, waitColor: c.w || c.wait2 ? INK : MUTED,
+        hasWait2: !!c.wait2, wait2: c.wait2 || '',
+        aria: [c.name, c.meta, status, 'waiting on ' + (c.w ? c.w[2] + (c.wait2 ? ' and Dana Ortiz' : '') : (c.wait2 ? 'Dana Ortiz' : 'no one'))].join(', ') };
+    });
+
+    return Object.assign(shell, {
+      empty, notEmpty: !empty, needs,
+      inboxLink: openCount ? 'Open Inbox (' + openCount + ')' : 'Open Inbox',
+      gridAlign: empty ? 'start' : 'stretch',
+      needsSummary: empty ? 'Nothing waiting on you' : (answered ? '2 approvals and 1 confirmation, oldest first' : '2 approvals, 1 question and 1 confirmation, oldest first'),
+      draft: st.draft, onDraft: (e) => this.setState({ draft: e.target.value }),
+      sources, attached, hasAttached: attached.length > 0, canStart, cannotStart: !canStart,
+      composeWorkspaces, composeWs: st.ws, composeWsAria: 'Workspace: ' + st.ws,
+      hint: canStart ? 'You can add people and data next' : 'Paste links to Teams, OneDrive, Confluence or Jira',
+      starters, cards, mineSummary: cards.filter((c) => c.stWeight === '700').length ? '5 projects, ' + cards.filter((c) => c.stWeight === '700').length + ' waiting on you' : '5 projects, none waiting on you'
+    });
+  }
+}
+</script>
+</body>
+</html>

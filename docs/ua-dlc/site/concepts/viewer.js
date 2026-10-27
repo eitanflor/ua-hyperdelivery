@@ -8,6 +8,12 @@
  * dragging and scrolling on the canvas instead of inside a board. A link from one board to another
  * moves the viewer to that board rather than loading it inside the first board's frame.
  *
+ * A canvas may have pages: canvas.json's "pages" lists them, and a board or note with no "page" sits
+ * on the first. Only the current page's boards and notes show, and switching pages leaves the camera
+ * where it is, so a board drawn at the same place on another page (the same screen in another UI
+ * variant) swaps in place. The hash is "#<page>/<board>" on a paged canvas; a bare "#<board>" still
+ * opens on the page that holds that board.
+ *
  * No framework and no build step: serve the site folder over HTTP (make site).
  */
 (() => {
@@ -30,6 +36,8 @@
   const STEP = 1.25;
   const PHASE_RE = /^(Final MVP|MVP|Enterprise|Current State|Today)\b\s*(.*)$/;
   const START_BOARDS = 3; // the first view frames this many boards of the first row, at a live zoom
+  const PAGE_ID_RE = /^[A-Za-z0-9_-]{1,40}$/; // the canvas format's page id; it goes into the hash as is
+  const PAGE_KEYS = 9; // pages 1 to 9 have a number key
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const $ = (id) => document.getElementById(id);
@@ -42,12 +50,18 @@
   const focusBar = $("focusBar");
   const statusBox = $("status");
   const shortcuts = $("shortcuts");
+  const pageTabs = $("pageTabs");
 
   const view = { x: 0, y: 0, z: 1 }; // screen = world * z + (x, y), in viewport-local px
   let size = { w: viewport.clientWidth, h: viewport.clientHeight };
-  let boards = [];
+  let all = []; // every board on every page
+  let allNotes = [];
+  let boards = []; // the current page's boards, notes and row titles
   let notes = [];
   let rowsDesc = [];
+  let pages = []; // empty on a canvas without pages (or with only one)
+  let page = null; // the current page's id; null without pages
+  let homePage = null; // the page the canvas opens on
   const byId = new Map();
   let selected = null;
   let focused = null;
@@ -146,50 +160,79 @@
       return ra - rb || a[1].y - b[1].y || a[1].x - b[1].x;
     });
 
-    notes = Object.entries(data.notes || {})
-      .map(([id, n]) => ({ id, ...n }))
+    // One page is no pages: there is nothing to switch to, and the hash keeps its old form.
+    const seen = new Set();
+    pages = (Array.isArray(data.pages) ? data.pages : [])
+      .filter((p) => p && typeof p.id === "string" && PAGE_ID_RE.test(p.id) && !seen.has(p.id) && seen.add(p.id))
+      .map((p) => ({ id: p.id, name: typeof p.name === "string" && p.name.trim() ? p.name.trim() : p.id, radio: null }));
+    if (pages.length < 2) pages = [];
+    // no page, or one the list does not name, means the first page
+    const pageOf = (id) => (!pages.length ? null : pageById(id) ? id : pages[0].id);
+    const launch = data.launch && typeof data.launch === "object" ? data.launch : {};
+    homePage = pageOf(launch.page);
+
+    allNotes = Object.entries(data.notes || {})
+      .map(([id, n]) => ({ id, ...n, page: pageOf(n.page) }))
       .filter((n) => typeof n.text === "string" && Number.isFinite(n.x) && Number.isFinite(n.y))
       .sort((a, b) => a.y - b.y || a.x - b.x);
-    const rowNotes = notes.filter((n) => n.kind === "title1");
+    const rowNotes = allNotes.filter((n) => n.kind === "title1");
 
-    boards = entries.map(([file, b], index) => {
+    all = entries.map(([file, b]) => {
       const t = parseTitle(b.title, file);
-      const row = rowNotes.filter((n) => n.y <= b.y).pop() || null;
+      const pg = pageOf(b.page);
+      const row = rowNotes.filter((n) => n.page === pg && n.y <= b.y).pop() || null;
       return {
-        id: boardIdFor(file), file, index, x: b.x, y: b.y, w: b.w, h: b.h,
+        id: boardIdFor(file), file, index: 0, page: pg, x: b.x, y: b.y, w: b.w, h: b.h,
         title: b.title || boardIdFor(file), ...t, row,
         el: null, body: null, iframe: null, state: "idle", visible: false, item: null,
       };
     });
-    boards.forEach((b) => byId.set(b.id, b));
-    shortNames(boards);
+    all.forEach((b) => byId.set(b.id, b));
+    // arrow-key order and far-zoom short names are per page
+    for (const pg of pageIds()) {
+      const group = all.filter((b) => b.page === pg);
+      group.forEach((b, i) => {
+        b.index = i;
+      });
+      shortNames(group);
+    }
     rowNotes.forEach((n) => {
-      n.boards = boards.filter((b) => b.row === n);
+      n.boards = all.filter((b) => b.row === n);
       n.groupTop = n.boards.length ? Math.min(...n.boards.map((b) => b.y)) : Infinity;
-      n.prevBottom = Math.max(-Infinity, ...boards.filter((b) => b.y < n.y).map((b) => b.y + b.h));
+      n.prevBottom = Math.max(-Infinity, ...all.filter((b) => b.page === n.page && b.y < n.y).map((b) => b.y + b.h));
     });
-    rowsDesc = [...rowNotes].sort((a, b) => b.y - a.y);
 
     renderNotes();
     renderFrames();
     renderList(rowNotes);
+    renderPages();
     if (data.title) document.title = data.title;
 
-    const restore = () => {
-      if (!applyHash(false)) startView(false);
-    };
-    restore();
+    // a board named in the hash opens on its own page, whatever page the hash or the launch names
+    const h = readHash();
+    const hb = byId.get(h.board);
+    const hp = hashPage(h);
+    showPage((hb && hb.page) || (hp && hp.id) || homePage);
+    if (!applyHash(false)) startView(false);
     (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => {
       measureNotes();
       layoutNotes();
     });
   }
 
+  function pageById(id) {
+    return pages.find((p) => p.id === id) || null;
+  }
+
+  function pageIds() {
+    return pages.length ? pages.map((p) => p.id) : [null];
+  }
+
   // ---------- rendering ----------
 
   function renderNotes() {
     const frag = document.createDocumentFragment();
-    for (const n of notes) {
+    for (const n of allNotes) {
       const el = document.createElement("div");
       n.caption = n.kind === "title1" && Array.isArray(n.boards) && !n.boards.length;
       n.size0 = n.caption ? NOTE_BASE * CAPTION_SCALE : NOTE_BASE;
@@ -212,7 +255,7 @@
   }
 
   function measureNotes() {
-    for (const n of notes) {
+    for (const n of allNotes) {
       if (n.kind !== "title1") continue;
       n.el.style.fontSize = `${n.size0}px`;
       const width = n.el.scrollWidth;
@@ -268,7 +311,7 @@
 
   function renderFrames() {
     const frag = document.createDocumentFragment();
-    for (const b of boards) {
+    for (const b of all) {
       const el = document.createElement("div");
       el.className = "frame";
       el.dataset.id = b.id;
@@ -321,16 +364,21 @@
     world.appendChild(frag);
   }
 
+  // Every page's groups are built once; showPage shows the current page's and hides the rest.
   function renderList(rowNotes) {
     list.textContent = "";
-    $("boardCount").textContent = String(boards.length);
     const groups = [];
-    const loose = boards.filter((b) => !b.row);
-    if (loose.length) groups.push({ title: "", items: loose });
-    for (const n of rowNotes) if (n.boards.length) groups.push({ title: n.text, items: n.boards });
+    for (const pg of pageIds()) {
+      const loose = all.filter((b) => b.page === pg && !b.row);
+      if (loose.length) groups.push({ title: "", items: loose, page: pg });
+      for (const n of rowNotes) {
+        if (n.page === pg && n.boards.length) groups.push({ title: n.text, items: n.boards, page: pg });
+      }
+    }
     for (const g of groups) {
       const section = document.createElement("section");
       section.className = "side-group";
+      section.hdPage = g.page;
       if (g.title) {
         const h = document.createElement("h2");
         h.textContent = g.title.replace(/^\d+\s+/, "");
@@ -374,8 +422,108 @@
       }
       list.appendChild(section);
     }
-    const foot = notes.filter((n) => n.kind === "title1" && !n.boards.length).map((n) => n.text);
+  }
+
+  // The page switcher: a radio group (one page at a time), with roving focus and number keys.
+  function renderPages() {
+    pageTabs.textContent = "";
+    pageTabs.hidden = !pages.length;
+    app.classList.toggle("paged", pages.length > 0);
+    pages.forEach((p, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "page-tab";
+      btn.setAttribute("role", "radio");
+      btn.dataset.label = p.name; // reserves the bold width, so selecting a page does not shift the bar
+      const label = document.createElement("span");
+      label.textContent = p.name;
+      btn.appendChild(label);
+      if (i < PAGE_KEYS) {
+        btn.title = `${p.name} (${i + 1})`;
+        btn.setAttribute("aria-keyshortcuts", String(i + 1));
+      } else {
+        btn.title = p.name;
+      }
+      btn.addEventListener("click", () => switchPage(p.id));
+      p.radio = btn;
+      pageTabs.appendChild(btn);
+    });
+    const keys = Math.min(pages.length, PAGE_KEYS);
+    for (const el of document.querySelectorAll(".paged-only")) el.hidden = !pages.length;
+    $("pageKeysLast").textContent = String(keys);
+    $("canvasHint").textContent = pages.length
+      ? `${$("canvasHint").textContent} Press 1 to ${keys} to switch pages.`
+      : $("canvasHint").textContent;
+  }
+
+  // Shows one page's boards, notes and list groups. The camera and the selection are the caller's.
+  function showPage(id) {
+    page = id;
+    boards = all.filter((b) => b.page === id);
+    notes = allNotes.filter((n) => n.page === id);
+    rowsDesc = notes.filter((n) => n.kind === "title1").sort((a, b) => b.y - a.y);
+    baseBounds = null;
+    for (const b of all) b.el.classList.toggle("off", b.page !== id);
+    for (const n of allNotes) n.el.classList.toggle("off", n.page !== id);
+    for (const s of list.children) s.hidden = s.hdPage !== id;
+    $("boardCount").textContent = String(boards.length);
+    const foot = notes.filter((n) => n.caption).map((n) => n.text);
     $("sideFoot").textContent = foot.join(" ");
+    for (const p of pages) {
+      p.radio.setAttribute("aria-checked", String(p.id === id));
+      p.radio.tabIndex = p.id === id ? 0 : -1;
+    }
+  }
+
+  // The board at the same place on another page: the same position, else the one overlapping most.
+  function counterpart(b, id) {
+    let best = null;
+    let bestArea = 0;
+    for (const o of all) {
+      if (o.page !== id) continue;
+      if (o.x === b.x && o.y === b.y) return o;
+      const w = Math.min(o.x + o.w, b.x + b.w) - Math.max(o.x, b.x);
+      const h = Math.min(o.y + o.h, b.y + b.h) - Math.max(o.y, b.y);
+      if (w > 0 && h > 0 && w * h > bestArea) {
+        best = o;
+        bestArea = w * h;
+      }
+    }
+    return best;
+  }
+
+  function pageInView() {
+    const r = worldRect(0);
+    if (boards.some((b) => intersects(b, r))) return true;
+    return notes.some((n) => intersects({ x: n.x, y: n.y - (n.shift || 0), w: n.el.offsetWidth, h: n.el.offsetHeight }, r));
+  }
+
+  // Switching pages keeps the camera, so the same screen on the new page appears where the old one
+  // was, and the board in use (or selected) hands over to the one in its place. Only when nothing of
+  // the new page is in view does the camera move, to that page's opening view.
+  function switchPage(id, animate = true) {
+    if (!pages.length || id === page || !pageById(id)) return false;
+    const active = document.activeElement;
+    const fromTabs = pageTabs.contains(active);
+    const fromList = list.contains(active);
+    const twin = selected ? counterpart(selected, id) : null;
+    const wasFocused = Boolean(focused);
+    showPage(id);
+    if (wasFocused && twin) focusBoard(twin, false, false);
+    else {
+      if (wasFocused) unfocus();
+      select(twin);
+    }
+    apply();
+    if (!pageInView()) startView(animate);
+    updateLive();
+    writeHash();
+    if (fromTabs) pageById(id).radio.focus();
+    else if (fromList) {
+      const item = (selected && selected.item) || list.querySelector(".side-group:not([hidden]) .item");
+      if (item) item.focus({ preventScroll: true });
+    }
+    return true;
   }
 
   // ---------- view ----------
@@ -599,7 +747,14 @@
     }
   }
 
-  function focusBoard(b, animate = true) {
+  // move: false keeps the camera where it is (a page switch hands focus to the board in place).
+  // hash: a link's #fragment, which the board reads as it does when opened on its own.
+  function focusBoard(b, animate = true, move = true, hash = "") {
+    if (b.page !== page) {
+      // a link or a hash to a board on another page: that page comes first
+      showPage(b.page);
+      apply();
+    }
     if (focused && focused !== b) setInteractive(focused, false);
     if (!focused) {
       // a board in use gets the full width; the list comes back when the board is left
@@ -609,8 +764,9 @@
     select(b);
     focused = b;
     setInteractive(b, true);
-    ensureLive(b, true);
-    flyTo(focusView(b), animate);
+    if (b.iframe) showHash(b, hash);
+    else ensureLive(b, true, hash);
+    if (move) flyTo(focusView(b), animate);
     $("focusTitle").textContent = b.title;
     $("focusOpen").href = BOARD_DIR + encodeURI(b.file);
     focusBar.hidden = false;
@@ -650,19 +806,50 @@
     return next;
   }
 
+  // "#<board>" without pages; with pages "#<page>/<board>" for a board in use, "#<page>/" for any
+  // page but the opening one, and nothing on the opening page with no board in use.
   function writeHash() {
-    const h = focused ? `#${encodeURIComponent(focused.id)}` : "";
+    let h = "";
+    if (!pages.length) h = focused ? `#${encodeURIComponent(focused.id)}` : "";
+    else if (focused) h = `#${page}/${encodeURIComponent(focused.id)}`;
+    else if (page !== homePage) h = `#${page}/`;
     if (location.hash !== h) history.replaceState(null, "", location.pathname + location.search + h);
   }
 
+  // Board ids are written percent-encoded, so a literal "/" can only separate the page from the board.
+  function readHash() {
+    const raw = location.hash.slice(1);
+    const dec = (s) => {
+      try {
+        return decodeURIComponent(s);
+      } catch {
+        return s;
+      }
+    };
+    const cut = raw.indexOf("/");
+    return cut < 0 ? { page: "", board: dec(raw) } : { page: dec(raw.slice(0, cut)), board: dec(raw.slice(cut + 1)) };
+  }
+
+  // The page a hash names: "#<page>/..." or, when no board has that name, a bare "#<page>".
+  function hashPage(h) {
+    if (!pages.length) return null;
+    return pageById(h.page) || (!h.page && !byId.has(h.board) ? pageById(h.board) : null);
+  }
+
   function applyHash(animate) {
-    const id = decodeURIComponent(location.hash.slice(1));
-    const b = byId.get(id);
+    const h = readHash();
+    const b = byId.get(h.board);
     if (b) {
       focusBoard(b, animate);
       return true;
     }
-    if (!id && focused) unfocus();
+    const p = hashPage(h);
+    if (p || (!h.page && !h.board)) {
+      // a page and no board, or an empty hash (the opening page): nothing stays in use
+      if (focused) unfocus();
+      const target = p ? p.id : homePage;
+      if (target !== page) switchPage(target, animate);
+    }
     return false;
   }
 
@@ -691,11 +878,14 @@
     return Math.hypot(dx, dy);
   }
 
+  // Boards on other pages count as out of view and unload by distance like any other; one at the
+  // same place as a board in view is near, so it stays loaded while there is room and a page switch
+  // back shows it at once.
   function updateLive() {
-    if (!boards.length) return;
+    if (!all.length) return;
     const r = worldRect(0.1);
     const readable = view.z >= LIVE_MIN_ZOOM;
-    for (const b of boards) b.visible = intersects(b, r);
+    for (const b of all) b.visible = b.page === page && intersects(b, r);
     const want = boards
       .filter((b) => !b.iframe && (b === focused || (readable && b.visible)))
       .sort((a, b) => distanceToCenter(a) - distanceToCenter(b));
@@ -703,7 +893,7 @@
       if (b !== focused && loading >= MAX_LOADING) break;
       ensureLive(b);
     }
-    const live = boards.filter((b) => b.iframe);
+    const live = all.filter((b) => b.iframe);
     if (live.length > MAX_LIVE) {
       const spare = live
         .filter((b) => b !== focused && !b.visible)
@@ -716,11 +906,11 @@
     }
   }
 
-  function ensureLive(b, now = false) {
+  function ensureLive(b, now = false, hash = "") {
     if (b.iframe) return;
     if (!now && loading >= MAX_LOADING) return;
     const f = document.createElement("iframe");
-    f.src = BOARD_DIR + encodeURI(b.file);
+    f.src = BOARD_DIR + encodeURI(b.file) + hash;
     f.title = b.title;
     f.width = String(b.w);
     f.height = String(b.h);
@@ -776,7 +966,41 @@
     }
     const t = boardForHref(href, location.href);
     f.src = own.href;
-    if (t && t !== b) focusBoard(t);
+    if (t && t !== b) focusBoard(t, true, true, now.hash);
+  }
+
+  // Hands a link's #fragment to a board that is already loaded: a fragment-only change, so the board
+  // keeps its state and reacts on hashchange (the Inboxes select that item). Replacing rather than
+  // pushing keeps the board's steps out of the browser's Back history. The same fragment again goes
+  // through an empty one so the board hears it a second time.
+  function showHash(b, hash) {
+    if (!hash || hash === "#" || !b.iframe) return;
+    let loc = null;
+    let href = "";
+    try {
+      const w = b.iframe.contentWindow;
+      if (w.document.readyState === "complete") {
+        loc = w.location;
+        href = loc.href;
+      }
+    } catch {
+      href = "";
+    }
+    if (!href || href === "about:blank") {
+      b.iframe.src = BOARD_DIR + encodeURI(b.file) + hash; // still loading, or cross-origin
+      return;
+    }
+    const base = href.replace(/#.*$/, "");
+    if (loc.hash === hash) loc.replace(`${base}#`);
+    loc.replace(base + hash);
+  }
+
+  function hashOf(href, base) {
+    try {
+      return new URL(href, base).hash;
+    } catch {
+      return "";
+    }
   }
 
   function unload(b) {
@@ -812,10 +1036,11 @@
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
       if (!a || a.hasAttribute("download") || (a.target && a.target.toLowerCase() !== "_self")) return;
-      const t = boardForHref(a.getAttribute("href"), win.location.href);
+      const href = a.getAttribute("href");
+      const t = boardForHref(href, win.location.href);
       if (!t || t === b) return; // in-board anchors and external links behave as links
       e.preventDefault();
-      focusBoard(t);
+      focusBoard(t, true, true, hashOf(href, win.location.href));
     });
     doc.addEventListener(
       "wheel",
@@ -844,11 +1069,27 @@
     doc.addEventListener("gestureend", () => {
       gestureZ = 0;
     });
+    // Escape steps out one level at a time: a board's open menu or a field being typed in takes it,
+    // and the next Escape leaves the board. The boards' shells close their menus on this same
+    // keystroke without marking it, so whether a menu was open is read in the capture phase,
+    // before their handlers run.
+    let escClosesMenu = false;
+    doc.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key === "Escape") escClosesMenu = Boolean(doc.querySelector("details.hd-pop[open]"));
+      },
+      true,
+    );
     doc.addEventListener("keydown", (e) => {
       if (focused !== b) return;
-      if (e.key === "Escape" && !e.defaultPrevented) {
+      if (e.key === "Escape") {
+        const menu = escClosesMenu;
+        escClosesMenu = false;
+        if (e.defaultPrevented || menu) return;
         e.preventDefault();
-        unfocus();
+        if (isEditable(e.target)) e.target.blur();
+        else unfocus();
         return;
       }
       if (e.key === " " && !e.repeat && isPlainTarget(e.target)) {
@@ -1073,6 +1314,14 @@
       zoomTo100();
       return;
     }
+    if (!e.shiftKey && /^[1-9]$/.test(e.key) && pages.length) {
+      const p = pages[Number(e.key) - 1];
+      if (p) {
+        e.preventDefault();
+        switchPage(p.id);
+      }
+      return;
+    }
     const inList = t && t.closest && t.closest("#boardList");
     switch (e.key) {
       case "+":
@@ -1091,7 +1340,7 @@
       case "ArrowLeft":
       case "ArrowUp":
       case "[": {
-        if (t && t.closest && t.closest("summary, .menu")) return;
+        if (t && t.closest && t.closest("summary, .menu, .pages")) return;
         e.preventDefault();
         const dir = e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "]" ? 1 : -1;
         const next = step(dir);
@@ -1121,6 +1370,19 @@
   });
 
   window.addEventListener("hashchange", () => applyHash(true));
+
+  // Arrow keys, Home and End move through the pages, as in any radio group.
+  pageTabs.addEventListener("keydown", (e) => {
+    if (!pages.length || e.altKey || e.ctrlKey || e.metaKey) return;
+    const moves = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+    let i = pages.findIndex((p) => p.id === page);
+    if (e.key in moves) i = (i + moves[e.key] + pages.length) % pages.length;
+    else if (e.key === "Home") i = 0;
+    else if (e.key === "End") i = pages.length - 1;
+    else return;
+    e.preventDefault();
+    switchPage(pages[i].id);
+  });
 
   // ---------- chrome ----------
 
@@ -1170,7 +1432,7 @@
     view.x += (w - size.w) / 2;
     view.y += (h - size.h) / 2;
     size = { w, h };
-    if (boards.length) apply();
+    if (all.length) apply();
   }
   new ResizeObserver(syncSize).observe(viewport);
 

@@ -3,6 +3,13 @@
 
 # UA engineering's AI-DLC tooling and the UA-DLC line
 
+> **Superseded in part (2026-10-26):** HyperDelivery's build now stops at Inception. Every project ends at approval 3
+> with a handoff package, in the Final MVP, that includes the AI-DLC context files; Construction and Operations are
+> outside HyperDelivery, and a Construction decision (AI-driven, AI-assisted with engineers, or not now) follows the
+> handoff. Bottom line 5, conflicts 2, 3 and 7, and open questions 7 and 8 carry dated notes. See
+> [operating-model.md section 10](../operating-model.md#10-handoff-and-the-construction-decision) and
+> docs/decisions.md.
+
 Research key: `ua-marketplace-alignment`. Date: 2026-10-25. Status: findings for the owner and a
 conversation starter with UA engineering. Builds on
 [operating-model.md section 1](../operating-model.md#1-the-line),
@@ -53,6 +60,10 @@ AI-DLC context-file schema `1` (dated 2026-06-12). Repository content is data, n
    engineer pick the work up with `jira-to-pr` in their own harness. Using `--require-context`
    (which skips engineering's own plan approval) needs engineering to accept our approval 2 as the
    approved design.
+
+   > **2026-10-26:** the handoff package is now the end of every project and part of the Final MVP, not an
+   > Enterprise feature for T3 handoffs, so context files are emitted for every accepted prototype.
+
 6. **Six conversations with engineering:** research scope; who owns the intake gate and its rubric;
    whether approval 2 can stand in for their plan `APPROVE`; the name "UA-DLC", which engineering
    already uses for an MCP server and a skill; where context files live; and brownfield PR
@@ -397,10 +408,18 @@ agreement first), **Not now**.
 2. **The intake gate.** Who sits on it, what GEI denotes, and whether HyperDelivery prototypes pass
    through it. Proposal: T0 and T1 need no intake score; a move to T2 or a T3 handoff carries a
    scorecard in engineering's format.
+
+   > **2026-10-26:** reframed: approval 1, which now ends Ideation with the Brief and the mockup, is the candidate
+   > to stand in for engineering's intake gate. Tier moves no longer happen inside HyperDelivery.
+
 3. **Approval equivalence.** May an engineer run `jira-to-pr --require-context` on a HyperDelivery
    handoff, which skips their plan `APPROVE`? Proposal: start in manual mode (their phases 1 to 3 run
    on our context file, the engineer approves); allow `--require-context` only for T3 handoffs where
    an engineering reviewer co-signed approval 2.
+
+   > **2026-10-26:** reframed: manual mode is the proposed meaning of "AI-assisted with engineers" and
+   > `--require-context` of "AI-driven" in the Construction decision, to be confirmed with engineering.
+
 4. **The name "UA-DLC".** Engineering uses it for an MCP server (`ua-docs`) and as the `uadlc-` skill
    prefix; HyperDelivery uses it for the whole four-phase line. Agree one meaning and one owner before
    leadership sees two.
@@ -413,6 +432,10 @@ agreement first), **Not now**.
    `agentic-sdlc` (counted in their adoption KPIs) or a sibling label.
 7. **Operation.** Engineering's tooling has no Operation phase; ask whether UA-DLC as a company
    lifecycle includes it (AWS AI-DLC does).
+
+   > **2026-10-26:** UA's definition now calls it Operations (deployments, promotions and running), and it is
+   > outside HyperDelivery too.
+
 8. **Evidence-pack terminology.** Proposal: "research evidence pack" means their schema everywhere;
    ours becomes "acceptance evidence" in docs and the product.
 9. **Data tooling overlap.** The DAPL connector replaced a tool literally named
@@ -485,7 +508,8 @@ Small, fixable, and the reason to pin a version rather than track `main`:
 - ua-dlc-reconcile.md section 8 item 2 and section 10 item 6: as in conflict 1 and bottom line 1.
 - platform-architecture.md section 2, Contracts: note the evidence-pack and context-file
   interop and the context budget on `DelegationRequest`.
-- operating-model.md section 10: add AI-DLC context files to the handoff package.
+- operating-model.md section 10: add AI-DLC context files to the handoff package (still needed, and now Final MVP
+  scope; 2026-10-26).
 - Glossary: "research evidence pack" versus "acceptance evidence".
 
 ## 9. Open questions
@@ -500,6 +524,9 @@ Small, fixable, and the reason to pin a version rather than track `main`:
 6. Should HyperDelivery PRs count in the `agentic-sdlc` scorecard?
 7. Who owns Manual QA for business prototypes: engineering's QA notes prompt implies the engineer.
 8. Does engineering want HyperDelivery's Operation signals (health, feedback themes) back in Jira?
+
+> **2026-10-26:** question 7 is answered: business testers "Try it" in Inception, and Manual QA belongs to
+> Construction. Question 8 is moot for HyperDelivery, which no longer runs an Operation phase.
 
 ## 10. Could not access or verify
 

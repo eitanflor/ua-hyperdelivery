@@ -71,6 +71,25 @@ kbd {
 .brand .ua { flex: none; }
 .brand .hair { width: 1px; height: 18px; background: currentColor; opacity: .3; flex: none; }
 .spacer { flex: 1 1 auto; }
+
+/* Page switcher: a segmented control; selection is weight and a raised white segment */
+.pages {
+  display: inline-flex; align-items: center; gap: 2px; min-width: 0; padding: 3px; margin-left: 4px;
+  background: var(--hover); border-radius: 8px;
+}
+.pages[hidden] { display: none; }
+.page-tab {
+  flex: 0 1 auto; min-width: 44px; height: 26px; padding: 0 10px; border: 0; border-radius: 6px;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  background: transparent; cursor: pointer; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--muted);
+}
+.page-tab > span, .page-tab::after { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-tab::after { content: attr(data-label); height: 0; visibility: hidden; font-weight: 600; }
+.page-tab:hover { color: var(--ink); }
+.page-tab[aria-checked="true"] {
+  background: var(--surface); color: var(--ink); font-weight: 600;
+  box-shadow: 0 0 0 1px var(--line-2), 0 1px 2px rgba(29, 29, 29, 0.08);
+}
 .sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
 .group { display: inline-flex; align-items: center; gap: 2px; }
 .icon-btn {
@@ -159,6 +178,8 @@ kbd {
   background: #fff4cc; border-radius: 4px;
 }
 .frame { position: absolute; }
+/* another page's boards and notes keep their place and their loaded board, unseen and unreachable */
+.frame.off, .note.off { visibility: hidden; }
 .frame-body {
   position: absolute; inset: 0; overflow: hidden; background: var(--surface);
   box-shadow: 0 0 0 calc(1px * var(--inv)) var(--line-2);
@@ -250,6 +271,10 @@ kbd {
 .fb-exit:hover { background: var(--ink-2); }
 .fb-exit kbd { background: rgba(255, 255, 255, 0.14); box-shadow: none; color: #ffffff; }
 
+/* the page switcher needs the brand's room first */
+@media (max-width: 1320px) {
+  .app.paged .brand-name { display: none; }
+}
 @media (max-width: 1100px) {
   .brand-name { display: none; }
   .link { display: none; }

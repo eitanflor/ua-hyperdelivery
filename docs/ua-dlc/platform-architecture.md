@@ -6,11 +6,12 @@ phases are in [enterprise-plan.md](enterprise-plan.md); the process is in
 [operating-model.md](operating-model.md); today's system is in [current-state.md](current-state.md).
 
 Status: proposal, 2026-10-25, revised 2026-10-26 (where Step Functions fits, lessons from harness
-engineering, and one coding lane: the AgentCore harness in HyperDelivery's sandbox account), and
-revised again in round 7 (re-phased into Current State, Final MVP and Enterprise, with one
-architecture per phase). Designs marked "draft" are owned by the team named and are finalized in the
-phase shown. Phases are HyperDelivery's own maturity (Current State, the Final MVP with its build and
-pilot, Enterprise), not a project's tier. Product status as of this date is in
+engineering, and one coding lane: the AgentCore harness in HyperDelivery's sandbox account),
+revised again the same day (re-phased into Current State, Final MVP and Enterprise, with one
+architecture per phase) and for the Inception boundary (HyperDelivery builds prototypes in the
+sandbox on dev data and ends every project with a handoff package; Construction is outside it). Designs marked "draft" are owned by the team named and are finalized in the phase shown.
+Phases are HyperDelivery's own maturity (Current State, the Final MVP with its build and pilot,
+Enterprise), not a project's target tier. Product status as of this date is in
 [Dependency status](#15-dependency-status).
 
 ## The three architectures
@@ -30,17 +31,36 @@ The plan draws HyperDelivery once per phase; this document is the detail behind 
   owns the chat; the delegation broker with typed contracts, the signed gate token and the
   do-no-harm write hook; service keys in Secrets Manager; the Cortex Code data specialist; the
   resource reader with a per-project index and AgentCore Memory; the coding agent, an AgentCore
-  harness session in the sandbox account driven one piece at a time by a build worker; previews and
-  a prototype GitHub organization with scans; reviewers and the evidence agent; traces and cost per
-  project, shown but not enforced; the new console; Teams cards; and the project's Confluence page,
-  published on request. The pilot (weeks 15 to 22) runs on it.
+  harness session in the sandbox account driven one piece at a time by a build worker; previews that
+  read dev data only, and a prototype GitHub organization with scans; reviewers and the evidence
+  agent; the handoff package after approval 3; traces and cost per project, shown but not enforced;
+  the new console; Teams cards; and the project's Confluence page, published on request. The pilot
+  (weeks 15 to 22) runs on it.
 - **[Enterprise](enterprise-plan.md#phase-3-enterprise)**, what lands by Enterprise ready (week 36).
   Entra app roles and approval rules, on-behalf-of tokens, a GitHub App, Snowflake External OAuth
   and per-user Atlassian sign-in replace the service identities; AgentCore Policy checks every tool
   call; audit is immutable and forwarded to the SIEM; budgets are enforced per workspace from Admin;
-  evals and the conformance suite gate CI and releases; a production stage with an SLO and on-call;
-  graduation and the T3 handoff; then the Library, Portfolio, a second coding engine, the Streamlit in
-  Snowflake builder, Rovo and Work IQ, and more departments. None of it is needed for the pilot.
+  evals and the conformance suite gate CI and releases; HyperDelivery's own production environment
+  with an SLO and on-call; a Construction intake agreed with engineering; then the Library,
+  Portfolio, a second coding engine, Streamlit prototypes in a Snowflake sandbox, Rovo and Work IQ,
+  and more departments. None of it is needed for the pilot, and none of it deploys a business app to
+  production.
+
+**Where HyperDelivery stops, in every phase.** HyperDelivery runs the first two UA-DLC phases.
+Ideation ends at approval 1 with the Brief and a mockup. Inception ends at approval 3 with a working
+prototype in the sandbox on dev data, and then the handoff package: a Jira epic with an issue per
+ticket, AI-DLC context files checked with engineering's validator, the repository, the decision
+chain, the evidence, what it skips, a dev-to-production data map and the target tier's Construction
+checklist. Construction (engineering's Code, Review, Manual QA, Visual QA and Deploy, on production
+data connections) and Operations (deployments, promotions and running) are outside HyperDelivery's
+build. After approval 3 the Construction owner, the receiving engineering lead with the business
+owner, records the Construction decision: AI-driven, AI-assisted with engineers, or not now. It is a
+decision record, not a fourth approval, and engineering's own gates on push, merge and release apply
+in both modes
+([operating-model.md](operating-model.md#10-handoff-and-the-construction-decision)). Whether
+HyperDelivery later adds an AI-driven Construction lane of its own is decided at the scale decision,
+on handoff evidence; nothing in this document builds for it. How other AI-DLC products draw the same
+boundary is in [research/dlc-landscape.md](research/dlc-landscape.md).
 
 [What lands in which phase](#what-lands-in-which-phase) gives the same split area by area.
 
@@ -48,7 +68,8 @@ The plan draws HyperDelivery once per phase; this document is the detail behind 
 
 One assistant owns the conversation. Every specialist behind it crosses one trust boundary per call,
 through a broker that holds the credentials, and every write with a side effect waits for a signed
-approval. The diagram shows the Final MVP; the dashed shape and line arrive in Enterprise.
+approval. The diagram shows the Final MVP. The dashed Gateway and its line arrive in Enterprise;
+the dashed grey Construction lane is outside HyperDelivery.
 
 ```mermaid
 flowchart LR
@@ -69,6 +90,7 @@ flowchart LR
       DDB["DynamoDB: projects, decisions, confirmed facts, resources"]
       S3["S3: artifacts, corpus, evidence"]
       WRK["Build worker"]
+      HO["Handoff package (after approval 3)"]
     end
     subgraph AGENT["Agent plane"]
       ORC["Orchestrator: Strands on AgentCore Runtime"]
@@ -93,13 +115,14 @@ flowchart LR
   subgraph SNOW["Snowflake"]
     COCO["Cortex Code data specialist"]
     SV["Semantic views, golden reports"]
+    DEV["Dev data: synthetic, dev database or designated views"]
   end
   subgraph GH["GitHub prototype org"]
     REPO["Repos, PRs, Actions, scans"]
   end
   subgraph SBX["Sandbox AWS account"]
     CODE["Coding agent: AgentCore harness session"]
-    PRV["Previews"]
+    PRV["Previews: the prototype, on dev data"]
   end
   subgraph ATL["Atlassian Cloud"]
     JIRA["Jira"]
@@ -107,6 +130,9 @@ flowchart LR
   end
   subgraph M365["Microsoft 365"]
     GRAPH["Graph: OneDrive, SharePoint, Teams transcripts"]
+  end
+  subgraph CONS["Construction, outside HyperDelivery"]
+    ENG["Engineering: Code, Review, Manual QA, Visual QA, Deploy"]
   end
 
   CON -->|"Entra token"| API
@@ -130,6 +156,7 @@ flowchart LR
   WRK -->|"turn, Git bundles"| CODE
   WRK -->|"push and one pull request, never from the sandbox"| REPO
   REPO -->|"pushed build branch"| PRV
+  PRV -->|"reads dev data only"| DEV
   BRK -->|"ResourceRef"| RDR
   RDR -->|"read as the user"| GRAPH
   RDR -->|"allowlisted reads"| CONF
@@ -138,24 +165,31 @@ flowchart LR
   GATE -->|"signed gate token"| BRK
   SEC -->|"service keys"| BRK
   SEC -->|"prototype org token"| WRK
-  BRK -->|"Jira writes after approval 2"| JIRA
+  BRK -->|"after approval 3"| HO
+  HO -->|"epic, context files"| JIRA
+  HO -.->|"after the Construction decision"| ENG
   VER -->|"test viewer"| PRV
   BRK -.->|"every tool call"| GW
   AGENT -->|"OTel spans"| OBS
 
   classDef later stroke-dasharray: 5 5
+  classDef outside stroke-dasharray: 5 5,color:#5F5F5F
   class GW later
+  class CONS,ENG outside
 ```
 
 How to read it: people never talk to a specialist, only to HyperDelivery; the broker is the only
 door out, and it gives each request a scoped credential (a service key from Secrets Manager in the
 Final MVP, a credential minted for one call in Enterprise), a budget and a schema; the write hook
 rejects every external write until the server records the authorizing approval as signed, and the
-approval service's signed token is what unlocks repository creation, pushes, Jira writes and the
-start of a build; the coding agent runs in the sandbox account and never reaches GitHub itself,
-because the build worker hands it Git bundles and pushes the branch and its one pull request;
-pointed resources land in that project's knowledge base, while signed
-decisions and confirmed facts stay in DynamoDB. The interactive version is the "How HyperDelivery
+approval service's signed token is what unlocks repository creation, pushes and the start of a build
+(approval 2) and the Jira filing at the handoff (approval 3); the coding agent runs in the sandbox
+account and never reaches GitHub itself, because the build worker hands it Git bundles and pushes
+the branch and its one pull request; previews, which are the prototype, read dev data only, while
+discovery reads production metadata, counts and aggregates through the broker, never rows;
+pointed resources land in that project's knowledge base, while signed decisions and confirmed facts
+stay in DynamoDB; and the handoff package is HyperDelivery's last output, which Construction picks up
+outside it. The interactive version is the "How HyperDelivery
 Is Built" help page, opened from the "?" menu in the console's top bar
 ([ux-direction.md](ux-direction.md#architecture-canvas)): a Today, MVP and Enterprise switch, a
 request replay, and each part's details in the side panel. It is not a project's Architecture tab,
@@ -167,8 +201,8 @@ which shows that project's own solution architecture, with HyperDelivery outside
 
 - The gates are the product. Every station that writes outside the conversation has a human
   approval after it. A build's pull request, one per project build with a commit per piece, merges
-  into the prototype repository only after its checks pass; nothing deploys, or merges into a
-  repository HyperDelivery did not create, without a signature.
+  into the prototype repository only after its checks pass; nothing deploys beyond the sandbox, and
+  nothing merges into a repository HyperDelivery did not create.
 - Completeness is computed by the server from the stored artifact, not taken from the agent.
 - The provider/tool split: generic clients carry no policy; per-agent least privilege lives in
   `src/tools/`. No agent holds the merge client. The delegation broker is a `tools/` policy wrapper
@@ -179,6 +213,11 @@ which shows that project's own solution architecture, with HyperDelivery outside
 
 **Change:**
 
+- **Production work leaves HyperDelivery.** Today approval 3 would merge the build's pull requests,
+  and earlier plans had HyperDelivery put T1 apps live, operate them and graduate them. From the
+  Final MVP every project ends at approval 3 with a prototype in the sandbox on dev data and a
+  handoff package; Construction and Operations stay with engineering and UA's existing change
+  process, and the Construction decision is recorded, not built.
 - **Writes before approval.** Today Blueprint creates repositories and Jira issues before approval
   2, and Review files issues, assigns Copilot and opens pull requests before approval 3, with only
   the prompt as a guard. The do-no-harm floor in the Final MVP moves repositories into a dedicated
@@ -198,7 +237,8 @@ which shows that project's own solution architecture, with HyperDelivery outside
 - **Uploads as the only way in** become pointing: paste a Teams recording, a OneDrive folder, a Jira
   ticket or a Confluence page, and HyperDelivery reads it as you and indexes it for the project
   (section 11).
-- **A preview on one machine** becomes hosted, isolated, expiring previews in the sandbox account.
+- **A preview on one machine** becomes hosted, isolated, expiring previews in the sandbox account,
+  reading dev data only.
 - **Per-issue autopilot pull requests** (Review assigns GitHub Copilot's cloud agent one issue per
   group of work, and each returns its own pull request) become one coding-agent session per project
   build, running in the sandbox account, with the whole signed plan in its workspace (section 9).
@@ -213,13 +253,14 @@ on other teams, and none of them is a precondition for the pilot.
 
 | Area | Current State (today) | Final MVP (build W1 to W14, pilot W15 to W22) | Enterprise (hardening W23 to W36, rollout from W37) |
 |---|---|---|---|
-| Identity | Entra sign-in with an ID token and no roles; one person's GitHub, Atlassian and Snowflake tokens act for every user, the Snowflake token in a plain environment variable | Entra sign-in, invite-only friendly and pilot users; remaining personal tokens in Secrets Manager, scoped to the prototype organization; a dedicated Snowflake service user with a grant-limited read-only role replaces the personal Snowflake token; pointed Microsoft 365 files read with the pointing person's delegated token and refreshed when they next open the project | App roles and approval rules per tier; on-behalf-of per step; GitHub App installation tokens for every push and pull request; Snowflake External OAuth; per-user Atlassian sign-in; credentials minted per call for the acting user; the AgentCore Identity vault for background refresh; no individual tokens |
-| Data access | Distill asks a Cortex Agent for raw rows, unscoped when no database or schema is set; results land in the turn with no query id | Snowflake only through the broker and Cortex Code, as the service user; per-task token exchange layered on once Snowflake confirms it; never rows; synthetic or approved non-confidential views; measured in the pilot | Reference-design roles; aggregation and masking policies for agents; Cortex budgets; a named Cortex Agent for answers; the Streamlit builder |
+| Lifecycle scope | Four stations from intake to a Showroom demo; approval 3 would merge the build's pull requests | Ideation and Inception: a mockup signed at approval 1, a working prototype in the sandbox on dev data signed at approval 3, then the handoff package (Jira epic and issues, AI-DLC context files, repository, decision chain, evidence, what it skips, dev-to-production data map, target-tier Construction checklist) and a recorded Construction decision | A Construction intake agreed with engineering; Construction and Operations stay outside HyperDelivery unless the scale decision says otherwise |
+| Identity | Entra sign-in with an ID token and no roles; one person's GitHub, Atlassian and Snowflake tokens act for every user, the Snowflake token in a plain environment variable | Entra sign-in, invite-only friendly and pilot users; remaining personal tokens in Secrets Manager, scoped to the prototype organization; a dedicated Snowflake service user with a grant-limited read-only role replaces the personal Snowflake token; pointed Microsoft 365 files read with the pointing person's delegated token and refreshed when they next open the project | App roles and approval rules per target tier; on-behalf-of per step; GitHub App installation tokens for every push and pull request; Snowflake External OAuth; per-user Atlassian sign-in; credentials minted per call for the acting user; the AgentCore Identity vault for background refresh; no individual tokens |
+| Data access | Distill asks a Cortex Agent for raw rows, unscoped when no database or schema is set; results land in the turn with no query id | Snowflake only through the broker and Cortex Code, as the service user; per-task token exchange layered on once Snowflake confirms it; discovery reads metadata, counts and aggregates from approved views, never rows; prototypes read dev data only (synthetic, a dev database or designated views); measured in the pilot | Reference-design roles; aggregation and masking policies for agents; Cortex budgets; a named Cortex Agent for answers; Streamlit prototypes in a sandbox schema on dev data |
 | Delegation and coding | Four station agents as chat personas; Review hands each group of work to Copilot's coding agent, one pull request per group; a harness build on an unmerged branch | Orchestrator owns the chat; broker and contracts, with `done_when` on delegations and a fix line in every rejection; drift and coverage from the broker; Cortex Code; the coding agent as one AgentCore harness session per build in the sandbox account, behind the `Builder` port, passing conformance suite v1; resource reader; reviewers and the evidence agent; the scope check in shadow from friendly users (W8), blocking from MVP ready; a span per delegation, shown in the trace view; golden-path lints and a short `AGENTS.md` map in each generated repository | Specialists behind Gateway targets, with policies on every tool that writes; a second coding engine behind the `Builder` port, chosen by the conformance suite; a build preview the builder can observe; Rovo and Work IQ questions; AgentCore Evaluations on build traces; conformance suite in CI; required scans on every repository |
 | Resources and collaboration | Uploads only; Jira and Confluence through the community `mcp-atlassian` server and one API token; no index; one global context note | Paste-a-link: OneDrive and SharePoint as the person who pointed; Jira and Confluence through an allowlisted service token; files labeled above Internal not indexed; transcripts only after the interim Privacy and Legal scope, and meeting links once admin consent and the transcript tenant control are in place; per-project index; one Confluence page per project, published on the requester's explicit action and polled; Teams cards and Inbox; Confluence comments and revisions feed Confirm what we heard | Rovo MCP service account; project SharePoint site; Forge events; workspace index; per-reader access re-check; Purview labels; retention and legal hold |
 | Policy | The prompt is the only guard: Blueprint creates repositories and Jira issues before approval 2, and Review opens pull requests before approval 3; anyone signed in can approve their own request | The floor: in-process write hook, prototype organization, builds and previews outside the HyperDelivery account; harness hooks on writes to protected files | Dogwood rules replayed against real traces in CI, then AgentCore Policy on every tool call; Verified Permissions for sharing |
-| Telemetry, cost, evals | An OpenTelemetry provider with no exporter; plain-text logs; cost recorded only on successful turns, with no rollups or budgets | Traces to CloudWatch; cost per project including Snowflake credits and each build session's model and Runtime cost, shown but not enforced, apart from a dollar cap per build session; deterministic approval preconditions; receipt fields per unit and approval; in the pilot, user feedback and approvals rejected despite passing evidence become golden cases, harness causes join the failure taxonomy, and human corrections and cost per accepted outcome, questions per build, replaced microVMs and merge rate by piece size are reported, with build caps reset from the p90 of real builds | SIEM, Object Lock audit, budgets enforced per workspace and chargeback; golden intakes, evaluations and ablation gate CI; rollback to the last signed version for live apps |
-| Operations | A five-minute invoker Lambda against ten-minute agent turns, with no retry or restart; full artifacts in the state payload; no point-in-time recovery; images pushed by hand; dev only | Async agent calls with task tokens; restart from a failed step; point-in-time recovery; a crash-and-resume test; a weekly release train and weekly doc gardening from the pilot | Production stage, SLO, on-call, tested restore; threat model and reviews signed |
+| Telemetry, cost, evals | An OpenTelemetry provider with no exporter; plain-text logs; cost recorded only on successful turns, with no rollups or budgets | Traces to CloudWatch; cost per project including Snowflake credits and each build session's model and Runtime cost, shown but not enforced, apart from a dollar cap per build session; deterministic approval preconditions; receipt fields per unit and approval; in the pilot, user feedback and approvals rejected despite passing evidence become golden cases, harness causes join the failure taxonomy, and human corrections and cost per accepted outcome, questions per build, replaced microVMs and merge rate by piece size are reported, with build caps reset from the p90 of real builds | SIEM, Object Lock audit, budgets enforced per workspace and chargeback; golden intakes, evaluations and ablation gate CI |
+| Running HyperDelivery | A five-minute invoker Lambda against ten-minute agent turns, with no retry or restart; full artifacts in the state payload; no point-in-time recovery; images pushed by hand; dev only | Async agent calls with task tokens; restart from a failed step; point-in-time recovery; a crash-and-resume test; a weekly release train and weekly doc gardening from the pilot | HyperDelivery production environment, SLO, on-call, tested restore; threat model and reviews signed |
 
 ## 2. The orchestrator and its specialists
 
@@ -233,9 +274,9 @@ on other teams, and none of them is a precondition for the pilot.
   ([Anthropic](https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop)).
   Snowflake work, coding, reading a two-hour recording and independent checking pass that test.
 - **Station agents become artifact producers.** Distill (steps 1.1 to 2.2), Blueprint (2.3 to 2.5),
-  Review (3.1 to 3.5) and Showroom (4.1) keep their typed outputs, re-scored by the server and
-  invoked at the gates; they stop being chat personas. Departments contribute skills and golden
-  paths, not new agents.
+  Review (2.6 to 2.10, the prototype build) and Showroom (2.11, the handoff) keep their typed
+  outputs, re-scored by the server and invoked at the gates; they stop being chat personas.
+  Departments contribute skills and golden paths, not new agents.
 
 ### Roster
 
@@ -245,11 +286,11 @@ on other teams, and none of them is a precondition for the pilot.
 | Delegation broker (trusted code) | `tools/` wrapper over `providers/` clients | Holds service keys from Secrets Manager (Final MVP); mints per call (Enterprise) | Subject tokens, never passed on | `DelegationRequest` to `SpecialistResult` | Final MVP |
 | Resource reader (context delegate) | Fresh-context Strands agent | AWS to Microsoft 365 and Atlassian | The pointer's delegated token, via the broker | `ResourceRef` to `ResourceDigest` | Final MVP |
 | Cortex Code data specialist | Cortex Agents Coding Agent (discovery, profiling); a named Cortex Agent for answers (Enterprise) | AWS to Snowflake | The read-only service user's key (Final MVP; the per-task exchange once Snowflake confirms it); the user's role through External OAuth (Enterprise) | `DataTask` to `DataFindings` | Final MVP |
-| Streamlit builder | Coding Agent with a mounted Snowflake workspace, behind the same `Builder` port | Sandbox schema only | Same, build role | `BuildUnit` (`runtime: sis`) to commit and manifest | Enterprise |
+| Streamlit builder | Coding Agent with a mounted Snowflake workspace, behind the same `Builder` port | Sandbox schema on dev data only | Same, build role | `BuildUnit` (`runtime: sis`) to commit and manifest | Enterprise |
 | Coding agent ("AgentCore harness, in the sandbox") | One AgentCore harness session per project build, behind the `Builder` port; Claude Sonnet 5.5 through Bedrock, set on each call. A second engine (a Claude Agent SDK image on AgentCore Runtime, or the Strands export) can replace it in the Enterprise phase | AWS to the sandbox AWS account, never the account that runs HyperDelivery; nothing in the sandbox reaches GitHub | None: Bedrock through the session's execution role; the API worker holds the GitHub credential and runs Git | `BuildUnit` to `BuildResult`, one piece per turn | Final MVP |
 | Reviewers and evidence agent | Fresh context, read-only; Playwright against the preview | The preview, as a test viewer | Read-only; a test identity | Artifact to `Findings` and evidence | Final MVP |
-| Atlassian and Microsoft 365 delegates | Rovo A2A and Work IQ A2A for questions; Rovo MCP for gated writes; the Teams bot | AWS to Atlassian, Microsoft 365 | User OAuth or on-behalf-of; a service account for writes after approval 2 | Question to cited answer; cards | Teams bot: Final MVP; Rovo, Work IQ and Rovo MCP: Enterprise |
-| Ops monitor | Scheduled job | Live apps | Read-only telemetry | Health, cost, expiry | Enterprise (until then, the platform team) |
+| Atlassian and Microsoft 365 delegates | Rovo A2A and Work IQ A2A for questions; Rovo MCP for gated writes; the Teams bot | AWS to Atlassian, Microsoft 365 | User OAuth or on-behalf-of; a service account for writes at the handoff, after approval 3 | Question to cited answer; cards | Teams bot: Final MVP; Rovo, Work IQ and Rovo MCP: Enterprise |
+| Prototype lifecycle monitor | Scheduled job | Sandboxes and previews | Read-only telemetry | Expiry, idle time and cost of prototypes | Enterprise (until then, the platform team) |
 
 Which agent owns each step of the line, with that step's inputs and outputs, is in
 [operating-model.md](operating-model.md#inputs-and-outputs-step-by-step); where each artifact is
@@ -263,13 +304,13 @@ Checks keep their blocking rules; only their owners change:
 | Intake triage, context curation | Intake, Research | Orchestrator skill; resource reader | Advises; people confirm |
 | Brief critic | Before approval 1 | Reviewer | Advises |
 | System mapper | Tech Design (opted-in repositories) | Reviewer | The owning team approves the map |
-| Architecture and data reviewer | Before approval 2 | Reviewer, with the data specialist | Per the signer matrix (operating-model.md section 4): blocks at T2 High risk |
+| Architecture and data reviewer | Before approval 2 | Reviewer, with the data specialist | Per the signer matrix (operating-model.md section 4): blocks for a T2 target at High risk |
 | Security reviewer | Approvals 2 and 3 | Reviewer, after deterministic scans | Blocks on confirmed findings at every tier; a full security review also blocks at High risk |
 | Code review finders and verifier | Before approval 3 | Reviewers | Each finding answered |
 | Scope check | Each `BuildResult`, after the deterministic checks | Fresh-context reviewer comparing the diff with its signed `BuildUnit` and criteria | Shadow from friendly users (W8); blocks from MVP ready |
-| Evidence and numbers check | Before approval 3 | Evidence agent, with the data specialist | Produces evidence |
-| Accessibility checker | Before approval 3 | Reviewer | Per the signer matrix: blocks at T2 Medium and High risk |
-| Demo producer, handoff packager | Show, Graduate | Orchestrator skills | Produce artifacts |
+| Evidence and numbers check | Before approval 3 | Evidence agent, with the data specialist | Produces evidence; on dev data it says "definitions match; numbers not checked on dev data" rather than claiming the numbers match |
+| Accessibility checker | Before approval 3 | Reviewer | Per the signer matrix: blocks for a T2 target at Medium and High risk |
+| Demo producer, handoff packager | Handoff (2.11), after approval 3 | Orchestrator skills; context files checked with engineering's validator | Produce artifacts; a context file that fails the validator holds the package |
 
 - **"Confirmed"** means reproduced by a deterministic tool or accepted by the platform engineer on
   duty (until the Enterprise phase creates on-call, the plan owner in business hours). The business owner sees
@@ -294,7 +335,7 @@ Checks keep their blocking rules; only their owners change:
 
 ### The delegation broker
 
-The orchestrator decides *what* to hand off; the broker, trusted code in `src/tools/`, decides with
+The orchestrator decides *what* to delegate; the broker, trusted code in `src/tools/`, decides with
 what authority:
 
 1. **Scope comes from the server, never the model:** envelope, tier, allowed objects, knowledge base id.
@@ -389,6 +430,19 @@ ResourceDigest:
 Findings:
   reviewer, summary
   items: [{id, severity, claim, evidence: SourceRef, confirmed_by: tool | engineer | null, blocks: bool}]
+
+HandoffPackage:                     # assembled after approval 3; HyperDelivery's last output
+  project_id, approval_3_decision_id, commit_sha, build_id
+  decision_chain: [{decision_id, hash}]
+  artifacts: {brief, mockup, plan, evidence, what_it_skips}      # S3 references
+  repository: {org, name, ref}
+  jira: {epic_key, issue_keys}
+  context_files: [path]             # engineering's AI-DLC format, checked with its validator
+  data_map: [{dev_source, production_source, certified_definition}]
+  target_tier, construction_checklist: [str]
+ConstructionDecision:               # a decision record, not a fourth approval
+  mode: ai_driven | ai_assisted | not_now
+  decided_by, default_from: {risk, target_tier}, rationale
 ```
 
 Specialists start isolated, with no transcript, and fetch referenced resources with their own
@@ -401,9 +455,14 @@ research evidence-pack JSON Schema and AI-DLC context files (one per unit ticket
 its Jira-to-PR pipeline reads. HyperDelivery vendors both pinned to a commit rather than tracking
 `main`, because they are young and not yet consistent: it mirrors the evidence pack in `core/domain/`
 with a drift test like the one above, imports a research run someone points at, and checks its own
-exports with engineering's dependency-free validator. For the handoff package (Enterprise) it emits
+exports with engineering's dependency-free validator. For the handoff package (Final MVP) it emits
 context files from `BuildUnit`, the decision records and the work graph; their `generated_by` value
-needs engineering to accept HyperDelivery as a source. Fixes go upstream, not into a fork
+needs engineering to accept HyperDelivery as a source, and the handoff format is agreed with
+engineering on the long-lead track ([section 16](#16-external-teams-and-lead-times)). The package
+lands where engineering's Construction tooling starts: its Jira-to-PR pipeline reads the context
+files either with an engineer approving the plan (AI-assisted) or with `--require-context`, trusting
+the plan signed at approval 2 as the approved design (AI-driven), which engineering has to confirm.
+Fixes go upstream, not into a fork
 ([research](research/ua-marketplace-alignment.md#4-what-to-reuse-or-interoperate-with)).
 
 ### Transports behind one port
@@ -419,7 +478,7 @@ reached through the Gateway as an MCP target, so one Cedar and Dogwood policy co
 the result lands in the project timeline, and the orchestrator picks it up on the next turn or posts
 in Teams. A single Snowflake table listing took about 117 seconds in the repo (decision 2026-08-29).
 **Each delegation is an `invoke_agent` span** with specialist, status, retries and cost, linked to
-its parent: the trace view's agent lanes, handoff connectors and failure markers come from it.
+its parent: the trace view's agent lanes, delegation connectors and failure markers come from it.
 
 ### Policy layers for every write
 
@@ -528,7 +587,7 @@ Snowflake confirms it. Either way the model never holds a token.
 | Agent work after an approval (Tech Design onward), often days later | No | The approver who released the gate, on a delegated token held in the AgentCore Identity vault and expiring with the project | Not applicable | Vault |
 | Repository creation, pushes, Jira writes | No | n/a | A service identity unlocked only by a signed gate token | Approval service |
 | Coding agent builds | No | n/a | Nothing from the sandbox: Git crosses its boundary as bundles, and the API worker pushes and opens the pull request, with the prototype organization's fine-grained token (Final MVP), then a GitHub App installation token minted for one hour and limited to that repository and to contents and pull-request permissions (Enterprise). No Copilot seat is needed, because the model never touches GitHub | Approval service; Secrets Manager |
-| Teammates with no Snowflake user | Yes | Catalog metadata and synthetic data only, unless provisioned | None | n/a |
+| Teammates with no Snowflake user | Yes | Catalog metadata and dev data only, unless provisioned | None | n/a |
 
 Gate tokens are signed by the approval service and verified in the broker from the Final MVP and in
 a Gateway interceptor from the Enterprise phase, because Cedar policies are stateless and the agent must not be
@@ -544,7 +603,7 @@ able to supply its own gate state.
 - **Fine-grained access in Cedar** through Amazon Verified Permissions (Enterprise). Entities: Org,
   Workspace, Project, Artifact, Session, Fact, Connection, Resource. Project roles: Owner, Editor,
   Contributor, Viewer, plus approver relations per gate and a definitions-reviewer relation for
-  stewards. Conditions on tier, classification and department. Templates power "Share with a group".
+  stewards. Conditions on target tier, classification and department. Templates power "Share with a group".
 - **The same Cedar for agents.** AgentCore Policy evaluates every Gateway tool call, deny by
   default. That needs every tool to be a Gateway target, so the community `mcp-atlassian` stdio
   server moves to Atlassian's remote Rovo MCP server first (Enterprise).
@@ -566,8 +625,9 @@ able to supply its own gate state.
 - **Workspace** is a business domain or team. It is the cost center, the workspace context layer,
   the workspace knowledge base, and the **data envelope**: the Snowflake workspace roles, SharePoint
   sites, Jira projects and GitHub organization it may use. A data owner pre-approves the envelope
-  once (for example, "Merchandising: sell-through and the margin golden report, aggregated,
-  read-only, allowed at T1"), so projects inside it need no per-project sign-off.
+  once (for example, "Merchandising: sell-through and the margin golden report, aggregated and
+  read-only for discovery; the dev sell-through database for prototypes"), so projects inside it
+  need no per-project sign-off.
 - **Project** has members and cross-workspace guests, its own knowledge base, its own memory
   namespace and its own Confluence page (section 11). Joining a project that carries confidential
   data needs data owner approval for that member, guests included.
@@ -580,7 +640,7 @@ or grant privileges.
 the searchable record is what compounds; a private project teaches only the people in it. The
 proposal: each project's Brief, decisions and status (not quoted source text) are discoverable across
 its workspace (in the Final MVP, across the pilot's users), so others can find it, comment and join as "one
-more voice". Sources, data and previews stay membership-gated as the tier contract says. A private
+more voice". Sources, data and previews stay membership-gated as the prototype contract says. A private
 project is an explicit, logged choice, and the default for People and Finance. Privacy and the works
 council are asked first for EMEA ([research](research/factory-sources-round4.md)).
 
@@ -635,24 +695,43 @@ only to agent sessions (Cortex Agents, the managed MCP server, an `IS_AGENTIC` O
 token exchange with `act`, or a `SERVICE_AGENT` user), never to plain SQL from our own code. The
 exchange's release status is confirmed with the account team before the Final MVP relies on it.
 
-**Tiers** (from the Enterprise phase; until then, the floor in section 7): T0, metadata and synthetic data only;
-T1, secure views with aggregation policies; T2, data-owner-approved grants. Delegations are
-asynchronous, and their credits flow into the project's cost view. Cortex Code needs cross-region
-inference, checked against the EMEA rule before any EMEA workspace.
+**Two kinds of read.** Discovery and the numbers check read production metadata, counts and
+aggregates through the broker, never rows, so the Brief and the plan can cite certified definitions;
+from the Enterprise phase they read with the user's own role (secure views with aggregation policies,
+and data-owner-approved grants where the envelope needs them). The prototype itself connects only to
+dev data: synthetic data, a dev Snowflake database, or views data platform designates as dev data
+(what counts is agreed with data platform before the pilot,
+[section 16](#16-external-teams-and-lead-times)). Delegations are asynchronous, and their credits
+flow into the project's cost view. Cortex Code needs cross-region inference, checked against the
+EMEA rule before any EMEA workspace.
 
 **Reference design (Enterprise):** External OAuth through a dedicated HyperDelivery Entra client with
 `IS_AGENTIC = TRUE`, so its sessions are distinct in `LOGIN_HISTORY`; one Entra scope per workspace
 role, with project isolation inside Snowflake through row access policies or per-project secure
 views; `EXTERNAL_OAUTH_ANY_ROLE_MODE = DISABLE`, allowed roles limited to HyperDelivery workspace
 roles, `OAUTH_USE_SECONDARY_ROLES = NONE`; agents see the intersection of the project's approved data
-and the member's entitlement; no free-form SQL tool at T0 or T1. Teammates with no Snowflake user work
-from metadata and synthetic data; whether to SCIM-provision workspace audiences is an Enterprise decision
-for data platform and identity. Data platform grants the platform role a scoped kill-switch privilege
-(revoke app `USAGE`, suspend the compute pool and warehouse) on HyperDelivery apps databases only.
+and the member's entitlement; no free-form SQL tool for agents. Teammates with no Snowflake user work
+from metadata and dev data; whether to SCIM-provision workspace audiences is an Enterprise decision
+for data platform and identity. Data platform grants the platform role a scoped privilege to pause a
+prototype (revoke `USAGE`, suspend the compute pool and warehouse) on HyperDelivery's sandbox schemas
+only; production apps databases belong to Construction and Operations.
 
 ### Streamlit in Snowflake golden path
 
-Co-signed by data platform:
+Co-signed by data platform. Inside HyperDelivery a Streamlit prototype lives in the project's sandbox
+schema on dev data; deploying a production app is Construction's. The production rules still ship as
+lints from the first build, so a handoff needs no rewrite.
+
+In HyperDelivery's sandbox:
+
+- Sandbox schemas get no grants outside the project, read only dev data, are tagged with target
+  tier, project and expiry, and stay out of the catalog. On expiry, roles, grants, schemas, compute
+  pools and app objects are removed through data platform's provisioning pipeline.
+- Packages from the Snowflake Anaconda channel or an approved artifact repository only.
+- The path's rules also ship as lints and structural tests in each generated repository
+  (section 10), so the coding agent meets them as failing checks, not only as instructions.
+
+In Construction (outside HyperDelivery; listed so the handoff package's checklist can name them):
 
 - Apps are owned by a functional app role scoped to exactly what the audience may see, never by a
   project role with broader grants. Restricted caller's rights for row-secured data (generally
@@ -660,23 +739,18 @@ Co-signed by data platform:
 - The audience is an Entra group SCIM-synced to a Snowflake role.
 - Shared compute pools per workspace with auto-suspend, and a query warehouse with a resource
   monitor.
-- Packages from the Snowflake Anaconda channel or an approved artifact repository only.
 - Deploys use the Snowflake CLI from CI under a key-pair or workload-identity deploy user, into an
   apps database per workspace.
-- Every T1 or higher data app is registered as a dbt exposure and a catalog consumer of its
-  sources, so upstream changes reach data platform's change process.
-- Sandbox schemas get no grants outside the project, are tagged with tier, project and expiry, and
-  stay out of the catalog. On expiry, roles, grants, schemas, compute pools and app objects are
-  removed through data platform's provisioning pipeline.
-- The path's rules also ship as lints and structural tests in each generated repository
-  (section 10), so the coding agent meets them as failing checks, not only as instructions.
+- Every production data app built for a T1 or higher target is registered as a dbt exposure and a
+  catalog consumer of its sources, so upstream changes reach data platform's change process.
 
 **Delegating the build** (Enterprise): Blueprint marks the unit `runtime: sis`; one Coding Agent run
 works in a project Snowflake workspace mounted from the prototype repository, under the build role
-(never the app role), with a scope that allows envelope reads and object management only in the
-sandbox schema. It returns a commit, the manifest, SQL with query ids and tests, and never deploys;
-CI deploys after approval 3, and the evidence agent opens the app as a test viewer. Snowflake App
-Runtime (Next.js, GA 2026-09-01) is a second in-Snowflake golden path to evaluate.
+(never an app role), with a scope that allows dev-data reads and object management only in the
+sandbox schema. It builds a Streamlit prototype there and returns a commit, the manifest, SQL with
+query ids and tests; the evidence agent opens the prototype as a test viewer. Deploying it to a
+workspace apps database is Construction's, from the handoff package. Snowflake App Runtime (Next.js,
+GA 2026-09-01) is a second in-Snowflake golden path to evaluate.
 
 ## 7. Data handling: rows stay in Snowflake
 
@@ -693,28 +767,32 @@ Snowflake:
 | S3 project corpus and knowledge base | Documents, pages and transcripts only, never extracts |
 | AgentCore Memory | Conversation and proposed facts only, never query results |
 | Generated repositories | No extracted data; fixtures generated from schema; push protection and PII scanning |
-| Previews | Query live as the viewer or under the approved app role (section 9); no cached extracts on disk or S3 |
-| Evidence screenshots and recordings | T0: synthetic data only. T1 and above: only what the viewer's role renders (aggregated or masked), kept in the project evidence store with KMS, the project's access policy and deletion at expiry; never in repositories or Teams cards |
+| Previews | Read dev data only, as the viewer or under the prototype's read-only role (section 9); no cached extracts on disk or S3 |
+| Evidence screenshots and recordings | Taken on dev data only, kept in the project evidence store with KMS, the project's access policy and deletion at expiry; never in repositories or Teams cards |
 | Third-party telemetry (for example Langfuse) | Never receives data-bearing spans |
 
 Every Snowflake session sets `QUERY_TAG` with the app, project, station, delegation and decision ids,
 so Snowflake's `ACCESS_HISTORY` joins to HyperDelivery's decision record. EMEA data is processed only
 in Bedrock regions UA approves.
 
-**Data in sandboxes by tier:**
+**Data in the sandbox, whatever the target tier:**
 
-| Tier | Snowflake objects |
+| Who reads | Snowflake objects |
 |---|---|
-| T0 | No production grants. Synthetic data generated inside Snowflake from the governed source (tool availability to confirm) into a synthetic database |
-| T1 | `SELECT` on approved secure views where masking renders by role, plus `CREATE` only in the project's sandbox schema |
-| T2 | Data-owner-approved grants through governed views |
+| The prototype (previews, the evidence agent, testers) | Dev data only: synthetic data generated inside Snowflake from the governed source (tool availability to confirm) into a synthetic database, a dev Snowflake database, or views data platform designates as dev data; `CREATE` only in the project's sandbox schema. No production grants |
+| Discovery and the numbers check (Cortex Code, through the broker) | Metadata, counts and aggregates from approved secure views at the envelope's grain, never rows |
 
-Until the Enterprise phase, the do-no-harm floor holds every tier to synthetic data or approved non-confidential
-secure views read through the broker, as the tier contract in
-[operating-model.md](operating-model.md#3-the-tier-contract) states.
+The prototype contract in [operating-model.md](operating-model.md#the-prototype-contract) states
+the same rule. What counts as dev data is agreed with data platform before the pilot
+([section 16](#16-external-teams-and-lead-times)); until then, prototypes use synthetic data. Because
+a prototype reads dev data, its evidence says "definitions match the golden report; numbers not
+checked on dev data" rather than claiming the numbers match: a numbers check against a golden report
+is often possible only in Construction, and the handoff package's data map says which sources it
+needs there.
 
-Zero-copy clones only by exception, with data owner approval, an expiry and centrally placed
-policies: a clone is still a copy as far as governance is concerned.
+Zero-copy clones of production data are not dev data. They are made only by exception, with data
+owner approval, an expiry and centrally placed policies: a clone is still a copy as far as
+governance is concerned.
 
 ## 8. Telemetry and traces
 
@@ -731,7 +809,7 @@ self-hosted Langfuse is an optional second destination later, never for data-bea
 - Every span carries project, station, unit-of-work and decision ids.
 - Every delegation is an `invoke_agent` span with the specialist, its brand key (for the logo), status,
   retries, cost and a link to its parent. Long delegations end with a span event when the result
-  lands, so the trace shows the handoff and the return.
+  lands, so the trace shows the delegation and the return.
 - Policy decisions carry the rule id and description, so a refusal shows as a failed step with its
   reason.
 - Decisions are emitted as span events and stored in DynamoDB; evaluation results use the
@@ -748,7 +826,7 @@ self-hosted Langfuse is an optional second destination later, never for data-bea
   `TraceView`, kept).
 - **Layer 2:** decision records with options, the recommendation, rationale, evidence and who chose;
   the decision timeline by person; delegation lanes; a ledger of every external side effect.
-- **Layer 3:** the span tree and waterfall with agent lanes, tool and model marks, handoff
+- **Layer 3:** the span tree and waterfall with agent lanes, tool and model marks, delegation
   connectors, failed and retry markers, the slowest step, tokens, cost rolled up per station and
   delegation, latency, errors and a CloudWatch deep link. Built from the MIT-licensed AgentPrism
   viewer (alpha; restyle from Tailwind 3 to v4), which already renders a span's brand as a logo.
@@ -758,10 +836,9 @@ across the decision record, `BuildResult`, spans and `Assisted-by` trailers. One
 on the approval and in Layer 2, and the Final MVP adds four fields: the policy-set and golden-path
 versions in force, the context sources the unit received, the number of human corrections
 (point-and-say fixes, course corrections, send-backs) and a rollback point. From the pilot, human
-corrections per accepted outcome are reported beside cost. From the Enterprise phase, for live T1 and Streamlit
-in Snowflake apps, the Deploy step records the previously signed commit, and "Roll back to the
-version signed on [date]" is an owner or platform action recorded like the kill switch. Whether a
-rollback needs a new signature is a decision still to log
+corrections per accepted outcome are reported beside cost. The receipt of approval 3 travels in the
+handoff package, so Construction starts from the signed commit and its evidence; rolling back a
+production app is an Operations matter, outside HyperDelivery
 ([research](research/harness-engineering.md#5-the-recommendations)).
 
 **Logging:** structured JSON with project, user and request correlation, retention policies, and
@@ -772,9 +849,10 @@ read-audit for content-bearing views (Enterprise, with SIEM forwarding).
 | Tier | Choice | Notes |
 |---|---|---|
 | Build | One AgentCore harness session per project build in the sandbox AWS account, in VPC mode, with managed session storage | A Firecracker microVM per session, at most 2 vCPU and 8 GB, ended at 8 hours. Session storage is a preview (1 GB, wiped after 14 idle days and when the harness version changes), so Git, pushed after every piece, stays the source of truth. Where it runs is set out below |
-| Web previews | ECS Express Mode, one preview per build branch, redeployed after each piece is pushed, torn down at merge, minimum zero tasks, with a "Wake preview" action that shows the cold start | One per build, as operating-model.md step 3.1 says, so the evidence agent checks the branch the pull request carries, outside the build session. App Runner is closed to new customers |
-| Preview access | A shared auth sidecar that validates the ALB-signed Entra header and checks project membership: against HyperDelivery's own project record in the Final MVP, and in Verified Permissions from the Enterprise phase | ALB sign-in alone cannot limit access to project members |
-| Data apps | Streamlit in Snowflake, from the Enterprise phase (section 6) | |
+| Web previews | ECS Express Mode, one preview per build branch, redeployed after each piece is pushed, torn down at merge, minimum zero tasks, with a "Wake preview" action that shows the cold start. The accepted prototype is pinned to the commit signed at approval 3 and kept for project members and named testers until the Construction decision plus 30 days (proposed) | One per build, as operating-model.md step 2.6 says, so the evidence agent checks the branch the pull request carries, outside the build session. App Runner is closed to new customers |
+| Preview access | A shared auth sidecar that validates the ALB-signed Entra header and checks project membership or a named tester: against HyperDelivery's own project record in the Final MVP, and in Verified Permissions from the Enterprise phase | ALB sign-in alone cannot limit access to project members |
+| Prototype data | Dev data only: synthetic data, a dev Snowflake database, or views data platform designates as dev data (section 7) | No prototype connects to production data; that starts in Construction |
+| Data apps | Streamlit prototypes in a sandbox schema on dev data, from the Enterprise phase (section 6) | Production Streamlit in Snowflake apps are Construction's |
 | Portable definition | A `devcontainer.json` in every generated repository | Engineers open the same environment at handoff |
 
 ### The coding agent: one lane, in the sandbox
@@ -847,9 +925,9 @@ owns, records on every build's receipt and tests
 - **Survive a replaced microVM (Final MVP).** Short-term AgentCore Memory, keyed to the project and
   with no long-term strategies so nothing crosses projects, reloads the conversation when an idle
   microVM is replaced. Each turn starts with a check and ends with a note: it reads the progress note
-  and Git log and runs the build's existing end-to-end check before changing anything, and ends with
-  a handoff note on the branch (what was done, what failed, what is next), so a replaced microVM costs
-  at most one piece and a retry continues instead of starting over
+  and Git log and runs the build's existing end-to-end check before changing anything, and ends by
+  updating that note on the branch (what was done, what failed, what is next), so a replaced microVM
+  costs at most one piece and a retry continues instead of starting over
   ([research](research/harness-engineering.md#5-the-recommendations)).
 - **A dollar budget per build session (Final MVP).** The harness caps iterations, time and tokens, not
   dollars. The worker prices each usage event from the model price table and stops the session when
@@ -871,8 +949,8 @@ owns, records on every build's receipt and tests
 - **A map in every generated repository (Final MVP).** A short `AGENTS.md`, its size capped in CI,
   points to the signed Brief and plan, `/decisions` and a generated data contract (objects, columns,
   grain and owners, never rows). The coding agent cannot read DynamoDB, so signed decisions that bind
-  a unit go into the repository with their hash from the first build, not only in the Enterprise
-  handoff package ([research](research/harness-engineering.md#5-the-recommendations)).
+  a unit go into the repository with their hash from the first build, not only in the handoff
+  package ([research](research/harness-engineering.md#5-the-recommendations)).
 - **Evidence comes from outside the build session (Final MVP).** Anything computed in the microVM is
   the builder's claim. The API checks each bundle's diff (protected files, including test
   configuration and `package.json` scripts, and touchpoint drift), the repository's CI runs on the
@@ -897,8 +975,8 @@ owns, records on every build's receipt and tests
 - **Where GitHub Copilot still fits.** GitHub Copilot's cloud agent is not a lane for business
   prototypes in the Final MVP: it runs outside UA's AWS accounts, its tasks API accepts only a seated
   user's token, and it builds one issue per session. Small, independent, well-specified changes suit
-  it, which describes a receiving engineering team's own repositories after a T3 handoff, under that
-  team's rules. Today's hand-off to Copilot in Review is removed for business prototypes in the
+  it, which describes a receiving engineering team's own repositories in Construction, under that
+  team's rules. Today's delegation to Copilot in Review is removed for business prototypes in the
   Final MVP.
 - **What the branch already proves, and what the Final MVP adds.** The unmerged `coding_agent_harness_test`
   branch (latest commit 2026-10-22) already builds on a harness: one session, one branch and one pull
@@ -912,36 +990,30 @@ owns, records on every build's receipt and tests
   later comes first.
 
 **Lifecycle controller.** A Step Functions machine drives each sandbox through requested,
-provisioning, running, paused, expired and deleted or graduated. T0 previews pause after 7 idle
-days and are deleted after 30 idle days, set on cost grounds. T1 apps run as their own deployment
-in a team-apps environment of the sandbox account, built from the repository rather than the
-preview instance, and follow the tier contract (90 days without renewal). Every sandbox is tagged
-for cost and has a budget alarm. The cloud platform team vends the sandbox account and owns its SCPs
-and IAM. A `SandboxProvider` interface in `providers/` keeps other providers possible. **The
-graduated build is never the sandbox itself.**
+provisioning, running, paused, expired and deleted or handed off. Previews pause after 7 idle days
+and are deleted after 30 idle days, set on cost grounds; an accepted prototype stays until the
+Construction decision plus 30 days (proposed), then is archived. Every sandbox is tagged for cost
+and has a budget alarm. The cloud platform team vends the sandbox account and owns its SCPs and IAM.
+A `SandboxProvider` interface in `providers/` keeps other providers possible. **Construction never
+ships the sandbox itself;** it builds from the repository and the handoff package.
 
-**Generated apps' own credentials.** One rule:
-
-- **Previews:** synthetic data, or a read-only role on approved non-confidential secure views, until
-  the Enterprise phase; from then, the viewer's identity (External OAuth) where the viewer has a Snowflake
-  user, otherwise the app's functional role.
-- **T1 web apps:** read through a per-app functional role whose audience the data owner approved as
-  part of the envelope; the viewer's identity where every viewer has a Snowflake user.
-- **Streamlit in Snowflake apps:** a functional app role scoped to exactly their audience
-  (section 6), with restricted caller's rights.
-
-Wherever an app or functional role is used, the data owner confirms at approval 2 (or at the
-graduation gate when the app moves up a tier) that the
-app's audience is within the role's entitled population. Secrets live only in Secrets Manager or
-Streamlit in Snowflake's native authentication, never in a repository or env file.
+**Prototypes' own credentials.** One rule: a prototype reads dev data only, through a read-only role
+on the dev database or designated dev views, or from synthetic data; from the Enterprise phase it
+reads as the viewer (External OAuth) where the viewer has a Snowflake user. At approval 2 the data
+owner confirms that the dev-data source and the production sources in the data map are within the
+envelope. Production credentials (a per-app functional role whose audience the data owner approves,
+restricted caller's rights for Streamlit in Snowflake apps) are set up in Construction, from the
+handoff package's data map. Secrets live only in Secrets Manager or Streamlit in Snowflake's native
+authentication, never in a repository or env file.
 
 ## 10. Securing generated code and the build agent
 
 - **Threat model** drafted on the long-lead track from week 2 and signed by the security architect in
   the Enterprise phase, covering prompt injection from Confluence pages and comments, transcripts, SharePoint,
   Jira tickets and repository contents, and the six lessons in section 2.
-- **A dedicated GitHub organization for T0 to T2 prototypes** from the Final MVP, with naming rules and
-  auto-archive on expiry; repositories transfer to the engineering organization at T3.
+- **A dedicated GitHub organization for all prototypes** from the Final MVP, with naming rules and
+  auto-archive on expiry; a repository transfers to the receiving organization when Construction
+  starts.
 - **Scanning.** From the Final MVP, the repository's CI runs secret, dependency and code scanning on every
   pushed build branch before review is requested, outside the build session: GitHub's own scanners
   where licensed, otherwise gitleaks, OSV-Scanner and Semgrep CE. (Copilot's cloud agent ran this
@@ -967,8 +1039,8 @@ Streamlit in Snowflake's native authentication, never in a repository or env fil
   to invoking one model, pulling the image and writing logs.
 - **Instruction-like text** in plan content, context packs and specialist results is flagged and
   shown to the approver of the plan.
-- **Patching:** a critical dependency vulnerability in a live T0 to T2 app is rebuilt from the
-  patched golden-path base within 7 days, or the app is switched off.
+- **Patching:** a critical dependency vulnerability in a running prototype is rebuilt from the
+  patched golden-path base within 7 days, or the prototype is paused.
 
 ## 11. Integrations, resources and per-project memory
 
@@ -978,10 +1050,10 @@ Streamlit in Snowflake's native authentication, never in a repository or env fil
 | SharePoint and OneDrive | A link resolver and file picker with Graph calls on behalf of the user; approved documents written back to a project SharePoint site | `Sites.Selected` where app-only access is needed |
 | Department knowledge | Bedrock Managed Knowledge Base, one per workspace, syncing only sources the whole workspace may read; `bedrock:Retrieve` restricted to the HyperDelivery runtime role; access re-checked in Cedar before content reaches a model (Enterprise) | AWS states its permission filtering is "not a security boundary". Customer-managed knowledge bases stopped accepting new SharePoint and Confluence connectors on 30 Sep 2026 |
 | Meeting transcripts | Pulled when someone points at a meeting; a downloaded `.vtt` or `.docx` transcript is accepted in the same box | Gated by a tenant control (below) |
-| Jira and Confluence | Final MVP: today's client, its token in Secrets Manager. Enterprise: Atlassian's Rovo MCP server (version 2 catalog), per-user OAuth for reads, a service account for writes after approval 2; Rovo A2A for questions | Needs an Atlassian admin to allow the client; consumes Rovo credits (about 1 to 10 per enriched call, 15 to 30 per generated item) |
+| Jira and Confluence | Final MVP: today's client, its token in Secrets Manager. Enterprise: Atlassian's Rovo MCP server (version 2 catalog), per-user OAuth for reads, a service account for writes at the handoff, after approval 3; Rovo A2A for questions | Needs an Atlassian admin to allow the client; consumes Rovo credits (about 1 to 10 per enriched call, 15 to 30 per generated item) |
 | Microsoft 365 questions | Work IQ A2A with an Entra delegated token (Enterprise), for "what did we decide about X" across the user's mail, chats and files | Does not replace transcript ingestion |
 | Snowflake | The broker and the Cortex Code data specialist (section 6); the managed MCP server for named agents | |
-| GitHub | The API worker pushes build branches and opens pull requests in the prototype organization: a fine-grained token in the Final MVP, GitHub App installation tokens in the Enterprise phase; a GitHub App per opted-in repository (Enterprise). Copilot's cloud agent only on a receiving team's own repositories after T3, under that team's rules | Each commit links back to the project timeline and carries an `Assisted-by:` trailer naming the engine, model, project and piece; the human signature stays in the decision record, never a Git sign-off |
+| GitHub | The API worker pushes build branches and opens pull requests in the prototype organization: a fine-grained token in the Final MVP, GitHub App installation tokens in the Enterprise phase; a GitHub App per opted-in repository (Enterprise). Copilot's cloud agent only on a receiving team's own repositories in Construction, under that team's rules | Each commit links back to the project timeline and carries an `Assisted-by:` trailer naming the engine, model, project and piece; the human signature stays in the decision record, never a Git sign-off |
 | AWS AgentCore | Runtime, Gateway, Identity, Policy, Memory, Evaluations, Observability; the harness for the coding agent, in the sandbox account | One place for policy, guardrails, audit and evaluation |
 
 ### Pointing at resources
@@ -1015,7 +1087,8 @@ your words"; type, labels and parent suggest the path and workspace; reporter an
 people to ask; an acceptance-criteria field seeds criteria; each comment becomes a "What we heard"
 statement attributed to its author; attachments and linked pages become pointed resources, with open
 inline comments as open-question candidates; issue links feed the duplicate check. Writing back to
-the ticket is a side effect: an explicit button, or tied to approval 2 with the Jira filing.
+the ticket is a side effect, so it waits for the Jira filing at the handoff, after approval 3; until
+then the project only links to the ticket.
 
 `EvidenceLink` gains a `SourceRef`: resource id, kind, URL, anchor (heading, page, transcript cue,
 comment id), source version, content hash and retrieval time. Atlassian account ids are captured at
@@ -1053,11 +1126,11 @@ The moat is UA's own context, indexed per project and reused with citations:
   10,000 per account per Region, and costs about $5 per GB of raw data a month. Retrieval is a
   per-agent tool whose knowledge base id comes from server state; answers cite chips that open the
   page version, comment or timestamp. The workspace knowledge base is the second tier.
-- **AgentCore Memory** for conversation only: chat history per session, summaries for handoffs,
+- **AgentCore Memory** for conversation only: chat history per session, summaries for delegations,
   user preferences, and proposed facts that feed "Confirm what we heard" and are never treated as
   true. Namespaces are keyed by workspace and project, with project and classification as
-  strictly-consistent keys so records never merge across projects. Episodic memory is off at T1 and
-  above.
+  strictly-consistent keys so records never merge across projects. Episodic memory is off for
+  projects with a T1 or higher target.
 - **DynamoDB** keeps the resource registry, decisions, confirmed facts and signatures, served by a
   direct `get_confirmed_facts(project)` tool; the Library queries them by workspace.
 - **Freshness:** Confluence by version polling, Jira by JQL on `updated`, project SharePoint folders
@@ -1088,17 +1161,19 @@ The moat is UA's own context, indexed per project and reused with citations:
   ([Why Step Functions stays](#why-step-functions-stays-and-where-langgraph-would-fit)).
 
 **Recurring cleanup.** From the pilot, the `sync-docs` skill runs weekly on HyperDelivery's own
-repository and opens doc fix-up pull requests; this repository has already drifted once. A
-golden-path drift sweep over live apps waits for Enterprise rollout and scale, when enough apps live long enough to
-drift; until then the 7-day patch rule (section 10) covers them, and any such change still goes back
-through the line ([research](research/harness-engineering.md#5-the-recommendations)).
+repository and opens doc fix-up pull requests; this repository has already drifted once
+([research](research/harness-engineering.md#5-the-recommendations)). HyperDelivery runs no live apps,
+and a prototype lives only until the Construction decision plus 30 days (proposed), so the 7-day
+patch rule (section 10) covers what it builds.
 
-**Enterprise production stage:** a separate production account or stage; a release pipeline with
-immutable image tags and a staging soak; prompt and model changes released through the same
-pipeline and gated on evaluations; backups with a tested restore; a scheduled canary run from
-approval 1 to done; an SLO (proposed 99.5% in business hours, RPO 1 hour, RTO 1 business day); an
-on-call rotation; a service desk category; the console as a fallback when Teams cards fail. Until
-then, a weekly release train with a second engineer able to deploy, debug and roll back.
+**HyperDelivery's own production environment (Enterprise):** a separate production account or stage
+for HyperDelivery itself, not for the apps it prototypes, which reach production only through
+Construction; a release pipeline with immutable image tags and a staging soak; prompt and model
+changes released through the same pipeline and gated on evaluations; backups with a tested restore;
+a scheduled canary run from intake to handoff; an SLO (proposed 99.5% in business hours, RPO 1 hour,
+RTO 1 business day); an on-call rotation; a service desk category; the console as a fallback when
+Teams cards fail. Until then, a weekly release train with a second engineer able to deploy, debug
+and roll back.
 
 ## 13. Governance, audit and cost
 
@@ -1119,11 +1194,12 @@ then, a weekly release train with a second engineer able to deploy, debug and ro
   enforced from the Enterprise phase; until then HyperDelivery is centrally funded, and who pays is
   decided at the scale decision.
 - **Reported as cost per accepted outcome,** including Snowflake, never cost per token.
-- **Compliance:** SOX controls review for finance prototypes below T3; Privacy and works council
-  review before meeting capture; WCAG 2.2 AA for the console and generated apps; the AI-literacy
-  module before EMEA access.
+- **Compliance:** finance prototypes stay on dev data, and SOX controls apply in Construction;
+  Privacy and works council review before meeting capture; WCAG 2.2 AA for the console and generated
+  apps; the AI-literacy module before EMEA access.
 - **UA review bodies:** informed in week 1 with the do-no-harm floor; InfoSec architecture review and
-  AI governance review in the Enterprise phase, before the second department; change advisory for T3.
+  AI governance review in the Enterprise phase, before the second department; change advisory in
+  Construction, outside HyperDelivery.
 
 ## 14. Quality and evaluation
 
@@ -1139,6 +1215,11 @@ then, a weekly release train with a second engineer able to deploy, debug and ro
   percentage threshold.
 - Review scoring fixed in the Final MVP: a report with no requirement met cannot pass, and coverage is
   graded only after builds settle.
+- **The handoff passes engineering's validator.** From the Final MVP, the context files in every
+  handoff package are checked with engineering's dependency-free validator before the package is
+  released. From the pilot, each handoff taken into Construction without a rewrite, and each one sent
+  back, is reported with its cause: whether handoffs are taken without a rewrite is the claim the
+  pilot has to prove.
 - **Passed every check, still rejected.** About half of the pull requests that passed SWE-bench's
   grader would not have been merged by maintainers, and "passes CI but wrong" is the failure that
   erodes trust in the whole system. From the pilot, every approval sent back or rejected although each
@@ -1186,6 +1267,7 @@ As of 2026-10-26. Each has a fallback so the plan does not hinge on it.
 | Teams meeting AI insights API | Beta; needs Microsoft 365 Copilot | Our own extraction from transcripts |
 | Microsoft Copilot Managed Runtime, Copilot Studio and Cowork apps, Agent 365 registry sync | Preview or early access | Not used; compared in the plan's use-case matrix |
 | Snowflake synthetic data generation | To confirm | Synthetic data from schema |
+| Engineering's AI-DLC context-file format and validator | Young, vendored pinned to a commit; HyperDelivery not yet accepted as a `generated_by` source | Hand over the Jira epic and the package as documents until the format is agreed |
 
 ## 16. External teams and lead times
 
@@ -1200,6 +1282,8 @@ Every request starts on the long-lead track, most in week 1, so none blocks Fina
 | UA Brand | Review of the wordmark, red usage, typeface and partner logos in chips | Week 2 | Week 10; fallback: public UA identity only, neutral chips without Microsoft marks, and the typeface held until Brand responds | [to confirm] |
 | InfoSec, AI governance | Heads-up and the floor in week 1; threat model draft; architecture and AI governance reviews | Weeks 1 to 2 | Enterprise sign-off | [to confirm] |
 | Data platform | Final MVP service user and grant-limited read-only role; confirm token exchange; reference design and roles; aggregation policies; provisioning | Week 1 (service user, scope); weeks 4 to 12 (design) | Week 2 (service user); Enterprise (design) | [to confirm] |
+| Data platform | A dev-data source for prototypes: synthetic data, a dev Snowflake database, or views it designates as dev data | Week 1 | Week 5 (hosted previews, ahead of friendly users in week 8); fallback: synthetic data from schema | [to confirm] |
+| UA engineering (AI marketplace owners, receiving engineering leads) | Agreement on the handoff format (context files, the `generated_by` source, the Jira epic's shape) and the Construction intake; who owns the Construction decision and its default by risk; whether `jira-to-pr --require-context` is what AI-driven means | Week 2 | Week 10 (the handoff package is built in weeks 10 to 14); fallback: emit engineering's published context-file format, checked with its validator, and settle the agreement at the pilot readout; the pilot (first Construction decisions) | [to confirm] |
 | Atlassian admins | Allowlist of Jira projects and Confluence spaces for the Final MVP; later the Rovo MCP client, service account and Forge app | Week 1 (allowlist); during the pilot (Rovo) | Week 3 (allowlist); Enterprise (Rovo) | [to confirm] |
 | Privacy and Legal | Interim scope for pointed meeting transcripts (pilot users' meetings only, no EMEA attendees, project index only) | Week 1 | Week 3 | [to confirm] |
 | Privacy and Legal | Meeting-capture review, including EMEA works councils, and transcript copies on AWS | Week 8 | Week 20 | [to confirm] |

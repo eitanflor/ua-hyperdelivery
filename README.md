@@ -181,5 +181,9 @@ Snowflake, no plaintext secrets, repositories only in a prototype GitHub organiz
 only in the sandbox account, writes only after approvals), then an orchestrator that hands
 Snowflake work to Cortex Code and coding to a sandboxed coding agent, built to MVP ready in
 week 14 and tried in a real testing pilot through week 22. Enterprise: identity, audit,
-budgets, evals, policy and the production stage, decided on pilot evidence and never holding up
-the Final MVP.
+budgets, evals, policy and HyperDelivery's own production environment, decided on pilot evidence
+and never holding up the Final MVP. HyperDelivery's build ends at Inception: a mockup, a working
+prototype on dev data in a hosted sandbox and a handoff package; whether Construction is AI-driven
+or AI-assisted with engineers is decided per project after Inception. The concept screens put
+it in a chat-first shell (a side nav, and each project as a conversation beside its artifacts),
+and the plan compares it with the products building toward UA-DLC.

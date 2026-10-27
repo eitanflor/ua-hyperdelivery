@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Confirm What We Heard</title>
+<title>HyperDelivery - Confirm What We Heard</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -12,260 +12,574 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light}
-body{margin:0;background:#F9F9F9}
+body{margin:0;background:#FFFFFF}
 a{color:#1D1D1D}a:hover{color:#444444}
 :focus-visible{outline:2px solid #0096FA;outline-offset:2px}
 .hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
-.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
 .hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
 .hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
 .hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
-.hd-nav a:hover{color:#1D1D1D!important}
 .hd-row:hover{background:#F9F9F9!important}
 .hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
 .hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
-.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent;border:0;padding:0;cursor:pointer}
 .hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
-.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-menu{position:absolute;top:44px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
 .hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
 .hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
 .hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
 .hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
-@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
 .hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
-</style>
-<style>
-.hd-sub[open]>summary .hd-caret{transform:rotate(180deg)}
+/* hd-shell: the side nav, the same on every product board (design-system.md section 7) */
+.hd-side{background:#F9F9F9;border-right:1px solid #F0F0F0;min-width:0}
+.hd-side-in{position:sticky;top:0;height:100vh;max-height:900px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:12px}
+.hd-sn{height:36px;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:8px;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:18px;white-space:nowrap;min-width:0}
+.hd-sn:not([aria-current="page"]):hover{background:#F0F0F0!important;color:#1D1D1D}
+.hd-sn:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #0096FA,inset 0 0 0 4px #FFFFFF!important}
+.hd-sn-sm{height:32px;font-size:13px;line-height:18px}
+.hd-sl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hd-new:hover{background:#F0F0F0!important}
+[data-rail="on"] .hd-sl,[data-rail="on"] .hd-recent,[data-rail="on"] .hd-word{display:none!important}
+[data-rail="on"] .hd-sn,[data-rail="on"] .hd-new{justify-content:center;padding:0}
+[data-rail="on"] .hd-sn[aria-current="page"]{background:#F0F0F0!important}
+[data-rail="on"] .hd-sn{position:relative}
+[data-rail="on"] .hd-count{position:absolute;top:1px;right:6px;min-width:16px!important;height:16px!important;padding:0 4px!important;font-size:11px!important;line-height:16px!important;box-shadow:0 0 0 2px #F9F9F9}
+[data-rail="on"] .hd-lock{justify-content:center;padding:0;flex-direction:column;height:auto;gap:12px}
+.hd-dots{display:inline-flex;align-items:center;gap:4px;flex:none}
+.hd-dots i{width:5px;height:5px;border-radius:999px;background:#444444;opacity:.3;animation:hd-dot 1.2s infinite}
+.hd-dots i:nth-child(2){animation-delay:.2s}.hd-dots i:nth-child(3){animation-delay:.4s}
+@keyframes hd-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hd-dots i{animation:none;opacity:.6}}
+/* hd-workspace: the conversation beside the artifact panel (design-system.md section 7.4) */
+.hd-tab:hover{background:#F0F0F0!important}
+.hd-tool>summary{list-style:none;cursor:pointer}
+.hd-tool>summary::-webkit-details-marker{display:none}
+.hd-tool>summary:hover{background:#F9F9F9}
+.hd-tool[open] .hd-chev{transform:rotate(90deg)}
+.hd-opt:hover{background:#F9F9F9!important}
+.hd-compose:focus-within{box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-look:hover{box-shadow:inset 0 0 0 1px #1D1D1D!important}
+/* this board: the panel's tabs and version label give up their icons and words below 1440 so the row fits */
+@media (max-width:1439px){.hd-tab:not(.hd-more)>svg,.hd-vlabel{display:none}}
+.hd-seg:not([aria-pressed="true"]):hover{background:#E6E6E6!important}
+.hd-tablist{scrollbar-width:none}.hd-tablist::-webkit-scrollbar{display:none}
+.hd-pop[open]>.hd-more{background:#F0F0F0!important}
+.hd-txt:hover{color:#444444!important}
+.hd-log>*{flex:none}
 </style>
 </helmet>
-<div style="min-height: 1106px; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums; background: #F9F9F9">
+<div class="hd-app" data-rail="{{railAttr}}" style="display: grid; grid-template-columns: {{sideW}} minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 1200px; min-height: 1200px; overflow: hidden; background: #FFFFFF; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
 
-<header style="height:56px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D0D0D0;position:relative;z-index:20">
-  <a href="Main.dc.html" class="hd-ring" style="display:flex;align-items:center;gap:12px;color:#1D1D1D;text-decoration:none;flex:none">
-    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
-    <span style="font-size:16px;line-height:20px;font-weight:700">HyperDelivery</span>
-  </a>
-  <span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
-  <details class="hd-pop" style="position:relative;flex:none">
-    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height:36px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 8px;border-radius:4px;color:#1D1D1D;font-size:14px;line-height:18px">Merchandising<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg></summary>
-    <div class="hd-menu" style="left:0;right:auto">
-      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closeMenu}}" style="font-weight:700">Merchandising<span style="flex:1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Sourcing</button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">Wholesale</button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closeMenu}}">EDM</button>
+<!-- hd-shell:side start -->
+<aside class="hd-side" aria-label="HyperDelivery">
+  <div class="hd-side-in">
+    <div class="hd-lock" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 2px 0 8px; margin-bottom: 8px">
+      <a href="Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 10px; color: #1D1D1D; text-decoration: none; min-width: 0">
+        <svg width="28" height="17" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex: none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg>
+        <span class="hd-word" style="font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">HyperDelivery</span>
+      </a>
+      <span class="hd-word" style="flex: 1"></span>
+      <button type="button" class="hd-iconbtn" onClick="{{toggleRail}}" aria-label="{{railLabel}}" aria-expanded="{{sideOpen}}" title="{{railLabel}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M9.5 4.5v15"></path></svg>
+      </button>
     </div>
-  </details>
-  <nav aria-label="Primary" class="hd-nav" style="display:flex;align-self:stretch;gap:24px">
-    <a href="Main.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Home</a>
-    <a href="Projects.dc.html" aria-current="page" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;font-weight:700;color:#1D1D1D;box-shadow:inset 0 -2px 0 #1D1D1D">Projects</a>
-    <a href="Inbox.dc.html" aria-label="Inbox, 4 waiting on you" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Inbox<span aria-hidden="true" style="margin-left:6px;min-width:16px;height:16px;box-sizing:border-box;padding:0 4px;border-radius:999px;background:#DC0019;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;text-align:center">4</span></a>
-    <a href="Library.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Library</a>
-    <a href="Portfolio.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Portfolio</a>
-    <span aria-hidden="true" style="align-self:center;width:1px;height:20px;background:#D0D0D0"></span>
-    <a href="Admin.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;text-decoration:none;color:#5F5F5F">Admin</a>
-  </nav>
-  <span style="flex:1"></span>
-  <div class="hd-right" style="display:flex;align-items:center;gap:16px;flex:none">
-    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border:0;border-radius:4px;background:#F0F0F0;color:#5F5F5F;font-family:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer;flex:none">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
-      <span style="flex:1">Search projects and facts</span>
-      <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    <a href="Main.dc.html" class="hd-new hd-ring-ink" aria-label="New Project" style="height: 40px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 14px; margin-bottom: 4px; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; color: #1D1D1D; text-decoration: none; font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 5v14M5 12h14"></path></svg><span class="hd-sl">New Project</span>
+    </a>
+    <button type="button" class="hd-sn" aria-label="Search projects and facts, Command K" aria-keyshortcuts="Meta+K" onClick="{{openSearch}}" style="border: 0; background: transparent; font-family: inherit; cursor: pointer; text-align: left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span class="hd-sl" style="flex: 1">Search</span>
+      <kbd class="hd-sl" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
     </button>
-    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;flex:none">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
-    <details class="hd-pop" style="position:relative;flex:none">
-      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle>
-          <path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+    <nav aria-label="Primary" style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+        <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" aria-label="{{n.aria}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}; color: {{n.fg}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+          <span class="hd-sl" style="flex: 1">{{n.label}}</span>
+          <sc-if value="{{n.hasTag}}" hint-placeholder-val="{{ false }}"><span class="hd-sl" style="font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">{{n.tag}}</span></sc-if>
+          <sc-if value="{{n.hasCount}}" hint-placeholder-val="{{ false }}"><span class="hd-count" aria-hidden="true" style="min-width: 18px; height: 18px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 18px; font-weight: 700; text-align: center">{{n.count}}</span></sc-if>
+        </a>
+      </sc-for>
+    </nav>
+    <div class="hd-recent" style="display: flex; flex-direction: column; gap: 2px; margin-top: 16px; min-height: 0">
+      <h2 style="margin: 0; padding: 0 10px 6px; font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">Recent</h2>
+      <sc-for list="{{recent}}" as="r" hint-placeholder-count="5">
+        <a href="{{r.href}}" class="hd-sn hd-sn-sm" aria-label="{{r.aria}}" aria-current="{{r.current}}" title="{{r.name}}" style="background: {{r.rowBg}}; box-shadow: {{r.rowRing}}; font-weight: {{r.fw}}">
+          <span aria-hidden="true" style="width: 14px; height: 14px; flex: none; display: inline-flex; align-items: center; justify-content: center">
+            <sc-if value="{{r.isWork}}" hint-placeholder-val="{{ false }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+            <sc-if value="{{r.isNotch}}" hint-placeholder-val="{{ true }}"><span style="width: 8px; height: 8px; box-sizing: border-box; background: {{r.bg}}; border: {{r.bd}}"></span></sc-if>
+          </span>
+          <span class="hd-sl" style="flex: 1">{{r.name}}</span>
+        </a>
+      </sc-for>
+      <a href="Projects.dc.html" class="hd-sn hd-sn-sm" style="color: #5F5F5F"><span aria-hidden="true" style="width: 14px; flex: none"></span><span class="hd-sl">All Projects</span></a>
+    </div>
+    <span style="flex: 1"></span>
+    <sc-for list="{{admin}}" as="n" hint-placeholder-count="0">
+      <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+        <span class="hd-sl">{{n.label}}</span>
+      </a>
+    </sc-for>
+    <details class="hd-pop" style="position: relative; margin-top: 8px">
+      <summary class="hd-sn hd-ring-in" aria-label="{{me.aria}}" style="height: 48px; padding: 0 8px">
+        <span aria-hidden="true" style="width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{me.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{me.initials}}</span>
+        <span class="hd-sl" style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+          <span class="hd-sl" style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span class="hd-sl" style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{me.workspace}}</span>
+        </span>
+        <svg class="hd-sl" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"></path></svg>
       </summary>
-      <nav class="hd-menu" aria-label="Help">
-        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
-        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
-        <hr>
-        <details class="hd-sub">
-          <summary class="hd-mi">Keyboard Shortcuts<span style="flex:1"></span><kbd>?</kbd></summary>
-          <dl style="margin:0;padding:4px 16px 8px;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:12px;line-height:18px;color:#5F5F5F">
-            <dt><kbd>⌘K</kbd></dt><dd style="margin:0">Search</dd>
-            <dt><kbd>/</kbd></dt><dd style="margin:0">Search This Table</dd>
-            <dt><kbd>J</kbd> <kbd>K</kbd></dt><dd style="margin:0">Next and Previous Item</dd>
-            <dt><kbd>@</kbd></dt><dd style="margin:0">Mention Someone</dd>
-            <dt><kbd>Esc</kbd></dt><dd style="margin:0">Close</dd>
-            <dt><kbd>?</kbd></dt><dd style="margin:0">Show Shortcuts</dd>
-          </dl>
-        </details>
-        <details class="hd-sub">
-          <summary class="hd-mi">What's New<span style="flex:1"></span><span style="padding:0 4px;border-radius:4px;background:#FE9000;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700">NEW</span></summary>
-          <ul style="margin:0;padding:4px 16px 8px;list-style:none;display:grid;gap:8px;font-size:12px;line-height:18px">
-            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
-            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
-            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
-          </ul>
-        </details>
-        <hr>
-        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex:1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
-      </nav>
-    </details>
-    <details class="hd-pop" style="position:relative;flex:none">
-      <summary class="hd-ring" aria-label="Maya Chen, account" style="width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">MC</summary>
-      <div class="hd-menu">
-        <div style="padding:8px 16px 12px;display:flex;flex-direction:column">
-          <span style="font-size:14px;line-height:18px;font-weight:700">Maya Chen</span>
-          <span style="font-size:12px;line-height:18px;color:#5F5F5F">Business owner, Merchandising</span>
+      <div class="hd-menu" style="top: auto; bottom: 56px; left: 0; right: auto; width: 248px">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{me.role}}</span>
         </div>
         <hr>
-        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex:1"></span><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;color:#5F5F5F">{{techLabel}}<sc-if value="{{tech}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <div style="padding: 4px 16px; font-size: 12px; line-height: 16px; color: #5F5F5F">Workspace</div>
+        <sc-for list="{{workspaces}}" as="w" hint-placeholder-count="4">
+          <button type="button" class="hd-mi" aria-pressed="{{w.on}}" onClick="{{closeMenu}}" style="font-weight: {{w.fw}}">{{w.name}}<span style="flex: 1"></span><sc-if value="{{w.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+        </sc-for>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}</span></button>
         <hr>
         <button type="button" class="hd-mi">Sign Out</button>
       </div>
     </details>
   </div>
-</header>
+</aside>
+<!-- hd-shell:side end -->
 
-<section style="background:#FFFFFF;border-bottom:1px solid #D0D0D0;padding:24px">
-  <nav aria-label="Breadcrumb" style="display:flex;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F">
-    <a href="Projects.dc.html" style="color:#5F5F5F;text-decoration:none">Projects</a><span aria-hidden="true">/</span>
-    <a href="Project.dc.html" style="color:#5F5F5F;text-decoration:none">SKU productivity workbench</a>
+<div style="min-width: 0; min-height: 0; display: flex; flex-direction: column">
+<!-- hd-shell:top start (project variant: breadcrumb, then the project's people and actions, then Help) -->
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #F0F0F0; position: relative; z-index: 20">
+  <nav aria-label="Breadcrumb" style="display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; line-height: 20px; color: #5F5F5F; white-space: nowrap">
+    <a href="Projects.dc.html" style="color: #5F5F5F; text-decoration: none">Projects</a><span aria-hidden="true">/</span>
+    <span aria-current="page" style="color: #1D1D1D; font-weight: 700; overflow: hidden; text-overflow: ellipsis">{{title}}</span>
+    <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 400">Target: T1 Team App</span>
   </nav>
-  <div style="margin-top:8px;display:flex;align-items:center;gap:16px;min-height:40px">
-    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:700;white-space:nowrap">Confirm What We Heard</h1>
-    <span style="flex:1"></span>
-    <span role="img" aria-label="Maya Chen, Dana Ortiz, Luis Romero and 3 others were in the session" style="display:inline-flex;align-items:center">
-      <span title="Maya Chen" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">MC</span>
-      <span title="Dana Ortiz" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#6A4C8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">DO</span>
-      <span title="Luis Romero" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#2E6A8E;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">LR</span>
-      <span aria-hidden="true" style="min-width:24px;height:24px;box-sizing:border-box;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#F0F0F0;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #FFFFFF">+3</span>
-    </span>
-    <span style="position:relative;flex:none;display:flex">
-      <sc-if value="{{canFinish}}" hint-placeholder-val="{{ false }}">
-        <a href="Project.dc.html" class="hd-btn-primary hd-ring" style="height:36px;min-width:96px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border-radius:999px;background:#1D1D1D;color:#FFFFFF;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Finish Review</a>
-      </sc-if>
-      <sc-if value="{{cannotFinish}}" hint-placeholder-val="{{ true }}">
-        <button type="button" disabled="{{ true }}" aria-describedby="finish-why" style="height:36px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:999px;background:#D0D0D0;color:#FFFFFF;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:not-allowed">Finish Review</button>
-        <span id="finish-why" style="position:absolute;top:100%;right:0;margin-top:4px;font-size:12px;line-height:18px;color:#5F5F5F;white-space:nowrap">{{leftLabel}}</span>
-      </sc-if>
-    </span>
-  </div>
-  <div style="margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;font-size:14px;line-height:20px;color:#5F5F5F">
-    <span style="color:#1D1D1D">{{countsLabel}}</span>
-    <span style="display:inline-flex;align-items:center;gap:8px">From
-      <span style="height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.microsoftteams}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Working session, Wed Oct 21</span>
-      <span style="height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.confluence}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Brief page, revisions 7 to 9</span>
-    </span>
-  </div>
-</section>
+  <span style="flex: 1"></span>
+  <span role="img" aria-label="People: Maya Chen, Priya Nair, Luis Romero, Dana Ortiz and Sam Kim" style="display: inline-flex; align-items: center; gap: 2px">
+    <sc-for list="{{people}}" as="p" hint-placeholder-count="4"><span aria-hidden="true" title="{{p.name}}" style="min-width: 28px; height: 28px; box-sizing: border-box; padding: 0 4px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{p.bg}}; color: {{p.fg}}; font-size: 12px; line-height: 16px; font-weight: 700; box-shadow: 0 0 0 2px #FFFFFF">{{p.initials}}</span></sc-for>
+  </span>
+  <button type="button" class="hd-btn-secondary hd-ring-ink" style="height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; cursor: pointer">Share</button>
+  <details class="hd-pop" style="position: relative; flex: none">
+    <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+    </summary>
+    <nav class="hd-menu" aria-label="Help">
+      <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+      <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+      <hr>
+      <details class="hd-sub">
+        <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>⌘/</kbd></summary>
+        <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+          <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+          <dt><kbd>⌘⇧O</kbd></dt><dd style="margin: 0">New Project</dd>
+          <dt><kbd>⌘B</kbd></dt><dd style="margin: 0">Hide or Show the Sidebar</dd>
+          <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention a Person or Source</dd>
+          <dt><kbd>⌘/</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+          <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+        </dl>
+      </details>
+      <details class="hd-sub">
+        <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+        <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+          <li><b>Oct 26</b> A sidebar, and every project's work in one place</li>
+          <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+          <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+        </ul>
+      </details>
+      <hr>
+      <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+    </nav>
+  </details>
+</header>
+<!-- hd-shell:top end -->
 
-<main style="padding:32px 24px 56px;display:grid;grid-template-columns:repeat(12, minmax(0, 1fr));column-gap:16px;align-items:stretch">
+<main aria-label="Project" style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+<!-- hd-workspace:line start (the project line, full width under the top bar; labels carry the split time or the wait) -->
+<div style="display: flex; align-items: center; gap: 24px; padding: 12px 24px; border-bottom: 1px solid #F0F0F0; background: #FFFFFF">
+  <div role="img" aria-label="{{lineAria}}" style="flex: 1; max-width: 760px; display: grid; grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr); align-items: center; row-gap: 6px">
+    <sc-for list="{{lineNames}}" as="n" hint-placeholder-count="7"><span style="justify-self: center; font-size: 12px; line-height: 16px; color: {{n.c}}; font-weight: {{n.w}}; white-space: nowrap">{{n.t}}</span></sc-for>
+    <sc-for list="{{lineTrack}}" as="x" hint-placeholder-count="7">
+      <sc-if value="{{x.isSeg}}" hint-placeholder-val="{{ true }}"><span style="height: {{x.h}}; background: {{x.bg}}; border-top: {{x.bt}}"></span></sc-if>
+      <sc-if value="{{x.isNotch}}" hint-placeholder-val="{{ false }}"><span style="width: 12px; height: 12px; box-sizing: border-box; background: {{x.fill}}; border: {{x.border}}"></span></sc-if>
+    </sc-for>
+    <sc-for list="{{lineLabels}}" as="l" hint-placeholder-count="7"><span style="justify-self: center; align-self: start; text-align: center; font-size: 12px; line-height: 16px; font-weight: 700; color: {{l.c}}; white-space: nowrap">{{l.t}}<sc-if value="{{l.hasSub}}" hint-placeholder-val="{{ false }}"><span style="display: flex; justify-content: center; align-items: center; gap: 4px; font-weight: 400; color: {{l.sc}}"><sc-if value="{{l.isWait}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM12 7v5l3.5 2"></path></svg></sc-if>{{l.sub}}</span></sc-if></span></sc-for>
+  </div>
+  <span style="margin-left: auto; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">Plan outputs <b style="color: #1D1D1D">requirements to tickets</b></span>
+</div>
+<!-- hd-workspace:line end -->
 
-  <section aria-label="Proposed items" style="grid-column:span 9;min-width:0;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
-    <div role="toolbar" aria-label="Filter items" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:16px 24px;background:#F9F9F9;border-bottom:1px solid #F0F0F0">
-      <sc-for list="{{statusChips}}" as="c" hint-placeholder-count="3">
-        <button type="button" class="{{c.focusCls}}" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:0;border-radius:4px;background:{{c.bg}};color:{{c.fg}};box-shadow:{{c.ring}};font-family:inherit;font-size:14px;line-height:18px;font-weight:{{c.weight}};white-space:nowrap;cursor:pointer">
-          <sc-if value="{{c.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
-          <span>{{c.label}}</span><span style="font-weight:400;color:{{c.countColor}}">{{c.n}}</span>
-        </button>
+<!-- hd-workspace:split start -->
+<div style="flex: 1; display: grid; grid-template-columns: {{splitCols}}; grid-template-rows: minmax(0, 1fr); min-height: 0">
+
+  <section aria-label="Conversation" style="display: {{convDisplay}}; flex-direction: column; border-right: 1px solid #F0F0F0; min-width: 0; min-height: 0; background: #FFFFFF">
+    <div role="log" aria-live="polite" class="hd-log" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 24px 24px 16px">
+
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><img src="{{logos.microsoftteams}}" width="14" height="14" alt="" style="flex: none">Wednesday's working session was recorded in Teams, Oct 21: 48 min, 6 people</div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">HyperDelivery</span>
+          <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">Oct 21 16:10</span>
+        </div>
+        <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #F0F0F0; overflow: hidden">
+          <sc-for list="{{tools}}" as="t" hint-placeholder-count="3">
+            <details class="hd-tool" style="border-top: {{t.rule}}">
+              <summary class="hd-ring-in" style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; font-size: 13px; line-height: 18px">
+                <svg class="hd-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; transition: transform .16s"><path d="M9.5 6l6 6-6 6"></path></svg>
+                <img src="{{t.logo}}" width="16" height="16" alt="" style="flex: none">
+                <span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.label}}</span>
+                <span style="color: #5F5F5F; white-space: nowrap">{{t.result}}</span>
+              </summary>
+              <ul style="margin: 0; padding: 0 12px 12px 48px; display: grid; gap: 4px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                <sc-for list="{{t.lines}}" as="l" hint-placeholder-count="2"><li>{{l}}</li></sc-for>
+              </ul>
+            </details>
+          </sc-for>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 22px">Wednesday's decisions are written down with who said them and when. Four are in your words, and Merchandising and Finance count one style differently.</p>
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 8px; box-shadow: {{crRing}}">
+          <div style="display: flex; align-items: flex-start; gap: 12px">
+            <span aria-hidden="true" style="width: 32px; height: 32px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #F0F0F0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6.5h10M10 12h10M10 17.5h10M3.5 6.5l1.2 1.2L7 5.4M3.5 12l1.2 1.2L7 10.9M3.5 17.5l1.2 1.2L7 16.4"></path></svg></span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 14px; line-height: 20px; font-weight: 700">12 things to confirm from Wednesday's working session</span>
+              <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{crMeta}}</span>
+            </span>
+          </div>
+          <sc-if value="{{notFinished}}" hint-placeholder-val="{{ true }}">
+            <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{openHeard}}" aria-pressed="{{heardPressed}}" style="align-self: flex-start; height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; cursor: pointer; white-space: nowrap">Review What We Heard</button>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5M8.5 13h7M8.5 16.5h5"></path></svg><span>The plan was drafted and sent for approval, Oct 23</span></div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; box-shadow: inset 0 0 0 1px #1D1D1D">
+        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 700; color: #DC0019"><span aria-hidden="true" style="width: 12px; height: 12px; background: #DC0019; flex: none"></span>Your Approval: The Plan</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 18px; color: #5F5F5F">Second of three<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 6px; flex: none"><path d="M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM12 7v5l3.5 2"></path></svg>Waiting 1d 4h</span>
+        </span>
+        <a href="Project.dc.html" class="hd-btn-secondary hd-ring-ink" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; color: #1D1D1D; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">Review and Sign</a>
+      </div>
+
+      <sc-for list="{{chat}}" as="m" hint-placeholder-count="0">
+        <div style="align-self: flex-end; max-width: 344px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px">
+          <sc-if value="{{m.hasText}}" hint-placeholder-val="{{ true }}"><div style="padding: 12px 16px; border-radius: 16px 16px 4px 16px; background: #F0F0F0; font-size: 14px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere">{{m.text}}</div></sc-if>
+          <sc-if value="{{m.hasFiles}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px"><sc-for list="{{m.files}}" as="c" hint-placeholder-count="1"><span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">{{c.label}}</span></sc-for></div></sc-if>
+          <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.who}}</span>
+        </div>
       </sc-for>
+
+      <sc-if value="{{finished}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg><span>{{finishedLine}}</span></div>
+      </sc-if>
     </div>
 
-    <sc-for list="{{atoms}}" as="a" hint-placeholder-count="8">
-      <div style="display:grid;grid-template-columns:112px minmax(0,1fr) 216px;column-gap:16px;align-items:start;padding:16px 24px;border-bottom:1px solid #F0F0F0">
-        <span style="min-height:24px;display:flex;align-items:center">
-          <span style="height:20px;display:inline-flex;align-items:center;padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap">{{a.badge}}</span>
-        </span>
-        <div style="min-width:0;display:flex;flex-direction:column;gap:8px">
-          <sc-if value="{{a.editing}}" hint-placeholder-val="{{ false }}">
-            <label style="display:flex;flex-direction:column;gap:8px">
-              <span style="font-size:14px;line-height:18px">Your words, before you confirm</span>
-              <textarea rows="2" style="width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;line-height:24px;color:#1D1D1D;border:1px solid #5F5F5F;border-radius:4px;padding:8px 12px;resize:none" defaultValue="{{a.text}}"></textarea>
-            </label>
-          </sc-if>
-          <sc-if value="{{a.notEditing}}" hint-placeholder-val="{{ true }}">
-            <div style="font-size:16px;line-height:24px;color:{{a.textColor}}">{{a.text}}</div>
-          </sc-if>
-          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:12px;line-height:18px;color:#5F5F5F">
-            <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap">
-              <sc-if value="{{a.hasAvatar}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{a.avatarBg}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">{{a.initials}}</span></sc-if>
-              <sc-if value="{{a.isSystem}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg></sc-if>
-              <span style="color:#1D1D1D">{{a.who}}</span>
-            </span>
-            <span style="height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{a.logo}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none"><span>{{a.where}}</span><sc-if value="{{a.hasAt}}" hint-placeholder-val="{{ true }}"><span style="font-family:'Chivo Mono',ui-monospace,monospace;color:#5F5F5F">{{a.at}}</span></sc-if></span>
-            <sc-if value="{{a.isWorkspace}}" hint-placeholder-val="{{ false }}"><span style="white-space:nowrap">Applies to the whole workspace</span></sc-if>
-            <sc-if value="{{a.hasDecision}}" hint-placeholder-val="{{ false }}"><span style="height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg><span>{{a.decision}}</span></span></sc-if>
+    <div style="flex: none; padding: 12px 24px 20px; background: #FFFFFF">
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px">
+        <sc-for list="{{suggest}}" as="s" hint-placeholder-count="2"><button type="button" class="hd-chip hd-ring-edge" onClick="{{s.pick}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; cursor: pointer">{{s.label}}</button></sc-for>
+      </div>
+      <div class="hd-compose" style="border-radius: 16px; box-shadow: inset 0 0 0 1px #949494">
+        <sc-if value="{{cmpHasFiles}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0">
+            <sc-for list="{{cmpFiles}}" as="c" hint-placeholder-count="1">
+              <span style="height: 28px; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px 0 8px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap">
+                <img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">
+                <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><b>{{c.kind}}</b> {{c.title}}</span>
+                <button type="button" class="hd-iconbtn" onClick="{{c.remove}}" aria-label="{{c.removeLabel}}" style="width: 24px; height: 24px; flex: none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></button>
+              </span>
+            </sc-for>
           </div>
-          <sc-if value="{{a.mine}}" hint-placeholder-val="{{ false }}">
-            <button type="button" onClick="{{a.toggleEdit}}" style="align-self:flex-start;padding:4px 0;border:0;background:transparent;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;text-decoration:underline;text-underline-offset:3px;cursor:pointer">{{a.editLabel}}</button>
-          </sc-if>
-        </div>
-        <div style="justify-self:end;display:flex;align-items:center;gap:8px;min-height:36px;margin-top:-6px">
-          <sc-if value="{{a.isOpen}}" hint-placeholder-val="{{ true }}">
-            <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{a.confirm}}" aria-label="{{a.confirmLabel}}" style="height:36px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:999px;background:#FFFFFF;color:#1D1D1D;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Confirm</button>
-            <button type="button" class="hd-btn-ghost hd-ring" onClick="{{a.reject}}" aria-label="{{a.rejectLabel}}" style="height:36px;display:inline-flex;align-items:center;gap:8px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Not Right</button>
-          </sc-if>
-          <sc-if value="{{a.isConfirmed}}" hint-placeholder-val="{{ false }}">
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#00834B;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Confirmed by you</span>
-            <button type="button" onClick="{{a.undo}}" aria-label="{{a.undoLabel}}" style="height:36px;padding:0 4px;border:0;background:transparent;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;text-decoration:underline;text-underline-offset:3px;cursor:pointer">Undo</button>
-          </sc-if>
-          <sc-if value="{{a.isRejected}}" hint-placeholder-val="{{ false }}">
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#1D1D1D;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg>Marked not right</span>
-            <button type="button" onClick="{{a.undo}}" aria-label="{{a.undoLabel}}" style="height:36px;padding:0 4px;border:0;background:transparent;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;text-decoration:underline;text-underline-offset:3px;cursor:pointer">Undo</button>
-          </sc-if>
+        </sc-if>
+        <div style="display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 16px">
+          <textarea id="hd-reply" rows="1" aria-label="Reply to HyperDelivery" placeholder="Correct something, or ask why" value="{{reply}}" onChange="{{onReply}}" onKeyDown="{{replyKey}}" style="flex: 1; min-height: 36px; box-sizing: border-box; border: 0; outline: none; resize: none; padding: 8px 0; font-family: inherit; font-size: 14px; line-height: 20px; background: transparent; color: #1D1D1D"></textarea>
+          <details class="hd-pop" style="position: relative; flex: none">
+            <summary class="hd-iconbtn hd-ring" aria-label="Point at a file or page" title="Point at a file or page" style="width: 36px; height: 36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+            <div class="hd-menu" role="group" aria-label="Point at a file or page" style="top: auto; bottom: 44px; right: -44px; width: 320px">
+              <div style="padding: 4px 16px 8px; font-size: 12px; line-height: 16px; color: #5F5F5F">Read with your access. Nothing is copied out of Snowflake.</div>
+              <sc-for list="{{cmpSources}}" as="p" hint-placeholder-count="6">
+                <button type="button" class="hd-mi" onClick="{{p.add}}" style="height: 40px">
+                  <img src="{{p.logo}}" width="18" height="18" alt="" style="flex: none">
+                  <span style="flex: 1">{{p.label}}</span>
+                  <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{p.hint}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </details>
+          <button type="button" aria-label="Send" disabled="{{replyEmpty}}" onClick="{{sendReply}}" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: {{sendBg}}; color: #FFFFFF; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"></path></svg></button>
         </div>
       </div>
-    </sc-for>
-    <sc-if value="{{noAtoms}}" hint-placeholder-val="{{ false }}">
-      <div style="padding:56px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.75 2.75L16.5 9.5"></path></svg>
-        <h2 style="margin:8px 0 0;font-size:16px;line-height:20px;font-weight:700">{{emptyTitle}}</h2>
-        <p style="margin:0;max-width:360px;font-size:14px;line-height:20px;color:#5F5F5F">{{emptyLine}}</p>
-        <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{showAll}}" style="margin-top:8px;height:36px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border:0;border-radius:999px;background:#FFFFFF;color:#1D1D1D;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Show All</button>
-      </div>
-    </sc-if>
+    </div>
   </section>
 
-  <aside aria-label="Pick this project's level" style="grid-column:span 3;min-width:0;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px">
-    <section aria-labelledby="level-title" style="position:sticky;top:16px;padding:16px;display:flex;flex-direction:column;gap:16px">
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <h2 id="level-title" style="margin:0;display:flex;align-items:center;gap:8px;font-size:16px;line-height:20px;font-weight:700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>Pick This Project's Level</h2>
-        <span style="font-size:12px;line-height:18px;color:#5F5F5F">Luis Romero certified both levels today.</span>
-      </div>
-
-      <details class="hd-sub" style="border-top:1px solid #F0F0F0;border-bottom:1px solid #F0F0F0">
-        <summary class="hd-ring-in" style="height:40px;display:flex;align-items:center;gap:8px;font-size:14px;line-height:18px;font-weight:700">Show Both Positions<span style="flex:1"></span><svg class="hd-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M6 9.5l6 6 6-6"></path></svg></summary>
-        <div style="display:flex;flex-direction:column;gap:8px;padding:8px 0 16px">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">MC</span><span style="font-size:14px;line-height:18px;font-weight:700;white-space:nowrap">Merchandising</span><span style="font-size:12px;line-height:18px;color:#5F5F5F;white-space:nowrap">Maya Chen</span></span>
-          <span style="font-size:14px;line-height:20px">Style-color: each colorway is its own row.</span>
-          <span style="align-self:flex-start;height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.confluence}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Range review playbook</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;padding:16px 0;border-top:1px solid #F0F0F0">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#6A4C8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">DO</span><span style="font-size:14px;line-height:18px;font-weight:700;white-space:nowrap">Finance</span><span style="font-size:12px;line-height:18px;color:#5F5F5F;white-space:nowrap">Dana Ortiz</span></span>
-          <span style="font-size:14px;line-height:20px">Style: all colorways roll up into one.</span>
-          <span style="align-self:flex-start;height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.sharepoint}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Margin reporting standard</span>
-        </div>
-      </details>
-
-      <div role="radiogroup" aria-labelledby="level-title" style="display:flex;flex-direction:column;gap:8px">
-        <sc-for list="{{resolutions}}" as="r" hint-placeholder-count="2">
-          <button type="button" role="radio" class="{{r.focusCls}}" aria-checked="{{r.checked}}" tabIndex="{{r.tab}}" onClick="{{r.pick}}" onKeyDown="{{levelKeys}}" style="min-height:44px;display:flex;align-items:flex-start;gap:12px;padding:12px;border:0;border-radius:4px;background:{{r.bg}};box-shadow:{{r.ring}};color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer">
-            <span aria-hidden="true" style="margin-top:2px;width:16px;height:16px;box-sizing:border-box;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:{{r.radioBorder}};background:#FFFFFF">
-              <sc-if value="{{r.on}}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:50%;background:#1D1D1D"></span></sc-if>
-            </span>
-            <span>{{r.label}}<sc-if value="{{r.recommended}}" hint-placeholder-val="{{ false }}"><span style="margin-left:4px;color:#5F5F5F">(Recommended)</span></sc-if></span>
+  <section aria-label="Artifacts" style="min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #F9F9F9">
+    <div style="display: flex; align-items: center; gap: 4px; padding: 12px 24px 0">
+      <div role="tablist" aria-label="Artifacts" class="hd-tablist" style="display: flex; align-items: center; gap: 0; min-width: 0; overflow-x: auto">
+        <sc-for list="{{arts}}" as="a" hint-placeholder-count="7">
+          <button type="button" role="tab" id="{{a.tabId}}" aria-selected="{{a.selected}}" aria-controls="art-panel" aria-disabled="{{a.locked}}" tabindex="{{a.tab}}" onClick="{{a.pick}}" onKeyDown="{{artKey}}" title="{{a.tip}}" class="hd-tab hd-ring-in" style="height: 36px; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 8px 8px 0 0; background: {{a.bg}}; box-shadow: {{a.ring}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: {{a.fw}}; color: {{a.fg}}; cursor: {{a.cursor}}; white-space: nowrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{a.icon}}"></path></svg>
+            {{a.label}}
+            <sc-if value="{{a.hasMeta}}" hint-placeholder-val="{{ false }}"><span style="font-weight: 400; color: #5F5F5F">{{a.meta}}</span></sc-if>
           </button>
         </sc-for>
       </div>
-    </section>
-  </aside>
+      <span style="flex: 1"></span>
+      <details class="hd-pop" style="position: relative; flex: none">
+        <summary class="hd-tab hd-more hd-ring-in" aria-label="More project views" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; border-radius: 8px 8px 0 0; font-size: 13px; line-height: 18px; color: #1D1D1D; white-space: nowrap">More<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg></summary>
+        <div class="hd-menu" role="group" aria-label="More project views" style="top: 40px; width: 288px">
+          <sc-for list="{{moreViews}}" as="v" hint-placeholder-count="1">
+            <button type="button" class="hd-mi" aria-disabled="true" title="{{v.tip}}" style="height: 48px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; color: #5F5F5F; cursor: default"><span>{{v.label}}</span><span style="font-size: 12px; line-height: 16px">{{v.tip}}</span></button>
+          </sc-for>
+        </div>
+      </details>
+    </div>
+
+    <div id="art-panel" role="tabpanel" aria-labelledby="{{artLabelledBy}}" style="flex: 1; margin: 0 24px 0; background: #FFFFFF; border-radius: 0 8px 0 0; box-shadow: inset 0 0 0 1px #F0F0F0; display: flex; flex-direction: column; min-height: 0">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #F0F0F0">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+          <h1 style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">{{artTitle}}</h1>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{artMeta}}</span>
+        </div>
+        <span style="flex: 1"></span>
+        <sc-if value="{{hasVersions}}" hint-placeholder-val="{{ true }}">
+          <details class="hd-pop" style="position: relative; flex: none">
+            <summary class="hd-btn-ghost hd-ring" aria-label="Versions" style="height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; font-size: 13px; line-height: 18px; color: #1D1D1D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0z"></path></svg><span class="hd-vlabel">Versions</span></summary>
+            <div class="hd-menu" role="group" aria-label="Versions" style="top: 40px; width: 288px">
+              <sc-for list="{{versions}}" as="v" hint-placeholder-count="3">
+                <button type="button" class="hd-mi" aria-pressed="{{v.on}}" onClick="{{closeMenu}}" style="font-weight: {{v.fw}}">{{v.label}}<span style="flex: 1"></span><sc-if value="{{v.isOn}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+              </sc-for>
+            </div>
+          </details>
+        </sc-if>
+        <button type="button" class="hd-iconbtn hd-ring" onClick="{{toggleFull}}" aria-pressed="{{fullPressed}}" aria-label="{{fullLabel}}" title="{{fullLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{fullD}}"></path></svg></button>
+      </div>
+
+      <div style="flex: 1 1 auto; height: 0; min-height: 0; padding: 24px; overflow: auto">
+        <sc-if value="{{isSources}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 16px">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px">
+              <div role="group" aria-label="Sources view" style="display: inline-flex; gap: 2px; padding: 2px; border-radius: 999px; background: #F0F0F0">
+                <sc-for list="{{views}}" as="v" hint-placeholder-count="2">
+                  <button type="button" class="hd-seg hd-ring" aria-pressed="{{v.pressed}}" onClick="{{v.pick}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 0; border-radius: 999px; background: {{v.bg}}; box-shadow: {{v.ring}}; font-family: inherit; font-size: 12px; line-height: 20px; font-weight: {{v.fw}}; color: #1D1D1D; cursor: pointer; white-space: nowrap">{{v.label}}<span style="font-weight: 400; color: #5F5F5F">{{v.n}}</span></button>
+                </sc-for>
+              </div>
+              <span style="flex: 1"></span>
+              <sc-if value="{{isHeard}}" hint-placeholder-val="{{ true }}">
+                <div role="group" aria-label="Filter items" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+                  <sc-for list="{{statusChips}}" as="c" hint-placeholder-count="3">
+                    <button type="button" class="{{c.focusCls}}" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 4px; background: {{c.bg}}; color: {{c.fg}}; box-shadow: {{c.ring}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: {{c.weight}}; white-space: nowrap; cursor: pointer">
+                      <sc-if value="{{c.on}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+                      <span>{{c.label}}</span><span style="font-weight: 400; color: {{c.countColor}}">{{c.n}}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{isHeard}}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 16px">
+                <sc-if value="{{showDispute}}" hint-placeholder-val="{{ true }}">
+                  <section aria-labelledby="level-title" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 8px; border: 1px solid {{disputeBd}}">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px">
+                      <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; font-weight: 600; white-space: nowrap">DEFINITION</span>
+                      <h2 id="level-title" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Pick This Project's Level</h2>
+                      <span style="flex: 1"></span>
+                      <sc-if value="{{levelDone}}" hint-placeholder-val="{{ false }}">
+                        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #00834B; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Set by you</span>
+                        <sc-if value="{{canUndo}}" hint-placeholder-val="{{ true }}"><button type="button" class="hd-ring" onClick="{{undoLevel}}" aria-label="Undo the level for this project" style="height: 32px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Undo</button></sc-if>
+                      </sc-if>
+                    </div>
+                    <p style="margin: 0; font-size: 14px; line-height: 20px; color: #5F5F5F">Merchandising and Finance count one style differently. Luis Romero certified both levels today.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px">
+                      <sc-for list="{{positions}}" as="p" hint-placeholder-count="2">
+                        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 8px; background: {{p.bg}}; box-shadow: {{p.mark}}">
+                          <span style="display: flex; align-items: center; gap: 8px; min-width: 0"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{p.avatarBg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">{{p.initials}}</span><span style="font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap">{{p.team}}</span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.who}}</span></span>
+                          <span style="font-size: 14px; line-height: 20px">{{p.text}}</span>
+                          <span style="display: flex; flex-wrap: wrap; gap: 6px">
+                            <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{p.logo}}" width="14" height="14" alt="">{{p.where}}</span>
+                            <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{logos.microsoftteams}}" width="14" height="14" alt="">Recording<span style="font-family: 'Chivo Mono', ui-monospace, monospace; color: #5F5F5F">{{p.at}}</span></span>
+                          </span>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{levelOpen}}" hint-placeholder-val="{{ true }}">
+                      <div role="radiogroup" aria-labelledby="level-title" style="display: flex; flex-direction: column; gap: 8px">
+                        <sc-for list="{{resolutions}}" as="r" hint-placeholder-count="2">
+                          <button type="button" role="radio" class="{{r.focusCls}}" aria-checked="{{r.checked}}" tabIndex="{{r.tab}}" onClick="{{r.pick}}" onKeyDown="{{levelKeys}}" style="min-height: 44px; display: flex; align-items: flex-start; gap: 12px; padding: 12px; border: 0; border-radius: 4px; background: {{r.bg}}; box-shadow: {{r.ring}}; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; text-align: left; cursor: pointer">
+                            <span aria-hidden="true" style="margin-top: 2px; width: 16px; height: 16px; box-sizing: border-box; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: {{r.radioBorder}}; background: #FFFFFF">
+                              <sc-if value="{{r.on}}" hint-placeholder-val="{{ false }}"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1D1D1D"></span></sc-if>
+                            </span>
+                            <span>{{r.label}}<sc-if value="{{r.recommended}}" hint-placeholder-val="{{ false }}"><span style="margin-left: 4px; color: #5F5F5F">(Recommended)</span></sc-if></span>
+                          </button>
+                        </sc-for>
+                      </div>
+                      <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{setLevel}}" style="align-self: flex-start; height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; cursor: pointer; white-space: nowrap">Use This Level</button>
+                    </sc-if>
+                    <sc-if value="{{levelDone}}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size: 14px; line-height: 20px">This project counts by <b>{{levelChosen}}</b>, labeled on every number.</span>
+                    </sc-if>
+                  </section>
+                </sc-if>
+
+                <sc-if value="{{hasAtoms}}" hint-placeholder-val="{{ true }}">
+                  <div style="border-radius: 8px; border: 1px solid #D0D0D0; overflow: hidden">
+                    <sc-for list="{{atoms}}" as="a" hint-placeholder-count="8">
+                      <div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: 16px; padding: 16px; border-top: {{a.rule}}; background: {{a.bg}}; box-shadow: {{a.mark}}">
+                        <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-top: 2px">
+                          <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #1D1D1D; background: #FFFFFF; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; font-weight: 600; white-space: nowrap">{{a.badge}}</span>
+                          <sc-if value="{{a.mine}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; line-height: 16px; font-weight: 700; color: #3D4B8C; white-space: nowrap">Your Words</span></sc-if>
+                        </span>
+                        <div style="min-width: 0; display: flex; flex-direction: column; gap: 10px">
+                          <sc-if value="{{a.editing}}" hint-placeholder-val="{{ false }}">
+                            <label style="display: flex; flex-direction: column; gap: 6px">
+                              <span style="font-size: 14px; line-height: 18px; font-weight: 700">Your words, before you confirm</span>
+                              <textarea rows="2" value="{{a.text}}" onChange="{{a.onEdit}}" style="width: 100%; box-sizing: border-box; font-family: inherit; font-size: 16px; line-height: 24px; color: #1D1D1D; border: 1px solid #5F5F5F; border-radius: 8px; padding: 8px 12px; resize: none"></textarea>
+                            </label>
+                          </sc-if>
+                          <sc-if value="{{a.notEditing}}" hint-placeholder-val="{{ true }}">
+                            <div style="font-size: 16px; line-height: 24px; color: {{a.textColor}}; text-decoration: {{a.strike}}">{{a.text}}</div>
+                          </sc-if>
+                          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                            <span style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap">
+                              <sc-if value="{{a.hasAvatar}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{a.avatarBg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">{{a.initials}}</span></sc-if>
+                              <sc-if value="{{a.isSystem}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg></sc-if>
+                              <span style="color: #1D1D1D">{{a.who}}</span>
+                            </span>
+                            <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{a.logo}}" width="14" height="14" alt="" style="flex: none"><span>{{a.where}}</span><sc-if value="{{a.hasAt}}" hint-placeholder-val="{{ true }}"><span style="font-family: 'Chivo Mono', ui-monospace, monospace; color: #5F5F5F">{{a.at}}</span></sc-if></span>
+                            <sc-if value="{{a.isWorkspace}}" hint-placeholder-val="{{ false }}"><span style="white-space: nowrap">Applies to the whole workspace</span></sc-if>
+                            <sc-if value="{{a.hasDecision}}" hint-placeholder-val="{{ false }}"><span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg><span>{{a.decision}}</span></span></sc-if>
+                          </div>
+                          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+                              <sc-if value="{{a.isOpen}}" hint-placeholder-val="{{ true }}">
+                                <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{a.confirm}}" aria-label="{{a.confirmLabel}}" style="height: 32px; display: inline-flex; align-items: center; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: 700; white-space: nowrap; cursor: pointer">Confirm</button>
+                                <button type="button" class="hd-btn-ghost hd-ring" onClick="{{a.reject}}" aria-label="{{a.rejectLabel}}" style="height: 32px; display: inline-flex; align-items: center; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: 700; white-space: nowrap; cursor: pointer">Not Right</button>
+                              </sc-if>
+                              <sc-if value="{{a.isConfirmed}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #007A45; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{a.confirmedBy}}</span></sc-if>
+                              <sc-if value="{{a.isRejected}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #1D1D1D; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg>Marked not right</span></sc-if>
+                              <sc-if value="{{a.canUndo}}" hint-placeholder-val="{{ false }}"><button type="button" class="hd-ring" onClick="{{a.undo}}" aria-label="{{a.undoLabel}}" style="height: 32px; padding: 0 4px; border: 0; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 13px; line-height: 18px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Undo</button></sc-if>
+                              <sc-if value="{{a.canEdit}}" hint-placeholder-val="{{ false }}"><button type="button" class="hd-ring" onClick="{{a.toggleEdit}}" aria-expanded="{{a.editExpanded}}" style="height: 32px; margin-left: 8px; padding: 0 4px; border: 0; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 13px; line-height: 18px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">{{a.editLabel}}</button></sc-if>
+                          </div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{noAtoms}}" hint-placeholder-val="{{ false }}">
+                  <div style="padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; border-radius: 8px; background: #F9F9F9">
+                    <h2 style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">{{emptyTitle}}</h2>
+                    <p style="margin: 0; max-width: 360px; font-size: 14px; line-height: 20px; color: #5F5F5F">{{emptyLine}}</p>
+                    <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{showAll}}" style="margin-top: 8px; height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1D1D1D; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer">Show All</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{isLinked}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; border-radius: 8px; border: 1px solid #D0D0D0; overflow: hidden">
+                <sc-for list="{{linked}}" as="s" hint-placeholder-count="5">
+                  <div style="display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px 16px; border-top: {{s.rule}}">
+                    <img src="{{s.logo}}" width="20" height="20" alt="">
+                    <span style="min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; line-height: 20px; font-weight: 700">{{s.title}}</span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{s.kind}}</span></span>
+                    <span style="font-size: 12px; line-height: 16px; color: #1D1D1D; white-space: nowrap">{{s.state}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isBrief}}" hint-placeholder-val="{{ false }}">
+          <article style="max-width: 640px; display: flex; flex-direction: column; gap: 20px">
+            <sc-for list="{{brief}}" as="b" hint-placeholder-count="5">
+              <section style="display: flex; flex-direction: column; gap: 6px">
+                <h2 style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">{{b.h}}</h2>
+                <p style="margin: 0; font-size: 16px; line-height: 24px">{{b.text}}
+                  <sc-for list="{{b.cites}}" as="c" hint-placeholder-count="1"><span title="{{c.tip}}" style="margin-left: 4px; height: 20px; display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; vertical-align: 2px; white-space: nowrap"><img src="{{c.logo}}" width="12" height="12" alt="">{{c.label}}</span></sc-for>
+                </p>
+              </section>
+            </sc-for>
+          </article>
+        </sc-if>
+
+        <sc-if value="{{isMockup}}" hint-placeholder-val="{{ false }}">
+          <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+            <div role="img" aria-label="Mockup of the Workbench Table look: a header, four filters and a table of styles with sell-through, margin per door and why each is flagged." style="border-radius: 8px; border: 1px solid #D0D0D0; overflow: hidden">
+              <div style="height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1D1D1D; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">Style Productivity, FW27<span style="flex: 1"></span><span style="font-weight: 400; color: #D0D0D0">Merchandising</span></div>
+              <div style="display: flex; gap: 8px; padding: 12px; background: #FFFFFF">
+                <sc-for list="{{mockFilters}}" as="f" hint-placeholder-count="4"><span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap">{{f}}</span></sc-for>
+              </div>
+              <div style="padding: 0 12px 12px; background: #FFFFFF">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.6fr; font-size: 12px; line-height: 16px; color: #5F5F5F; border-bottom: 1px solid #D0D0D0; padding: 6px 0">
+                  <span>Style</span><span style="text-align: right">Sell-Through</span><span style="text-align: right">Margin per Door</span><span style="padding-left: 16px">Why It Is Flagged</span>
+                </div>
+                <sc-for list="{{mockRows}}" as="r" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.6fr; align-items: center; font-size: 12px; line-height: 16px; border-bottom: 1px solid #F0F0F0; padding: 8px 0">
+                    <span style="font-weight: 700">{{r.name}}</span><span style="text-align: right">{{r.st}}</span><span style="text-align: right">{{r.m}}</span>
+                    <span style="padding-left: 16px; display: flex; align-items: center; gap: 6px"><sc-if value="{{r.flag}}" hint-placeholder-val="{{ false }}"><span style="width: 6px; height: 6px; border-radius: 999px; background: #1D1D1D; flex: none"></span></sc-if>{{r.why}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <figcaption style="font-size: 12px; line-height: 18px; color: #5F5F5F">The look signed with the brief at approval 1. Numbers are invented; the prototype uses dev data.</figcaption>
+          </figure>
+        </sc-if>
+
+        <sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; border-radius: 8px; border: 1px solid #D0D0D0; overflow: hidden">
+            <sc-for list="{{listRows}}" as="s" hint-placeholder-count="4">
+              <div style="display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px 16px; border-top: {{s.rule}}">
+                <span aria-hidden="true" style="width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center">
+                  <sc-if value="{{s.isLogo}}" hint-placeholder-val="{{ true }}"><img src="{{s.logo}}" width="20" height="20" alt=""></sc-if>
+                  <sc-if value="{{s.isGlyph}}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.glyph}}"></path></svg></sc-if>
+                  <sc-if value="{{s.isNotch}}" hint-placeholder-val="{{ false }}"><span style="width: 12px; height: 12px; box-sizing: border-box; background: {{s.nbg}}; border: {{s.nbd}}"></span></sc-if>
+                </span>
+                <span style="min-width: 0; display: flex; flex-direction: column">
+                  <span style="font-size: 14px; line-height: 20px; font-weight: 700">{{s.title}}</span>
+                  <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{s.kind}}</span>
+                </span>
+                <span style="font-size: 12px; line-height: 18px; color: {{s.sc}}; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap"><sc-if value="{{s.check}}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{s.state}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 24px; border-top: 1px solid #F0F0F0; background: #FFFFFF">
+        <div style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 20px; font-weight: 700">{{finishTitle}}</span>
+          <span id="finish-why" style="font-size: 12px; line-height: 18px; color: #5F5F5F"><b style="color: #1D1D1D">{{finishCount}}</b> {{finishNote}}</span>
+        </div>
+        <sc-if value="{{canFinish}}" hint-placeholder-val="{{ false }}">
+          <button type="button" class="hd-btn-primary hd-ring" onClick="{{finish}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #1D1D1D; color: #FFFFFF; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; cursor: pointer; white-space: nowrap">Finish Review</button>
+        </sc-if>
+        <sc-if value="{{cannotFinish}}" hint-placeholder-val="{{ true }}">
+          <button type="button" disabled aria-describedby="finish-why" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #D0D0D0; color: #FFFFFF; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: not-allowed">Finish Review</button>
+        </sc-if>
+        <sc-if value="{{finished}}" hint-placeholder-val="{{ false }}">
+          <button type="button" class="hd-ring" onClick="{{unfinish}}" style="height: 44px; padding: 0 8px; border: 0; background: transparent; font-family: inherit; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Undo</button>
+        </sc-if>
+      </div>
+    </div>
+    <div style="height: 24px"></div>
+  </section>
+</div>
+<!-- hd-workspace:split end -->
 </main>
 </div>
+</div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1106}}'>
+<script type="text/x-dc" data-dc-script data-props='{"rail":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1200}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { s: { a1: 'confirmed', a2: 'confirmed', a3: 'confirmed' }, editing: null, resolution: 'certified', status: 'all', tech: false };
+    this.state = { rail: null, chat: [], att: [], tech: false, art: 'sources', view: 'heard', s: { a1: 'confirmed', a2: 'confirmed', a3: 'confirmed', a11: 'confirmed', a8: 'confirmed' }, editing: null, edits: {}, resolution: 'certified', levelDone: false, status: 'all', finished: false, reply: '', full: false };
   }
   componentDidMount() {
     this.hdClose = (e) => {
@@ -275,88 +589,398 @@ class Component extends DCLogic {
         if (esc || !d.contains(e.target)) {
           const hadFocus = d.contains(document.activeElement);
           d.open = false;
+          d.querySelectorAll('details.hd-sub[open]').forEach((s) => { s.open = false; });
           if (esc && hadFocus) d.querySelector('summary').focus();
         }
       });
     };
+    // hd-shell keys, as the Help menu lists them: Command K searches, Command Shift O starts a project,
+    // Command B folds the side nav, Command / opens the shortcut list.
+    this.hdSearch = () => {
+      const f = document.querySelector('[data-hd-search]');
+      if (f) { f.focus(); if (f.select) f.select(); return; }
+      window.location.href = 'Projects.dc.html#search';
+    };
+    this.hdShellKeys = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.defaultPrevented) return;
+      const key = (e.key || '').toLowerCase();
+      if (key === 'k' && !e.shiftKey) { e.preventDefault(); this.hdSearch(); return; }
+      if (key === 'o' && e.shiftKey) {
+        e.preventDefault();
+        const idea = document.getElementById('hd-idea');
+        if (idea) idea.focus(); else window.location.href = 'Main.dc.html';
+        return;
+      }
+      if (key === 'b' && !e.shiftKey) {
+        const fold = document.querySelector('.hd-side button[aria-expanded]');
+        if (fold) { e.preventDefault(); fold.click(); }
+        return;
+      }
+      if (key === '/' || e.code === 'Slash') {
+        const help = document.querySelector('summary[aria-label="Help"]');
+        if (!help) return;
+        e.preventDefault();
+        help.parentElement.open = true;
+        const keys = help.parentElement.querySelector('details.hd-sub');
+        if (keys) { keys.open = true; keys.querySelector('summary').focus(); }
+      }
+    };
     document.addEventListener('mousedown', this.hdClose);
     document.addEventListener('keydown', this.hdClose);
+    document.addEventListener('keydown', this.hdShellKeys);
+    // Like any chat, the conversation opens at its latest message.
+    setTimeout(() => { const l = document.querySelector('[role="log"]'); if (l) l.scrollTop = l.scrollHeight; }, 0);
   }
   componentWillUnmount() {
     document.removeEventListener('mousedown', this.hdClose);
     document.removeEventListener('keydown', this.hdClose);
+    document.removeEventListener('keydown', this.hdShellKeys);
   }
   renderVals() {
     const st = this.state;
-    // One literal path per mark; the publish script rewrites each to its uploaded asset.
-    const LOGO = { microsoftteams: 'logos/microsoftteams.svg', confluence: 'logos/confluence.svg', snowflake: 'logos/snowflake.svg', sharepoint: 'logos/sharepoint.svg' };
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = {
+      snowflake: 'logos/snowflake.svg',
+      jira: 'logos/jira.svg',
+      confluence: 'logos/confluence.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      sharepoint: 'logos/sharepoint.svg',
+      onedrive: 'logos/onedrive.svg',
+      file: 'logos/file.svg'
+    };
+    const closeMenu = (e) => { const d = e && e.currentTarget && e.currentTarget.closest('details'); if (d) { d.open = false; const s = d.querySelector(':scope > summary'); if (s) s.focus(); } };
+    const INK = '#1D1D1D', RED = '#DC0019', MUTED = '#5F5F5F', GREY = '#949494', GREEN = '#00834B';
+    const SELECTED = 'inset 0 0 0 2px #1D1D1D', REST = 'inset 0 0 0 1px #D0D0D0';
+    // Maya's own statements are tinted with her color and labeled "Your Words" (never color alone).
+    const MINE_BG = '#F5F6F9', MINE_MARK = 'inset 3px 0 0 #3D4B8C';
+    const finished = st.finished;
+
+    // hd-shell: the side nav (design-system.md section 7).
+    const rail = st.rail === null ? (this.props.rail ?? false) : st.rail;
+    const ICON = {
+      home: 'M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z',
+      inbox: 'M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z',
+      projects: 'M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z',
+      library: 'M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z'
+    };
+    const ACTIVE = 'projects';
+    const navItem = (key, label, href, extra) => {
+      const on = key === ACTIVE;
+      return Object.assign({ label, href, icon: ICON[key], current: on ? 'page' : 'false', aria: label,
+        bg: 'transparent', ring: 'none', fw: on ? '700' : '400', fg: on ? '#1D1D1D' : '#5F5F5F',
+        hasCount: false, count: '', hasTag: false, tag: '' }, extra || {});
+    };
+    // Four things wait on Maya (Home's count); this review is one of them.
+    const INBOX_COUNT = finished ? 3 : 4;
+    const nav = [
+      navItem('home', 'Home', 'Main.dc.html'),
+      navItem('inbox', 'Inbox', 'Inbox.dc.html', { hasCount: true, count: String(INBOX_COUNT), aria: 'Inbox, ' + INBOX_COUNT + ' waiting on you' }),
+      navItem('projects', 'Projects', 'Projects.dc.html'),
+      navItem('library', 'Library', 'Library.dc.html', { hasTag: true, tag: 'Enterprise' })
+    ];
+    const admin = [];
+    const MARK = {
+      you: { bg: RED, bd: 'none', word: 'waiting on you' },
+      other: { bg: '#FFFFFF', bd: '1.5px solid ' + INK, word: 'waiting on someone else' },
+      done: { bg: INK, bd: 'none', word: 'prototype accepted' },
+      draft: { bg: '#FFFFFF', bd: '1.5px dashed ' + GREY, word: 'draft' }
+    };
+    const recentItem = (name, href, kind, on) => Object.assign({ name, href,
+      isWork: kind === 'work', isNotch: kind !== 'work', bg: '', bd: '',
+      current: on ? 'page' : 'false', rowBg: 'transparent', rowRing: 'none', fw: on ? '700' : '400',
+      aria: name + ', ' + (kind === 'work' ? 'working' : MARK[kind].word) }, kind === 'work' ? {} : { bg: MARK[kind].bg, bd: MARK[kind].bd });
+    const title = 'SKU productivity workbench';
+    const recent = [
+      recentItem(title, 'ContextReview.dc.html', 'you', true),
+      recentItem('Wholesale sell-through tracker', 'Gate.dc.html', 'you'),
+      recentItem('Tariff scenario planner', 'Activity.dc.html', 'work'),
+      recentItem('Product master quality monitor', 'Inbox.dc.html#q', 'you'),
+      recentItem('Activation scorecard', 'Graduation.dc.html', 'done')
+    ];
+    const me = { name: 'Maya Chen', initials: 'MC', bg: '#3D4B8C', role: 'Business owner, Merchandising', workspace: 'Merchandising',
+      aria: 'Maya Chen, Merchandising, account and workspace' };
+    const workspaces = ['Merchandising', 'Sourcing', 'Wholesale', 'EDM'].map((name, i) => ({ name, on: i === 0, fw: i === 0 ? '700' : '400' }));
+    // The same stack as Project.dc.html: three avatars plus +N, touching (design-system.md section 9.8).
+    const people = [
+      { initials: 'MC', bg: '#3D4B8C', fg: '#FFFFFF', name: 'Maya Chen' },
+      { initials: 'PN', bg: '#3F5FA0', fg: '#FFFFFF', name: 'Priya Nair' },
+      { initials: 'LR', bg: '#2E6A8E', fg: '#FFFFFF', name: 'Luis Romero' },
+      { initials: '+2', bg: '#F0F0F0', fg: INK, name: 'Dana Ortiz and Sam Kim' }
+    ];
+
+    // The line: what we're building is signed; the plan waits on Maya, the second of three.
+    const SEG = ['Discover', 'Plan', 'Prototype', 'Handoff'];
+    const segState = ['done', 'current', 'future', 'future'];
+    const GATES = ["What We're Building", 'The Plan', 'The Working Prototype'];
+    const gateState = [{ k: 'signed', sub: '5d 2h, 3 signers' }, { k: 'you', sub: 'Waiting 1d 4h' }, { k: 'upcoming', sub: '' }];
+    const lineNames = [], lineTrack = [], lineLabels = [];
+    for (let i = 0; i < 7; i++) {
+      if (i % 2 === 0) {
+        const s = segState[i / 2];
+        lineNames.push({ t: SEG[i / 2], c: s === 'current' ? INK : MUTED, w: s === 'current' ? 700 : 400 });
+        lineTrack.push({ isSeg: true, isNotch: false, h: s === 'current' ? '4px' : (s === 'done' ? '2px' : '0'), bg: s === 'future' ? 'transparent' : INK, bt: s === 'future' ? '2px dashed ' + GREY : '0 none transparent', fill: '', border: '' });
+        lineLabels.push({ t: '', sub: '', c: MUTED, hasSub: false, isWait: false, sc: MUTED });
+      } else {
+        const g = gateState[(i - 1) / 2];
+        lineNames.push({ t: '', c: MUTED, w: 400 });
+        lineTrack.push({ isSeg: false, isNotch: true, h: '', bg: '', bt: '',
+          fill: g.k === 'signed' ? INK : (g.k === 'you' ? RED : '#FFFFFF'),
+          border: g.k === 'other' ? '2px solid ' + INK : (g.k === 'upcoming' ? '2px solid ' + GREY : 'none') });
+        lineLabels.push({ t: (g.k === 'you' ? 'Your Approval: ' : '') + GATES[(i - 1) / 2], sub: g.sub, hasSub: !!g.sub, isWait: g.k === 'you' || g.k === 'other', c: g.k === 'you' ? RED : (g.k === 'upcoming' ? MUTED : INK), sc: g.k === 'you' ? INK : MUTED });
+      }
+    }
+
+    const tools = [
+      { logo: LOGO.microsoftteams, label: "Read Wednesday's working session", result: '48 min', lines: ['9 statements, each with a speaker and a time', 'Read as Maya, who attended'] },
+      { logo: LOGO.confluence, label: 'Read brief revisions 7 to 9', result: '2 edits, 1 comment', lines: ['Priya commented on the refresh time', 'Jordan edited What It Skips'] },
+      { logo: LOGO.snowflake, label: 'Checked the store attributes view', result: 'Counts only', lines: ['Door counts refresh weekly', 'Layout and counts only; no values left Snowflake'] }
+    ].map((t, i) => Object.assign(t, { rule: i ? '1px solid #F0F0F0' : '0' }));
+
+    // What we heard: 11 facts plus the level dispute make the 12 things to confirm.
     const teams = LOGO.microsoftteams, conf = LOGO.confluence, snow = LOGO.snowflake;
     const p = (initials, avatarBg) => ({ hasAvatar: true, isSystem: false, initials, avatarBg });
+    const YOU = 'Maya Chen, Merchandising (you)';
     const base = [
       Object.assign({ id: 'a1', badge: 'METRIC', text: 'Productivity is margin dollars per door, read from the Daily Product Margin golden report.', who: 'Luis Romero, Data Platform', logo: teams, where: 'Recording', at: '12:05', scope: 'workspace', mine: false }, p('LR', '#2E6A8E')),
-      Object.assign({ id: 'a2', badge: 'RULE', text: 'Flag the bottom 20% of FW27 styles by margin per door, each season.', who: 'Maya Chen, Merchandising (you)', logo: teams, where: 'Recording', at: '14:10', scope: 'project', mine: true, decision: 'Decision, Oct 22' }, p('MC', '#3D4B8C')),
+      Object.assign({ id: 'a2', badge: 'RULE', text: 'Flag the bottom 20% of FW27 styles by margin per door, each season.', who: YOU, logo: teams, where: 'Recording', at: '14:10', scope: 'project', mine: true, decision: 'Decision, Oct 22' }, p('MC', '#3D4B8C')),
+      Object.assign({ id: 'a9', badge: 'RULE', text: 'A style needs at least 8 weeks of selling before it can be flagged.', who: YOU, logo: teams, where: 'Recording', at: '16:30', scope: 'project', mine: true }, p('MC', '#3D4B8C')),
+      Object.assign({ id: 'a10', badge: 'SCOPE', text: 'US doors only for FW27; Canada follows after the April line review.', who: YOU, logo: teams, where: 'Recording', at: '19:05', scope: 'project', mine: true }, p('MC', '#3D4B8C')),
       Object.assign({ id: 'a3', badge: 'SCOPE', text: 'Wholesale accounts and Factory House doors are out of scope for the first version.', who: 'Jordan Lee, Wholesale', logo: teams, where: 'Recording', at: '21:40', scope: 'project', mine: false }, p('JL', '#2F6B5E')),
       Object.assign({ id: 'a4', badge: 'CONSTRAINT', text: 'Numbers must match the golden report to the dollar, or planners will not trust the tool.', who: 'Dana Ortiz, Finance', logo: teams, where: 'Recording', at: '24:02', scope: 'workspace', mine: false }, p('DO', '#6A4C8C')),
+      Object.assign({ id: 'a11', badge: 'RULE', text: 'Marked-down units count at the marked-down price, as Finance reports margin.', who: 'Dana Ortiz, Finance', logo: teams, where: 'Recording', at: '26:40', scope: 'workspace', mine: false, by: 'Confirmed by Dana Ortiz in Teams, Oct 23' }, p('DO', '#6A4C8C')),
       Object.assign({ id: 'a5', badge: 'CONSTRAINT', text: 'Planners need the view refreshed by Monday 08:00 Eastern each week.', who: 'Priya Nair, Merchandising Planning', logo: conf, where: 'Inline comment on the Brief', at: 'Revision 7', scope: 'project', mine: false }, p('PN', '#3F5FA0')),
       Object.assign({ id: 'a6', badge: 'SCOPE', text: 'Store-level detail is out of scope for the first version.', who: 'Jordan Lee, Wholesale', logo: conf, where: 'Page edit, What It Skips', at: 'Revision 9', scope: 'project', mine: false }, p('JL', '#2F6B5E')),
       { id: 'a7', badge: 'ASSUMPTION', text: 'Door counts come from the store attributes table and refresh weekly.', who: 'HyperDelivery, from catalog details refreshed Oct 20', logo: snow, where: 'Store attributes view', at: '', scope: 'project', mine: false, hasAvatar: false, isSystem: true, initials: '', avatarBg: '' },
-      Object.assign({ id: 'a8', badge: 'QUESTION', text: 'Next to the line planning tool, or standalone?', who: 'Sam Kim, Merchandising Systems', logo: teams, where: 'Recording', at: '30:15', scope: 'project', mine: false }, p('SK', '#2F6F78'))
+      Object.assign({ id: 'a8', badge: 'SCOPE', text: 'Standalone for now, not inside the line planning tool.', who: 'Sam Kim, Merchandising Systems', logo: teams, where: 'Recording', at: '30:15', scope: 'project', mine: false, decision: 'Decision, Oct 22', by: 'Settled by Sam Kim, Oct 22' }, p('SK', '#2F6F78'))
     ];
     const s = st.s;
     const set = (id, v) => this.setState({ s: Object.assign({}, this.state.s, { [id]: v }) });
-    const all = base.map((a) => {
+    const all = base.map((a, i) => {
       const state = s[a.id] || 'open';
       const editing = st.editing === a.id;
-      return Object.assign(a, {
-        st: state,
-        decision: a.decision || '',
-        hasDecision: Boolean(a.decision),
-        hasAt: Boolean(a.at),
-        isWorkspace: a.scope === 'workspace',
-        isOpen: state === 'open',
-        isConfirmed: state === 'confirmed',
-        isRejected: state === 'rejected',
-        textColor: state === 'rejected' ? '#5F5F5F' : '#1D1D1D',
-        confirmLabel: 'Confirm: ' + a.text,
-        rejectLabel: 'Not right: ' + a.text,
-        undoLabel: 'Undo: ' + a.text,
-        editing, notEditing: !editing, editLabel: editing ? 'Done Editing' : 'Edit My Words',
+      const text = st.edits[a.id] ?? a.text;
+      return Object.assign({}, a, {
+        st: state, text,
+        decision: a.decision || '', hasDecision: Boolean(a.decision), hasAt: Boolean(a.at), isWorkspace: a.scope === 'workspace',
+        isOpen: state === 'open', isConfirmed: state === 'confirmed', isRejected: state === 'rejected', canUndo: state !== 'open' && !finished && !(a.by && state === 'confirmed'),
+        confirmedBy: a.by || 'Confirmed by you',
+        textColor: state === 'rejected' ? MUTED : INK, strike: state === 'rejected' ? 'line-through' : 'none',
+        bg: a.mine ? MINE_BG : '#FFFFFF', mark: a.mine ? MINE_MARK : 'none',
+        confirmLabel: 'Confirm: ' + text, rejectLabel: 'Not right: ' + text, undoLabel: 'Undo: ' + text,
+        editing, notEditing: !editing, canEdit: a.mine && state === 'open', editExpanded: editing ? 'true' : 'false',
+        editLabel: editing ? 'Done Editing' : 'Edit My Words',
         toggleEdit: () => this.setState({ editing: editing ? null : a.id }),
-        confirm: () => set(a.id, 'confirmed'),
-        reject: () => set(a.id, 'rejected'),
+        onEdit: (e) => this.setState({ edits: Object.assign({}, this.state.edits, { [a.id]: e.target.value }) }),
+        confirm: () => { set(a.id, 'confirmed'); if (editing) this.setState({ editing: null }); },
+        reject: () => { set(a.id, 'rejected'); if (editing) this.setState({ editing: null }); },
         undo: () => set(a.id, 'open')
       });
     });
-    const confirmedCount = all.filter((a) => a.st === 'confirmed').length;
+    const levelDone = st.levelDone;
+    const confirmedCount = all.filter((a) => a.st === 'confirmed').length + (levelDone ? 1 : 0);
     const rejectedCount = all.filter((a) => a.st === 'rejected').length;
-    const openCount = all.filter((a) => a.st === 'open').length;
-    const chip = (on) => ({ on, pressed: on ? 'true' : 'false', bg: on ? '#1D1D1D' : '#FFFFFF', fg: on ? '#FFFFFF' : '#1D1D1D', ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0', focusCls: on ? 'hd-ring' : 'hd-chip hd-ring-edge', weight: on ? '700' : '400', countColor: on ? '#D0D0D0' : '#5F5F5F' });
+    const openCount = all.filter((a) => a.st === 'open').length + (levelDone ? 0 : 1);
+    const TOTAL = all.length + 1;
+    const chip = (on) => ({ on, pressed: on ? 'true' : 'false', bg: on ? INK : '#FFFFFF', fg: on ? '#FFFFFF' : INK, ring: on ? 'none' : REST, focusCls: on ? 'hd-ring' : 'hd-chip hd-ring-edge', weight: on ? '700' : '400', countColor: on ? '#D0D0D0' : MUTED });
     const status = st.status;
     const statusChips = [
-      { id: 'all', label: 'All', n: String(all.length) },
+      { id: 'all', label: 'All', n: String(TOTAL) },
       { id: 'open', label: 'To Review', n: String(openCount) },
       { id: 'confirmed', label: 'Confirmed', n: String(confirmedCount) }
     ].map((c) => Object.assign(c, chip(status === c.id), { pick: () => this.setState({ status: c.id }) }));
-    const atoms = all.filter((a) => status === 'all' || a.st === status);
+    const atoms = all.filter((a) => status === 'all' || a.st === status).map((a, i) => Object.assign(a, { rule: i ? '1px solid #F0F0F0' : '0' }));
+    const showDispute = status === 'all' || (status === 'open' && !levelDone) || (status === 'confirmed' && levelDone);
     const levels = [
-      { id: 'certified', label: 'Style-color, the certified level', recommended: true },
-      { id: 'style', label: 'Style, labeled on every number', recommended: false }
+      { id: 'certified', label: 'Style-color, the certified level', recommended: true, short: 'style-color, the certified level' },
+      { id: 'style', label: 'Style, labeled on every number', recommended: false, short: 'style' }
     ];
     const resolutions = levels.map((r) => {
       const on = st.resolution === r.id;
-      return Object.assign({}, r, { on, checked: on ? 'true' : 'false', tab: on ? 0 : -1, focusCls: on ? 'hd-ring-sel' : 'hd-ring-edge', bg: on ? '#F0F0F0' : '#FFFFFF', ring: on ? 'inset 0 0 0 2px #1D1D1D' : 'inset 0 0 0 1px #D0D0D0', radioBorder: on ? '2px solid #1D1D1D' : '1.5px solid #5F5F5F', pick: () => this.setState({ resolution: r.id }) });
+      return Object.assign({}, r, { on, checked: on ? 'true' : 'false', tab: on ? 0 : -1, focusCls: on ? 'hd-ring-sel' : 'hd-ring-edge', bg: on ? '#F0F0F0' : '#FFFFFF', ring: on ? SELECTED : REST, radioBorder: on ? '2px solid #1D1D1D' : '1.5px solid #5F5F5F', pick: () => this.setState({ resolution: r.id }) });
     });
-    const counts = [confirmedCount + ' confirmed'];
-    if (rejectedCount) counts.push(rejectedCount + ' not right');
-    counts.push(openCount + ' to review');
+    const positions = [
+      { initials: 'MC', avatarBg: '#3D4B8C', team: 'Merchandising', who: 'You', text: 'Style-color: each colorway is its own row.', logo: conf, where: 'Range review playbook', at: '17:20', bg: MINE_BG, mark: MINE_MARK },
+      { initials: 'DO', avatarBg: '#6A4C8C', team: 'Finance', who: 'Dana Ortiz', text: 'Style: all colorways roll up into one.', logo: LOGO.sharepoint, where: 'Margin reporting standard', at: '18:05', bg: '#F9F9F9', mark: 'none' }
+    ];
+    const handled = [confirmedCount + ' confirmed'].concat(rejectedCount ? [rejectedCount + ' not right'] : []);
+    const counts = handled.concat(openCount ? [openCount + ' to review'] : []);
+    const view = st.view;
+    const views = [
+      { id: 'linked', label: 'Linked Sources', n: '5' },
+      { id: 'heard', label: 'What We Heard', n: String(TOTAL) }
+    ].map((v) => { const on = view === v.id; return Object.assign(v, { pressed: on ? 'true' : 'false', bg: on ? '#FFFFFF' : 'transparent', ring: on ? '0 1px 2px rgba(29,29,29,0.12), inset 0 0 0 1px #D0D0D0' : 'none', fw: on ? '700' : '400', pick: () => this.setState({ view: v.id }) }); });
+    const linked = [
+      { logo: LOGO.jira, title: 'MERCH-1182', kind: 'Jira story with 2 linked Confluence pages', state: 'Indexed' },
+      { logo: LOGO.microsoftteams, title: 'Line review prep', kind: 'Teams recording, 42 min', state: 'Indexed' },
+      { logo: LOGO.microsoftteams, title: 'Working session, Wed Oct 21', kind: 'Teams recording, 48 min, 6 people', state: 'Indexed' },
+      { logo: LOGO.confluence, title: 'Brief page', kind: 'Confluence, revisions 7 to 9', state: 'Indexed' },
+      { logo: LOGO.snowflake, title: 'Daily Product Margin', kind: 'Snowflake golden report, layout and counts only', state: 'Checked' }
+    ].map((r, i) => Object.assign(r, { rule: i ? '1px solid #F0F0F0' : '0' }));
+
+    // The artifact panel: the plan exists and waits on Maya; the prototype comes after it is signed.
+    const ART_ICON = {
+      brief: 'M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5M8.5 13h7M8.5 16.5h5',
+      mockup: 'M4 4.5h16v15H4zM4 9h16M9 9v10.5',
+      plan: 'M5 5h14M5 12h14M5 19h9',
+      prototype: 'M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z',
+      data: 'M4 6c0-1.4 3.6-2.5 8-2.5s8 1.1 8 2.5-3.6 2.5-8 2.5S4 7.4 4 6zM4 6v12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5V6M4 12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5',
+      sources: 'M10 14a4 4 0 0 0 6 .5l3-3a4 4 0 0 0-5.7-5.7l-1.1 1.1M14 10a4 4 0 0 0-6-.5l-3 3a4 4 0 0 0 5.7 5.7l1.1-1.1',
+      decisions: 'M9 11.5l2.5 2.5L16 9.5M5 4.5h14v15H5z'
+    };
+    const ARTS = [
+      { id: 'brief', label: 'Brief' }, { id: 'mockup', label: 'Mockup' }, { id: 'plan', label: 'Plan' },
+      { id: 'data', label: 'Data' }, { id: 'sources', label: 'Sources' }, { id: 'decisions', label: 'Decisions' },
+      // The line's next output shows locked after the open tabs (design-system.md section 9.27).
+      { id: 'prototype', label: 'Prototype', locked: true, tip: 'The prototype is built after the plan is signed' }
+    ];
+    const art = st.art;
+    const openIds = ARTS.filter((a) => !a.locked).map((a) => a.id);
+    const arts = ARTS.map((a) => {
+      const on = art === a.id;
+      return { label: a.label, meta: '', hasMeta: false, icon: ART_ICON[a.id], tabId: 'art-tab-' + a.id,
+        selected: on ? 'true' : 'false', locked: a.locked ? 'true' : 'false', tab: on ? 0 : -1, tip: a.tip || a.label,
+        bg: on ? '#FFFFFF' : 'transparent', ring: on ? 'inset 1px 1px 0 #F0F0F0, inset -1px 0 0 #F0F0F0' : 'none',
+        fw: on ? '700' : '400', fg: a.locked ? GREY : INK, cursor: a.locked ? 'not-allowed' : 'pointer',
+        pick: () => { if (!a.locked) this.setState({ art: a.id }); } };
+    });
+    const artKey = (e) => {
+      const i = Math.max(0, openIds.indexOf(art));
+      let n = -1;
+      if (e.key === 'ArrowRight') n = (i + 1) % openIds.length;
+      else if (e.key === 'ArrowLeft') n = (i - 1 + openIds.length) % openIds.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = openIds.length - 1;
+      if (n < 0) return;
+      e.preventDefault();
+      this.setState({ art: openIds[n] });
+      const t = document.getElementById('art-tab-' + openIds[n]);
+      if (t) t.focus();
+    };
+    const DOC = 'M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5';
+    const row = (o) => Object.assign({ isLogo: false, isGlyph: false, isNotch: false, logo: '', glyph: '', nbg: '', nbd: '', sc: GREEN, check: true }, o);
+    const LISTS = {
+      plan: [
+        row({ isGlyph: true, glyph: DOC, title: 'Requirements', kind: '3 stories, 6 acceptance criteria', state: 'Drafted', sc: INK, check: false }),
+        row({ isGlyph: true, glyph: DOC, title: 'Stories', kind: 'Each tied to its criteria and how they will be shown', state: 'Drafted', sc: INK, check: false }),
+        row({ isGlyph: true, glyph: DOC, title: 'Tech Design', kind: 'Read-only views, a sandbox app, dev data', state: 'Drafted', sc: INK, check: false }),
+        row({ isGlyph: true, glyph: DOC, title: 'Test Plan', kind: 'Browser checks, definitions, sign-in', state: 'Drafted', sc: INK, check: false }),
+        row({ isGlyph: true, glyph: DOC, title: 'Tickets', kind: 'Drafted; filed in Jira with the handoff', state: 'At Handoff', sc: MUTED, check: false })
+      ],
+      data: [
+        row({ isLogo: true, logo: snow, title: 'Daily Product Margin', kind: 'Golden report, owner Luis Romero. Definitions only', state: 'Certified' }),
+        row({ isLogo: true, logo: snow, title: 'Store attributes view', kind: 'Door counts, refreshed weekly. Definitions only', state: 'Certified' }),
+        row({ isLogo: true, logo: snow, title: 'Merchandising dev copy', kind: 'What the prototype will read in the sandbox', state: 'Dev Data', sc: INK, check: false })
+      ],
+      decisions: [
+        row({ isNotch: true, nbg: INK, nbd: 'none', title: "What We're Building", kind: 'Signed Oct 21 by Priya, Luis and you, 5d 2h', state: 'Signed' }),
+        row({ isNotch: true, nbg: RED, nbd: 'none', title: 'The Plan', kind: 'Second of three; waiting on you, 1d 4h', state: 'Your Approval', sc: RED, check: false }),
+        row({ isGlyph: true, glyph: 'M9 11.5l2.5 2.5L16 9.5M5 4.5h14v15H5z', title: 'Standalone for now, not inside the line planning tool', kind: 'Settled by Sam Kim, Oct 22', state: 'Settled' }),
+        row({ isGlyph: true, glyph: 'M9 11.5l2.5 2.5L16 9.5M5 4.5h14v15H5z', title: 'Marked-down units count at the marked-down price', kind: 'Answered by Dana Ortiz in Teams, Oct 23', state: 'Settled' }),
+        levelDone
+          ? row({ isGlyph: true, glyph: 'M9 11.5l2.5 2.5L16 9.5M5 4.5h14v15H5z', title: 'Which level counts as one style?', kind: 'Set by you: ' + levels.find((l) => l.id === st.resolution).short, state: 'Settled' })
+          : row({ isGlyph: true, glyph: 'M12 4L2.8 19.5h18.4zM12 10v4', title: 'Which level counts as one style?', kind: 'Merchandising and Finance differ; waiting on you', state: 'Open', sc: INK, check: false })
+      ]
+    };
+    const listRows = (LISTS[art] || []).map((r, i) => Object.assign({}, r, { rule: i ? '1px solid #F0F0F0' : '0' }));
+    const cite = (logo, label, tip) => ({ logo: LOGO[logo], label, tip });
+    const brief = [
+      { h: 'Problem', text: 'Before each line review, merchandisers export several reports into Excel to find the styles that fall below the productivity line, and each person does it a little differently.', cites: [cite('microsoftteams', '14:02', 'Line review prep, at 14:02')] },
+      { h: 'Who It Is For', text: 'Merchandisers and planners in Merchandising, about 20 people, with Maya Chen as business owner.', cites: [cite('jira', 'MERCH-1182', 'MERCH-1182, description')] },
+      { h: 'What Good Looks Like', text: 'One list of FW27 styles below the line on margin per door, each with a plain reason, ready before the April line review.', cites: [cite('confluence', 'Playbook §3', 'Range review playbook, section 3')] },
+      { h: 'In and Out of Scope', text: 'In: FW27 styles, US doors, read-only. Out: wholesale doors and changing the line planning tool.', cites: [cite('jira', 'comment', 'MERCH-1182, comment by Sam Kim')] },
+      { h: 'Data It Will Use', text: 'Margin per door and sell-through from the Daily Product Margin golden report. The prototype runs on dev data in the sandbox.', cites: [cite('snowflake', 'Certified', 'MERCH.GOLDEN.DAILY_PRODUCT_MARGIN, owner Luis Romero')] }
+    ];
+    const isHeard = view === 'heard';
+    const ART_TITLE = { brief: 'Brief', mockup: 'Mockup', plan: 'Plan', data: 'Data', sources: isHeard ? 'What We Heard' : 'Linked Sources', decisions: 'Decisions' };
+    const ART_META = {
+      brief: 'Signed with the mockup Oct 21, 3 signers',
+      mockup: 'Workbench Table, the look signed at approval 1',
+      plan: 'Version 3, Oct 23, waiting on your approval',
+      data: 'Read through the broker; no rows leave Snowflake',
+      sources: isHeard ? counts.join(', ') + ". From Wednesday's working session and brief revisions 7 to 9" : '5 sources, read as Maya',
+      decisions: levelDone ? '2 approvals, 3 settled' : '2 approvals, 2 settled, 1 open'
+    };
+    const VERS = {
+      brief: ['Version 2, signed Oct 21', 'Version 1, Oct 14'],
+      mockup: ['Version 2, Workbench Table, Oct 16', 'Version 1, three starting looks, Oct 13'],
+      plan: ['Version 3, Oct 23', 'Version 2, Oct 22', 'Version 1, Oct 21']
+    };
+    const versions = (VERS[art] || []).map((label, i) => ({ label, on: i === 0 ? 'true' : 'false', isOn: i === 0, fw: i === 0 ? '700' : '400' }));
+    const full = st.full;
+    const canFinish = openCount === 0 && !finished;
+    const heardOpen = art === 'sources' && isHeard;
+
+    // The composer, the same on every workspace board: Enter sends and Shift+Enter starts a new line, the + menu
+    // points at a source (it joins the next message as a chip), and a suggestion fills the draft or acts.
+    const CMP_SOURCES = [
+      { key: 'microsoftteams', label: 'Teams Recording', hint: 'Meetings you attended', kind: 'Teams', title: 'Line review prep, Oct 21' },
+      { key: 'onedrive', label: 'OneDrive or SharePoint', hint: 'Files and folders', kind: 'OneDrive', title: 'FW27 SKU cuts.xlsx' },
+      { key: 'confluence', label: 'Confluence Page', hint: 'With its comments', kind: 'Confluence', title: 'Line review method' },
+      { key: 'jira', label: 'Jira Ticket', hint: 'With linked pages', kind: 'Jira', title: 'MERCH-1182' },
+      { key: 'snowflake', label: 'Snowflake Report', hint: 'Certified views', kind: 'Snowflake', title: 'Sell-through, golden report' },
+      { key: 'file', label: 'Upload a File', hint: 'Still works', kind: 'File', title: 'notes.docx' }
+    ];
+    const cmpState = this.state, cmpAtt = cmpState.att || [], cmpDraft = cmpState.reply || '';
+    const cmpFocus = () => setTimeout(() => { const r = document.getElementById('hd-reply'); if (r) r.focus(); }, 60);
+    const cmpSend = () => {
+      const s = this.state, text = (s.reply || '').trim(), keys = s.att || [];
+      if (!text && !keys.length) return;
+      const files = keys.map((k) => CMP_SOURCES.find((c) => c.key === k)).map((c) => ({ logo: LOGO[c.key], label: c.kind + ' ' + c.title }));
+      this.setState({ chat: (s.chat || []).concat([{ text, hasText: !!text, files, hasFiles: files.length > 0, who: 'You, just now' }]), reply: '', att: [] });
+      setTimeout(() => { const l = document.querySelector('[role="log"]'); if (l) l.scrollTop = l.scrollHeight; }, 80);
+      cmpFocus();
+    };
+    const cmpReady = !!cmpDraft.trim() || cmpAtt.length > 0;
+    const cmp = {
+      suggest: ([{ label: 'Show What Is Left', act: () => this.setState({ art: 'sources', view: 'heard', status: 'open' }) }, 'Why Does the Level Matter?']).map((x) => {
+        const label = typeof x === 'string' ? x : x.label;
+        const text = typeof x === 'string' ? x.split(' ').map((w, i) => (i === 0 || w === 'I' ? w : w.toLowerCase())).join(' ') : x.text;
+        return { label, pick: x.act || (() => { this.setState({ reply: text }); cmpFocus(); }) };
+      }),
+      reply: cmpDraft, onReply: (e) => this.setState({ reply: e.target.value }),
+      replyKey: (e) => { if (e.key === 'Enter' && !e.shiftKey && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.preventDefault(); cmpSend(); } },
+      replyEmpty: !cmpReady, sendBg: cmpReady ? '#1D1D1D' : '#D0D0D0', sendReply: cmpSend, chat: cmpState.chat || [],
+      cmpSources: CMP_SOURCES.map((c) => ({ logo: LOGO[c.key], label: c.label, hint: c.hint,
+        add: (e) => { closeMenu(e); if (cmpAtt.indexOf(c.key) < 0) this.setState({ att: cmpAtt.concat([c.key]) }); cmpFocus(); } })),
+      cmpFiles: cmpAtt.map((k) => CMP_SOURCES.find((c) => c.key === k)).map((c) => ({ logo: LOGO[c.key], kind: c.kind, title: c.title,
+        removeLabel: 'Remove ' + c.kind + ' ' + c.title, remove: () => { this.setState({ att: cmpAtt.filter((k) => k !== c.key) }); cmpFocus(); } })),
+      cmpHasFiles: cmpAtt.length > 0
+    };
     return {
-      logos: LOGO,
-      tech: st.tech,
-      techOn: st.tech ? 'true' : 'false',
-      techLabel: st.tech ? 'On' : 'Off',
-      toggleTech: () => this.setState({ tech: !this.state.tech }),
-      closeMenu: (e) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; },
-      showMonogram: (e) => { const i = e.currentTarget; i.style.display = 'none'; if (i.previousElementSibling) i.previousElementSibling.style.color = '#444444'; },
+      suggest: cmp.suggest, reply: cmp.reply, onReply: cmp.onReply, replyKey: cmp.replyKey, replyEmpty: cmp.replyEmpty, sendBg: cmp.sendBg, sendReply: cmp.sendReply,
+      chat: cmp.chat, cmpSources: cmp.cmpSources, cmpFiles: cmp.cmpFiles, cmpHasFiles: cmp.cmpHasFiles,
+      railAttr: rail ? 'on' : 'off', sideW: rail ? '64px' : '248px', sideOpen: rail ? 'false' : 'true',
+      railLabel: rail ? 'Show the sidebar' : 'Hide the sidebar',
+      openSearch: () => this.hdSearch(),
+      toggleRail: () => this.setState({ rail: !rail }),
+      nav, admin, recent, me, workspaces, closeMenu, logos: LOGO,
+      tech: st.tech, techOn: st.tech ? 'true' : 'false', techWord: st.tech ? 'On' : 'Off', toggleTech: () => this.setState({ tech: !st.tech }),
+      title, people,
+      splitCols: full ? 'minmax(0, 1fr)' : '440px minmax(0, 1fr)', convDisplay: full ? 'none' : 'flex',
+      toggleFull: () => this.setState({ full: !full }), fullPressed: full ? 'true' : 'false', fullLabel: full ? 'Show the conversation' : 'Open full screen',
+      fullD: full ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5' : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+      hasVersions: versions.length > 0, versions,
+      moreViews: [{ label: 'Timeline', tip: 'Shown on the Tariff scenario planner example' }].concat(st.tech ? [{ label: 'Trace', tip: 'Shown on the Tariff scenario planner example' }] : []),
+      lineNames, lineTrack, lineLabels,
+      lineAria: "What we're building signed after 5 days 2 hours by 3 signers. The plan is waiting on you, the second of three, for 1 day 4 hours. The working prototype is upcoming.",
+      tools,
+      crMeta: finished ? 'Finished: ' + handled.join(', ') + '.' : counts.join(', ') + '. Four are in your words; one definition is disputed.',
+      crRing: heardOpen ? SELECTED : REST, heardPressed: heardOpen ? 'true' : 'false',
+      openHeard: () => this.setState({ art: 'sources', view: 'heard' }),
+      notFinished: !finished, finished,
+      finishedLine: 'You finished confirming what we heard: ' + handled.join(', ') + '. The brief and the plan now use them.',
+      arts, artKey, artLabelledBy: 'art-tab-' + art,
+      isSources: art === 'sources', isBrief: art === 'brief', isMockup: art === 'mockup', isList: !!LISTS[art],
+      artTitle: ART_TITLE[art], artMeta: ART_META[art],
+      views, isHeard, isLinked: !isHeard, linked,
+      statusChips, atoms, hasAtoms: atoms.length > 0, noAtoms: atoms.length === 0 && !showDispute,
+      emptyTitle: status === 'confirmed' ? 'Nothing Confirmed Yet' : 'Nothing Left to Review',
+      emptyLine: status === 'confirmed' ? 'Items you confirm show here with who said them and where.' : 'Every item is confirmed or marked not right.',
+      showAll: () => this.setState({ status: 'all' }),
+      showDispute, disputeBd: levelDone ? '#D0D0D0' : INK, positions, resolutions,
+      levelOpen: !levelDone, levelDone, canUndo: !finished,
+      levelChosen: levels.find((l) => l.id === st.resolution).short,
+      setLevel: () => this.setState({ levelDone: true }), undoLevel: () => this.setState({ levelDone: false }),
       levelKeys: (e) => {
         const keys = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1, Home: 'first', End: 'last' };
         const k = keys[e.key];
@@ -370,15 +994,19 @@ class Component extends DCLogic {
         const btns = group ? group.querySelectorAll('[role="radio"]') : [];
         if (btns[next]) btns[next].focus();
       },
-      statusChips, resolutions, atoms,
-      noAtoms: atoms.length === 0,
-      emptyTitle: status === 'confirmed' ? 'Nothing Confirmed Yet' : 'Nothing Left to Review',
-      emptyLine: status === 'confirmed' ? 'Items you confirm show here with who said them and where.' : 'Every item is confirmed or marked not right. Finish the review when you are ready.',
-      showAll: () => this.setState({ status: 'all' }),
-      canFinish: openCount === 0,
-      cannotFinish: openCount > 0,
-      leftLabel: openCount + ' left to review',
-      countsLabel: counts.join(', ')
+      listRows, brief,
+      mockFilters: ['Season FW27', 'Franchise', 'Gender', 'Flagged only'],
+      mockRows: [
+        { name: 'Shell run jacket', st: '38%', m: '$96', why: 'Margin per door 36% under the line', flag: true },
+        { name: 'Run 5-inch short', st: '41%', m: '$118', why: 'Margin per door 21% under the line', flag: true },
+        { name: 'Training LS top', st: '71%', m: '$412', why: '', flag: false },
+        { name: 'Fleece hoodie', st: '68%', m: '$356', why: '', flag: false }
+      ],
+      finishTitle: finished ? 'Review Finished' : 'Confirm What We Heard',
+      finishCount: finished ? handled.join(', ') + '.' : (openCount ? openCount + ' left to review.' : 'Every item is handled.'),
+      finishNote: finished ? 'The brief and the plan now use your confirmed facts.' : 'Confirmed facts go into the brief and the plan.',
+      canFinish, cannotFinish: openCount > 0 && !finished,
+      finish: () => this.setState({ finished: true, editing: null }), unfinish: () => this.setState({ finished: false })
     };
   }
 }

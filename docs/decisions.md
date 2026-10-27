@@ -19,9 +19,198 @@ Template for new entries:
 
 ---
 
+## 2026-10-27 - The UI direction goes to a team vote between three variants
+- **Status**: Proposed (open until the team vote closes; the result is logged here and the design docs
+  follow it). Amends "The concept app gets a side nav, a chat-first Home and one workspace per project"
+  (2026-10-26), whose shell becomes Variant B, the reference build until then
+- **Context**: The concept screens moved from a header-based design (round 7) to a side nav and a
+  chat-first shell (round 8) on the owner's direction. Before the front end is rebuilt, the owner
+  wants the team to compare real options, discuss the tradeoffs and vote rather than assume one. The
+  content (projects, people, the line and its approvals, the facts) does not depend on the shell, so the
+  same screens can be drawn three ways and compared fairly.
+- **Decision**: Three UI variants go to a team vote on the concept canvas, each drawn at its best with
+  the same facts: seven screens each (Home, Inbox, Projects, New project, Project, Approval, Handoff) at
+  the same positions on canvas pages A, B and C, plus a Compare and Vote page (`Compare.dc.html`) with the
+  pros and cons; votes are collected on a separate vote page the owner shares. Until the result, Variant
+  B stays the reference build and `docs/ua-dlc/design-system.md` section 7 documents its shell.
+- **Alternatives considered**: *A · Top Bar* - the round 7 header app, cleaned up (like Jira, ServiceNow
+  or SharePoint): familiar, dense, room for the Enterprise screens and closest to today's console, but
+  more to learn and the AI is a side panel. *B · Side Nav and Chat* - today's boards (like ChatGPT, Claude
+  or Copilot): the easiest start and the AI leads, but a blank box can stall people and decisions can get
+  lost in a long conversation. *C · Guided Path* - the line as the navigation, one next step at a time
+  with the assistant in a drawer (like TurboTax or DocuSign): nothing to learn and deliberate signing, but
+  slower for daily users, the AI less visible, and the most to build. *Keep B without a vote* - not
+  chosen: the owner wants the team's view while changing course is still cheap.
+- **Consequences**: Three sets of boards are kept consistent until the vote, so a fact change touches
+  A, B and C. The Final MVP's shell work (`ux-direction.md` section 13, weeks 2 to 6) should not lock
+  before the vote closes. If A or C wins, `ux-direction.md` sections 3 and 4, `design-system.md` section
+  7 and the plan's experience section are rewritten for it; revisit when the vote closes.
+
+---
+
+## 2026-10-26 - HyperDelivery's build stops at Inception; Construction is decided after it
+- **Status**: Proposed (the owner's direction; leadership confirms at the plan review and engineering
+  agrees the handoff). Supersedes in part "UA-DLC keeps engineering's step names in a four-phase line"
+  and "Enterprise expansion planned as UA-DLC, staged by evidence gates"
+- **Context**: The owner aligned with another UA team on what each UA-DLC phase hands over: Ideation a
+  visual mockup that supplements the research and the brief, Inception a prototype (at most on a hosted
+  sandbox with dev data), Construction a production-ready version on production data connections, and
+  Operations the deployments and promotions. The plan put the working prototype, the Deploy step, a T1
+  go-live and the Operation phase inside HyperDelivery, which is exactly where work starts touching
+  production systems and data.
+- **Decision**: HyperDelivery runs Ideation and Inception and ends every project at approval 3 with a
+  handoff package (Jira epic and issues, AI-DLC context files in engineering's format, the repository,
+  the decision chain, the evidence, What it skips, a dev-to-production data map and the target tier's
+  Construction checklist). Construction (engineering's Code, Review, Manual QA, Visual QA, Deploy) and
+  Operations stay outside its build. Whether HyperDelivery later adds an AI-driven Construction lane is
+  decided at the scale decision on handoff evidence; nothing is built for it before then.
+- **Alternatives considered**: *Keep the prototype in Construction* - rejected: it contradicts the agreed
+  definition, where Construction means production-ready on production data. *Build Construction now* -
+  rejected: it touches production systems and data before the pilot has shown the value, and it is the
+  speculative infrastructure AGENTS.md rules out.
+- **Consequences**: Deploy, Operate, Graduate, tier moves and live-app support leave HyperDelivery; the
+  handoff package moves into the Final MVP and graduation leaves Enterprise. HyperDelivery's last output
+  becomes engineering's first input (its `jira-to-pr` pipeline starts from the same context files). The
+  three phases and their weeks do not change. Two long-lead items are added: a dev-data source agreed
+  with data platform, and engineering's agreement on the handoff format and Construction intake.
+
+---
+
+## 2026-10-26 - Approval 1 ends Ideation and signs the brief and the mockup
+- **Status**: Proposed, with the entry above
+- **Context**: With a mockup as Ideation's output, approval 1 sat in the middle of Inception (after
+  Stories) and the mockup went unsigned; the Brief was a separate confirmation stop.
+- **Decision**: The three approvals sit at the end of Ideation ("What we're building": the brief and the
+  mockup), after Tickets ("The plan", which now includes requirements, stories and acceptance criteria)
+  and at the end of Inception ("The working prototype"). Inception's build steps get their own names
+  (Prototype build, Checks, Evidence, Looks like the mockup, Try it) so Construction keeps engineering's
+  five step names in engineering's order. At Light depth the plan is drafted straight after the mockup,
+  so approvals 1 and 2 can still be reviewed in one sitting.
+- **Alternatives considered**: *Keep approval 1 after Stories* - rejected: the mockup goes unsigned and
+  there are two stops; it matches neither AWS AI-DLC 2.x (Rough Mockups, then Approval & Handoff, at the
+  end of Ideation) nor engineering's intake gate. *A fourth approval* - rejected: no strong reason, and
+  three is the rule. *Two approvals, dropping the plan* - rejected: approval 2 is the gate before side
+  effects (repository, sandbox, dev-data grants, build spend).
+- **Consequences**: Every approval signs something a business teammate can see. The operating model's
+  steps, the Lifecycle help page and every board's line change; agent instructions follow in the build.
+
+---
+
+## 2026-10-26 - Prototypes run only in the sandbox on dev data; T1 to T3 become target tiers
+- **Status**: Proposed, with the entries above. Amends "The project tier 'T2 MVP' is renamed 'T2
+  Department app'"
+- **Context**: A T1 team prototype hosted for 25 people for 90 days is production use in all but name,
+  and the owner set the maximum for Inception as a hosted sandbox on dev data.
+- **Decision**: Inside HyperDelivery every project produces one thing: a prototype in the sandbox on dev
+  data, for project members and named testers, with an expiry. T1 Team app, T2 Department app and T3
+  Engineering-owned system become target tiers: proposed in the brief, confirmed with the plan, built in
+  Construction; they still set who signs and what the handoff package must hold. Dev data means synthetic
+  data, a dev Snowflake database or views data platform designates as dev data. Discovery may still read
+  production metadata, counts and aggregates through the broker (never rows) to cite certified
+  definitions.
+- **Alternatives considered**: *Keep the T1 go-live in the sandbox account's team-apps environment* -
+  rejected: production use without production controls. *Let prototypes read approved production views*
+  - rejected: that is a production data connection, which the agreed definition places in Construction.
+- **Consequences**: Confidential data and strong sign-in stop blocking pilot prototypes. A numbers check
+  against a golden report often moves to Construction, so evidence says "definitions match; numbers not
+  checked on dev data" instead of claiming a match. The team-apps environment and Streamlit in Snowflake
+  deploys leave the Final MVP.
+
+---
+
+## 2026-10-26 - The Construction mode is a named decision, not a fourth approval
+- **Status**: Proposed, with the entries above. Supersedes the "both, by risk tier" production path in
+  "Enterprise expansion planned as UA-DLC, staged by evidence gates" and the Graduate approval
+- **Context**: The owner wants UA to decide later whether production work is fully AI-driven or
+  AI-assisted with engineers, because that is where production systems and data come in.
+- **Decision**: After approval 3 the Construction owner (the receiving engineering lead, with the business
+  owner) chooses AI-driven, AI-assisted with engineers, or not now, and HyperDelivery records it as a
+  decision. The default comes from risk and the target tier: low-risk, read-only work without sign-in or
+  personal data defaults to AI-driven; sensitive data, authentication, writes to systems of record or core
+  systems default to AI-assisted with engineers. Engineering's gates on push, merge and release apply in
+  both modes, and a pipeline, never a model, deploys. "AI-driven" first means engineering's `jira-to-pr`
+  running with `--require-context` on the handoff [confirm with engineering].
+- **Alternatives considered**: *Make it approval 4* - rejected: different decision makers, outside
+  HyperDelivery's build, and it would break the three-approval rule without a strong reason. *Fold it into
+  approval 3* - rejected: approval 3's signers are not the people who should decide how engineering
+  builds; they may state a preference, which goes in the package.
+- **Consequences**: The Graduation screen becomes the Handoff screen in the Final MVP. Engineering keeps
+  "rebuild from the plan" as a valid outcome and a 10-business-day accept-or-decline window.
+
+---
+
+## 2026-10-26 - The line reads Discover, Plan, Prototype, Handoff
+- **Status**: Proposed, with the entries above
+- **Context**: The business-facing line read Discover, Plan, Build, Live, and "handoff" also named
+  agent-to-agent passes in the activity views. With the stop at Inception, "Live" and "Build" no longer
+  describe HyperDelivery's output.
+- **Decision**: Business labels are Discover, Plan, Prototype and Handoff, with the three approvals named
+  by their decision; agent-to-agent passes are "delegations"; the last UA-DLC phase is "Operations", the
+  name UA just agreed.
+- **Alternatives considered**: *"Production (later)" or "Live" as the last stretch* - rejected: both read
+  as if HyperDelivery ships to production. *"Next"* - rejected: vague.
+- **Consequences**: The glossary, the line component, every board's line labels and the Activity board's
+  "Decisions and Delegations" view change.
+
+---
+
+## 2026-10-26 - Jira is filed at the handoff, and "Prototype only" is a valid target
+- **Status**: Proposed, with the entries above
+- **Context**: Approval 2 used to unlock both the repository and the Jira epic. With the build stopping
+  at Inception, the tickets are for whoever does Construction, and some projects are explorations that
+  should never reach Construction.
+- **Decision**: Approval 2 unlocks the prototype repository, pushes and the sandbox build; the Jira epic
+  and issues, with engineering's AI-DLC context files, are filed at the handoff after approval 3. A project
+  may name "Prototype only" as its target, so a requester can still sign alone at low risk and its
+  Construction decision defaults to "not now".
+- **Alternatives considered**: *File Jira after approval 2, as before* - rejected: engineering's backlog
+  would fill with tickets for prototypes that may never be built for production, and the tickets would
+  describe prototype pieces rather than Construction work. *Drop T0 without a replacement* - rejected: it
+  would force a second signer onto personal explorations.
+- **Consequences**: A project's origin ticket (when it starts from Jira) is still linked from the start;
+  only the new epic waits, and nothing writes back to the origin ticket before the handoff. A
+  "Prototype only" project keeps its tickets in HyperDelivery; T1 to T3 targets file them. Settles
+  open question 4 in `research/ua-dlc-reconcile.md`.
+
+---
+
+## 2026-10-26 - The concept app gets a side nav, a chat-first Home and one workspace per project
+- **Status**: Accepted for the concept screens and the design docs (supersedes the top-bar navigation in
+  `docs/ua-dlc/design-system.md` section 7 and the eight-tab project page in `ux-direction.md`; keeps
+  "Help lives behind a '?' in the top bar"). Amended 2026-10-27: the UI direction is now put to a team
+  vote between three variants, with this shell as Variant B, the reference build until the vote closes
+  (see "The UI direction goes to a team vote between three variants")
+- **Context**: The owner found the user flow complicated for a business user and asked for the simplicity
+  of ChatGPT, Claude Desktop and Gemini, with a side nav and a project's made things visible beside the
+  conversation in one screen. The old Home also carried cards that held open empty columns. Research
+  (`docs/ua-dlc/research/ai-app-layouts.md`) found every leading AI app converging on the same shape, and
+  UA's own Baselayer library already has a left account navigation, a preview-section pattern with a
+  compact empty state and a three-dot loader (`research/figma-libraries.md`).
+- **Decision**: A collapsible left side nav (New Project, Search, Home, Inbox, Projects, Library, Recent
+  projects with status marks, role-gated Portfolio and Admin, the account and workspace) replaces the top
+  bar, which keeps only the page name and the "?" Help menu. Home is one composer that points at Teams,
+  OneDrive, SharePoint, Confluence, Jira and Snowflake, with Waiting on You and recent projects below and no
+  showcase cards. Every project is one workspace: the conversation on the left and an artifact panel on the
+  right (Brief, Mockup, Plan, Prototype, Data, Sources, Decisions; Timeline, Architecture and Trace under
+  More); approvals are cards in the conversation and are signed in the panel's decision bar. Running work
+  uses Baselayer's three-dot loader; human waits show age.
+- **Alternatives considered**: *Keep the top bar and polish it* - rejected: seven zones in one row and no
+  view of the projects a person is working on. *A separate Start page with three tabs* - rejected: it asks
+  people to classify their input before typing; the composer recognizes Jira keys and links instead.
+  *Separate Approval and Confirm-what-we-heard screens* - rejected: a second place for the same project;
+  they are views of the workspace now. *Copy a chat app's mode picker or model picker* - rejected:
+  HyperDelivery's users should not have to choose.
+- **Consequences**: The line and its three approvals stay the one element only HyperDelivery has. The
+  console adopts this shell when the Final MVP rebuilds its front end; the move from the top bar needs a
+  one-time "where things moved" note for current users.
+
+---
+
 ## 2026-10-26 - HyperDelivery runs in three phases: Current State, Final MVP, Enterprise
 - **Status**: Accepted for the plan (in `docs/ua-dlc/enterprise-plan.md`; supersedes the five stages
-  in "HyperDelivery is built working version first; enterprise hardening follows the MVP")
+  in "HyperDelivery is built working version first; enterprise hardening follows the MVP"). Consequences
+  amended by "HyperDelivery's build stops at Inception" (graduation leaves Enterprise; the handoff joins
+  the Final MVP)
 - **Context**: The owner wants the project run by three high-level milestones: what runs today, a
   fully usable Final MVP that a real testing pilot can try on varied use cases, and Enterprise.
   Governance, logging, cost or budget enforcement, evals and scaling must not stand between the team
@@ -73,7 +262,9 @@ Template for new entries:
 
 ## 2026-10-26 - Help lives behind a "?" in the top bar, not in the Library
 - **Status**: Accepted for the concept screens (in `docs/ua-dlc/ux-direction.md` and
-  `docs/ua-dlc/design-system.md`)
+  `docs/ua-dlc/design-system.md`). Amended by "2026-10-26 - The concept app gets a side nav, a
+  chat-first Home and one workspace per project": the avatar moved to the side nav's account row,
+  and the "?" is the last item of the top bar.
 - **Context**: "How HyperDelivery Works" was a section of the Library, so explaining the product
   competed with UA's shared knowledge and was hard to find from other screens. The owner asked for it
   as a "?" icon in the top header.
@@ -110,7 +301,12 @@ Template for new entries:
 ---
 
 ## 2026-10-26 - The project tier "T2 MVP" is renamed "T2 Department app"
-- **Status**: Accepted (tier contract in `docs/ua-dlc/operating-model.md`)
+- **Status**: Accepted (tier contract in `docs/ua-dlc/operating-model.md`); T2 is now a target tier,
+  built in Construction ("2026-10-26 - Prototypes run only in the sandbox on dev data"). The other
+  tiers moved too: T0 Sandbox became the "Prototype only" target ("2026-10-26 - Jira is filed at
+  the handoff, and 'Prototype only' is a valid target"), and T1 Team prototype and T3 Production
+  handoff became T1 Team app and T3 Engineering-owned system ("2026-10-26 - Prototypes run only in
+  the sandbox on dev data").
 - **Context**: The tier contract called its third tier "T2 MVP", and the plan's second phase is now
   the Final MVP. One word for both a project's tier and HyperDelivery's own phase invites confusion,
   often in the same sentence.
@@ -152,7 +348,9 @@ Template for new entries:
   Amended by "2026-10-26 - HyperDelivery runs in three phases: Current State, Final MVP, Enterprise":
   Stage 1 below reads Final MVP and Stage 4 reads Enterprise; the sandbox account has a named
   non-production fallback and is not on the Final MVP's critical path, which holds only the
-  prototype GitHub organization and the Snowflake service user.
+  prototype GitHub organization and the Snowflake service user. Amended by "2026-10-26 -
+  HyperDelivery's build stops at Inception": Copilot's cloud agent stays acceptable on a receiving
+  team's own repositories in Construction, whatever the target tier.
 - **Context**: The owner wants to know where the coding agent runs: inside a predefined sandbox, not
   GitHub Copilot's cloud agent opening a separate autopilot pull request for each issue, which builds
   the plan in fragments with no shared workspace and moves integration, tests and evidence after the
@@ -190,6 +388,9 @@ Template for new entries:
 - **Status**: Accepted for the concept screens and plan page (production use goes through UA Brand).
   Amended by "2026-10-26 - Desktop and laptop only, light theme only, for now": the product has no
   dark surface, so the white-on-dark logo appears only in the brand section, as a brand asset.
+  Amended by "2026-10-26 - The concept app gets a side nav, a chat-first Home and one workspace per
+  project": the lockup (logo, then "HyperDelivery", no hairline) heads the side nav, not the top
+  bar.
 - **Context**: The owner asked for the real UA logo so HyperDelivery reads as a UA product offering.
   The internal Figma file "UA Brand Logos" holds the logo, lockups, monogram, signatures and brand
   colors; Baselayer's own Token Reference opens with the UA logo followed by the product name.
@@ -210,7 +411,10 @@ Template for new entries:
 - **Status**: Accepted (in `docs/ua-dlc/design-system.md`; supersedes the visual parts of the
   "color from brand marks and specialist hues" entry below where they conflict). Amended by
   "2026-10-26 - Desktop and laptop only, light theme only, for now": the dark values are set aside
-  and only the light theme is designed.
+  and only the light theme is designed. Amended by "2026-10-26 - The concept app gets a side nav, a
+  chat-first Home and one workspace per project": the left navigation rejected below is now adopted
+  (a 248 px side nav that collapses to a 64 px rail), and the top bar keeps only the page name or
+  breadcrumb, page actions and the "?".
 - **Context**: The owner found the round-3 concept screens better with color but still not "a fully
   polished SaaS product", with broken icons and uneven spacing, and asked for Under Armour's brand.
   Six independent audits (taste, premium SaaS, Anthropic frontend-design, Impeccable, UI/UX Pro Max,
@@ -239,7 +443,10 @@ Template for new entries:
 ---
 
 ## 2026-10-25 - HyperDelivery interoperates with UA engineering's own AI-DLC tooling
-- **Status**: Proposed (to settle with UA engineering; see `docs/ua-dlc/research/ua-marketplace-alignment.md`)
+- **Status**: Proposed (to settle with UA engineering; see `docs/ua-dlc/research/ua-marketplace-alignment.md`);
+  strengthened by "2026-10-26 - HyperDelivery's build stops at Inception" and "The Construction mode is a
+  named decision" (the context files ship in the Final MVP; the handoff lands where engineering's
+  Construction starts)
 - **Context**: UA engineering's internal AI marketplace already implements an AI-DLC for engineers:
   an ideation research skill with a scored intake, a separate Inception repository, and a 13-phase
   Jira-to-PR construction pipeline with its own gates, evidence rules and phase-artifact schemas.
@@ -311,7 +518,9 @@ Template for new entries:
 ---
 
 ## 2026-10-25 - UA-DLC keeps engineering's step names in a four-phase line
-- **Status**: Accepted (in `docs/ua-dlc/operating-model.md`)
+- **Status**: Accepted (in `docs/ua-dlc/operating-model.md`); superseded in part by "2026-10-26 -
+  HyperDelivery's build stops at Inception", "Approval 1 ends Ideation" and "The line reads Discover,
+  Plan, Prototype, Handoff" (approval positions, the Operation phase, Graduate, where QA sits)
 - **Context**: UA engineering proposed an Ideation, Inception and Construction variant with twelve
   steps. UA-DLC had its own stage names. Two vocabularies would split the organization.
 - **Decision**: Use engineering's twelve step names verbatim as the spine, add Intake, Data
@@ -370,7 +579,9 @@ Template for new entries:
 ## 2026-10-25 - Enterprise expansion planned as UA-DLC, staged by evidence gates
 - **Status**: Accepted; its staging is superseded by "2026-10-25 - HyperDelivery is built working
   version first; enterprise hardening follows the MVP", itself superseded by "2026-10-26 -
-  HyperDelivery runs in three phases: Current State, Final MVP, Enterprise".
+  HyperDelivery runs in three phases: Current State, Final MVP, Enterprise". Its production path by
+  risk tier is superseded by "2026-10-26 - The Construction mode is a named decision, not a fourth
+  approval", where it survives as the default.
 - **Context**: HyperDelivery is moving from an EDM pilot toward a UA-wide tool. Early users said
   they don't care which agent is doing what, the UA ideathon suggested the best context comes from
   mixed teams, and the deployed pilot still has correctness, security and data-handling gaps

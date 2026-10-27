@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Needs Attention</title>
+<title>HyperDelivery - Needs Attention</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -12,245 +12,270 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light}
-body{margin:0;background:#F9F9F9}
+body{margin:0;background:#FFFFFF}
 a{color:#1D1D1D}a:hover{color:#444444}
 :focus-visible{outline:2px solid #0096FA;outline-offset:2px}
 .hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
-.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
 .hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
 .hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
 .hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
-.hd-nav a:hover{color:#1D1D1D!important}
 .hd-row:hover{background:#F9F9F9!important}
 .hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
 .hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
-.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent;border:0;padding:0;cursor:pointer}
 .hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
-.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-menu{position:absolute;top:44px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
 .hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
 .hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
 .hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
 .hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
-@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+/* hd-shell: the side nav, the same on every product board (design-system.md section 7) */
+.hd-side{background:#F9F9F9;border-right:1px solid #F0F0F0;min-width:0}
+.hd-side-in{position:sticky;top:0;height:100vh;max-height:900px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:12px}
+.hd-sn{height:36px;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:8px;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:18px;white-space:nowrap;min-width:0}
+.hd-sn:not([aria-current="page"]):hover{background:#F0F0F0!important;color:#1D1D1D}
+.hd-sn:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #0096FA,inset 0 0 0 4px #FFFFFF!important}
+.hd-sn-sm{height:32px;font-size:13px;line-height:18px}
+.hd-sl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hd-new:hover{background:#F0F0F0!important}
+[data-rail="on"] .hd-sl,[data-rail="on"] .hd-recent,[data-rail="on"] .hd-word{display:none!important}
+[data-rail="on"] .hd-sn,[data-rail="on"] .hd-new{justify-content:center;padding:0}
+[data-rail="on"] .hd-sn[aria-current="page"]{background:#F0F0F0!important}
+[data-rail="on"] .hd-sn{position:relative}
+[data-rail="on"] .hd-count{position:absolute;top:1px;right:6px;min-width:16px!important;height:16px!important;padding:0 4px!important;font-size:11px!important;line-height:16px!important;box-shadow:0 0 0 2px #F9F9F9}
+[data-rail="on"] .hd-lock{justify-content:center;padding:0;flex-direction:column;height:auto;gap:12px}
+.hd-dots{display:inline-flex;align-items:center;gap:4px;flex:none}
+.hd-dots i{width:5px;height:5px;border-radius:999px;background:#444444;opacity:.3;animation:hd-dot 1.2s infinite}
+.hd-dots i:nth-child(2){animation-delay:.2s}.hd-dots i:nth-child(3){animation-delay:.4s}
+@keyframes hd-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hd-dots i{animation:none;opacity:.6}}
+/* Needs Attention */
+.hd-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .hd-crumb:hover{text-decoration:underline!important;text-underline-offset:3px}
 </style>
 </helmet>
-<div style="min-height: 1371px; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums; background: #F9F9F9">
+<div class="hd-app" data-rail="{{railAttr}}" style="display: grid; grid-template-columns: {{sideW}} minmax(0, 1fr); min-height: 1666px; background: #FFFFFF; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
 
-<header style="height:56px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D0D0D0;position:relative;z-index:20">
-  <a href="Main.dc.html" class="hd-ring" style="display:flex;align-items:center;gap:12px;color:#1D1D1D;text-decoration:none;flex:none">
-    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
-    <span style="font-size:16px;line-height:20px;font-weight:700">HyperDelivery</span>
-  </a>
-  <span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
-  <details class="hd-pop" style="position:relative;flex:none">
-    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height:36px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 8px;border-radius:4px;color:#1D1D1D;font-size:14px;line-height:18px;white-space:nowrap">Merchandising
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg>
-    </summary>
-    <div class="hd-menu" style="left:0;right:auto">
-      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closePop}}" style="font-weight:700">Merchandising<span style="flex:1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closePop}}">Sourcing</button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closePop}}">Wholesale</button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closePop}}">EDM</button>
+<!-- hd-shell:side start -->
+<aside class="hd-side" aria-label="HyperDelivery">
+  <div class="hd-side-in">
+    <div class="hd-lock" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 2px 0 8px; margin-bottom: 8px">
+      <a href="Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 10px; color: #1D1D1D; text-decoration: none; min-width: 0">
+        <svg width="28" height="17" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex: none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg>
+        <span class="hd-word" style="font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">HyperDelivery</span>
+      </a>
+      <span class="hd-word" style="flex: 1"></span>
+      <button type="button" class="hd-iconbtn" onClick="{{toggleRail}}" aria-label="{{railLabel}}" aria-expanded="{{sideOpen}}" title="{{railLabel}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M9.5 4.5v15"></path></svg>
+      </button>
     </div>
-  </details>
-  <nav aria-label="Primary" class="hd-nav" style="display:flex;align-self:stretch;gap:24px">
-    <a href="Main.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Home</a>
-    <a href="Projects.dc.html" aria-current="page" style="display:flex;align-items:center;font-size:14px;line-height:18px;font-weight:700;color:#1D1D1D;text-decoration:none;box-shadow:inset 0 -2px 0 #1D1D1D">Projects</a>
-    <a href="Inbox.dc.html" aria-label="Inbox, 4 waiting on you" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Inbox<span aria-hidden="true" style="margin-left:6px;min-width:16px;height:16px;box-sizing:border-box;padding:0 4px;border-radius:999px;background:#DC0019;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;text-align:center">4</span></a>
-    <a href="Library.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Library</a>
-    <a href="Portfolio.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Portfolio</a>
-    <span aria-hidden="true" style="align-self:center;width:1px;height:20px;background:#D0D0D0"></span>
-    <a href="Admin.dc.html" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Admin</a>
-  </nav>
-  <span style="flex:1"></span>
-  <div class="hd-right" style="display:flex;align-items:center;gap:16px;flex:none">
-    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border:0;border-radius:4px;background:#F0F0F0;color:#5F5F5F;font-family:inherit;font-size:14px;line-height:20px;text-align:left;flex:none;cursor:pointer">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
-      <span style="flex:1;white-space:nowrap">Search projects and facts</span>
-      <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    <a href="Main.dc.html" class="hd-new hd-ring-ink" aria-label="New Project" style="height: 40px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 14px; margin-bottom: 4px; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; color: #1D1D1D; text-decoration: none; font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 5v14M5 12h14"></path></svg><span class="hd-sl">New Project</span>
+    </a>
+    <button type="button" class="hd-sn" aria-label="Search projects and facts, Command K" aria-keyshortcuts="Meta+K" onClick="{{openSearch}}" style="border: 0; background: transparent; font-family: inherit; cursor: pointer; text-align: left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span class="hd-sl" style="flex: 1">Search</span>
+      <kbd class="hd-sl" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
     </button>
-    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;flex:none">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
-    <details class="hd-pop" style="position:relative;flex:none">
-      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+    <nav aria-label="Primary" style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+        <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" aria-label="{{n.aria}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}; color: {{n.fg}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+          <span class="hd-sl" style="flex: 1">{{n.label}}</span>
+          <sc-if value="{{n.hasTag}}" hint-placeholder-val="{{ false }}"><span class="hd-sl" style="font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">{{n.tag}}</span></sc-if>
+          <sc-if value="{{n.hasCount}}" hint-placeholder-val="{{ false }}"><span class="hd-count" aria-hidden="true" style="min-width: 18px; height: 18px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 18px; font-weight: 700; text-align: center">{{n.count}}</span></sc-if>
+        </a>
+      </sc-for>
+    </nav>
+    <div class="hd-recent" style="display: flex; flex-direction: column; gap: 2px; margin-top: 16px; min-height: 0">
+      <h2 style="margin: 0; padding: 0 10px 6px; font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">Recent</h2>
+      <sc-for list="{{recent}}" as="r" hint-placeholder-count="5">
+        <a href="{{r.href}}" class="hd-sn hd-sn-sm" aria-label="{{r.aria}}" aria-current="{{r.current}}" title="{{r.name}}" style="background: {{r.rowBg}}; box-shadow: {{r.rowRing}}; font-weight: {{r.fw}}">
+          <span aria-hidden="true" style="width: 14px; height: 14px; flex: none; display: inline-flex; align-items: center; justify-content: center">
+            <sc-if value="{{r.isWork}}" hint-placeholder-val="{{ false }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+            <sc-if value="{{r.isNotch}}" hint-placeholder-val="{{ true }}"><span style="width: 8px; height: 8px; box-sizing: border-box; background: {{r.bg}}; border: {{r.bd}}"></span></sc-if>
+          </span>
+          <span class="hd-sl" style="flex: 1">{{r.name}}</span>
+        </a>
+      </sc-for>
+      <a href="Projects.dc.html" class="hd-sn hd-sn-sm" style="color: #5F5F5F"><span aria-hidden="true" style="width: 14px; flex: none"></span><span class="hd-sl">All Projects</span></a>
+    </div>
+    <span style="flex: 1"></span>
+    <sc-for list="{{admin}}" as="n" hint-placeholder-count="0">
+      <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+        <span class="hd-sl">{{n.label}}</span>
+      </a>
+    </sc-for>
+    <details class="hd-pop" style="position: relative; margin-top: 8px">
+      <summary class="hd-sn hd-ring-in" aria-label="{{me.aria}}" style="height: 48px; padding: 0 8px">
+        <span aria-hidden="true" style="width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{me.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{me.initials}}</span>
+        <span class="hd-sl" style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+          <span class="hd-sl" style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span class="hd-sl" style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{me.workspace}}</span>
+        </span>
+        <svg class="hd-sl" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"></path></svg>
       </summary>
-      <nav class="hd-menu" aria-label="Help">
-        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
-        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
-        <hr>
-        <details class="hd-sub">
-          <summary class="hd-mi">Keyboard Shortcuts<span style="flex:1"></span><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></summary>
-          <dl style="margin:0;padding:4px 16px 8px;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:12px;line-height:18px;color:#5F5F5F">
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd></dt><dd style="margin:0">Search</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">/</kbd></dt><dd style="margin:0">Search This Table</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">J</kbd> <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">K</kbd></dt><dd style="margin:0">Next and Previous Item</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">@</kbd></dt><dd style="margin:0">Mention Someone</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">Esc</kbd></dt><dd style="margin:0">Close</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></dt><dd style="margin:0">Show Shortcuts</dd>
-          </dl>
-        </details>
-        <details class="hd-sub">
-          <summary class="hd-mi">What's New<span style="flex:1"></span><span style="padding:0 4px;border-radius:4px;background:#FE9000;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700">NEW</span></summary>
-          <ul style="margin:0;padding:4px 16px 8px;list-style:none;display:grid;gap:8px;font-size:12px;line-height:18px">
-            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
-            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
-            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
-          </ul>
-        </details>
-        <hr>
-        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex:1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
-      </nav>
-    </details>
-    <details class="hd-pop" style="position:relative;flex:none">
-      <summary class="hd-ring" aria-label="Omar Haddad, account" style="width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#4A5560;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">OH</summary>
-      <div class="hd-menu">
-        <div style="padding:8px 16px 12px;display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:14px;line-height:18px;font-weight:700">Omar Haddad</span>
-          <span style="font-size:12px;line-height:18px;color:#5F5F5F">Engineering reviewer, Data Platform</span>
+      <div class="hd-menu" style="top: auto; bottom: 56px; left: 0; right: auto; width: 248px">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{me.role}}</span>
         </div>
         <hr>
-        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex:1"></span><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;color:#5F5F5F">{{techLabel}}<sc-if value="{{techIsOn}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <div style="padding: 4px 16px; font-size: 12px; line-height: 16px; color: #5F5F5F">Workspace</div>
+        <sc-for list="{{workspaces}}" as="w" hint-placeholder-count="4">
+          <button type="button" class="hd-mi" aria-pressed="{{w.on}}" onClick="{{closeMenu}}" style="font-weight: {{w.fw}}">{{w.name}}<span style="flex: 1"></span><sc-if value="{{w.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+        </sc-for>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}</span></button>
         <hr>
         <button type="button" class="hd-mi">Sign Out</button>
       </div>
     </details>
   </div>
-</header>
+</aside>
+<!-- hd-shell:side end -->
 
-<section style="background:#FFFFFF;border-bottom:1px solid #D0D0D0;padding:24px">
-  <nav aria-label="Breadcrumb" style="display:flex;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F">
-    <a href="Projects.dc.html" class="hd-crumb hd-ring" style="color:#5F5F5F;text-decoration:none">Projects</a><span aria-hidden="true">/</span>
-    <span aria-current="page">Needs Attention</span>
+<div style="min-width: 0; display: flex; flex-direction: column">
+<!-- hd-shell:top start -->
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #F0F0F0; position: relative; z-index: 20">
+  <nav aria-label="Breadcrumb" style="display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; line-height: 20px; color: #5F5F5F; white-space: nowrap">
+    <a href="Projects.dc.html" class="hd-crumb" style="color: #5F5F5F; text-decoration: none">Projects</a><span aria-hidden="true">/</span>
+    <span aria-current="page" style="color: #1D1D1D; font-weight: 700">Needs Attention</span>
   </nav>
-  <div style="margin-top:8px;display:flex;align-items:center;gap:16px;min-height:40px">
-    <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:700;white-space:nowrap">Needs Attention</h1>
-  </div>
-  <div style="margin-top:8px;display:flex;flex-wrap:wrap;column-gap:24px;row-gap:4px;font-size:14px;line-height:20px;color:#5F5F5F">
-    <sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}"><span>7 open</span><span>4 waiting on you</span></sc-if>
-    <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}"><span>Nothing open</span></sc-if>
-    <span>Updated 2 min ago</span>
-  </div>
-</section>
+  <span style="flex: 1"></span>
+  <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">Updated 2 min ago</span>
+  <details class="hd-pop" style="position: relative; flex: none">
+    <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+    </summary>
+    <nav class="hd-menu" aria-label="Help">
+      <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+      <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+      <hr>
+      <details class="hd-sub">
+        <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>⌘/</kbd></summary>
+        <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+          <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+          <dt><kbd>⌘⇧O</kbd></dt><dd style="margin: 0">New Project</dd>
+          <dt><kbd>⌘B</kbd></dt><dd style="margin: 0">Hide or Show the Sidebar</dd>
+          <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention a Person or Source</dd>
+          <dt><kbd>⌘/</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+          <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+        </dl>
+      </details>
+      <details class="hd-sub">
+        <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+        <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+          <li><b>Oct 26</b> A sidebar, and every project's work in one place</li>
+          <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+          <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+        </ul>
+      </details>
+      <hr>
+      <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+    </nav>
+  </details>
+</header>
+<!-- hd-shell:top end -->
 
-<main style="padding:32px 24px 56px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:16px;row-gap:24px;align-items:start">
-  <section aria-label="What needs attention, by project" style="grid-column:1 / -1;min-width:0;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
+<main style="flex: 1; padding: 32px 24px 56px; display: flex; flex-direction: column; align-items: center">
+  <div style="width: 100%; max-width: 880px; display: flex; flex-direction: column; gap: 16px">
+    <h1 class="hd-sr">Needs Attention</h1>
 
     <sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
-      <div role="group" aria-label="Filter by kind" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;row-gap:8px;padding:12px 24px;background:#F9F9F9;border-bottom:1px solid #F0F0F0">
-        <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
-          <button type="button" class="{{f.cls}}" onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="height:32px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:0;border-radius:4px;background:{{f.bg}};color:{{f.fg}};box-shadow:{{f.ring}};font-family:inherit;font-size:14px;line-height:18px;font-weight:{{f.weight}};white-space:nowrap;cursor:pointer">
-            <sc-if value="{{f.showCheck}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
-            <sc-if value="{{f.showGlyph}}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.glyph}}"></path></svg></sc-if>{{f.label}}<span style="font-weight:400;color:{{f.countColor}}">{{f.count}}</span>
+      <div role="group" aria-label="Show" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+          <button type="button" class="{{f.cls}}" onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 4px; background: {{f.bg}}; color: {{f.fg}}; box-shadow: {{f.ring}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: {{f.fw}}; white-space: nowrap; cursor: pointer">
+            <sc-if value="{{f.showNotch}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 8px; height: 8px; box-sizing: border-box; background: {{f.notchBg}}; border: {{f.notchBd}}; flex: none"></span></sc-if>
+            {{f.label}}<span style="font-weight: 400; color: {{f.countColor}}">{{f.count}}</span>
           </button>
         </sc-for>
       </div>
-    </sc-if>
 
-    <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
-      <div style="border-top:{{g.divider}}">
-        <div style="display:flex;align-items:center;gap:16px;padding:0 24px;min-height:44px;background:#F9F9F9">
-          <h2 style="margin:0;font-size:16px;line-height:20px;font-weight:700;white-space:nowrap">{{g.name}}</h2>
-          <span style="font-size:14px;line-height:20px;color:#5F5F5F;white-space:nowrap">{{g.stage}}</span>
-          <span role="img" aria-label="{{g.peopleLabel}}" style="display:inline-flex;align-items:center">
-            <sc-for list="{{g.people}}" as="pp" hint-placeholder-count="2">
-              <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{pp.fill}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;box-shadow:0 0 0 2px #F9F9F9">{{pp.ini}}</span>
-            </sc-for>
-          </span>
-          <span style="flex:1"></span>
-          <a href="{{g.href}}" class="hd-ring" aria-label="{{g.openLabel}}" style="display:inline-block;padding:12px 0;font-size:14px;line-height:20px;color:#1D1D1D;text-decoration:underline;text-underline-offset:3px;white-space:nowrap">Open Project</a>
-        </div>
-        <sc-for list="{{g.rows}}" as="c" hint-placeholder-count="2">
-          <article aria-label="{{c.label}}" style="display:grid;grid-template-columns:8px 24px minmax(0,1fr) minmax(0,1fr) 296px;column-gap:16px;align-items:start;padding:16px 24px;border-top:1px solid #F0F0F0">
-            <span aria-hidden="true" style="margin-top:6px;width:8px;height:8px;background:{{c.marker}}"></span>
-            <span data-tile="1" style="position:relative;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">
-              <span data-mono="1" aria-hidden="true" style="font-size:12px;line-height:16px;font-weight:700;color:transparent">{{c.mono}}</span>
-              <img src="{{c.logo}}" width="16" height="16" alt="{{c.sys}}" onError="{{showMonogram}}" style="position:absolute;top:4px;left:4px;width:16px;height:16px">
-            </span>
-            <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
-              <h3 style="margin:0;font-size:16px;line-height:20px;font-weight:700">{{c.title}}</h3>
-              <span style="display:flex;flex-wrap:wrap;align-items:center;column-gap:8px;row-gap:4px;font-size:14px;line-height:20px;color:{{c.statusColor}}">
-                <span style="display:inline-flex;align-items:center;gap:4px;min-width:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="{{c.glyphStatus}}"></path></svg><span style="white-space:nowrap">{{c.statusLine}}</span></span>
-                <span style="height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap;flex:none">
-                  <span data-tile="1" style="position:relative;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex:none"><span data-mono="1" aria-hidden="true" style="font-size:12px;line-height:16px;font-weight:700;color:transparent">{{c.mono}}</span><img src="{{c.logo}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="position:absolute;top:0;left:0;width:16px;height:16px"></span>{{c.chip}}</span>
-              </span>
-              <span style="font-size:12px;line-height:18px;color:#5F5F5F">{{c.block}}</span>
-            </div>
-            <div style="min-width:0;max-width:480px;display:flex;flex-direction:column;gap:8px">
-              <p style="margin:0;font-size:14px;line-height:20px;color:#5F5F5F">{{c.text}}</p>
-              <span style="display:flex;flex-wrap:wrap;align-items:center;column-gap:24px;row-gap:4px;min-height:24px;font-size:12px;line-height:18px;color:#5F5F5F">
-                <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap"><sc-if value="{{c.hasGoodLabel}}" hint-placeholder-val="{{ true }}"><span>{{c.goodLabel}}</span></sc-if><span style="color:#1D1D1D">{{c.goodValue}}</span></span>
-                <sc-if value="{{c.youWait}}" hint-placeholder-val="{{ true }}"><span style="font-weight:700;color:#1D1D1D;white-space:nowrap">Waiting on You</span></sc-if>
-                <sc-if value="{{c.hasTold}}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:4px"><span>Notified</span>
-                  <sc-for list="{{c.toldList}}" as="t" hint-placeholder-count="1">
-                    <span style="display:inline-flex;align-items:center;gap:6px;color:#1D1D1D;white-space:nowrap"><sc-if value="{{t.hasAv}}" hint-placeholder-val="{{ true }}"><span title="{{t.name}}" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{t.fill}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">{{t.ini}}</span></sc-if>{{t.text}}</span>
-                  </sc-for>
-                </span></sc-if>
-              </span>
-            </div>
-            <div style="align-self:center;display:flex;align-items:center;justify-content:flex-end;gap:16px">
-              <button type="button" class="{{c.btnCls}}" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 16px;border:0;border-radius:999px;background:{{c.btnBg}};color:{{c.btnFg}};box-shadow:inset 0 0 0 1px #1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">{{c.action}}</button>
-              <a href="{{c.href}}" class="hd-ring" style="display:inline-block;padding:12px 0;font-size:14px;line-height:20px;color:#1D1D1D;text-decoration:underline;text-underline-offset:3px;white-space:nowrap">{{c.secondary}}</a>
-            </div>
-          </article>
+      <ul aria-label="{{listLabel}}" style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px">
+        <sc-for list="{{shown}}" as="c" hint-placeholder-count="5">
+          <li>
+            <article aria-labelledby="{{c.hid}}" aria-describedby="{{c.did}}" style="border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0; background: #FFFFFF; overflow: hidden">
+              <div style="display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px 16px; background: #F9F9F9; border-bottom: 1px solid #F0F0F0; border-radius: 8px 8px 0 0">
+                <span aria-hidden="true" style="width: 32px; height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">
+                  <sc-if value="{{c.isLogo}}" hint-placeholder-val="{{ true }}"><img src="{{c.logo}}" width="18" height="18" alt=""></sc-if>
+                  <sc-if value="{{c.isMark}}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg></sc-if>
+                  <sc-if value="{{c.isGlyph}}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{c.tileGlyph}}"></path></svg></sc-if>
+                </span>
+                <span style="min-width: 0; display: flex; flex-direction: column">
+                  <h2 id="{{c.hid}}" style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.block}}</h2>
+                  <span style="padding: 2px 4px; margin: -2px -4px; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><a href="{{c.projectHref}}" class="hd-ring-in" style="color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; border-radius: 2px">{{c.project}}</a>, {{c.stretch}}</span>
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap">
+                  <sc-if value="{{c.enterprise}}" hint-placeholder-val="{{ false }}"><span style="height: 20px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; color: #5F5F5F">Enterprise</span></sc-if>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; font-weight: 700; color: {{c.stColor}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{c.stGlyph}}"></path></svg>{{c.statusWord}}</span>
+                </span>
+              </div>
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; align-items: end; padding: 16px">
+                <div style="min-width: 0; display: flex; flex-direction: column; gap: 12px">
+                  <p id="{{c.did}}" style="margin: 0; max-width: 620px; font-size: 14px; line-height: 20px">{{c.text}}</p>
+                  <sc-if value="{{c.isBudget}}" hint-placeholder-val="{{ false }}">
+                    <div style="max-width: 620px; display: flex; flex-direction: column; gap: 6px">
+                      <span style="font-size: 14px; line-height: 20px"><b>{{budget.used}}</b> of {{budget.cap}}</span>
+                      <div role="img" aria-label="{{budget.aria}}" style="display: grid; grid-template-columns: {{budget.cols}}; column-gap: 2px; height: 8px">
+                        <sc-for list="{{budget.parts}}" as="b" hint-placeholder-count="3"><span style="background: {{b.c}}"></span></sc-for>
+                      </div>
+                      <div aria-hidden="true" style="display: grid; grid-template-columns: {{budget.cols}}; column-gap: 2px; font-size: 12px; line-height: 18px; white-space: nowrap">
+                        <sc-for list="{{budget.parts}}" as="b" hint-placeholder-count="3"><span>{{b.label}}</span></sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; column-gap: 24px; row-gap: 4px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; color: {{c.whoColor}}; font-weight: {{c.whoWeight}}">
+                      <sc-if value="{{c.whoNotch}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width: 8px; height: 8px; box-sizing: border-box; background: {{c.notchBg}}; border: {{c.notchBd}}; flex: none"></span></sc-if>
+                      <sc-if value="{{c.whoDots}}" hint-placeholder-val="{{ false }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+                      <sc-if value="{{c.whoSched}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M20 11a8 8 0 0 0-14.6-4.5M4 4.5v3.8h3.8M4 13a8 8 0 0 0 14.6 4.5M20 19.5v-3.8h-3.8"></path></svg></sc-if>
+                      <span>{{c.whoText}}<sc-if value="{{c.ageShort}}" hint-placeholder-val="{{ true }}">, <span style="color: #1D1D1D; font-weight: 400">{{c.age}}</span></sc-if></span>
+                      <sc-if value="{{c.ageLong}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; color: #1D1D1D; font-weight: 700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 7v5l3.5 2"></path></svg>{{c.age}}</span></sc-if>
+                    </span>
+                    <span style="white-space: nowrap">{{c.goodLabel}} <span style="color: #1D1D1D">{{c.good}}</span></span>
+                  </div>
+                </div>
+                <sc-if value="{{c.isLink}}" hint-placeholder-val="{{ true }}">
+                  <a href="{{c.href}}" class="{{c.btnCls}}" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; background: {{c.btnBg}}; color: {{c.btnFg}}; box-shadow: inset 0 0 0 1px #1D1D1D; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">{{c.action}}</a>
+                </sc-if>
+                <sc-if value="{{c.isDone}}" hint-placeholder-val="{{ false }}">
+                  <span role="status" id="{{c.doneId}}" tabindex="-1" style="height: 36px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; line-height: 20px; white-space: nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00834B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{c.doneText}}</span>
+                </sc-if>
+                <sc-if value="{{c.isBtn}}" hint-placeholder-val="{{ false }}">
+                  <button type="button" class="{{c.btnCls}}" onClick="{{c.act}}" aria-pressed="{{c.pressed}}" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; border: 0; border-radius: 999px; background: {{c.btnBg}}; color: {{c.btnFg}}; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: pointer"><sc-if value="{{c.showCheck}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>{{c.action}}</button>
+                </sc-if>
+              </div>
+            </article>
+          </li>
         </sc-for>
-      </div>
-    </sc-for>
-
-    <sc-if value="{{showBudget}}" hint-placeholder-val="{{ true }}">
-      <div style="border-top:{{budgetDivider}}">
-        <div style="display:flex;align-items:center;gap:16px;padding:0 24px;min-height:44px;background:#F9F9F9">
-          <h2 id="fa-budget" style="margin:0;font-size:16px;line-height:20px;font-weight:700;white-space:nowrap">Budget</h2>
-          <span style="font-size:14px;line-height:20px;color:#5F5F5F;white-space:nowrap">Merchandising workspace, Oct 1 to Dec 31</span>
-          <span style="flex:1"></span>
-          <a href="Admin.dc.html" class="hd-ring" style="display:inline-block;padding:12px 0;font-size:14px;line-height:20px;color:#1D1D1D;text-decoration:underline;text-underline-offset:3px;white-space:nowrap">See Spend by Project</a>
-        </div>
-        <article aria-labelledby="fa-budget" style="display:grid;grid-template-columns:8px 24px minmax(0,1fr) minmax(0,1fr) 296px;column-gap:16px;align-items:start;padding:16px 24px;border-top:1px solid #F0F0F0">
-          <span aria-hidden="true" style="margin-top:6px;width:8px;height:8px"></span>
-          <span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16M6.5 16V11M11 16V6.5M15.5 16v-4M20 16V8.5"></path></svg></span>
-          <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
-            <h3 style="margin:0;font-size:16px;line-height:20px;font-weight:700">Model use at 80% of the $300 cap</h3>
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:14px;line-height:20px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4L2.8 19.5h18.4zM12 10v4M12 16.75v.01"></path></svg><span style="white-space:nowrap">Forecast to reach the cap in November</span></span>
-            <span style="font-size:12px;line-height:18px;color:#5F5F5F">Shared by every project in the workspace</span>
-          </div>
-          <div style="min-width:0;max-width:480px;display:flex;flex-direction:column;gap:8px">
-            <span style="font-size:14px;line-height:20px"><span style="font-weight:700">$240</span> of $300, 80%</span>
-            <div role="img" aria-label="Model use by stage: Build $140, Plan $60, Discover $40, and $60 left of the $300 cap" style="display:grid;grid-template-columns:140fr 60fr 40fr 60fr;column-gap:2px;height:8px">
-              <span style="background:#1D1D1D"></span><span style="background:#5F5F5F"></span><span style="background:#949494"></span><span style="background:#D0D0D0"></span>
-            </div>
-            <div aria-hidden="true" style="display:grid;grid-template-columns:140fr 60fr 40fr 60fr;column-gap:2px;font-size:12px;line-height:18px;white-space:nowrap">
-              <span>Build $140</span><span>Plan $60</span><span>Discover $40</span><span style="text-align:right;color:#5F5F5F">$60 left</span>
-            </div>
-            <p style="margin:0;font-size:14px;line-height:20px;color:#5F5F5F">At the cap, model calls pause until Maya raises it or the quarter turns. Work and previews are kept.</p>
-            <span style="display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;min-height:24px;font-size:12px;line-height:18px;color:#5F5F5F"><span>Notified</span><span style="display:inline-flex;align-items:center;gap:6px;color:#1D1D1D;white-space:nowrap"><span title="Maya Chen" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">MC</span>Maya Chen (workspace admin)</span></span>
-          </div>
-          <div style="align-self:center;display:flex;align-items:center;justify-content:flex-end;gap:16px">
-            <button type="button" class="hd-btn-secondary hd-ring-ink" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 16px;border:0;border-radius:999px;background:#FFFFFF;color:#1D1D1D;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Ask Maya to Raise the Cap</button>
-          </div>
-        </article>
-      </div>
+      </ul>
+      <sc-if value="{{noneShown}}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 0; padding: 16px 20px; border-radius: 8px; background: #F9F9F9; font-size: 14px; line-height: 20px; color: #5F5F5F">Nothing here right now.</p>
+      </sc-if>
     </sc-if>
 
     <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
-      <div style="padding:64px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.75 2.75L16.5 9.5"></path></svg>
-        <h2 style="margin:0;font-size:16px;line-height:20px;font-weight:700">Nothing Needs Attention</h2>
-        <p style="margin:0;max-width:360px;font-size:14px;line-height:20px;color:#5F5F5F">Failures and stalls show here, each with one next step.</p>
+      <div style="padding: 16px 20px; border-radius: 8px; background: #F9F9F9; display: flex; flex-direction: column; gap: 4px">
+        <h2 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 700">Nothing Needs Attention</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 24px; color: #5F5F5F">When a step fails or stalls, it shows here and in Teams.</p>
       </div>
     </sc-if>
-  </section>
+  </div>
 </main>
 </div>
+</div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"empty":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1371}}'>
+<script type="text/x-dc" data-dc-script data-props='{"empty":{"editor":"boolean","default":false},"rail":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1666}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { filter: 'all', tech: false };
+    this.state = { rail: null, tech: false, filter: 'all', awake: false, done: {} };
   }
   componentDidMount() {
     this.hdClose = (e) => {
@@ -260,109 +285,221 @@ class Component extends DCLogic {
         if (esc || !d.contains(e.target)) {
           const hadFocus = d.contains(document.activeElement);
           d.open = false;
+          d.querySelectorAll('details.hd-sub[open]').forEach((s) => { s.open = false; });
           if (esc && hadFocus) d.querySelector('summary').focus();
         }
       });
     };
+    // hd-shell keys, as the Help menu lists them: Command K searches, Command Shift O starts a project,
+    // Command B folds the side nav, Command / opens the shortcut list.
+    this.hdSearch = () => {
+      const f = document.querySelector('[data-hd-search]');
+      if (f) { f.focus(); if (f.select) f.select(); return; }
+      window.location.href = 'Projects.dc.html#search';
+    };
+    this.hdShellKeys = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.defaultPrevented) return;
+      const key = (e.key || '').toLowerCase();
+      if (key === 'k' && !e.shiftKey) { e.preventDefault(); this.hdSearch(); return; }
+      if (key === 'o' && e.shiftKey) {
+        e.preventDefault();
+        const idea = document.getElementById('hd-idea');
+        if (idea) idea.focus(); else window.location.href = 'Main.dc.html';
+        return;
+      }
+      if (key === 'b' && !e.shiftKey) {
+        const fold = document.querySelector('.hd-side button[aria-expanded]');
+        if (fold) { e.preventDefault(); fold.click(); }
+        return;
+      }
+      if (key === '/' || e.code === 'Slash') {
+        const help = document.querySelector('summary[aria-label="Help"]');
+        if (!help) return;
+        e.preventDefault();
+        help.parentElement.open = true;
+        const keys = help.parentElement.querySelector('details.hd-sub');
+        if (keys) { keys.open = true; keys.querySelector('summary').focus(); }
+      }
+    };
     document.addEventListener('mousedown', this.hdClose);
     document.addEventListener('keydown', this.hdClose);
+    document.addEventListener('keydown', this.hdShellKeys);
   }
   componentWillUnmount() {
     document.removeEventListener('mousedown', this.hdClose);
     document.removeEventListener('keydown', this.hdClose);
+    document.removeEventListener('keydown', this.hdShellKeys);
   }
   renderVals() {
-    const ink = '#1D1D1D', muted = '#5F5F5F', red = '#DC0019';
     const st = this.state;
     const empty = this.props.empty ?? false;
-    // One literal map; the publish script rewrites each path to its uploaded asset.
-    const LOGO = { snowflake: 'logos/snowflake.svg', github: 'logos/github.svg', confluence: 'logos/confluence.svg', microsoftteams: 'logos/microsoftteams.svg', amazonwebservices: 'logos/amazonwebservices.svg' };
-    const X = 'M6.5 6.5l11 11M17.5 6.5l-11 11';
-    const LOCK = 'M6.5 10.5h11a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19v-7a1.5 1.5 0 0 1 1.5-1.5zM8 10.5v-3a4 4 0 0 1 8 0v3';
-    const CLOCK = 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 7v5l3.5 2';
-    const ALERT = 'M12 4L2.8 19.5h18.4zM12 10v4M12 16.75v.01';
-    const GLYPH = { failed: X, blocked: LOCK, stalled: CLOCK };
-    // The system the failure happened in, as a tile and an object chip with its full-color mark.
-    const sys = (key, name, chip) => ({ logo: LOGO[key], mono: name.charAt(0), sys: name, chip: chip || name });
-    // People fills, one per person (design system 3.6); anyone else is #444444.
-    const av = (ini, fill, name) => ({ ini, fill, name });
-    const RA = av('RA', '#6B5A4E', 'Rina Alvarez'), LR = av('LR', '#2E6A8E', 'Luis Romero'), OH = av('OH', '#4A5560', 'Omar Haddad'),
-      AR = av('AR', '#2D6470', 'Ana Ruiz'), TG = av('TG', '#444444', 'Theo Grant'), LB = av('LB', '#444444', 'Leah Brooks'),
-      NP = av('NP', '#444444', 'Noah Park'), DO = av('DO', '#6A4C8C', 'Dana Ortiz');
-    // The viewer, when notified, is "You" with no avatar.
-    const YOU = { ini: '', fill: '', name: 'You' };
-    const projects = [
-      { id: 'tariff', name: 'Tariff scenario planner', stage: 'Build', href: 'Activity.dc.html', people: [RA, LR, OH] },
-      { id: 'store', name: 'Store labor and traffic planner', stage: 'Live', href: 'Project.dc.html', people: [AR] },
-      { id: 'activation', name: 'Activation scorecard', stage: 'Live', href: 'Project.dc.html', people: [TG] },
-      { id: 'promo', name: 'Promo dependency monitor', stage: 'Live', href: 'Project.dc.html', people: [LB] }
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = {
+      confluence: 'logos/confluence.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      snowflake: 'logos/snowflake.svg',
+      microsoftexcel: 'logos/microsoftexcel.svg',
+      terminal: 'logos/terminal.svg',
+      webbrowser: 'logos/web-browser.svg',
+      database: 'logos/database.svg'
+    };
+    const closeMenu = (e) => { const d = e && e.currentTarget && e.currentTarget.closest('details'); if (d) { d.open = false; const s = d.querySelector(':scope > summary'); if (s) s.focus(); } };
+    const INK = '#1D1D1D', RED = '#DC0019', MUTED = '#5F5F5F';
+
+    // hd-shell: the side nav. Same items, order and recent projects on every board; only the active
+    // area, the viewer and the role-gated items change (design-system.md section 7).
+    const rail = st.rail === null ? (this.props.rail ?? false) : st.rail;
+    const ICON = {
+      home: 'M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z',
+      inbox: 'M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z',
+      projects: 'M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z',
+      library: 'M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z',
+      portfolio: 'M5 20v-8M12 20V4M19 20v-11',
+      admin: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 4.5v5M9 14.5v5'
+    };
+    const ACTIVE = 'projects';
+    const INBOX_COUNT = 4;
+    const navItem = (key, label, href, extra) => {
+      const on = key === ACTIVE;
+      return Object.assign({ label, href, icon: ICON[key], current: on ? 'page' : 'false', aria: label,
+        bg: 'transparent', ring: 'none', fw: on ? '700' : '400', fg: on ? '#1D1D1D' : '#5F5F5F',
+        hasCount: false, count: '', hasTag: false, tag: '' }, extra || {});
+    };
+    const nav = [
+      navItem('home', 'Home', 'Main.dc.html'),
+      navItem('inbox', 'Inbox', 'Inbox.dc.html', INBOX_COUNT
+        ? { hasCount: true, count: String(INBOX_COUNT), aria: 'Inbox, ' + INBOX_COUNT + ' waiting on you' } : {}),
+      navItem('projects', 'Projects', 'Projects.dc.html'),
+      navItem('library', 'Library', 'Library.dc.html', { hasTag: true, tag: 'Enterprise' })
     ];
-    // youWait: the item cannot move until the viewer acts (one red marker, HD-R1). primary: the first row's action.
-    const all = [
-      Object.assign({ project: 'tariff', kind: 'failed', title: 'Piece 4 failed its checks twice', statusLine: 'Checks failed, round 2 of 2',
-        block: 'Piece 4: Excel export', text: 'Both check rounds are used. 2 export tests still fail, so piece 4 was not saved. Pieces 1 to 3 are safe.',
-        goodLabel: 'Last good', goodValue: 'piece 3, Oct 23, 15:14', told: [YOU, NP], action: 'See What Failed', secondary: 'Open Trace', href: 'Activity.dc.html', youWait: true, primary: true }, sys('amazonwebservices', 'Coding agent')),
-      Object.assign({ project: 'tariff', kind: 'failed', title: 'Snowflake check hit its time cap', statusLine: 'Couldn’t finish the query',
-        block: 'Duty rate coverage check, step 15', text: 'The duty rate check stopped at its 2-minute cap. Nothing was lost; a retry resumes where it stopped.',
-        goodLabel: 'Last good', goodValue: '09:12 today', told: [YOU], action: 'Retry the Check', secondary: 'Open Trace', href: 'Activity.dc.html', youWait: true, primary: false }, sys('snowflake', 'Snowflake')),
-      Object.assign({ project: 'tariff', kind: 'failed', title: 'Lost access to a source page', statusLine: 'Couldn’t open the page',
-        block: 'Landed cost method, version 12', text: 'This page’s space is no longer on HyperDelivery’s allowlist. The copy from Oct 20 stays in this project until you remove it.',
-        goodLabel: 'Last read', goodValue: 'Oct 20', told: [YOU, Object.assign({}, DO, { suffix: ' (page owner)' })], action: 'Request Access', secondary: 'Remove From Sources', href: 'Activity.dc.html', youWait: true, primary: false }, sys('confluence', 'Confluence')),
-      // A Microsoft 365 setting is nobody's failure: muted, and the way out is an admin.
-      Object.assign({ project: 'store', kind: 'blocked', title: 'Transcripts are off for this meeting', statusLine: 'Transcript is turned off',
-        block: 'Weekly ops review, Oct 21, 42 min', text: 'Ask a Microsoft 365 admin to turn them on, or use the meeting notes instead.',
-        goodLabel: '', goodValue: 'Not read yet', told: [YOU], action: 'Ask an Admin', secondary: 'Use Meeting Notes', href: 'Project.dc.html', youWait: false, primary: false }, sys('microsoftteams', 'Microsoft Teams')),
-      Object.assign({ project: 'activation', kind: 'stalled', title: 'Refresh stalled at 02:10', statusLine: 'Refresh has stalled',
-        block: 'Nightly refresh, Oct 25', text: 'Yesterday’s numbers stay on screen. A retry starts from the last good step.',
-        goodLabel: 'Last good', goodValue: '02:10 today', told: [YOU, TG], action: 'Retry the Refresh', secondary: 'Open Trace', href: 'Activity.dc.html', youWait: false, primary: false }, sys('snowflake', 'Snowflake')),
-      Object.assign({ project: 'promo', kind: 'failed', title: 'A change still fails accessibility after 3 rounds', statusLine: 'Contrast check failed, 2 issues',
-        block: 'Accessibility check, round 3 of 3', text: 'Two heatmap colors fail contrast, and fixing them changes the accepted look. Choose one of 2 options.',
-        goodLabel: 'Last good', goodValue: 'accepted version, Oct 20', told: [YOU, LB], action: 'Choose a Fix', secondary: 'See the 2 Issues', href: 'Gate.dc.html', youWait: true, primary: false }, sys('github', 'GitHub'))
+    // Portfolio and Admin appear only for the roles that use them; a business owner never sees them.
+    const admin = [];
+    // Recent projects carry the mini line's own marks: red notch waits on you, an outline notch on
+    // someone else, the spinner is work running, an ink notch is an accepted prototype.
+    const MARK = {
+      you: { bg: RED, bd: 'none', word: 'waiting on you' },
+      other: { bg: '#FFFFFF', bd: '1.5px solid ' + INK, word: 'waiting on someone else' },
+      done: { bg: INK, bd: 'none', word: 'prototype accepted' }
+    };
+    const recentItem = (name, href, kind, on) => Object.assign({ name, href,
+      isWork: kind === 'work', isNotch: kind !== 'work', bg: '', bd: '',
+      current: on ? 'page' : 'false', rowBg: 'transparent', rowRing: 'none', fw: on ? '700' : '400',
+      aria: name + ', ' + (kind === 'work' ? 'working' : MARK[kind].word) }, kind === 'work' ? {} : { bg: MARK[kind].bg, bd: MARK[kind].bd });
+    const recent = [
+      recentItem('SKU productivity workbench', 'Project.dc.html', 'you'),
+      recentItem('Wholesale sell-through tracker', 'Gate.dc.html', 'you'),
+      recentItem('Tariff scenario planner', 'Activity.dc.html', 'work'),
+      recentItem('Product master quality monitor', 'Inbox.dc.html#q', 'you'),
+      recentItem('Activation scorecard', 'Graduation.dc.html', 'done')
     ];
-    const tests = { all: () => true, failed: (c) => c.kind === 'failed', blocked: (c) => c.kind === 'blocked', stalled: (c) => c.kind === 'stalled', budget: () => false };
+    const me = { name: 'Maya Chen', initials: 'MC', bg: '#3D4B8C', role: 'Business owner, Merchandising', workspace: 'Merchandising',
+      aria: 'Maya Chen, Merchandising, account and workspace' };
+    const workspaces = ['Merchandising', 'Sourcing', 'Wholesale', 'EDM'].map((name, i) => ({ name, on: i === 0, fw: i === 0 ? '700' : '400' }));
+
+    // Needs Attention: one list, each failure shown inside the block it failed in, with when that
+    // block last worked and one way forward. Red marks only what waits on the viewer.
+    const G = {
+      failed: 'M6.5 6.5l11 11M17.5 6.5l-11 11',
+      lock: 'M6.5 10.5h11a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19v-7a1.5 1.5 0 0 1 1.5-1.5zM8 10.5v-3a4 4 0 0 1 8 0v3',
+      stalled: 'M9 5v14M15 5v14',
+      cap: 'M4.5 17.5a8.5 8.5 0 1 1 15 0M12 13.5l4-4.5',
+      off: 'M3 3l18 18M10.6 5.1A8 8 0 0 1 20 12c0 1.2-.3 2.4-.8 3.4M6.3 6.3A8 8 0 0 0 7.6 19l-1.1 2.5 3.4-1.1',
+      asleep: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z',
+      budget: 'M4 19.5h16M6.5 16V11M11 16V6.5M15.5 16v-4M20 16V8.5'
+    };
+    // who: 'you' waits on the viewer (red); 'other' on a named person (outline notch, clock and age);
+    // 'work' is HyperDelivery working now (dots); 'sched' is a retry it has booked (no motion).
+    const ITEMS = [
+      { id: 'access', who: 'other', whoName: 'Sam Kim, page owner', age: '1d 2h', project: 'SKU productivity workbench', projectHref: 'Project.dc.html', stretch: 'Plan',
+        tile: 'logo', logo: LOGO.confluence, block: 'Range review playbook, version 12', st: 'lock', statusWord: 'Lost Access',
+        text: 'Its space was made private on Oct 23, so new versions cannot be read. The plan you are signing cites the copy from Oct 22, which stays until you remove it.',
+        goodLabel: 'Last read', good: 'Oct 22, 16:40', action: 'Ask Sam for Access', doneText: 'Asked Sam Kim in Teams' },
+      { id: 'loop', who: 'you', age: '42m', project: 'Product master quality monitor', projectHref: 'Inbox.dc.html#q', stretch: 'Discover',
+        tile: 'mark', block: 'Research: what counts as one style', st: 'cap', statusWord: 'Loop Budget Reached',
+        text: 'Research stopped after 30 rounds without a certified rule for which level counts as one style for duplicate checks. The question went to you instead.',
+        goodLabel: 'Last good', good: 'Brief draft 2, Oct 24, 13:40', action: 'Answer the Question', href: 'Inbox.dc.html', primary: true },
+      { id: 'checks', who: 'other', whoName: 'Omar Haddad', age: '3h', project: 'Tariff scenario planner', projectHref: 'Activity.dc.html', stretch: 'Prototype',
+        tile: 'logo', logo: LOGO.microsoftexcel, block: 'Piece 4: Excel export', st: 'failed', statusWord: 'Failed Check Round 2 of 2',
+        text: 'Both check rounds are used and 2 export tests still fail, so piece 4 was not saved. Pieces 1 to 3 are safe. Omar, the engineering reviewer, chooses how to go on.',
+        goodLabel: 'Last good', good: 'Piece 3, Oct 23, 15:14', action: 'See What Failed', href: 'Activity.dc.html' },
+      { id: 'credit', who: 'sched', whoText: 'Retries tonight at 02:00', project: 'Tariff scenario planner', projectHref: 'Activity.dc.html', stretch: 'Prototype',
+        tile: 'logo', logo: LOGO.snowflake, block: 'Checks: duty rate coverage', st: 'cap', statusWord: 'At Its Credit Cap',
+        text: 'The coverage check on the dev database stopped at its 2-credit cap with 9 of 14 countries checked. Nothing was lost; the retry starts at country 10.',
+        goodLabel: 'Last good', good: 'Country 9 of 14, Oct 24, 09:12', action: 'Retry Now', doneText: 'Retry started', doneAs: { who: 'work', whoText: 'Retrying from country 10' } },
+      { id: 'transcript', who: 'other', whoName: 'Priya Nair', age: '5h', project: 'Product master quality monitor', projectHref: 'Inbox.dc.html#q', stretch: 'Discover',
+        tile: 'logo', logo: LOGO.microsoftteams, block: 'EDM data quality sync, Oct 22', st: 'off', statusWord: 'Transcripts Off', setting: true,
+        text: 'Transcripts were off for this meeting, so nothing from it is in the brief. A Microsoft 365 admin can turn them on, or the meeting notes can stand in.',
+        goodLabel: 'Last read', good: 'None yet', action: 'Use Meeting Notes', doneText: 'Meeting notes added to the sources' },
+      { id: 'policy', who: 'other', whoName: 'Theo Grant', age: '6h', project: 'Activation scorecard', projectHref: 'Graduation.dc.html', stretch: 'Handoff',
+        tile: 'logo', logo: LOGO.database, block: 'Prototype data connection', st: 'lock', statusWord: 'Blocked by Policy',
+        text: 'A request to connect the prototype to the production Marketing database was blocked. Prototypes use dev data; production connections are built in Construction.',
+        goodLabel: 'Last good', good: 'Prototype on dev data, handed off Oct 23', action: 'Add to the Handoff Notes', doneText: 'Added to the handoff notes' },
+      { id: 'preview', who: 'work', whoText: 'Waking, about 1 minute', project: 'Wholesale sell-through tracker', projectHref: 'Gate.dc.html', stretch: 'Prototype',
+        tile: 'logo', logo: LOGO.webbrowser, block: 'Try It: version 4 preview', st: 'asleep', statusWord: 'Waking',
+        text: 'The sandbox preview slept after 2 idle hours and is waking for your review. Version 4 and its evidence are unchanged.',
+        goodLabel: 'Last good', good: 'Version 4, opened Oct 24, 18:20', toggle: true },
+      { id: 'budget', who: 'other', whoName: 'Luis Romero, workspace admin', age: '3h', project: 'Merchandising workspace', projectHref: 'Projects.dc.html', stretch: 'all projects',
+        tile: 'glyph', tileGlyph: G.budget, block: 'Model budget, Oct 1 to Dec 31', st: 'cap', statusWord: 'Budget Reached', enterprise: true, isBudget: true,
+        text: 'New model work in Merchandising is paused; saved work and previews are kept. SKU productivity workbench waits here once its plan is signed.',
+        goodLabel: 'Last good', good: 'Under the cap until Oct 24, 11:20', action: 'Ask Luis to Raise It', doneText: 'Asked Luis in Teams' }
+    ];
+    const BUCKET = { you: 'you', other: 'other', work: 'fixing', sched: 'fixing' };
+    const all = empty ? [] : ITEMS;
     const f = st.filter;
-    // A row waiting on the viewer says so ("Waiting on You"), so Notified lists only the others.
-    const shown = empty ? [] : all.filter(tests[f]).map((c) => {
-      const told = c.youWait ? c.told.filter((t) => t !== YOU) : c.told;
+    const pick = (c) => f === 'all' || BUCKET[c.who] === f;
+    const shown = all.filter(pick).map((c0) => {
+      // A one-shot action (a request, a retry) is replaced by what happened, so it cannot be sent twice.
+      const isDone = !!st.done[c0.id];
+      const c = isDone && c0.doneAs ? Object.assign({}, c0, c0.doneAs) : c0;
+      const you = c.who === 'you', other = c.who === 'other';
+      const isToggle = !!c.toggle;
+      const isBtn = !isDone && (isToggle || !c.href);
+      const action = isToggle ? (st.awake ? 'Kept Awake Until Signed' : 'Keep Awake Until Signed') : c.action;
       return Object.assign({}, c, {
-        label: c.youWait ? c.title + ', waiting on you' : c.title,
-        marker: c.youWait ? red : 'transparent', glyphStatus: GLYPH[c.kind], statusColor: c.kind === 'blocked' ? muted : ink,
-        hasGoodLabel: !!c.goodLabel,
-        hasTold: told.length > 0,
-        toldList: told.map((t, j) => ({ hasAv: !!t.ini, ini: t.ini, fill: t.fill, name: t.name, text: t.name + (t.suffix || '') + (j < told.length - 1 ? ',' : '') })),
-        btnBg: c.primary ? ink : '#FFFFFF', btnFg: c.primary ? '#FFFFFF' : ink,
+        hid: 'na-' + c.id, did: 'na-' + c.id + '-text',
+        isLogo: c.tile === 'logo', isMark: c.tile === 'mark', isGlyph: c.tile === 'glyph', tileGlyph: c.tileGlyph || '', logo: c.logo || '',
+        enterprise: !!c.enterprise, isBudget: !!c.isBudget,
+        stGlyph: G[c.st], stColor: c.setting ? MUTED : INK,
+        whoNotch: you || other, whoDots: c.who === 'work', whoSched: c.who === 'sched',
+        notchBg: you ? RED : '#FFFFFF', notchBd: you ? 'none' : '1.5px solid ' + INK,
+        whoColor: you ? RED : INK, whoWeight: you ? '700' : '400',
+        whoText: you ? 'Waiting on You' : (other ? 'Waiting on ' + c.whoName : c.whoText),
+        // A short wait in a card is plain text; at two business days or more it turns Bold and carries the clock.
+        age: c.age || '', ageLong: (you || other) && /^([2-9]|\d\d+)d/.test(c.age || ''), ageShort: (you || other) && !!c.age && !/^([2-9]|\d\d+)d/.test(c.age || ''),
+        isLink: !isDone && !isBtn, isBtn, isDone, doneText: c.doneText || '', doneId: 'na-' + c.id + '-done', href: c.href || '', action,
+        pressed: isToggle ? (st.awake ? 'true' : 'false') : null, showCheck: isToggle && st.awake,
+        act: isToggle ? () => this.setState({ awake: !st.awake }) : () => this.setState({ done: Object.assign({}, st.done, { [c.id]: true }) }, () => { const el = document.getElementById('na-' + c.id + '-done'); if (el) el.focus(); }),
+        btnBg: c.primary ? INK : '#FFFFFF', btnFg: c.primary ? '#FFFFFF' : INK,
         btnCls: c.primary ? 'hd-btn-primary hd-ring' : 'hd-btn-secondary hd-ring-ink'
       });
     });
-    const groups = projects.map((p) => ({ p, rows: shown.filter((c) => c.project === p.id) })).filter((g) => g.rows.length > 0).map((g, i) => ({
-      name: g.p.name, stage: g.p.stage, href: g.p.href, openLabel: 'Open project ' + g.p.name, divider: i === 0 ? '0' : '1px solid #F0F0F0',
-      people: g.p.people,
-      peopleLabel: 'People: ' + g.p.people.map((pp) => pp.name).join(', '),
-      rows: g.rows
-    }));
-    const budgetCount = 1;
-    const chip = (id, label, glyph) => {
-      const on = f === id;
-      const count = id === 'budget' ? budgetCount : (id === 'all' ? all.length + budgetCount : all.filter(tests[id]).length);
-      return { label, count: String(count), on: on ? 'true' : 'false', bg: on ? ink : '#FFFFFF', fg: on ? '#FFFFFF' : ink, ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0',
-        cls: on ? 'hd-ring' : 'hd-chip hd-ring-edge', weight: on ? 700 : 400, countColor: on ? '#D0D0D0' : muted,
-        showCheck: on, showGlyph: !on && !!glyph, glyph: glyph || '', pick: () => this.setState({ filter: id }) };
-    };
-    const showBudget = !empty && (f === 'all' || f === 'budget');
+    const count = (b) => all.filter((c) => b === 'all' || BUCKET[c.who] === b).length;
+    const FILTERS = [['all', 'All', ''], ['you', 'Waiting on You', 'you'], ['other', 'Waiting on Others', 'other'], ['fixing', 'Recovering', '']];
+    const filters = FILTERS.map((x) => {
+      const on = f === x[0];
+      return { label: x[1], count: String(count(x[0])), on: on ? 'true' : 'false',
+        bg: on ? INK : '#FFFFFF', fg: on ? '#FFFFFF' : INK, ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0', fw: on ? '700' : '400',
+        cls: on ? 'hd-ring' : 'hd-chip hd-ring-edge', countColor: on ? '#D0D0D0' : MUTED,
+        showNotch: !!x[2], notchBg: x[2] === 'you' ? RED : '#FFFFFF', notchBd: x[2] === 'you' ? (on ? '1.5px solid #FFFFFF' : 'none') : '1.5px solid ' + (on ? '#FFFFFF' : INK),
+        pick: () => this.setState({ filter: x[0] }) };
+    });
+    // The workspace budget by stretch: Prototype, Plan and Discover, ink to light.
+    const PARTS = [['Prototype', 170, INK], ['Plan', 80, MUTED], ['Discover', 50, '#949494']];
+    const budget = { used: '$300', cap: '$300, Merchandising',
+      cols: PARTS.map((p) => p[1] + 'fr').join(' '),
+      parts: PARTS.map((p) => ({ c: p[2], label: p[0] + ' $' + p[1] })),
+      aria: 'Model spend by stretch: ' + PARTS.map((p) => p[0] + ' $' + p[1]).join(', ') + '. The $300 budget is used.' };
+    const NAMES = { all: 'Everything that needs attention', you: 'Waiting on you', other: 'Waiting on others', fixing: 'Recovering' };
+
     return {
-      logos: LOGO,
-      showMonogram: (e) => { const i = e.currentTarget; i.style.display = 'none'; const t = i.closest('[data-tile]'); const m = t && t.querySelector('[data-mono]'); if (m) m.style.color = m.getAttribute('data-mono-color') || '#444444'; },
-      closePop: (e) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; },
-      techOn: st.tech ? 'true' : 'false',
-      techIsOn: st.tech,
-      techLabel: st.tech ? 'On' : 'Off',
-      toggleTech: () => this.setState({ tech: !st.tech }),
-      hasItems: !empty,
-      isEmpty: empty,
-      filters: [chip('all', 'All', ''), chip('failed', 'Failed', X), chip('blocked', 'Blocked', LOCK), chip('stalled', 'Stalled', CLOCK), chip('budget', 'Budget', ALERT)],
-      showBudget,
-      budgetDivider: groups.length > 0 ? '1px solid #F0F0F0' : '0',
-      groups
+      railAttr: rail ? 'on' : 'off', sideW: rail ? '64px' : '248px', sideOpen: rail ? 'false' : 'true',
+      railLabel: rail ? 'Show the sidebar' : 'Hide the sidebar',
+      openSearch: () => this.hdSearch(),
+      toggleRail: () => this.setState({ rail: !rail }),
+      nav, admin, recent, me, workspaces, closeMenu, logos: LOGO,
+      techOn: st.tech ? 'true' : 'false', techWord: st.tech ? 'On' : 'Off', toggleTech: () => this.setState({ tech: !st.tech }),
+      hasItems: !empty, isEmpty: empty,
+      filters, shown, noneShown: !empty && shown.length === 0, listLabel: NAMES[f], budget
     };
   }
 }

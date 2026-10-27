@@ -39,26 +39,44 @@ opens on its own from `concepts/project/<Board>.dc.html` when served.
 |---|---|
 | Pan | Drag the empty canvas, hold Space and drag anywhere, or scroll with two fingers |
 | Zoom | Ctrl or Cmd and scroll, pinch, the + and - buttons or keys |
+| Switch page | Click a page in the bar's page switcher, or press 1 to 9 (arrow keys move through the pages while the switcher has focus); the view stays where it is |
 | See everything | Fit All, or Shift+1 (the canvas opens on the first boards of the first row) |
 | Frame the selected board | Fit Board, or Shift+2; Shift+0 zooms to 100% |
-| Go to a board | Click it in the board list, or use the arrow keys or `[` and `]` |
+| Go to a board | Click it in the board list, or use the arrow keys or `[` and `]`; both cover the current page |
 | Use a board | Double-click it, or press Enter; it zooms to fit, takes clicks and typing, and scrolls when it grows past its frame |
-| Follow a link to another board | Click it as usual; the viewer moves to that board |
-| Back to the canvas | Esc, or Back to Canvas |
+| Follow a link to another board | Click it as usual; the viewer moves to that board, and a link to part of a board (`Inbox.dc.html#q`, an Inbox item) opens it on that part |
+| Back to the canvas | Esc, or Back to Canvas. A board's open menu or a text field takes the first Esc (the menu closes and focus returns to its button); the next Esc leaves the board |
 | Open a board full page | Open on the board's title strip, or in the bar at the bottom while using it |
 
 The address bar remembers the board in use (for example `/concepts/#Start`), so a link opens
-straight on that board. Boards load only when they are on screen at a readable zoom (about 15%
-or more), and the viewer unloads far-off boards once more than about eight are live, so a long
-session stays light. A board ignores the pointer until you use it, which keeps dragging and
-scrolling on the canvas. While a board is in use the board list steps aside so the board gets
-the full width, and comes back on Esc.
+straight on that board. On a canvas with pages it also remembers the page: `#b/Start` is the
+`Start` board in use on page `b`, `#a/` is page `a` with no board in use, and the opening page
+with no board in use has no hash. A bare `#Start` still works and opens on the page that holds
+`Start`.
+
+Pages hold alternatives of the same screens: switching pages keeps the view, so a board drawn at
+the same place on another page appears in place, and the board in use or selected hands over to
+it. Only when nothing of the new page is in view does the canvas move to that page's opening
+view. Number keys switch pages while the canvas or the viewer's controls have keyboard focus; a
+board in use keeps its own keys, so click the switcher there.
+
+Boards load only when they are on screen at a readable zoom (about 15% or more), and the viewer
+unloads far-off boards once more than about eight are live, so a long session stays light; a
+board on another page counts as off screen but stays loaded while there is room, so switching
+back is instant. A board ignores the pointer until you use it, which keeps dragging and scrolling
+on the canvas. While a board is in use the board list steps aside so the board gets the full
+width, and comes back on Esc.
 
 The viewer reads everything from `concepts/project/canvas.json`: each board's `x`, `y`, `w`, `h`
 and `title`, the `title1` notes as row titles and board-list groups, and `order` for the arrow
-keys. A title reads `Name · Sub · Phase`: the phase (`Final MVP` or `Enterprise`) shows as a tag,
-and a note in parentheses after it joins the sub line. A `title1` note that heads no boards (the
-"invented" disclaimer) shows as a caption. Add or move a board there and reload.
+keys. An optional `pages` list (`{"id", "name"}` in switcher order; ids are letters, digits, `-`
+and `_`) adds pages: a board or note with a `page` id sits on that page, and one with none sits
+on the first. `launch.page` picks the page the canvas opens on (otherwise the first). With no
+`pages`, or only one, the canvas has no switcher and works as one page. A title reads
+`Name · Sub · Phase`: the phase (`Final MVP` or `Enterprise`) shows as a tag, and a note in
+parentheses after it joins the sub line. A `title1` note that heads no boards (the "invented"
+disclaimer) shows as a caption on its page and at the foot of the board list; a page that should
+carry it needs its own copy. Add or move a board there and reload.
 
 ### Known console messages
 

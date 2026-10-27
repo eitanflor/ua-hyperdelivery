@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyperDelivery - Activation Scorecard Handoff (Variant A)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+/* hd-shell:top start (Variant A: base rules, the app bar, menus, the Variant B tooltip, the loader) */
+:root{color-scheme:light}
+body{margin:0;background:#F9F9F9}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-txt:hover{color:#444444!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent;border:0;padding:0;cursor:pointer}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:44px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+input::placeholder,textarea::placeholder{color:#5F5F5F}
+/* hd-shell:top (Variant A): the 56 px app bar, the same on every A board */
+.hd-tn{position:relative;height:56px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px;color:#5F5F5F;text-decoration:none;font-size:14px;line-height:18px;white-space:nowrap;cursor:pointer}
+.hd-tn:hover{color:#1D1D1D}
+.hd-tn[aria-current="page"]{color:#1D1D1D;font-weight:700}
+.hd-tn[aria-current="page"]::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;background:#1D1D1D}
+.hd-tn:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #0096FA,inset 0 0 0 4px #FFFFFF}
+.hd-find{width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;border-radius:4px;background:#F0F0F0;color:#5F5F5F;cursor:text}
+.hd-find:focus-within{background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA}
+.hd-find input{flex:1;min-width:0;height:34px;box-sizing:border-box;border:0;outline:none;padding:0;background:transparent;font-family:inherit;font-size:14px;line-height:20px;color:#1D1D1D}
+.hd-find input::-webkit-search-cancel-button{display:none}
+.hd-acct:hover,.hd-pop[open]>.hd-acct{box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #D0D0D0}
+/* "Drawn in Variant B": a real control that does not navigate; its tooltip shows on hover and focus, Esc hides it */
+.hd-tip-wrap{position:relative;display:inline-flex}
+.hd-off{cursor:default}
+.hd-tip{display:none;position:absolute;z-index:40;top:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 8px;border-radius:4px;background:#1D1D1D;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:400;white-space:nowrap;pointer-events:none}
+.hd-tip-l{top:50%;left:auto;right:calc(100% + 8px);transform:translateY(-50%)}
+.hd-off:hover+.hd-tip,.hd-off:focus-visible+.hd-tip{display:block}
+:root[data-hd-tipoff] .hd-tip{display:none!important}
+.hd-dots{display:inline-flex;align-items:center;gap:4px;flex:none}
+.hd-dots i{width:5px;height:5px;border-radius:999px;background:#444444;opacity:.3;animation:hd-dot 1.2s infinite}
+.hd-dots i:nth-child(2){animation-delay:.2s}.hd-dots i:nth-child(3){animation-delay:.4s}
+@keyframes hd-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hd-dots i{animation:none;opacity:.6}}
+/* hd-shell:top end */
+/* Handoff (Variant A): the project page at Handoff, with the Construction decision record first */
+.hd-page-tab{position:relative;height:44px;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px;padding:0 4px;border:0;background:transparent;font-family:inherit;font-size:14px;line-height:18px;color:#5F5F5F;white-space:nowrap;cursor:pointer;text-decoration:none}
+.hd-page-tab:hover{color:#1D1D1D}
+.hd-page-tab[aria-selected="true"]{color:#1D1D1D;font-weight:700}
+.hd-page-tab[aria-selected="true"]::before{content:"";position:absolute;left:4px;right:4px;bottom:0;height:2px;background:#1D1D1D}
+.hd-page-tab:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #0096FA,inset 0 0 0 4px #FFFFFF}
+.hd-tool>summary{list-style:none;cursor:pointer}
+.hd-tool>summary::-webkit-details-marker{display:none}
+.hd-tool>summary:hover{background:#F9F9F9}
+.hd-tool[open] .hd-chev{transform:rotate(90deg)}
+.hd-opt:not(:disabled):hover{background:#F9F9F9!important}
+.hd-opt:disabled{cursor:default!important}
+.hd-check:not([aria-disabled="true"]):hover{background:#F9F9F9}
+.hd-noteb:focus-within{box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-note{outline:none}
+.hd-seg:hover{background:#F0F0F0!important}
+.hd-compose:focus-within{box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-log>*{flex:none}
+.hd-pop[open]>.hd-btn-ghost{background:#F0F0F0}
+</style>
+</helmet>
+<div style="min-height: 1653px; background: #F9F9F9; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
+
+<!-- hd-shell:top start -->
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 24px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #D0D0D0; position: relative; z-index: 20">
+  <a href="A_Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 12px; color: #1D1D1D; text-decoration: none; flex: none">
+    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex: none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg>
+    <span aria-hidden="true" style="width: 1px; height: 20px; background: #D0D0D0; flex: none"></span>
+    <span style="font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">HyperDelivery</span>
+  </a>
+  <nav aria-label="Primary" style="display: flex; align-self: stretch; align-items: stretch; gap: 8px">
+    <sc-for list="{{topNav}}" as="n" hint-placeholder-count="4">
+      <sc-if value="{{n.live}}" hint-placeholder-val="{{ true }}">
+        <a href="{{n.href}}" class="hd-tn" aria-current="{{n.current}}" aria-label="{{n.aria}}">{{n.label}}<sc-if value="{{n.hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="min-width: 16px; height: 16px; box-sizing: border-box; padding: 0 4px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; text-align: center">{{n.count}}</span></sc-if></a>
+      </sc-if>
+      <sc-if value="{{n.off}}" hint-placeholder-val="{{ false }}">
+        <span class="hd-tip-wrap" style="align-items: stretch">
+          <a role="link" tabindex="0" aria-disabled="true" aria-describedby="{{n.tipId}}" class="hd-tn hd-off">{{n.label}}<sc-if value="{{n.hasTag}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{n.tag}}</span></sc-if></a>
+          <span role="tooltip" id="{{n.tipId}}" class="hd-tip">Drawn in Variant B</span>
+        </span>
+      </sc-if>
+    </sc-for>
+    <sc-if value="{{hasRoleNav}}" hint-placeholder-val="{{ false }}">
+      <span aria-hidden="true" style="align-self: center; width: 1px; height: 20px; background: #D0D0D0"></span>
+      <sc-for list="{{roleNav}}" as="n" hint-placeholder-count="0">
+        <span class="hd-tip-wrap" style="align-items: stretch">
+          <a role="link" tabindex="0" aria-disabled="true" aria-describedby="{{n.tipId}}" class="hd-tn hd-off">{{n.label}}</a>
+          <span role="tooltip" id="{{n.tipId}}" class="hd-tip">Drawn in Variant B</span>
+        </span>
+      </sc-for>
+    </sc-if>
+  </nav>
+  <span style="flex: 1"></span>
+  <div style="display: flex; align-items: center; gap: 16px; flex: none">
+    <div class="hd-find-box" onFocus="{{searchFocus}}" onBlur="{{searchBlur}}" style="position: relative; flex: none">
+      <label class="hd-find">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+        <input type="search" data-hd-search="1" aria-label="Search projects and facts" aria-keyshortcuts="Meta+K" placeholder="Search projects and facts" autocomplete="off" value="{{searchQ}}" onChange="{{onSearch}}" onKeyDown="{{searchKey}}">
+        <kbd aria-hidden="true" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 2px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+      </label>
+      <sc-if value="{{searchShow}}" hint-placeholder-val="{{ false }}">
+        <div class="hd-menu" style="top: 44px; left: 0; right: auto; width: 336px">
+          <div role="status" style="padding: 4px 16px 8px; font-size: 12px; line-height: 16px; color: #5F5F5F">{{searchCount}}</div>
+          <sc-for list="{{searchHits}}" as="h" hint-placeholder-count="2">
+            <sc-if value="{{h.live}}" hint-placeholder-val="{{ true }}">
+              <a class="hd-mi" href="{{h.href}}" style="height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px"><span style="font-weight: 700">{{h.name}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{h.meta}}</span></a>
+            </sc-if>
+            <sc-if value="{{h.off}}" hint-placeholder-val="{{ false }}">
+              <span class="hd-tip-wrap" style="display: block">
+                <a role="link" tabindex="0" aria-disabled="true" aria-describedby="{{h.tipId}}" class="hd-mi hd-off" style="height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px"><span style="font-weight: 700">{{h.name}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{h.meta}}</span></a>
+                <span role="tooltip" id="{{h.tipId}}" class="hd-tip hd-tip-l">Drawn in Variant B</span>
+              </span>
+            </sc-if>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+    <a href="A_Start.dc.html" class="hd-btn-primary hd-ring" aria-keyshortcuts="Meta+Shift+O" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 999px; background: #1D1D1D; color: #FFFFFF; text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; flex: none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
+    <details class="hd-pop" open="{{helpOpen}}" style="position: relative; flex: none">
+      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+      </summary>
+      <nav class="hd-menu" aria-label="Help">
+        <span class="hd-tip-wrap" style="display: block"><a role="link" tabindex="0" aria-disabled="true" aria-describedby="hd-tip-h1" class="hd-mi hd-off">How Work Moves</a><span role="tooltip" id="hd-tip-h1" class="hd-tip hd-tip-l">Drawn in Variant B</span></span>
+        <span class="hd-tip-wrap" style="display: block"><a role="link" tabindex="0" aria-disabled="true" aria-describedby="hd-tip-h2" class="hd-mi hd-off">How HyperDelivery Is Built</a><span role="tooltip" id="hd-tip-h2" class="hd-tip hd-tip-l">Drawn in Variant B</span></span>
+        <hr>
+        <details class="hd-sub">
+          <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>⌘/</kbd></summary>
+          <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+            <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+            <dt><kbd>⌘⇧O</kbd></dt><dd style="margin: 0">Start a Project</dd>
+            <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention a Person or Source</dd>
+            <dt><kbd>⌘/</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+            <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+          </dl>
+        </details>
+        <details class="hd-sub">
+          <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+          <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
+          </ul>
+        </details>
+        <hr>
+        <span class="hd-tip-wrap" style="display: block"><a role="link" tabindex="0" aria-disabled="true" aria-describedby="hd-tip-h3" class="hd-mi hd-off">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a><span role="tooltip" id="hd-tip-h3" class="hd-tip hd-tip-l">Drawn in Variant B</span></span>
+      </nav>
+    </details>
+    <details class="hd-pop" style="position: relative; flex: none">
+      <summary class="hd-acct hd-ring" aria-label="{{me.aria}}" title="{{me.name}}" style="width: 32px; height: 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: {{me.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{me.initials}}</summary>
+      <div class="hd-menu">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{me.role}}</span>
+        </div>
+        <hr>
+        <div style="padding: 4px 16px; font-size: 12px; line-height: 16px; color: #5F5F5F">Workspace</div>
+        <sc-for list="{{workspaces}}" as="w" hint-placeholder-count="4">
+          <button type="button" class="hd-mi" aria-pressed="{{w.pressed}}" onClick="{{closeMenu}}" style="font-weight: {{w.fw}}">{{w.name}}<span style="flex: 1"></span><sc-if value="{{w.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+        </sc-for>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}</span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</header>
+<!-- hd-shell:top end -->
+
+<main>
+<section aria-label="Project header" style="background: #FFFFFF; border-bottom: 1px solid #D0D0D0; padding: 20px 24px 0">
+  <nav aria-label="Breadcrumb" style="display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+    <a href="A_Projects.dc.html" class="hd-ring" style="color: #5F5F5F; text-decoration: none">Projects</a><span aria-hidden="true">/</span><span>Marketing</span>
+  </nav>
+  <div style="margin-top: 8px; display: flex; align-items: center; gap: 16px; min-height: 40px">
+    <h1 style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0">Activation scorecard</h1>
+    <span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; white-space: nowrap; flex: none">{{stageChip}}</span>
+    <span style="flex: 1"></span>
+    <span role="img" aria-label="People: Theo Grant, business owner; Luis Romero, data owner" style="display: inline-flex; align-items: center; gap: 2px; flex: none">
+      <span aria-hidden="true" title="Theo Grant" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #444444; color: #FFFFFF; box-shadow: 0 0 0 2px #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">TG</span>
+      <span aria-hidden="true" title="Luis Romero" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #2E6A8E; color: #FFFFFF; box-shadow: 0 0 0 2px #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">LR</span>
+    </span>
+    <button type="button" onClick="{{openProto}}" class="hd-btn-secondary hd-ring-ink" style="height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; cursor: pointer; white-space: nowrap; flex: none">Try the Prototype</button>
+  </div>
+  <div style="margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; font-size: 14px; line-height: 20px; color: #5F5F5F">
+    <span style="display: inline-flex; align-items: center; gap: 8px">Owner<span style="display: inline-flex; align-items: center; gap: 8px; color: #1D1D1D"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #444444; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">TG</span>Theo Grant</span></span>
+    <span style="display: inline-flex; align-items: center; gap: 8px">Data owner<span style="display: inline-flex; align-items: center; gap: 8px; color: #1D1D1D"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #2E6A8E; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">LR</span>Luis Romero</span></span>
+    <span style="display: inline-flex; align-items: center; gap: 8px">Workspace<span style="color: #1D1D1D">Marketing</span></span>
+    <span style="display: inline-flex; align-items: center; gap: 8px">Jira
+      <button type="button" onClick="{{goPackage}}" class="hd-chip hd-ring-edge" aria-label="MKTG-418, open in Package" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border: 0; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; color: #1D1D1D; font-family: inherit; font-size: 12px; line-height: 16px; white-space: nowrap; cursor: pointer"><img src="{{logos.jira}}" width="16" height="16" alt="" style="flex: none"><span style="font-family: 'Chivo Mono', ui-monospace, monospace">MKTG-418</span></button>
+    </span>
+  </div>
+
+  <!-- hd-line start (the project's line; it ends at Handoff, then a dashed Construction stub outside HyperDelivery) -->
+  <div style="margin-top: 20px; display: flex; align-items: center; gap: 24px">
+    <div role="img" aria-label="{{lineAria}}" style="flex: 1 1 860px; max-width: 860px; display: grid; grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr) 16px minmax(0, 0.7fr); align-items: center; row-gap: 6px">
+      <sc-for list="{{lineNames}}" as="n" hint-placeholder-count="9"><span style="justify-self: center; font-size: 12px; line-height: 16px; color: {{n.c}}; font-weight: {{n.w}}; white-space: nowrap">{{n.t}}</span></sc-for>
+      <sc-for list="{{lineTrack}}" as="x" hint-placeholder-count="9">
+        <sc-if value="{{x.isSeg}}" hint-placeholder-val="{{ true }}"><span style="height: {{x.h}}; background: {{x.bg}}; border-top: {{x.bt}}"></span></sc-if>
+        <sc-if value="{{x.isNotch}}" hint-placeholder-val="{{ false }}"><span style="width: 12px; height: 12px; box-sizing: border-box; background: {{x.fill}}; border: {{x.border}}"></span></sc-if>
+      </sc-for>
+      <sc-for list="{{lineLabels}}" as="l" hint-placeholder-count="9"><span style="justify-self: center; align-self: start; min-height: 32px; text-align: center; font-size: 12px; line-height: 16px; font-weight: {{l.w}}; color: {{l.c}}; white-space: nowrap">{{l.t}}<sc-if value="{{l.hasSub}}" hint-placeholder-val="{{ false }}"><span style="display: block; font-weight: 400; color: #5F5F5F">{{l.sub}}</span></sc-if></span></sc-for>
+    </div>
+    <span style="margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 14px; line-height: 18px; white-space: nowrap">
+      <span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: {{stripC}}"><span aria-hidden="true" style="width: 12px; height: 12px; box-sizing: border-box; flex: none; background: {{stripC}}"></span>{{stripText}}</span>
+      <sc-if value="{{undecided}}" hint-placeholder-val="{{ true }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 18px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM12 7v5l3.5 2"></path></svg>Waiting 1d</span></sc-if>
+      <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{stripSub}}</span>
+    </span>
+  </div>
+  <!-- hd-line end -->
+
+  <div style="margin-top: 16px; display: flex; align-items: stretch; gap: 16px; height: 44px">
+    <div role="tablist" aria-label="Project artifacts" style="display: flex; align-items: stretch; gap: 20px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+        <button type="button" role="tab" id="{{t.tabId}}" aria-selected="{{t.selected}}" aria-controls="hd-tabpanel" tabindex="{{t.tab}}" onClick="{{t.pick}}" onKeyDown="{{tabKey}}" class="hd-page-tab">{{t.label}}<sc-if value="{{t.hasCount}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">{{t.count}}</span></sc-if></button>
+      </sc-for>
+    </div>
+    <span class="hd-tip-wrap" style="align-items: stretch">
+      <a role="link" tabindex="0" aria-disabled="true" aria-describedby="hd-tip-activity" class="hd-page-tab hd-off">Activity</a>
+      <span role="tooltip" id="hd-tip-activity" class="hd-tip">Drawn in Variant B</span>
+    </span>
+    <span style="flex: 1"></span>
+    <sc-if value="{{hasVersions}}" hint-placeholder-val="{{ false }}">
+      <details class="hd-pop" style="position: relative; align-self: center; flex: none">
+        <summary class="hd-btn-ghost hd-ring" aria-label="{{verAria}}" style="height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; font-size: 13px; line-height: 18px; color: #1D1D1D; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0z"></path></svg>{{verLabel}}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg></summary>
+        <div class="hd-menu" role="group" aria-label="Versions" style="top: 40px; width: 288px">
+          <sc-for list="{{versions}}" as="v" hint-placeholder-count="3">
+            <button type="button" class="hd-mi" aria-pressed="{{v.on}}" onClick="{{closeMenu}}" style="font-weight: {{v.fw}}">{{v.label}}<span style="flex: 1"></span><sc-if value="{{v.isOn}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+          </sc-for>
+        </div>
+      </details>
+    </sc-if>
+    <sc-if value="{{noVersions}}" hint-placeholder-val="{{ true }}">
+      <span style="align-self: center; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">{{tabMeta}}</span>
+    </sc-if>
+  </div>
+</section>
+
+<div style="padding: 24px 24px 56px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; align-items: stretch">
+
+  <div id="hd-tabpanel" role="tabpanel" aria-labelledby="{{tabLabelledBy}}" style="grid-column: span 9; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+    <sc-if value="{{isDecide}}" hint-placeholder-val="{{ true }}">
+      <section id="hd-decision" aria-labelledby="hd-dec-h" style="background: #FFFFFF; border: 1px solid #1D1D1D; border-radius: 8px; overflow: hidden">
+        <div style="min-height: 40px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: #1D1D1D; color: #FFFFFF">
+          <span aria-hidden="true" style="width: 12px; height: 12px; box-sizing: border-box; flex: none; background: {{band.notchBg}}; border: {{band.notchBd}}"></span>
+          <h2 id="hd-dec-h" style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap">{{band.label}}</h2>
+          <span style="font-size: 12px; line-height: 18px; color: #D0D0D0; white-space: nowrap">{{band.who}}</span>
+          <span style="flex: 1"></span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 18px; white-space: nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.glyph}}"></path></svg>{{band.wait}}</span>
+        </div>
+        <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 20px">
+          <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px 32px">
+            <p style="flex: 1 1 320px; margin: 0; max-width: 480px; font-size: 16px; line-height: 24px">Handoff package ready Oct 23. Decide by Fri Nov 6, 10 business days from the handoff. Theo prefers AI-driven if Retail Systems is comfortable with it.</p>
+            <div style="flex: none; display: flex; flex-direction: column; gap: 8px">
+              <h3 style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 700">Who Decides</h3>
+              <ul aria-label="Who decides" style="margin: 0; padding: 0; list-style: none; display: flex; gap: 20px">
+                <sc-for list="{{who}}" as="w" hint-placeholder-count="3">
+                  <li style="display: flex; align-items: center; gap: 8px">
+                    <span aria-hidden="true" style="width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{w.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{w.ini}}</span>
+                    <span style="display: flex; flex-direction: column; white-space: nowrap"><span style="font-size: 14px; line-height: 18px; font-weight: 700">{{w.name}}</span><span style="font-size: 12px; line-height: 16px; font-weight: {{w.sw}}; color: {{w.c}}">{{w.part}}</span></span>
+                  </li>
+                </sc-for>
+              </ul>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 8px; background: #F0F0F0">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+            <span style="display: flex; flex-direction: column; gap: 2px; font-size: 14px; line-height: 20px">
+              <b>Recommended: AI-Driven Construction</b>
+              <span>From risk and target tier: low risk, read-only, aggregates only, no personal data and no new sign-in. <span style="white-space: nowrap">Target: T1 Team App.</span></span>
+            </span>
+          </div>
+
+          <div role="radiogroup" aria-labelledby="hd-decide-q" aria-describedby="hd-decide-sub" style="display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <h3 id="hd-decide-q" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Build It in Construction</h3>
+              <span id="hd-decide-sub" style="font-size: 13px; line-height: 18px; color: #5F5F5F">Retail Systems' gates on push, merge and release apply in both. A pipeline, never a model, deploys.</span>
+            </div>
+            <sc-for list="{{opts}}" as="o" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; border-radius: 8px; background: #FFFFFF; border: {{o.bd}}; overflow: hidden">
+                <button type="button" role="radio" id="{{o.domId}}" disabled="{{lockOpts}}" aria-checked="{{o.checked}}" tabindex="{{o.tab}}" onClick="{{o.pick}}" onKeyDown="{{choiceKey}}" aria-describedby="{{o.descId}}" class="hd-opt hd-ring-in" style="display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 4px; align-items: start; padding: 14px 16px; border: 0; border-radius: 0; background: #FFFFFF; font-family: inherit; text-align: left; color: #1D1D1D; cursor: pointer">
+                  <span aria-hidden="true" style="margin-top: 1px; width: 18px; height: 18px; box-sizing: border-box; border-radius: 999px; box-shadow: {{o.dotRing}}; display: inline-flex; align-items: center; justify-content: center"><span style="width: 8px; height: 8px; border-radius: 999px; background: {{o.dot}}"></span></span>
+                  <span style="min-width: 0; display: flex; flex-direction: column; gap: 4px">
+                    <span style="font-size: 16px; line-height: 20px; font-weight: 700">{{o.label}}</span>
+                    <span id="{{o.descId}}" style="font-size: 14px; line-height: 20px; color: #5F5F5F">{{o.desc}}</span>
+                  </span>
+                  <sc-if value="{{o.rec}}" hint-placeholder-val="{{ false }}"><span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: #F0F0F0; font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap">Recommended</span></sc-if>
+                </button>
+                <sc-if value="{{o.hasSub}}" hint-placeholder-val="{{ false }}">
+                  <button type="button" role="checkbox" aria-checked="{{rebuildOn}}" aria-disabled="{{rebuildOff}}" onClick="{{toggleRebuild}}" class="hd-check hd-ring-in" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px 14px 46px; border: 0; border-top: 1px solid #F0F0F0; border-radius: 0; background: transparent; font-family: inherit; text-align: left; color: {{rebuildC}}; cursor: {{rebuildCursor}}">
+                    <span aria-hidden="true" style="margin-top: 1px; width: 16px; height: 16px; box-sizing: border-box; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 2px; background: {{rebuildBg}}; box-shadow: {{rebuildRing}}"><sc-if value="{{rebuildChecked}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span>
+                    <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; line-height: 18px; font-weight: 700">Rebuild From the Plan</span><span style="font-size: 12px; line-height: 18px; color: {{rebuildSubC}}">A new repository from the plan, decisions and evidence; the prototype stays as a reference.</span></span>
+                  </button>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <label style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 14px; line-height: 18px; font-weight: 700">{{noteLabel}}</span>
+            <span class="hd-noteb" style="display: block; max-width: 680px; border-radius: 8px; box-shadow: inset 0 0 0 1px #949494">
+              <textarea id="hd-note" class="hd-note" rows="2" readOnly="{{lockOpts}}" value="{{note}}" onChange="{{onNote}}" aria-describedby="hd-note-hint" placeholder="What Theo and the platform team should know" style="display: block; width: 100%; min-height: 64px; box-sizing: border-box; border: 0; resize: none; padding: 10px 14px; border-radius: 8px; font-family: inherit; font-size: 14px; line-height: 20px; background: transparent; color: #1D1D1D"></textarea>
+            </span>
+            <span id="hd-note-hint" style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{noteHint}}</span>
+          </label>
+
+          <sc-if value="{{undecided}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 16px; border-top: 1px solid #F0F0F0">
+              <span id="hd-bar-note" style="flex: 1 1 280px; font-size: 14px; line-height: 20px; color: #5F5F5F; font-weight: {{barNoteW}}">{{barNote}}</span>
+              <div style="display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto">
+                <button type="button" onClick="{{askTheo}}" class="hd-ring hd-txt" style="height: 44px; padding: 0 8px; border: 0; border-radius: 999px; background: transparent; font-family: inherit; font-size: 14px; line-height: 20px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; cursor: pointer">Ask Theo</button>
+                <button type="button" onClick="{{decide}}" disabled="{{decideOff}}" aria-describedby="hd-bar-note" class="{{decideCls}}" style="height: 44px; display: inline-flex; align-items: center; padding: 0 20px; border: 0; border-radius: 999px; background: {{decideBg}}; color: #FFFFFF; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; cursor: {{decideCursor}}">Sign Decision</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{decided}}" hint-placeholder-val="{{ false }}">
+            <div role="status" style="min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-top: 16px; border-top: 1px solid #F0F0F0">
+              <span style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+                <span id="hd-dec-status" tabindex="-1" class="hd-ring-in" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00834B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{recordedLabel}}</span>
+                <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">Recorded Oct 24. The repository moves to retail-systems and MKTG-418 joins your board.</span>
+              </span>
+              <button type="button" onClick="{{undo}}" class="hd-ring hd-txt" style="height: 44px; padding: 0 8px; border: 0; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; cursor: pointer">Undo</button>
+            </div>
+          </sc-if>
+        </div>
+      </section>
+
+      <section aria-labelledby="hd-adds" style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; gap: 12px">
+          <h2 id="hd-adds" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">What Construction Adds</h2>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Not in the prototype</span>
+        </div>
+        <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0">
+          <sc-for list="{{adds}}" as="d" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 10px 16px; border-top: {{d.rule}}">
+              <span aria-hidden="true" style="width: 12px; height: 12px; box-sizing: border-box; border: 2px dashed #949494"></span>
+              <span style="min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; line-height: 20px; font-weight: 700">{{d.what}}</span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{d.how}}</span></span>
+              <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">After Handoff</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isPackage}}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="pk-h" style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+        <div style="display: flex; align-items: baseline; gap: 12px"><h2 id="pk-h" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">Handoff Package</h2><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">For Retail Systems</span></div>
+        <sc-for list="{{pkgGroups}}" as="g" hint-placeholder-count="2">
+          <section style="display: flex; flex-direction: column; gap: 8px">
+            <h3 style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 700">{{g.title}}</h3>
+            <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0">
+              <sc-for list="{{g.items}}" as="p" hint-placeholder-count="5">
+                <div style="padding: 10px 16px; border-top: {{p.rule}}; display: flex; flex-direction: column; gap: 8px">
+                  <div style="display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; column-gap: 12px; align-items: center">
+                    <span aria-hidden="true" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0">
+                      <sc-if value="{{p.hasLogo}}" hint-placeholder-val="{{ true }}"><img src="{{p.logo}}" width="18" height="18" alt=""></sc-if>
+                      <sc-if value="{{p.hasGlyph}}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{p.glyph}}"></path></svg></sc-if>
+                    </span>
+                    <span style="min-width: 0; display: flex; flex-direction: column">
+                      <span style="font-size: 14px; line-height: 20px; font-weight: 700">{{p.what}}</span>
+                      <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; font-family: {{p.family}}; overflow-wrap: anywhere">{{p.ref}}</span>
+                    </span>
+                    <span style="font-size: 12px; line-height: 18px; color: {{p.stateC}}; font-weight: {{p.stateW}}; white-space: nowrap">{{p.state}}</span>
+                  </div>
+                  <sc-if value="{{p.hasList}}" hint-placeholder-val="{{ false }}">
+                    <ul style="margin: 0 0 0 44px; padding: 0 0 0 16px; display: grid; gap: 2px; font-size: 13px; line-height: 20px">
+                      <sc-for list="{{p.list}}" as="l" hint-placeholder-count="3"><li>{{l}}</li></sc-for>
+                    </ul>
+                  </sc-if>
+                  <sc-if value="{{p.hasMap}}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-left: 44px; border-radius: 4px; box-shadow: inset 0 0 0 1px #F0F0F0; overflow: hidden">
+                      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); column-gap: 8px; padding: 6px 10px; background: #F9F9F9; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F"><span>In the Prototype: Dev</span><span></span><span>In Construction: Production</span></div>
+                      <sc-for list="{{dataMap}}" as="m" hint-placeholder-count="4">
+                        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); column-gap: 8px; align-items: start; padding: 6px 10px; border-top: 1px solid #F0F0F0; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px">
+                          <span style="overflow-wrap: anywhere">{{m.dev}}</span>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="becomes" style="margin-top: 2px"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                          <span style="overflow-wrap: anywhere; color: #5F5F5F">{{m.prod}}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+        </sc-for>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isProto}}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="pt-h" style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <div style="display: flex; align-items: baseline; gap: 12px; min-width: 0">
+            <h2 id="pt-h" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700; white-space: nowrap">{{protoTitle}}</h2>
+            <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{protoMeta}}</span>
+          </div>
+          <span style="flex: 1"></span>
+          <div role="radiogroup" aria-label="View" style="flex: none; display: inline-flex; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0; overflow: hidden">
+            <sc-for list="{{views}}" as="v" hint-placeholder-count="2">
+              <button type="button" role="radio" aria-checked="{{v.checked}}" tabindex="{{v.tab}}" onClick="{{v.pick}}" onKeyDown="{{viewKey}}" class="{{v.cls}}" style="height: 32px; padding: 0 16px; border: 0; background: {{v.bg}}; color: {{v.fg}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: {{v.fw}}; cursor: pointer">{{v.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+          <div style="max-width: 760px; border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0; overflow: hidden">
+            <div style="height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid #D0D0D0; background: #F9F9F9; font-size: 12px; line-height: 16px">
+              <img src="{{logos.database}}" width="14" height="14" alt="">
+              <b>{{provenance}}</b><span style="color: #5F5F5F">{{provenanceSub}}</span>
+            </div>
+            <div role="img" aria-label="{{shotAria}}">
+              <div style="height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: {{appBar}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">Activation Scorecard<span style="flex: 1"></span><span style="font-weight: 400; color: {{appBarSub}}">Week 43, Marketing</span></div>
+              <div style="display: flex; gap: 8px; padding: 12px; background: #FFFFFF">
+                <sc-for list="{{appFilters}}" as="f" hint-placeholder-count="3"><span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px">{{f}}</span></sc-for>
+              </div>
+              <div style="padding: 0 12px 12px; background: #FFFFFF">
+                <div style="display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.8fr); column-gap: 12px; padding: 6px 0; border-bottom: 1px solid #D0D0D0; font-size: 12px; line-height: 16px; color: #5F5F5F"><span>Channel</span><span style="text-align: right">New Members</span><span style="text-align: right">Active by Day 30</span><span>Activation Rate</span></div>
+                <sc-for list="{{appRows}}" as="r" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.8fr); column-gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid #F0F0F0; font-size: 12px; line-height: 16px">
+                    <span style="font-weight: 700">{{r.ch}}</span><span style="text-align: right; color: {{r.numC}}">{{r.n}}</span><span style="text-align: right; color: {{r.numC}}">{{r.a}}</span>
+                    <span style="display: flex; align-items: center; gap: 8px; white-space: nowrap"><span style="width: 44px; height: 6px; background: #F0F0F0; flex: none"><span style="display: block; height: 6px; width: {{r.pct}}; background: {{r.barC}}"></span></span><span style="color: {{r.numC}}">{{r.rate}}</span><sc-if value="{{r.flag}}" hint-placeholder-val="{{ false }}"><span style="height: 18px; display: inline-flex; align-items: center; padding: 0 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px #1D1D1D; font-weight: 700">Below 40%</span></sc-if></span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <figcaption style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{shotCaption}}</figcaption>
+        </figure>
+        <sc-if value="{{isProtoView}}" hint-placeholder-val="{{ true }}">
+          <section aria-labelledby="hd-evidence" style="display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid #F0F0F0">
+            <h3 id="hd-evidence" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Evidence: 6 of 6 Criteria Met</h3>
+            <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 24px; font-size: 14px; line-height: 20px">
+              <sc-for list="{{evidence}}" as="e" hint-placeholder-count="6"><li style="display: flex; align-items: flex-start; gap: 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00834B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{e}}</li></sc-for>
+            </ul>
+            <p style="margin: 0; display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 20px; color: #5F5F5F"><span aria-hidden="true" style="margin-top: 4px; width: 12px; height: 12px; box-sizing: border-box; flex: none; border: 2px dashed #949494"></span>Definitions match the golden report; numbers not checked on dev data (checked in Construction).</p>
+          </section>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isChain}}" hint-placeholder-val="{{ false }}">
+      <section aria-labelledby="dc-h" style="background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="dc-h" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">Decisions</h2>
+        <ol style="margin: 0; padding: 0; list-style: none; border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0">
+          <sc-for list="{{chain}}" as="d" hint-placeholder-count="5">
+            <li style="display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; column-gap: 12px; align-items: start; padding: 12px 16px; border-top: {{d.rule}}">
+              <span aria-hidden="true" style="margin-top: 4px; width: 12px; height: 12px; box-sizing: border-box; background: {{d.fill}}; border: {{d.border}}"></span>
+              <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 14px; line-height: 20px; font-weight: 700; color: {{d.c}}">{{d.what}}</span>
+                <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{d.who}}</span>
+              </span>
+              <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12px; line-height: 18px; white-space: nowrap">
+                <span>{{d.when}}</span>
+                <span style="font-family: 'Chivo Mono', ui-monospace, monospace; color: #5F5F5F">{{d.hash}}</span>
+              </span>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+    </sc-if>
+  </div>
+
+  <section aria-labelledby="hd-conv-h" style="grid-column: span 3; min-width: 0; min-height: 960px; position: relative">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #D0D0D0; border-radius: 8px">
+      <div style="flex: none; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #F0F0F0">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+        <span style="display: flex; flex-direction: column; min-width: 0">
+          <h2 id="hd-conv-h" style="margin: 0; font-size: 14px; line-height: 18px; font-weight: 700">HyperDelivery</h2>
+          <span role="status" style="font-size: 12px; line-height: 16px; color: #5F5F5F; white-space: nowrap">{{convStatus}}</span>
+        </span>
+      </div>
+      <div role="log" aria-live="polite" aria-labelledby="hd-conv-h" class="hd-log" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 16px">
+        <sc-for list="{{msgs}}" as="m" hint-placeholder-count="5">
+          <sc-if value="{{m.isNote}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{m.glyphColor}}" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="{{m.glyph}}"></path></svg>
+              <span>{{m.text}}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.isBubble}}" hint-placeholder-val="{{ false }}">
+            <div style="align-self: flex-end; max-width: 264px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+              <div style="padding: 10px 14px; border-radius: 16px 16px 4px 16px; background: #F0F0F0; font-size: 14px; line-height: 20px">{{m.text}}</div>
+              <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.meta}}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.isPerson}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{m.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{m.ini}}</span>
+                <span style="font-size: 13px; line-height: 18px; font-weight: 700">{{m.name}}</span>
+                <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.meta}}</span>
+              </div>
+              <p style="margin: 0; font-size: 14px; line-height: 22px">{{m.text}}</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.isTurn}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+                <span style="font-size: 13px; line-height: 18px; font-weight: 700">HyperDelivery</span>
+                <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.when}}</span>
+              </div>
+              <sc-if value="{{m.hasTools}}" hint-placeholder-val="{{ true }}">
+                <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #F0F0F0">
+                  <sc-for list="{{m.tools}}" as="t" hint-placeholder-count="3">
+                    <details class="hd-tool" style="border-top: {{t.rule}}">
+                      <summary class="hd-ring-in" style="display: grid; grid-template-columns: 12px 16px minmax(0, 1fr); align-items: start; column-gap: 8px; padding: 8px 10px; font-size: 13px; line-height: 18px">
+                        <svg class="hd-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 3px; transition: transform .16s"><path d="M9.5 6l6 6-6 6"></path></svg>
+                        <span style="height: 18px; display: inline-flex; align-items: center"><img src="{{t.logo}}" width="16" height="16" alt=""></span>
+                        <span style="min-width: 0; display: flex; flex-direction: column"><span>{{t.label}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{t.result}}</span></span>
+                      </summary>
+                      <ul style="margin: 0; padding: 0 10px 10px 46px; display: grid; gap: 4px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                        <sc-for list="{{t.lines}}" as="l" hint-placeholder-count="2"><li>{{l}}</li></sc-for>
+                      </ul>
+                    </details>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-for list="{{m.paras}}" as="p" hint-placeholder-count="1"><p style="margin: 0; font-size: 14px; line-height: 22px">{{p}}</p></sc-for>
+              <sc-if value="{{m.hasLink}}" hint-placeholder-val="{{ false }}">
+                <button type="button" class="hd-chip hd-ring-edge" onClick="{{m.linkOpen}}" aria-label="{{m.linkAria}}" style="align-self: flex-start; height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border: 0; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: inherit; font-size: 12px; line-height: 16px; color: #1D1D1D; cursor: pointer"><img src="{{logos.snowflake}}" width="14" height="14" alt="">{{m.linkLabel}}</button>
+              </sc-if>
+              <sc-if value="{{m.hasCards}}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{m.cards}}" as="a" hint-placeholder-count="1">
+                  <button type="button" class="hd-row hd-ring" onClick="{{a.open}}" aria-label="{{a.aria}}" aria-pressed="{{a.pressed}}" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; border-radius: 8px; background: #FFFFFF; box-shadow: {{a.ring}}; font-family: inherit; text-align: left; cursor: pointer; color: #1D1D1D">
+                    <span aria-hidden="true" style="width: 32px; height: 32px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #F0F0F0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{a.icon}}"></path></svg></span>
+                    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 700">{{a.label}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{a.meta}}</span></span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M9.5 6l6 6-6 6"></path></svg>
+                  </button>
+                </sc-for>
+              </sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.isDecision}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 8px; box-shadow: {{m.ring}}">
+              <span style="display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 700; color: {{m.labelColor}}"><span aria-hidden="true" style="width: 12px; height: 12px; box-sizing: border-box; flex: none; margin-top: 4px; background: {{m.notchBg}}; border: {{m.notchBd}}"></span>{{m.label}}</span>
+              <span style="font-size: 16px; line-height: 22px; font-weight: 700">{{m.title}}</span>
+              <span style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 18px; color: #5F5F5F">
+                <span>{{m.line1}}</span>
+                <span style="display: inline-flex; align-items: flex-start; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="{{m.glyph2}}"></path></svg>{{m.line2}}</span>
+              </span>
+              <sc-if value="{{m.canDecide}}" hint-placeholder-val="{{ true }}">
+                <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{m.review}}" style="align-self: flex-start; height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; cursor: pointer">Review and Decide</button>
+              </sc-if>
+            </div>
+          </sc-if>
+        </sc-for>
+
+        <sc-for list="{{chat}}" as="m" hint-placeholder-count="0">
+          <div style="align-self: flex-end; max-width: 264px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+            <sc-if value="{{m.hasText}}" hint-placeholder-val="{{ true }}"><div style="padding: 10px 14px; border-radius: 16px 16px 4px 16px; background: #F0F0F0; font-size: 14px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere">{{m.text}}</div></sc-if>
+            <sc-if value="{{m.hasFiles}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px"><sc-for list="{{m.files}}" as="c" hint-placeholder-count="1"><span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">{{c.label}}</span></sc-for></div></sc-if>
+            <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.who}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex: none; padding: 12px 16px 16px; border-top: 1px solid #F0F0F0">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px">
+          <sc-for list="{{suggest}}" as="s" hint-placeholder-count="2"><button type="button" class="hd-chip hd-ring-edge" onClick="{{s.pick}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; cursor: pointer">{{s.label}}</button></sc-for>
+        </div>
+        <div class="hd-compose" style="border-radius: 16px; box-shadow: inset 0 0 0 1px #949494">
+          <sc-if value="{{cmpHasFiles}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0">
+              <sc-for list="{{cmpFiles}}" as="c" hint-placeholder-count="1">
+                <span style="height: 28px; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px 0 8px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap">
+                  <img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">
+                  <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><b>{{c.kind}}</b> {{c.title}}</span>
+                  <button type="button" class="hd-iconbtn" onClick="{{c.remove}}" aria-label="{{c.removeLabel}}" style="width: 24px; height: 24px; flex: none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></button>
+                </span>
+              </sc-for>
+            </div>
+          </sc-if>
+          <textarea id="hd-reply" rows="2" aria-label="Ask HyperDelivery about the handoff" placeholder="Ask about the handoff" value="{{reply}}" onChange="{{onReply}}" onKeyDown="{{replyKey}}" style="display: block; width: 100%; min-height: 52px; box-sizing: border-box; border: 0; outline: none; resize: none; padding: 10px 14px 0; font-family: inherit; font-size: 14px; line-height: 20px; background: transparent; border-radius: 16px 16px 0 0; color: #1D1D1D"></textarea>
+          <div style="display: flex; align-items: center; gap: 6px; padding: 4px 8px 8px">
+            <details class="hd-pop" style="position: relative; flex: none">
+              <summary class="hd-iconbtn hd-ring" aria-label="Point at a file or page" title="Point at a file or page" style="width: 36px; height: 36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+              <div class="hd-menu" role="group" aria-label="Point at a file or page" style="top: auto; bottom: 44px; left: 0; right: auto; width: 256px">
+                <div style="padding: 4px 16px 8px; font-size: 12px; line-height: 16px; color: #5F5F5F">Read with your access. Nothing is copied out of Snowflake.</div>
+                <sc-for list="{{cmpSources}}" as="p" hint-placeholder-count="6">
+                  <button type="button" class="hd-mi" onClick="{{p.add}}" style="height: 48px; gap: 10px">
+                    <img src="{{p.logo}}" width="18" height="18" alt="" style="flex: none">
+                    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span>{{p.label}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{p.hint}}</span></span>
+                  </button>
+                </sc-for>
+              </div>
+            </details>
+            <span style="flex: 1"></span>
+            <button type="button" aria-label="Send" disabled="{{replyEmpty}}" onClick="{{sendReply}}" style="width: 36px; height: 36px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: {{sendBg}}; color: #FFFFFF; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"></path></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"decided":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1653}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tech: false, searchQ: '', searchOpen: false, tab: 'decide', choice: 'driven', rebuild: false, note: '', decided: null, decidedAs: null,
+      view: 'prototype', chat: [], reply: '', att: [] };
+  }
+  componentDidMount() {
+    // hd-shell:top start (copy verbatim)
+    // hd-shell: menus close on Escape (focus returns to their button) and on a click outside; Escape also
+    // hides a "Drawn in Variant B" tooltip until the pointer or focus moves on.
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      if (esc) {
+        const a = document.activeElement;
+        this.hdTipEl = document.querySelector('.hd-tip-wrap:hover') || (a && a.closest ? a.closest('.hd-tip-wrap') : null);
+        document.documentElement.setAttribute('data-hd-tipoff', '');
+      }
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          d.querySelectorAll('details.hd-sub[open]').forEach((s) => { s.open = false; });
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    this.hdTipOn = (e) => {
+      const w = e.target.closest ? e.target.closest('.hd-tip-wrap') : null;
+      if (e.type === 'focusin' || w !== this.hdTipEl) document.documentElement.removeAttribute('data-hd-tipoff');
+    };
+    // hd-shell keys, as the Help menu lists them: Command K searches, Command Shift O starts a project,
+    // Command / opens the shortcut list.
+    this.hdSearch = () => {
+      const f = document.querySelector('[data-hd-search]');
+      if (f) { f.focus(); if (f.select) f.select(); }
+    };
+    this.hdShellKeys = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.defaultPrevented) return;
+      const key = (e.key || '').toLowerCase();
+      if (key === 'k' && !e.shiftKey) { e.preventDefault(); this.hdSearch(); return; }
+      if (key === 'o' && e.shiftKey) {
+        e.preventDefault();
+        const idea = document.getElementById('hd-idea');
+        if (idea) idea.focus(); else window.location.href = 'A_Start.dc.html';
+        return;
+      }
+      if (key === '/' || e.code === 'Slash') {
+        const help = document.querySelector('summary[aria-label="Help"]');
+        if (!help) return;
+        e.preventDefault();
+        help.parentElement.open = true;
+        const keys = help.parentElement.querySelector('details.hd-sub');
+        if (keys) { keys.open = true; keys.querySelector('summary').focus(); }
+      }
+    };
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+    document.addEventListener('keydown', this.hdShellKeys);
+    document.addEventListener('focusin', this.hdTipOn);
+    document.addEventListener('mouseover', this.hdTipOn);
+    // hd-shell:top end
+    // Like any chat, the conversation opens at its latest message.
+    setTimeout(() => { const l = document.querySelector('[role="log"]'); if (l) l.scrollTop = l.scrollHeight; }, 0);
+  }
+  componentWillUnmount() {
+    // hd-shell:top start (copy verbatim)
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+    document.removeEventListener('keydown', this.hdShellKeys);
+    document.removeEventListener('focusin', this.hdTipOn);
+    document.removeEventListener('mouseover', this.hdTipOn);
+    // hd-shell:top end
+  }
+  renderVals() {
+    const st = this.state;
+    const helpOpen = false;
+    const tech = !!st.tech;
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = {
+      jira: 'logos/jira.svg',
+      confluence: 'logos/confluence.svg',
+      github: 'logos/github.svg',
+      snowflake: 'logos/snowflake.svg',
+      sharepoint: 'logos/sharepoint.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      database: 'logos/database.svg',
+      onedrive: 'logos/onedrive.svg',
+      file: 'logos/file.svg'
+    };
+    const closeMenu = (e) => { const d = e && e.currentTarget && e.currentTarget.closest('details'); if (d) { d.open = false; const s = d.querySelector(':scope > summary'); if (s) s.focus(); } };
+    const focusLater = (sel) => setTimeout(() => { const el = document.querySelector(sel); if (el) el.focus(); }, 60);
+    const toLatest = () => setTimeout(() => { const l = document.querySelector('[role="log"]'); if (l) l.scrollTop = l.scrollHeight; }, 80);
+    const INK = '#1D1D1D', RED = '#DC0019', MUTED = '#5F5F5F', GREY = '#949494', GREEN = '#00834B';
+    const REST = 'inset 0 0 0 1px #D0D0D0', SELECTED = 'inset 0 0 0 2px #1D1D1D';
+    const G = {
+      check: 'M5 12.5l4.5 4.5L19 7.5',
+      clock: 'M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM12 7v5l3.5 2',
+      package: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9',
+      prototype: 'M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z',
+      mockup: 'M4 4.5h16v15H4zM4 9h16M9 9v10.5',
+      chain: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2',
+      file: 'M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5',
+      term: 'M4.5 6.5h15v11h-15zM8 10.5l2 1.5-2 1.5M12 14h4',
+      map: 'M9 4.5l-5 2v13l5-2 6 2 5-2v-13l-5 2zM9 4.5v13M15 6.5v13',
+      skip: 'M6 6l12 12M18 6L6 18'
+    };
+    const MONO = "'Chivo Mono', ui-monospace, monospace";
+
+    // The Construction decision: a record beside the three approvals, not a fourth approval. It waits on Kim until signed.
+    const decided = st.decided === null ? (this.props.decided ?? false) : st.decided;
+
+    // hd-shell:top start. Same items, order and search index on every A board; only ACTIVE, INBOX_COUNT, the
+    // viewer (me, workspaces, FIND) and the role-gated rows change. A destination Variant A does not draw is a
+    // real control that does not navigate, with the "Drawn in Variant B" tooltip. Needs LOGO.microsoftteams,
+    // closeMenu and helpOpen above it.
+    const ACTIVE = 'projects';
+    const INBOX_COUNT = decided ? 0 : 1;
+    const topItem = (key, label, href, extra) => Object.assign({ label, href: href || '', live: !!href, off: !href, tipId: 'hd-tip-' + key,
+      current: key === ACTIVE ? 'page' : 'false', aria: label, hasCount: false, count: '', hasTag: false, tag: '' }, extra || {});
+    const topNav = [
+      topItem('home', 'Home', 'A_Main.dc.html'),
+      topItem('projects', 'Projects', 'A_Projects.dc.html'),
+      topItem('inbox', 'Inbox', 'A_Inbox.dc.html', INBOX_COUNT ? { hasCount: true, count: String(INBOX_COUNT), aria: 'Inbox, ' + INBOX_COUNT + ' waiting on you' } : {}),
+      topItem('library', 'Library', null, { hasTag: true, tag: 'Enterprise' })
+    ];
+    // Portfolio (sponsors and leads) and Admin (admins) only; a business owner never sees them.
+    const roleNav = [];
+    const me = { name: 'Kim Patel', initials: 'KP', bg: '#3F4A55', role: 'Construction owner, Retail Systems',
+      aria: 'Kim Patel, Retail ops, account and workspace' };
+    const workspaces = ['Retail ops', 'Marketing'].map((name, i) => ({ name, on: i === 0, pressed: i === 0 ? 'true' : 'false', fw: i === 0 ? '700' : '400' }));
+    // The projects this viewer can open, for the search box: a board in Variant A, or null.
+    const FIND = [
+      ['Activation scorecard', 'Marketing, your decision: Construction', 'A_Graduation.dc.html'],
+      ['Store labor forecast', 'Retail ops, Construction: AI-assisted', null]
+    ];
+    const q = st.searchQ.trim().toLowerCase();
+    const searchHits = q ? FIND.filter((f) => (f[0] + ' ' + f[1]).toLowerCase().indexOf(q) >= 0)
+      .map((f, i) => ({ name: f[0], meta: f[1], href: f[2] || '', live: !!f[2], off: !f[2], tipId: 'hd-tip-find-' + i })) : [];
+    const shell = {
+      topNav, roleNav, hasRoleNav: roleNav.length > 0, me, workspaces, closeMenu, logos: LOGO, helpOpen,
+      techOn: st.tech ? 'true' : 'false', techWord: st.tech ? 'On' : 'Off', toggleTech: () => this.setState({ tech: !st.tech }),
+      searchQ: st.searchQ, searchShow: st.searchOpen && !!q, searchHits,
+      searchCount: searchHits.length ? searchHits.length + (searchHits.length === 1 ? ' project' : ' projects') : 'No projects match "' + st.searchQ.trim() + '"',
+      onSearch: (e) => this.setState({ searchQ: e.target.value, searchOpen: true }),
+      searchKey: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ searchQ: '', searchOpen: false }); } },
+      searchFocus: () => { if (!this.state.searchOpen) this.setState({ searchOpen: true }); },
+      searchBlur: () => setTimeout(() => { const box = document.querySelector('.hd-find-box'); if (box && !box.contains(document.activeElement)) this.setState({ searchOpen: false }); }, 120)
+    };
+    // hd-shell:top end
+
+    // The choice: two ways to build it in Construction, or not now. The default comes from risk and the target tier.
+    const CHOICES = [
+      { id: 'driven', label: 'AI-Driven Construction', short: 'AI-Driven', rec: true,
+        desc: "Retail Systems' pipeline trusts the approved design and builds from the context files, without a second plan review." },
+      { id: 'assisted', label: 'AI-Assisted With Engineers', short: 'AI-Assisted With Engineers', hasSub: true,
+        desc: 'Your engineers lead the build with AI help, starting with a review of the plan.' },
+      { id: 'notnow', label: 'Not Now', short: 'Not Now',
+        desc: 'No Construction yet. The prototype stays open to its testers for 30 days after this decision, then expires. Theo sees your note.' }
+    ];
+    const ORDER = CHOICES.map((c) => c.id);
+    const recorded = decided ? (st.decidedAs || { choice: 'driven', rebuild: false }) : null;
+    const choice = recorded ? recorded.choice : (ORDER.indexOf(st.choice) >= 0 ? st.choice : 'driven');
+    const pick = (id, focus) => {
+      this.setState({ choice: id });
+      if (focus) setTimeout(() => { const el = document.getElementById('hd-choice-' + id); if (el) el.focus(); }, 0);
+    };
+    const choiceKey = (e) => {
+      const i = ORDER.indexOf(choice);
+      let n = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % ORDER.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + ORDER.length) % ORDER.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = ORDER.length - 1;
+      if (n < 0) return;
+      e.preventDefault();
+      pick(ORDER[n], true);
+    };
+    // A selected option row is white with a 1 px ink ring (design-system.md 9.13).
+    const opts = CHOICES.map((c) => {
+      const on = choice === c.id;
+      return Object.assign({}, c, { domId: 'hd-choice-' + c.id, descId: 'hd-choice-d-' + c.id, checked: on ? 'true' : 'false', tab: on ? 0 : -1,
+        bd: on ? '1px solid #1D1D1D' : '1px solid #D0D0D0', dot: on ? INK : 'transparent',
+        dotRing: on ? 'inset 0 0 0 2px #1D1D1D' : 'inset 0 0 0 1.5px #5F5F5F', hasSub: !!c.hasSub, rec: !!c.rec,
+        pick: () => { if (!decided) pick(c.id, false); } });
+    });
+    const assisted = choice === 'assisted';
+    const rebuild = assisted && (recorded ? recorded.rebuild : st.rebuild);
+    const note = st.note;
+    const needNote = choice === 'notnow' && !note.trim();
+    const picked = CHOICES.find((c) => c.id === choice);
+    const pickedName = picked.label + (rebuild ? ', Rebuilt From the Plan' : '');
+    const pickedShort = picked.short + (rebuild ? ', Rebuilt From the Plan' : '');
+
+    // Artifact tabs: the decision, the package, the accepted prototype (and its mockup), and the signed chain.
+    const TABS = [
+      { id: 'decide', label: 'Construction' }, { id: 'package', label: 'Package', count: '10' },
+      { id: 'prototype', label: 'Prototype', count: 'v5' }, { id: 'chain', label: 'Decisions' }
+    ];
+    const ids = TABS.map((t) => t.id);
+    const tab = ids.indexOf(st.tab) >= 0 ? st.tab : 'decide';
+    // A shorter tab shortens the conversation panel, so it scrolls back to its latest message.
+    const goTab = (id, extra, focusSel) => { this.setState(Object.assign({ tab: id }, extra || {})); toLatest(); if (focusSel) focusLater(focusSel); };
+    const tabs = TABS.map((t) => {
+      const on = tab === t.id;
+      return { label: t.label, count: t.count || '', hasCount: !!t.count, tabId: 'pt-' + t.id, selected: on ? 'true' : 'false', tab: on ? 0 : -1, pick: () => goTab(t.id) };
+    });
+    const tabKey = (e) => {
+      const i = Math.max(0, ids.indexOf(tab));
+      let n = -1;
+      if (e.key === 'ArrowRight') n = (i + 1) % ids.length;
+      else if (e.key === 'ArrowLeft') n = (i - 1 + ids.length) % ids.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = ids.length - 1;
+      if (n < 0) return;
+      e.preventDefault();
+      goTab(ids[n], null, '#pt-' + ids[n]);
+    };
+    const view = st.view === 'mockup' ? 'mockup' : 'prototype';
+    const isMock = view === 'mockup';
+    const VERS = {
+      prototype: isMock ? ['Mockup, signed Oct 9', 'Three starting looks, Oct 6'] : ['Version 5, accepted Oct 23', 'Version 4, Oct 22', 'Version 3, Oct 21'],
+      package: ['Sealed Oct 23, 10 items']
+    };
+    const versions = (VERS[tab] || []).map((label, i) => ({ label, on: i === 0 ? 'true' : 'false', isOn: i === 0, fw: i === 0 ? '700' : '400' }));
+    const META = {
+      decide: decided ? 'Recorded Oct 24 by you' : 'Handoff package ready Oct 23, decide by Fri Nov 6',
+      chain: 'Every signature, with the hash of what was signed'
+    };
+
+    // The line: Discover, Plan and Prototype are done; Handoff runs until the Construction decision is recorded.
+    // HyperDelivery stops at the end of Handoff; Construction is drawn dashed after it, outside HyperDelivery.
+    const SEG = ['Discover', 'Plan', 'Prototype', 'Handoff'];
+    const segState = ['done', 'done', 'done', decided ? 'done' : 'current'];
+    const GATES = [["What We're Building", '3d 4h, 2 signers'], ['The Plan', '2d 1h, 2 signers'], ['The Working Prototype', '1d 6h, 2 signers']];
+    const lineNames = [], lineTrack = [], lineLabels = [];
+    for (let i = 0; i < 7; i++) {
+      if (i % 2 === 0) {
+        const s = segState[i / 2];
+        lineNames.push({ t: SEG[i / 2], c: s === 'current' ? INK : MUTED, w: s === 'current' ? 700 : 400 });
+        lineTrack.push({ isSeg: true, isNotch: false, h: s === 'current' ? '4px' : '2px', bg: INK, bt: '0 none transparent', fill: '', border: '' });
+        lineLabels.push({ t: '', c: MUTED, w: 700, hasSub: false, sub: '' });
+      } else {
+        const g = GATES[(i - 1) / 2];
+        lineNames.push({ t: '', c: MUTED, w: 400 });
+        lineTrack.push({ isSeg: false, isNotch: true, h: '', bg: '', bt: '', fill: INK, border: '0 none transparent' });
+        lineLabels.push({ t: g[0], c: INK, w: 700, hasSub: true, sub: g[1] });
+      }
+    }
+    lineNames.push({ t: '', c: MUTED, w: 400 }, { t: 'Construction', c: MUTED, w: 400 });
+    lineTrack.push({ isSeg: true, isNotch: false, h: '0', bg: 'transparent', bt: '0 none transparent', fill: '', border: '' },
+      { isSeg: true, isNotch: false, h: '0', bg: 'transparent', bt: '2px dashed ' + GREY, fill: '', border: '' });
+    lineLabels.push({ t: '', c: MUTED, w: 400, hasSub: false, sub: '' }, { t: decided ? picked.short.replace(' With Engineers', '') : 'Outside HyperDelivery', c: decided ? INK : MUTED, w: 400, hasSub: false, sub: '' });
+
+    // The conversation: the sealed package, Theo's note, Kim's question and the decision card.
+    const MSG = { isNote: false, isBubble: false, isPerson: false, isTurn: false, isDecision: false };
+    const noteMsg = (text) => Object.assign({}, MSG, { isNote: true, glyph: G.check, glyphColor: INK, text });
+    const tool = (src, label, result, lines) => ({ logo: LOGO[src], label, result, lines });
+    const card = (label, meta, icon, on, open) => ({ label, meta, icon, aria: 'Open ' + label.toLowerCase(), open, pressed: on ? 'true' : 'false', ring: on ? SELECTED : REST });
+    const turn = (when, o) => {
+      const tools = (o.tools || []).map((t, i) => Object.assign(t, { rule: i ? '1px solid #F0F0F0' : '0 none transparent' }));
+      const cards = o.cards || [];
+      return Object.assign({}, MSG, { isTurn: true, when, tools, hasTools: tools.length > 0, paras: o.paras || [], cards, hasCards: cards.length > 0,
+        hasLink: !!o.link, linkLabel: o.link ? o.link.label : '', linkAria: o.link ? o.link.aria : '', linkOpen: o.link ? o.link.open : () => {} });
+    };
+    const reviewDecide = () => {
+      this.setState({ tab: 'decide' });
+      setTimeout(() => { const d = document.getElementById('hd-decision'); if (d && d.scrollIntoView) d.scrollIntoView({ block: 'start', behavior: 'smooth' }); const o = document.getElementById('hd-choice-' + choice); if (o) o.focus({ preventScroll: true }); }, 60);
+    };
+    const msgs = [
+      noteMsg("Theo and Luis signed what we're building, Oct 9"),
+      noteMsg('Theo and Luis signed the plan, Oct 14'),
+      noteMsg('Theo and Luis accepted the working prototype, version 5, Oct 23'),
+      turn('Oct 23 17:10', {
+        tools: [
+          tool('jira', 'Filed Jira epic MKTG-418', '9 issues', ['One issue per piece of the plan, each with its acceptance checks', 'Filed at the handoff, after approval 3']),
+          tool('file', 'Wrote the AI-DLC context files', '9 of 9 valid', ["One context file per issue, for engineering's pipeline", "Checked with engineering's validator"]),
+          tool('github', 'Prepared the repository transfer', 'to retail-systems', ['ua-prototypes/activation-scorecard, with its devcontainer', 'Moves when you record a Construction mode']),
+          tool('snowflake', 'Mapped dev data to production', '4 sources', ['3 dev views and 1 SharePoint list, each with its production source', 'Definitions match the golden report; numbers not checked on dev data'])
+        ],
+        paras: ['I sealed the handoff package for Retail Systems. It holds everything Construction starts from, and every decision in it is traced to who signed it.'],
+        cards: [
+          card('Package', '10 items, Oct 23', G.package, tab === 'package', () => goTab('package')),
+          card('Prototype', 'Version 5', G.prototype, tab === 'prototype' && !isMock, () => goTab('prototype', { view: 'prototype' })),
+          card('Mockup', 'Signed Oct 9', G.mockup, tab === 'prototype' && isMock, () => goTab('prototype', { view: 'mockup' })),
+          card('Decisions', '3 approvals', G.chain, tab === 'chain', () => goTab('chain'))
+        ]
+      }),
+      Object.assign({}, MSG, { isPerson: true, ini: 'TG', bg: '#444444', name: 'Theo Grant', meta: 'Business owner, Oct 23 17:32',
+        text: 'Kim, Marketing wants this before the January activation review. AI-driven works for us if Retail Systems is comfortable with it.' }),
+      Object.assign({}, MSG, { isBubble: true, text: 'Does the prototype write to anything?', meta: 'You, Oct 24 09:12' }),
+      turn('', {
+        paras: ['No. It reads three dev views and one SharePoint list, and writes nothing. In Construction it would read the four mapped production sources the same way.'],
+        link: { label: 'Data Map', aria: 'Open the dev-to-production data map', open: () => goTab('package') }
+      }),
+      Object.assign({}, MSG, { isDecision: true }, decided ? {
+        ring: REST, labelColor: INK, notchBg: INK, notchBd: 'none', label: 'Decision Recorded', title: pickedName,
+        line1: 'Theo and the platform team heard in Teams.', glyph2: G.check, line2: 'Recorded Oct 24', canDecide: false, review: () => {}
+      } : {
+        ring: 'inset 0 0 0 1px #1D1D1D', labelColor: RED, notchBg: RED, notchBd: 'none', label: 'Your Decision: Construction', title: 'How should Retail Systems build it?',
+        line1: 'Recommended: AI-driven. You decide, with Theo Grant.', glyph2: G.clock, line2: 'Decide by Fri Nov 6, 10 business days from the handoff', canDecide: true, review: reviewDecide
+      })
+    ];
+
+    // Package, prototype and decisions: the same facts as the side-nav workspace.
+    const item = (o) => Object.assign({ hasLogo: false, logo: '', hasGlyph: false, glyph: '', family: 'inherit', state: '', stateC: MUTED, stateW: '400',
+      hasList: false, list: [], hasMap: false }, o);
+    const pkgGroups = [
+      { title: 'What Engineering Starts From', items: [
+        item({ what: 'Jira epic MKTG-418', ref: '9 issues, one per piece of the plan, with acceptance checks', hasLogo: true, logo: LOGO.jira, state: 'Filed Oct 23' }),
+        item({ what: 'Confluence page', ref: 'Activation scorecard: handoff, in the MKTG space', hasLogo: true, logo: LOGO.confluence, state: 'Published' }),
+        item({ what: 'Repository', ref: 'ua-prototypes/activation-scorecard → retail-systems', family: MONO, hasLogo: true, logo: LOGO.github, state: decided ? 'Transferring' : 'Moves on your decision', stateC: INK, stateW: '700' }),
+        item({ what: 'Devcontainer', ref: '.devcontainer/devcontainer.json', family: MONO, hasGlyph: true, glyph: G.term, state: 'Opens in 2 min' }),
+        item({ what: 'AI-DLC context files', ref: '9 files in aidlc/, one per issue', hasGlyph: true, glyph: G.file, state: '9 of 9 valid', stateC: GREEN, stateW: '700' }),
+        item({ what: 'Dev-to-production data map', ref: '4 sources; the prototype read only the dev side', hasGlyph: true, glyph: G.map, state: 'Read-only', hasMap: true })
+      ] },
+      { title: 'What Was Approved', items: [
+        item({ what: 'Mockup', ref: 'Scorecard look, signed with the brief on Oct 9', hasGlyph: true, glyph: G.mockup, state: 'Signed' }),
+        item({ what: 'Accepted prototype and evidence', ref: 'Version 5 in the sandbox on dev data; 6 of 6 criteria met', hasGlyph: true, glyph: G.prototype, state: 'Accepted Oct 23' }),
+        item({ what: 'Decision chain', ref: '3f2a…7c, 9c41…e0, e07b…21, 51dd…9a', family: MONO, hasGlyph: true, glyph: G.chain, state: '3 approvals' }),
+        item({ what: 'What It Skips', ref: 'Agreed at the plan; Construction keeps these out unless Theo asks again', hasGlyph: true, glyph: G.skip, state: '3 items', hasList: true,
+          list: ['Member-level detail: aggregates only', 'Writing segments back to the CRM', 'Paid media spend, which stays in the media mix report'] })
+      ] }
+    ].map((g) => Object.assign(g, { items: g.items.map((p, i) => Object.assign(p, { rule: i ? '1px solid #F0F0F0' : '0' })) }));
+    const brk = (t) => t.replace(/\./g, '.​');
+    const dataMap = [
+      { dev: 'MKTG_DEV.ACTIVATION_DAILY_SYN', prod: 'MKTG.GOLDEN.ACTIVATION_DAILY' },
+      { dev: 'MKTG_DEV.LOYALTY_SIGNUPS_AGG', prod: 'MKTG.GOLDEN.LOYALTY_SIGNUPS_WEEKLY' },
+      { dev: 'MKTG_DEV.CAMPAIGN_DIM', prod: 'MKTG.CORE.CAMPAIGN_DIM' },
+      { dev: 'SharePoint: Campaign calendar (read as the tester)', prod: 'SharePoint: Campaign calendar (read by the app)' }
+    ].map((m) => ({ dev: brk(m.dev), prod: brk(m.prod) }));
+    const viewKey = (e) => {
+      if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Home', 'End'].indexOf(e.key) < 0) return;
+      e.preventDefault();
+      const next = e.key === 'Home' ? 'prototype' : (e.key === 'End' ? 'mockup' : (view === 'prototype' ? 'mockup' : 'prototype'));
+      this.setState({ view: next });
+      const btns = e.currentTarget.parentElement.querySelectorAll('[role="radio"]');
+      const el = btns[next === 'prototype' ? 0 : 1]; if (el) el.focus();
+    };
+    const ROWS = [['App', '4,210', '2,780', 66], ['Web', '3,880', '2,010', 52], ['Stores', '5,120', '2,300', 45], ['Partners', '960', '310', 32]];
+    const chain = [
+      { what: "What We're Building", who: 'Signed by Theo Grant and Luis Romero after 3d 4h', when: 'Oct 9', hash: '3f2a…7c', fill: INK, border: '0 none transparent', c: INK },
+      { what: 'The Plan', who: 'Signed by Theo Grant and Luis Romero after 2d 1h', when: 'Oct 14', hash: '9c41…e0', fill: INK, border: '0 none transparent', c: INK },
+      { what: 'The Working Prototype', who: 'Version 5 accepted by Theo Grant and Luis Romero after 1d 6h', when: 'Oct 23', hash: 'e07b…21', fill: INK, border: '0 none transparent', c: INK },
+      { what: 'Handoff package sealed', who: 'HyperDelivery, 10 items', when: 'Oct 23', hash: '51dd…9a', fill: '#FFFFFF', border: '2px solid #1D1D1D', c: INK },
+      decided
+        ? { what: 'Construction: ' + pickedShort, who: 'Recorded by you, with Theo Grant', when: 'Oct 24', hash: '7b90…c4', fill: INK, border: '0 none transparent', c: INK }
+        : { what: 'Your Decision: Construction', who: 'You decide, with Theo Grant, by Fri Nov 6', when: 'Waiting 1d', hash: '', fill: RED, border: '0 none transparent', c: RED }
+    ].map((d, i) => Object.assign(d, { rule: i ? '1px solid #F0F0F0' : '0' }));
+
+    // The composer: Enter sends and Shift+Enter starts a new line; the + menu points at a source, which joins the
+    // next message as a chip; a suggestion fills the draft or acts.
+    const CMP_SOURCES = [
+      { key: 'microsoftteams', label: 'Teams Recording', hint: 'Meetings you attended', kind: 'Teams', title: 'Activation review, Oct 20' },
+      { key: 'onedrive', label: 'OneDrive or SharePoint', hint: 'Files and folders', kind: 'OneDrive', title: 'Activation targets.xlsx' },
+      { key: 'confluence', label: 'Confluence Page', hint: 'With its comments', kind: 'Confluence', title: 'Campaign measurement guide' },
+      { key: 'jira', label: 'Jira Ticket', hint: 'With linked pages', kind: 'Jira', title: 'MKTG-418' },
+      { key: 'snowflake', label: 'Snowflake Report', hint: 'Certified views', kind: 'Snowflake', title: 'Activation, golden report' },
+      { key: 'file', label: 'Upload a File', hint: 'Still works', kind: 'File', title: 'notes.docx' }
+    ];
+    const cmpAtt = st.att, cmpDraft = st.reply;
+    const cmpFocus = () => setTimeout(() => { const r = document.getElementById('hd-reply'); if (r) { r.focus(); r.setSelectionRange(r.value.length, r.value.length); } }, 60);
+    const cmpSend = () => {
+      const s = this.state, text = (s.reply || '').trim(), keys = s.att || [];
+      if (!text && !keys.length) return;
+      const files = keys.map((k) => CMP_SOURCES.find((c) => c.key === k)).map((c) => ({ logo: LOGO[c.key], label: c.kind + ' ' + c.title }));
+      this.setState({ chat: s.chat.concat([{ text, hasText: !!text, files, hasFiles: files.length > 0, who: 'You, just now' }]), reply: '', att: [] });
+      toLatest();
+      cmpFocus();
+    };
+    const cmpReady = !!cmpDraft.trim() || cmpAtt.length > 0;
+    const suggest = [
+      { label: 'What Does Construction Add?', pick: () => { this.setState({ reply: 'What does Construction add?' }); cmpFocus(); } },
+      { label: 'Show the Data Map', pick: () => goTab('package', null, '#pt-package') }
+    ];
+
+    return Object.assign(shell, {
+      stageChip: decided ? 'Construction: ' + picked.short.replace(' With Engineers', '') : 'Handoff Package Ready',
+      openProto: () => goTab('prototype', { view: 'prototype' }, '#pt-prototype'),
+      goPackage: () => goTab('package', null, '#pt-package'),
+      lineNames, lineTrack, lineLabels,
+      lineAria: decided
+        ? 'Discover, Plan and Prototype done; all three approvals signed. Handoff done: Construction recorded as ' + pickedName + '. Construction happens outside HyperDelivery.'
+        : "Discover, Plan and Prototype done; what we're building, the plan and the working prototype are signed. Handoff is in progress: the Construction decision is waiting on you, 1 day, by November 6. Construction happens outside HyperDelivery.",
+      stripC: decided ? INK : RED, stripText: decided ? 'Construction: ' + pickedShort : 'Your Decision: Construction', stripSub: decided ? 'Recorded Oct 24' : 'by Fri Nov 6',
+      undecided: !decided, decided,
+      tabs, tabKey, tabLabelledBy: 'pt-' + tab,
+      hasVersions: versions.length > 0, noVersions: versions.length === 0, versions, verLabel: versions.length ? versions[0].label : '',
+      verAria: versions.length ? 'Versions: ' + versions[0].label : '', tabMeta: META[tab] || '',
+      isDecide: tab === 'decide', isPackage: tab === 'package', isProto: tab === 'prototype', isChain: tab === 'chain',
+      band: decided
+        ? { label: 'Construction: ' + pickedShort, who: 'Recorded with Theo Grant', wait: 'Recorded Oct 24', glyph: G.check, notchBg: '#FFFFFF', notchBd: 'none' }
+        : { label: 'Your Decision: Construction', who: 'You decide, with Theo Grant', wait: 'Waiting 1d', glyph: G.clock, notchBg: RED, notchBd: 'none' },
+      who: [
+        { ini: 'KP', bg: '#3F4A55', name: 'Kim Patel', part: decided ? 'Decided' : 'You, decides', sw: decided ? '400' : '700', c: INK },
+        { ini: 'TG', bg: '#444444', name: 'Theo Grant', part: 'Business owner', sw: '400', c: MUTED },
+        { ini: 'LR', bg: '#2E6A8E', name: 'Luis Romero', part: 'Told when you decide', sw: '400', c: MUTED }
+      ],
+      opts, choiceKey, lockOpts: decided,
+      rebuildOn: rebuild ? 'true' : 'false', rebuildChecked: rebuild, rebuildOff: assisted && !decided ? 'false' : 'true',
+      rebuildC: assisted ? INK : GREY, rebuildSubC: assisted ? MUTED : GREY, rebuildCursor: assisted && !decided ? 'pointer' : 'not-allowed',
+      rebuildBg: rebuild ? INK : '#FFFFFF', rebuildRing: rebuild ? 'none' : (assisted ? 'inset 0 0 0 1.5px #5F5F5F' : 'inset 0 0 0 1.5px #D0D0D0'),
+      toggleRebuild: () => { if (assisted && !decided) this.setState({ rebuild: !st.rebuild }); },
+      noteLabel: choice === 'notnow' ? 'Note for Theo (Needed for Not Now)' : 'Note for Theo (Optional)',
+      noteHint: needNote ? 'Say what would change your answer.' : 'Shared with Theo and the platform team with your decision.',
+      note, onNote: (e) => this.setState({ note: e.target.value }),
+      barNote: needNote ? 'Add a note for Theo to choose Not Now.' : pickedName + ' selected, with Theo Grant, by Fri Nov 6',
+      barNoteW: needNote ? '700' : '400',
+      decideOff: needNote, decideBg: needNote ? '#D0D0D0' : INK, decideCursor: needNote ? 'not-allowed' : 'pointer', decideCls: needNote ? 'hd-ring' : 'hd-btn-primary hd-ring',
+      // After signing, focus moves to the recorded status; Undo returns it to the option that was chosen.
+      decide: () => { if (needNote) return; this.setState({ decided: true, decidedAs: { choice, rebuild } }); toLatest(); focusLater('#hd-dec-status'); },
+      undo: () => { const was = (this.state.decidedAs && this.state.decidedAs.choice) || choice; this.setState({ decided: false, decidedAs: null }); toLatest(); focusLater('#hd-choice-' + was); },
+      recordedLabel: 'Construction: ' + pickedShort,
+      askTheo: () => { this.setState({ reply: 'Theo, ' }); cmpFocus(); },
+      adds: [
+        { what: 'Production data connections', how: 'Read-only roles on the 4 mapped sources' },
+        { what: 'Tests in CI', how: 'The 6 acceptance checks as browser tests in your pipeline' },
+        { what: 'Scans', how: 'Secret, dependency and code scans, with an SBOM' },
+        { what: 'Runbook', how: 'Owner, on-call path and rollback' },
+        { what: 'Monitoring', how: 'Usage, errors and data freshness alerts' }
+      ].map((d, i) => Object.assign(d, { rule: i ? '1px solid #F0F0F0' : '0' })),
+      pkgGroups, dataMap,
+      protoTitle: isMock ? 'Mockup' : 'Prototype, Version 5',
+      protoMeta: isMock ? 'Scorecard look, signed with the brief on Oct 9' : 'Accepted Oct 23 by Theo Grant and Luis Romero' + (tech ? ', ua-prototypes/activation-scorecard' : ''),
+      views: [['prototype', 'Prototype'], ['mockup', 'Mockup']].map((v) => ({ label: v[1], checked: view === v[0] ? 'true' : 'false', tab: view === v[0] ? 0 : -1,
+        bg: view === v[0] ? INK : '#FFFFFF', fg: view === v[0] ? '#FFFFFF' : INK, fw: view === v[0] ? '700' : '400',
+        cls: view === v[0] ? 'hd-ring' : 'hd-seg hd-ring-in', pick: () => this.setState({ view: v[0] }) })),
+      viewKey, isProtoView: !isMock,
+      provenance: isMock ? 'Mockup' : 'Sandbox, dev data', provenanceSub: isMock ? 'Shape only; numbers invented' : 'Synthetic numbers; definitions from the golden report',
+      appBar: isMock ? '#5F5F5F' : INK, appBarSub: isMock ? '#F0F0F0' : '#D0D0D0',
+      appFilters: ['Channel: All', 'North America', 'Last 8 Weeks'],
+      appRows: ROWS.map((r) => ({ ch: r[0], n: isMock ? '0,000' : r[1], a: isMock ? '0,000' : r[2], rate: isMock ? '00%' : r[3] + '%', pct: r[3] + '%',
+        flag: !isMock && r[3] < 40, numC: isMock ? GREY : INK, barC: isMock ? '#D0D0D0' : INK })),
+      shotAria: isMock
+        ? 'Mockup of the activation scorecard: a header, three filters and a table of channels with new members, members activated in 30 days and the activation rate.'
+        : 'The accepted prototype: activation by channel for week 43. App 66 percent, web 52, stores 45, partners 32, flagged below the 40 percent target. Synthetic numbers.',
+      shotCaption: isMock ? 'The mockup Theo signed with the brief. The prototype followed its shape.' : 'Open to project members and 4 named testers until 30 days after your decision.',
+      evidence: ['Shows activation by channel for the last 8 weeks', 'Flags any channel below the 40% target', 'Filters by channel, region and week', 'Exports the table to Excel', 'Loads in under 2 seconds in the sandbox', 'Matches the signed mockup'],
+      chain,
+      convStatus: decided ? 'Construction recorded' : 'Waiting on you',
+      msgs, chat: st.chat, suggest,
+      reply: cmpDraft, onReply: (e) => this.setState({ reply: e.target.value }),
+      replyKey: (e) => { if (e.key === 'Enter' && !e.shiftKey && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.preventDefault(); cmpSend(); } },
+      replyEmpty: !cmpReady, sendBg: cmpReady ? INK : '#D0D0D0', sendReply: cmpSend,
+      cmpSources: CMP_SOURCES.map((c) => ({ logo: LOGO[c.key], label: c.label, hint: c.hint,
+        add: (e) => { closeMenu(e); if (cmpAtt.indexOf(c.key) < 0) this.setState({ att: cmpAtt.concat([c.key]) }); cmpFocus(); } })),
+      cmpFiles: cmpAtt.map((k) => CMP_SOURCES.find((c) => c.key === k)).map((c) => ({ logo: LOGO[c.key], kind: c.kind, title: c.title,
+        removeLabel: 'Remove ' + c.kind + ' ' + c.title, remove: () => { this.setState({ att: cmpAtt.filter((k) => k !== c.key) }); cmpFocus(); } })),
+      cmpHasFiles: cmpAtt.length > 0
+    });
+  }
+}
+</script>
+</body>
+</html>

@@ -236,7 +236,7 @@ Hiding the crew is cheap because names live only in the display layer (ui/consol
 6. What approval policy applies per gate (a named person, any member of a group, or all must sign), and does it come from Entra groups? Is "assignment required" enabled on the app?
 7. Which identity model replaces the shared tokens: AgentCore Identity, Entra on-behalf-of, a GitHub App, or a service identity per department?
 8. Should Simple mode collapse to one assistant voice, with documents named by what they contain, and the crew kept only in Detailed mode and the audit trail?
-9. What is the primary deliverable for a business user: a hosted preview URL, a clickable mockup or a demo script? Where do previews run, and who tears them down?
+9. What is the primary deliverable for a business user: a hosted preview URL, a clickable mockup or a demo script? Where do previews run, and who tears them down? *(Answered for the plan on 2026-10-26: a visual mockup at the end of Ideation, then a working prototype in the sandbox on dev data at the end of Inception, open to project members and named testers until it expires, then a handoff package to Construction. See [operating-model.md section 3](operating-model.md#3-the-prototype-contract-and-target-tiers).)*
 10. Which M365 piece comes first: Teams notifications and approvals, Teams transcripts, or SharePoint?
 11. Is the UA EDMA Request template the canonical FSD format? Who owns the golden-path template and a catalog of UA systems and data?
 12. Will cost be charged back per department, with budgets? Will a pilot baseline be captured to prove "faster than today"?

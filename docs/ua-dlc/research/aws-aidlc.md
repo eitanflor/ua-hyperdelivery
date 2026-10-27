@@ -3,6 +3,10 @@
 
 # AWS AI-DLC: how it works, and how it maps onto HyperDelivery / UA-DLC
 
+> **Superseded in part (2026-10-26):** HyperDelivery's build stops at Inception. The "Graduate" step
+> and the Operation mapping in sections 9 and 10 are replaced by the handoff package and the
+> Construction decision ([operating-model.md section 10](../operating-model.md#10-handoff-and-the-construction-decision)).
+
 *Researched 2026-10-25. Repo read at `awslabs/aidlc-workflows` main commit `267fc1b` (2026-10-25, release 2.11.1), plus the `v1` and `v1-operations` branches. All repo links point at those branches.*
 
 ## 0. "AI-DLC" means three different things

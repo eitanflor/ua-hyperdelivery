@@ -33,7 +33,7 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 - `docs/ua-dlc/`, round 7: the plan now runs in three phases instead of five stages. Current State
   ends with the baseline measured in week 2; the Final MVP is built to MVP ready in week 14 and then
   tried in a real testing pilot through week 22; Enterprise (governance, identity, audit, budgets,
-  evals, policy and the production stage) is decided at the pilot readout. Each phase has its own
+  evals, policy and HyperDelivery's own production environment) is decided at the pilot readout. Each phase has its own
   architecture diagram, and enterprise work never holds up the Final MVP or its pilot. Guidance on
   which tool to use moves out of the concept screens into the plan's complexity and use-case
   matrices (sourced in `research/tool-landscape.md`). The design targets desktop and laptop browsers
@@ -45,6 +45,43 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   (two DynamoDB tables, uploads failing on `dev`, agent runtimes outside CDK, the approval 3 merge),
   and earlier research reports keep their findings with a note that maps their stage numbers to the
   phases. See docs/decisions.md.
+
+- `docs/ua-dlc/`, round 8: HyperDelivery's build now stops at Inception. Following the UA-DLC outputs
+  agreed with another UA team (Ideation a visual mockup, Inception a prototype on a hosted sandbox with
+  dev data, Construction a production-ready version on production data, Operations the deployments and
+  promotions), approval 1 signs the brief and the mockup at the end of Ideation, approval 3 accepts the
+  sandbox prototype at the end of Inception, and every project ends with a handoff package. How
+  Construction is done (AI-driven or AI-assisted with engineers) is a named decision after the handoff,
+  not a fourth approval; prototypes run only on dev data, and T1 to T3 become target tiers built in
+  Construction. Approval 2 now unlocks only the prototype repository, pushes, the sandbox, dev-data
+  grants and build spend; the Jira epic and issues, with engineering's AI-DLC context files, are
+  filed at the handoff after approval 3. The line reads Discover, Plan, Prototype, Handoff. The concept screens move to a
+  collapsible side nav, a chat-first Home and one workspace per project (the conversation beside an
+  artifact panel holding the brief, mockup, plan and prototype), use UA Baselayer's three-dot loader in
+  place of spinners, and drop showcase cards such as "Shipped Across UA This Week". The plan adds a guide
+  to who else is building toward UA-DLC (`research/dlc-landscape.md`, with a coverage visual), the tool
+  matrices show the real Factory and Cursor marks with a generic mark for other agentic IDEs, and the
+  research folder adds a read-only pass over UA's Figma libraries (`research/figma-libraries.md`) and a
+  study of how leading AI apps lay out their UI (`research/ai-app-layouts.md`). The competitor claims
+  are checked against their sources: engineering agents can query Snowflake through MCP, so the
+  difference is binding numbers to certified definitions, and Snowflake's apps are built by analysts
+  and engineers rather than business users. See docs/decisions.md.
+
+- `docs/ua-dlc/`, round 9: the UI direction goes to a team vote instead of being assumed. The concept
+  canvas gets four pages: Compare and Vote (`Compare.dc.html`, opened first: the three directions side by
+  side, each with a wireframe of its Home, what it feels like, who it suits, honest pros and cons, then a
+  comparison table, what stays the same and a link to the vote page), A · Top Bar (`A_*.dc.html`, the round
+  7 header design rebuilt with today's content and rules, without its showcase cards), B · Side Nav and
+  Chat (today's boards, unchanged, the reference build) and C · Guided Path (`C_*.dc.html`, new: the line
+  is the navigation, one next step at a time, with the assistant on call in a drawer). A and C each draw
+  Home, Inbox, Projects, New project, Project, Approval and Handoff with B's facts, at the same positions
+  as B's boards, so switching pages swaps the UI in place. Votes are collected on a separate page the
+  owner shares, and the decision stays open until then. `ux-direction.md` section 3 describes the three
+  directions and how the vote works, `design-system.md` section 7.1 notes that it documents Variant B's
+  shell, and the plan's "Before the meeting" list adds the vote. On the canvas, Esc first closes a
+  board's open menu (focus back on its button) or leaves a text field, and only the next Esc leaves the
+  board; a link to part of another board, such as an Inbox item, opens that board on that part. See
+  docs/decisions.md.
 
 - A turn's usage now carries its dollar cost (`cost_usd`) and the `model_id` that ran it beside
   the token counts, and the console shows the cost next to the token total (`142K tok · $0.31`,

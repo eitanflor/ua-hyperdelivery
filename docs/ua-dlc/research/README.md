@@ -1,8 +1,8 @@
 <!-- cspell:words Baselayer Firecrawl Snowsight -->
 # UA-DLC research library
 
-Twenty-two research reports, a completeness critique and an index of every source the owner shared,
-gathered on 2026-10-25 and 2026-10-26 in six rounds to inform the
+Twenty-five research reports, a completeness critique and an index of every source the owner shared,
+gathered on 2026-10-25 and 2026-10-26 in seven rounds to inform the
 [enterprise plan](../enterprise-plan.md), the [platform architecture](../platform-architecture.md),
 the [operating model](../operating-model.md) and the [UX direction](../ux-direction.md). Each report was
 written by a separate researcher with one brief. In the first round, the critique read all nine
@@ -17,13 +17,18 @@ harness announcement and the documentation behind it, checked the unmerged
 `coding_agent_harness_test` branch, and recommended one coding lane: the harness in HyperDelivery's
 sandbox account, behind a swappable `Builder` port. The sixth, labeled Round 7, compared HyperDelivery
 with the other tools UA teammates can use and placed each on the plan's complexity and use-case
-matrices.
+matrices. The seventh, labeled Round 8, compared HyperDelivery with the products building toward
+UA-DLC, read how the leading AI work apps lay out their screens, and made a second read-only pass over
+UA's Figma libraries for an app shell and a chat-first workspace.
 
 These are point-in-time notes. Vendor products, prices and dates in this space change monthly.
 Every non-obvious claim carries a source link; claims from secondary sources are marked in the
 reports. Verify before acting on one. Reports written before the three-phase plan that use the old stage
 numbers, or describe phone or dark-theme screens, carry a note under the title that maps the
 stages to the three phases (Current State, Final MVP, Enterprise) or marks those screens out of scope.
+Reports that place the prototype build in Construction, or describe Deploy, Graduate or an Operation
+phase inside HyperDelivery, carry a dated "Superseded in part" note: since 2026-10-26 HyperDelivery's
+build stops at Inception, with a handoff to Construction.
 
 | Report | Covers |
 |---|---|
@@ -55,6 +60,10 @@ stages to the three phases (Current State, Final MVP, Enterprise) or marks those
 | [agentcore-harness-coding.md](agentcore-harness-coding.md) | The AgentCore harness as the sandboxed, swappable coding engine: what it is, where the coding agent runs, why one session with the whole plan beats per-issue autopilot pull requests, an engine comparison, what the unmerged branch already does and what the Final MVP still needs, identity, the token in the command logs, risks and cost |
 | **Round 7** | |
 | [tool-landscape.md](tool-landscape.md) | Where HyperDelivery fits among the tools UA teammates can use (Snowflake CoWork and Snowsight, Cortex Code, GitHub Copilot, Palantir Foundry and AIP, Factory, Claude Code, agentic IDEs, Microsoft 365 Copilot and Copilot Studio): the complexity matrix, the use-case matrix, each tool's audience, data access, governance, path to production, status and pricing, and the 2026 name changes the plan should pick up |
+| **Round 8** | |
+| [dlc-landscape.md](dlc-landscape.md) | Who else is building toward UA-DLC (Chopin, Anthropic's AI-native SDLC playbook, AWS AI-DLC and Kiro, Spec Kit and Copilot, Factory, Devin, Microsoft, Rovo Dev, Google, app builders, Snowflake apps, 8090): how much of each phase each covers, what makes HyperDelivery different, where others beat it, and prepared answers for leadership |
+| [ai-app-layouts.md](ai-app-layouts.md) | How ChatGPT, Claude, Gemini, Microsoft Copilot and the agentic builders lay out their apps, and the layout proposed for HyperDelivery: a side nav, a chat-first Home, the conversation beside an artifact panel, and ten rules that keep it simple |
+| [figma-libraries.md](figma-libraries.md) | A second read-only pass over UA's Figma libraries for an app shell: Baselayer's account side nav, preview sections, three-dot loader, snackbar and dialogs, what Baselayer Ignite and the community kits offer, and the conflicts with design-system.md |
 | [sources.md](sources.md) | The index of every link the owner shared, across all rounds, and the report that read each one |
 
 Re-check the reports each quarter, or before any decision that depends on a product's status.

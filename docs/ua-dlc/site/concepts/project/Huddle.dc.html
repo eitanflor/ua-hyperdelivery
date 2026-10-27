@@ -38,12 +38,12 @@ a{color:#1D1D1D}a:hover{color:#444444}
 .tm-ctl:hover{background:#F5F5F5!important}
 </style>
 </helmet>
-<div style="width: 1280px; height: 800px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; font-family: Archivo, Arial, sans-serif; color: #242424; font-variant-numeric: tabular-nums; background: #F5F5F5">
+<div style="width: 100%; min-width: 1280px; height: 800px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; font-family: Archivo, Arial, sans-serif; color: #242424; font-variant-numeric: tabular-nums; background: #F5F5F5">
 
-  <div style="height:56px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:16px;padding:0 16px 0 24px;background:#FFFFFF;border-bottom:1px solid #E0E0E0">
-    <img src="{{logos.microsoftteams}}" width="24" height="24" alt="Microsoft Teams" onError="{{showMonogram}}" style="flex:none">
-    <span style="font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Working session: SKU productivity workbench</span>
-    <span style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#616161">38:12</span>
+  <header style="height:56px;flex:none;box-sizing:border-box;display:flex;align-items:center;gap:16px;padding:0 16px 0 24px;background:#FFFFFF;border-bottom:1px solid #E0E0E0">
+    <img src="{{logos.microsoftteams}}" width="24" height="24" alt="Microsoft Teams" style="flex:none">
+    <h1 style="margin:0;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Working session: SKU productivity workbench</h1>
+    <span style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#616161">26:31</span>
     <span style="flex:1"></span>
     <sc-if value="{{isTranscript}}" hint-placeholder-val="{{ true }}">
       <span style="height:28px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 8px;border-radius:4px;background:#F5F5F5;box-shadow:inset 0 0 0 1px #E0E0E0;font-size:12px;line-height:16px;white-space:nowrap"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:#242424"></span>Transcribing</span>
@@ -56,10 +56,10 @@ a{color:#1D1D1D}a:hover{color:#444444}
       <span style="width:36px;height:36px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;background:#5B5FC7;color:#FFFFFF"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M12 14V8M9 10.5L12 7.5l3 3M8 21h8"></path></svg></span>
       <span style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 12px 0 8px;border-radius:4px;background:#EBEBEB;font-size:12px;line-height:16px;font-weight:700"><svg width="20" height="20" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>HyperDelivery</span>
     </div>
-  </div>
+  </header>
 
   <div style="flex:1;min-height:0;display:flex">
-    <div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:16px;padding:16px 24px">
+    <main aria-label="Meeting stage" style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:16px;padding:16px 24px">
       <div role="status" style="flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FFFFFF;border-top:2px solid #FE9000;box-shadow:inset 1px 0 0 #E0E0E0,inset -1px 0 0 #E0E0E0,inset 0 -1px 0 #E0E0E0;color:#1D1D1D;font-size:14px;line-height:20px">
         <sc-if value="{{isTranscript}}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg></sc-if>
         <sc-if value="{{isNotes}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg></sc-if>
@@ -71,7 +71,7 @@ a{color:#1D1D1D}a:hover{color:#444444}
           <div style="display:flex;align-items:center;gap:16px">
             <span style="font-size:12px;line-height:18px;color:#5F5F5F">Shared to stage from HyperDelivery</span>
             <span style="flex:1"></span>
-            <span style="height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.confluence}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Also on the Brief page, version 9</span>
+            <span style="height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.confluence}}" width="16" height="16" alt="" style="flex:none">Also on the Brief page, version 9</span>
           </div>
           <h2 style="margin:8px 0 0;font-size:24px;line-height:30px;font-weight:700">{{tabTitle}}</h2>
           <div role="tablist" aria-label="Living document" style="margin-top:8px;display:flex;gap:24px;height:44px;flex:none;box-shadow:inset 0 -1px 0 #D0D0D0">
@@ -101,7 +101,7 @@ a{color:#1D1D1D}a:hover{color:#444444}
           </div>
         </sc-for>
       </div>
-    </div>
+    </main>
 
     <aside aria-label="HyperDelivery meeting panel" style="width:360px;flex:none;box-sizing:border-box;background:#FFFFFF;border-left:1px solid #E0E0E0;display:flex;flex-direction:column;color:#1D1D1D">
       <div style="padding:4px 16px;border-bottom:1px solid #F0F0F0;display:flex;align-items:center;gap:8px">
@@ -111,27 +111,37 @@ a{color:#1D1D1D}a:hover{color:#444444}
         <a href="Project.dc.html" class="hd-ring" style="display:inline-block;padding:12px 0;font-size:14px;line-height:20px;color:#1D1D1D;text-decoration:underline;text-underline-offset:3px;white-space:nowrap">Open Project</a>
       </div>
 
+      <div style="padding:8px 16px 10px;border-bottom:1px solid #F0F0F0">
+        <div role="img" aria-label="{{line.aria}}" style="display:grid;grid-template-columns:minmax(0,1fr) 10px minmax(0,1fr) 10px minmax(0,1fr) 10px minmax(0,1fr);align-items:center;row-gap:6px">
+          <sc-for list="{{line.track}}" as="x" hint-placeholder-count="7">
+            <sc-if value="{{x.isSeg}}" hint-placeholder-val="{{ true }}"><span style="height:{{x.h}};background:{{x.bg}};border-top:{{x.bt}}"></span></sc-if>
+            <sc-if value="{{x.isNotch}}" hint-placeholder-val="{{ false }}"><span style="width:10px;height:10px;box-sizing:border-box;background:{{x.fill}};border:{{x.border}}"></span></sc-if>
+          </sc-for>
+          <sc-for list="{{line.labels}}" as="l" hint-placeholder-count="7"><span style="justify-self:center;font-size:12px;line-height:16px;color:{{l.c}};font-weight:{{l.w}};white-space:nowrap">{{l.t}}</span></sc-for>
+        </div>
+      </div>
+
       <div style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">
-        <section aria-labelledby="asking-title" style="padding:16px;border-bottom:1px solid #F0F0F0;display:flex;flex-direction:column;gap:8px">
+        <section aria-labelledby="asking-title" style="padding:12px 16px;border-bottom:1px solid #F0F0F0;display:flex;flex-direction:column;gap:6px">
           <h3 id="asking-title" style="margin:0;font-size:14px;line-height:18px;font-weight:700">Now Asking</h3>
           <span style="display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#6A4C8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">DO</span>Best answered by Dana, Finance</span>
           <span style="font-size:16px;line-height:20px;font-weight:700">Do marked-down units count toward margin per door?</span>
-          <span style="align-self:flex-start;height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.sharepoint}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none">Margin reporting standard, section 4</span>
+          <span style="align-self:flex-start;height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;font-size:12px;line-height:16px;white-space:nowrap"><img src="{{logos.sharepoint}}" width="16" height="16" alt="" style="flex:none">Margin reporting standard, section 4</span>
         </section>
 
-        <section aria-labelledby="captured-title" style="padding:16px;display:flex;flex-direction:column">
+        <section aria-labelledby="captured-title" style="padding:12px 16px;display:flex;flex-direction:column">
           <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
             <h3 id="captured-title" style="margin:0;font-size:14px;line-height:18px;font-weight:700">Captured (Proposed)</h3>
             <span style="flex:1"></span>
             <span style="font-size:12px;line-height:18px;color:#5F5F5F">4 so far</span>
           </div>
           <sc-for list="{{atoms}}" as="a" hint-placeholder-count="4">
-            <div style="display:grid;grid-template-columns:72px minmax(0,1fr);align-items:start;padding:8px 0;border-bottom:1px solid #F0F0F0">
+            <div style="display:grid;grid-template-columns:72px minmax(0,1fr);align-items:start;padding:6px 0;border-bottom:1px solid #F0F0F0">
               <span><span style="height:20px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap">{{a.badge}}</span></span>
               <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
                 <span style="font-size:14px;line-height:20px">{{a.text}}</span>
                 <span style="display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:18px;color:#5F5F5F">
-                  <sc-if value="{{isTranscript}}" hint-placeholder-val="{{ true }}"><img src="{{logos.microsoftteams}}" width="16" height="16" alt="" onError="{{showMonogram}}" style="flex:none;margin-top:1px"></sc-if>
+                  <sc-if value="{{isTranscript}}" hint-placeholder-val="{{ true }}"><img src="{{logos.microsoftteams}}" width="16" height="16" alt="" style="flex:none;margin-top:1px"></sc-if>
                   <sc-if value="{{isNotes}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:1px"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg></sc-if>
                   <span>{{a.who}}</span>
                 </span>
@@ -161,6 +171,22 @@ class Component extends DCLogic {
   }
   renderVals() {
     const LOGO = { microsoftteams: 'logos/microsoftteams.svg', confluence: 'logos/confluence.svg', sharepoint: 'logos/sharepoint.svg' };
+    // The project line in the panel: the session happens in Discover, which ends at approval 1
+    // (the brief and the mockup); Plan, Prototype and Handoff follow.
+    const SEG = ['Discover', 'Plan', 'Prototype', 'Handoff'];
+    const segState = ['current', 'future', 'future', 'future'];
+    const track = [], labels = [];
+    for (let i = 0; i < 7; i++) {
+      if (i % 2 === 0) {
+        const sg = segState[i / 2];
+        track.push({ isSeg: true, isNotch: false, h: sg === 'current' ? '4px' : (sg === 'done' ? '2px' : '0'), bg: sg === 'future' ? 'transparent' : '#1D1D1D',
+          bt: sg === 'future' ? '2px dashed #949494' : '0 none transparent', fill: '', border: '' });
+        labels.push({ t: SEG[i / 2], c: sg === 'current' ? '#1D1D1D' : '#5F5F5F', w: sg === 'current' ? 700 : 400 });
+      } else {
+        track.push({ isSeg: false, isNotch: true, h: '', bg: '', bt: '', fill: '#FFFFFF', border: '2px solid #949494' });
+        labels.push({ t: '', c: '#5F5F5F', w: 400 });
+      }
+    }
     const transcript = (this.props.capture ?? 'transcript') === 'transcript';
     // Teams light: quiet tiles carry a 1px stroke; Teams purple marks only the active speaker.
     const quiet = 'inset 0 0 0 1px #E0E0E0', talking = '0 0 0 2px #5B5FC7';
@@ -202,7 +228,7 @@ class Component extends DCLogic {
     };
     return {
       logos: LOGO,
-      showMonogram: (e) => { const i = e.currentTarget; i.style.display = 'none'; if (i.previousElementSibling) i.previousElementSibling.style.color = '#444444'; },
+      line: { track, labels, aria: "SKU productivity workbench is in Discover. What we're building, the plan and the working prototype are upcoming, then Handoff." },
       isTranscript: transcript,
       isNotes: !transcript,
       capText: transcript ? 'Transcript on since 2:02 PM. Everyone in the meeting sees this.' : 'Notes only, not recording. Jordan is the scribe.',
@@ -235,7 +261,7 @@ class Component extends DCLogic {
         { badge: 'METRIC', text: 'Margin dollars per door, from the Daily Product Margin golden report', who: by('Luis', '12:05') },
         { badge: 'RULE', text: 'Flag the bottom 20% of FW27 styles each season', who: by('Maya', '14:10') },
         { badge: 'SCOPE', text: 'Wholesale and Factory House out of scope for the first version', who: by('Jordan', '21:40') },
-        { badge: 'TERM', text: 'One style means style-color for this project', who: by('Maya', '18:22') + ', disputed' }
+        { badge: 'TERM', text: 'One style means style-color for this project', who: by('Maya', '17:20') + ', disputed' }
       ]
     };
   }

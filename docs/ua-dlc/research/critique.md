@@ -3,6 +3,10 @@
 
 # Completeness critique: HyperDelivery / UA-DLC research set (2026-10-25)
 
+> **Superseded in part (2026-10-26):** HyperDelivery's build stops at Inception. The "Graduate" step
+> (contradiction 5 and insight 14) is replaced by the handoff package and the Construction
+> decision ([operating-model.md section 10](../operating-model.md#10-handoff-and-the-construction-decision)).
+
 I read all nine full reports. The shared WebSearch budget ran out after my first query, so every spot-check below used direct WebFetch, firecrawl, local clones, or a read-only look at the HyperDelivery repo.
 
 ## 1. Contradictions between reports

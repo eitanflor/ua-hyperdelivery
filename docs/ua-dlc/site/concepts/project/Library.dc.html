@@ -12,352 +12,312 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light}
-body{margin:0;background:#F9F9F9}
+body{margin:0;background:#FFFFFF}
 a{color:#1D1D1D}a:hover{color:#444444}
 :focus-visible{outline:2px solid #0096FA;outline-offset:2px}
 .hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
 .hd-ring-sel:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 2px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
-.hd-ring-outer:focus-visible{outline-color:transparent;box-shadow:0 0 0 1px #1D1D1D,0 0 0 3px #FFFFFF,0 0 0 5px #0096FA!important}
 .hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
 .hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
 .hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
-.hd-nav a:hover{color:#1D1D1D!important}
-.hd-nav a[data-label]{display:inline-grid!important;grid-auto-flow:column;align-content:center}
-.hd-nav a[data-label]::after{content:attr(data-label);grid-area:2/1;height:0;overflow:hidden;visibility:hidden;font-weight:700}
 .hd-row:hover{background:#F9F9F9!important}
 .hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
 .hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
-.hd-pop>summary{white-space:nowrap}
-.hd-search{cursor:pointer}
-.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent;border:0;padding:0;cursor:pointer}
 .hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
-.hd-menu{position:absolute;top:52px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-menu{position:absolute;top:44px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
 .hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
 .hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
 .hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
 .hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
-@media (max-width:1439px){.hd-search{width:36px!important;padding:0!important;justify-content:center}.hd-search span,.hd-search kbd{display:none}}
-.hd-crumb:hover{text-decoration:underline!important;text-underline-offset:2px}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+/* hd-shell: the side nav, the same on every product board (design-system.md section 7) */
+.hd-side{background:#F9F9F9;border-right:1px solid #F0F0F0;min-width:0}
+.hd-side-in{position:sticky;top:0;height:100vh;max-height:900px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:12px}
+.hd-sn{height:36px;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:8px;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:18px;white-space:nowrap;min-width:0}
+.hd-sn:not([aria-current="page"]):hover{background:#F0F0F0!important;color:#1D1D1D}
+.hd-sn:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #0096FA,inset 0 0 0 4px #FFFFFF!important}
+.hd-sn-sm{height:32px;font-size:13px;line-height:18px}
+.hd-sl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hd-new:hover{background:#F0F0F0!important}
+[data-rail="on"] .hd-sl,[data-rail="on"] .hd-recent,[data-rail="on"] .hd-word{display:none!important}
+[data-rail="on"] .hd-sn,[data-rail="on"] .hd-new{justify-content:center;padding:0}
+[data-rail="on"] .hd-sn[aria-current="page"]{background:#F0F0F0!important}
+[data-rail="on"] .hd-sn{position:relative}
+[data-rail="on"] .hd-count{position:absolute;top:1px;right:6px;min-width:16px!important;height:16px!important;padding:0 4px!important;font-size:11px!important;line-height:16px!important;box-shadow:0 0 0 2px #F9F9F9}
+[data-rail="on"] .hd-lock{justify-content:center;padding:0;flex-direction:column;height:auto;gap:12px}
+.hd-dots{display:inline-flex;align-items:center;gap:4px;flex:none}
+.hd-dots i{width:5px;height:5px;border-radius:999px;background:#444444;opacity:.3;animation:hd-dot 1.2s infinite}
+.hd-dots i:nth-child(2){animation-delay:.2s}.hd-dots i:nth-child(3){animation-delay:.4s}
+@keyframes hd-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hd-dots i{animation:none;opacity:.6}}
+/* Library */
+.hd-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.hd-crumb:hover{text-decoration:underline!important;text-underline-offset:3px}
 .hd-field:focus-within{outline:2px solid #0096FA;outline-offset:2px}
+.hd-path:hover{box-shadow:inset 0 0 0 1px #1D1D1D!important}
 </style>
 </helmet>
-<div style="min-height: 990px; display: flex; flex-direction: column; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums; background: #F9F9F9">
+<div class="hd-app" data-rail="{{railAttr}}" style="display: grid; grid-template-columns: {{sideW}} minmax(0, 1fr); min-height: 1483px; background: #FFFFFF; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
 
-<header style="height:56px;box-sizing:border-box;display:flex;align-items:center;gap:24px;padding:0 24px;background:#FFFFFF;border-bottom:1px solid #D0D0D0;position:relative;z-index:20">
-  <a href="Main.dc.html" class="hd-ring" style="display:flex;align-items:center;gap:12px;color:#1D1D1D;text-decoration:none;flex:none">
-    <svg width="34" height="20" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex:none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg><span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
-    <span style="font-size:16px;line-height:20px;font-weight:700">HyperDelivery</span>
-  </a>
-  <span aria-hidden="true" style="width:1px;height:20px;background:#D0D0D0;flex:none"></span>
-  <details class="hd-pop" style="position:relative;flex:none">
-    <summary class="hd-ring" aria-label="Workspace: Merchandising" style="height:36px;box-sizing:border-box;display:flex;align-items:center;gap:4px;padding:0 8px;border-radius:4px;color:#1D1D1D;font-size:14px;line-height:18px">Merchandising<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg></summary>
-    <div class="hd-menu" style="left:0;right:auto">
-      <button type="button" class="hd-mi" aria-pressed="true" onClick="{{closePop}}" style="font-weight:700">Merchandising<span style="flex:1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closePop}}">Sourcing</button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closePop}}">Wholesale</button>
-      <button type="button" class="hd-mi" aria-pressed="false" onClick="{{closePop}}">EDM</button>
+<!-- hd-shell:side start -->
+<aside class="hd-side" aria-label="HyperDelivery">
+  <div class="hd-side-in">
+    <div class="hd-lock" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 2px 0 8px; margin-bottom: 8px">
+      <a href="Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 10px; color: #1D1D1D; text-decoration: none; min-width: 0">
+        <svg width="28" height="17" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex: none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg>
+        <span class="hd-word" style="font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">HyperDelivery</span>
+      </a>
+      <span class="hd-word" style="flex: 1"></span>
+      <button type="button" class="hd-iconbtn" onClick="{{toggleRail}}" aria-label="{{railLabel}}" aria-expanded="{{sideOpen}}" title="{{railLabel}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M9.5 4.5v15"></path></svg>
+      </button>
     </div>
-  </details>
-  <nav aria-label="Primary" class="hd-nav" style="display:flex;align-self:stretch;gap:24px">
-    <a href="Main.dc.html" data-label="Home" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Home</a>
-    <a href="Projects.dc.html" data-label="Projects" aria-current="{{nav.projCurrent}}" style="display:flex;align-items:center;font-size:14px;line-height:18px;font-weight:{{nav.projWeight}};color:{{nav.projColor}};text-decoration:none;box-shadow:{{nav.projBar}}">Projects</a>
-    <a href="Inbox.dc.html" data-label="Inbox" aria-label="Inbox, 4 waiting on you" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Inbox<span aria-hidden="true" style="margin-left:6px;min-width:16px;height:16px;box-sizing:border-box;padding:0 4px;border-radius:999px;background:#DC0019;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;text-align:center">4</span></a>
-    <a href="Library.dc.html" data-label="Library" aria-current="{{nav.libCurrent}}" style="display:flex;align-items:center;font-size:14px;line-height:18px;font-weight:{{nav.libWeight}};color:{{nav.libColor}};text-decoration:none;box-shadow:{{nav.libBar}}">Library</a>
-    <a href="Portfolio.dc.html" data-label="Portfolio" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Portfolio</a>
-    <span aria-hidden="true" style="align-self:center;width:1px;height:20px;background:#D0D0D0"></span>
-    <a href="Admin.dc.html" data-label="Admin" style="display:flex;align-items:center;font-size:14px;line-height:18px;color:#5F5F5F;text-decoration:none">Admin</a>
-  </nav>
-  <span style="flex:1"></span>
-  <div class="hd-right" style="display:flex;align-items:center;gap:16px;flex:none">
-    <button type="button" class="hd-search hd-ring" aria-label="Search projects and facts, Command K" style="width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border:0;border-radius:4px;background:#F0F0F0;color:#5F5F5F;font-family:inherit;font-size:14px;line-height:20px;text-align:left;flex:none">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
-      <span style="flex:1">Search projects and facts</span>
-      <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    <a href="Main.dc.html" class="hd-new hd-ring-ink" aria-label="New Project" style="height: 40px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 14px; margin-bottom: 4px; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; color: #1D1D1D; text-decoration: none; font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 5v14M5 12h14"></path></svg><span class="hd-sl">New Project</span>
+    </a>
+    <button type="button" class="hd-sn" aria-label="Search projects and facts, Command K" aria-keyshortcuts="Meta+K" onClick="{{openSearch}}" style="border: 0; background: transparent; font-family: inherit; cursor: pointer; text-align: left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span class="hd-sl" style="flex: 1">Search</span>
+      <kbd class="hd-sl" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
     </button>
-    <sc-if value="{{showStart}}" hint-placeholder-val="{{ true }}">
-      <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height:36px;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Start a Project</a>
-    </sc-if>
-    <details class="hd-pop" style="position:relative;flex:none">
-      <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+    <nav aria-label="Primary" style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+        <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" aria-label="{{n.aria}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}; color: {{n.fg}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+          <span class="hd-sl" style="flex: 1">{{n.label}}</span>
+          <sc-if value="{{n.hasTag}}" hint-placeholder-val="{{ false }}"><span class="hd-sl" style="font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">{{n.tag}}</span></sc-if>
+          <sc-if value="{{n.hasCount}}" hint-placeholder-val="{{ false }}"><span class="hd-count" aria-hidden="true" style="min-width: 18px; height: 18px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 18px; font-weight: 700; text-align: center">{{n.count}}</span></sc-if>
+        </a>
+      </sc-for>
+    </nav>
+    <div class="hd-recent" style="display: flex; flex-direction: column; gap: 2px; margin-top: 16px; min-height: 0">
+      <h2 style="margin: 0; padding: 0 10px 6px; font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">Recent</h2>
+      <sc-for list="{{recent}}" as="r" hint-placeholder-count="5">
+        <a href="{{r.href}}" class="hd-sn hd-sn-sm" aria-label="{{r.aria}}" aria-current="{{r.current}}" title="{{r.name}}" style="background: {{r.rowBg}}; box-shadow: {{r.rowRing}}; font-weight: {{r.fw}}">
+          <span aria-hidden="true" style="width: 14px; height: 14px; flex: none; display: inline-flex; align-items: center; justify-content: center">
+            <sc-if value="{{r.isWork}}" hint-placeholder-val="{{ false }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+            <sc-if value="{{r.isNotch}}" hint-placeholder-val="{{ true }}"><span style="width: 8px; height: 8px; box-sizing: border-box; background: {{r.bg}}; border: {{r.bd}}"></span></sc-if>
+          </span>
+          <span class="hd-sl" style="flex: 1">{{r.name}}</span>
+        </a>
+      </sc-for>
+      <a href="Projects.dc.html" class="hd-sn hd-sn-sm" style="color: #5F5F5F"><span aria-hidden="true" style="width: 14px; flex: none"></span><span class="hd-sl">All Projects</span></a>
+    </div>
+    <span style="flex: 1"></span>
+    <sc-for list="{{admin}}" as="n" hint-placeholder-count="0">
+      <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+        <span class="hd-sl">{{n.label}}</span>
+      </a>
+    </sc-for>
+    <details class="hd-pop" style="position: relative; margin-top: 8px">
+      <summary class="hd-sn hd-ring-in" aria-label="{{me.aria}}" style="height: 48px; padding: 0 8px">
+        <span aria-hidden="true" style="width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{me.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{me.initials}}</span>
+        <span class="hd-sl" style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+          <span class="hd-sl" style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span class="hd-sl" style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{me.workspace}}</span>
+        </span>
+        <svg class="hd-sl" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"></path></svg>
       </summary>
-      <nav class="hd-menu" aria-label="Help">
-        <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
-        <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
-        <hr>
-        <details class="hd-sub">
-          <summary class="hd-mi">Keyboard Shortcuts<span style="flex:1"></span><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></summary>
-          <dl style="margin:0;padding:4px 16px 8px;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:12px;line-height:18px;color:#5F5F5F">
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">⌘K</kbd></dt><dd style="margin:0">Search</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">/</kbd></dt><dd style="margin:0">Search This Table</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">J</kbd> <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">K</kbd></dt><dd style="margin:0">Next and Previous Item</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">@</kbd></dt><dd style="margin:0">Mention Someone</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">Esc</kbd></dt><dd style="margin:0">Close</dd>
-            <dt><kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">?</kbd></dt><dd style="margin:0">Show Shortcuts</dd>
-          </dl>
-        </details>
-        <details class="hd-sub">
-          <summary class="hd-mi">What's New<span style="flex:1"></span><span style="height:16px;display:inline-flex;align-items:center;padding:0 4px;border-radius:4px;background:#FE9000;color:#1D1D1D;font-size:12px;line-height:16px;font-weight:700">NEW</span></summary>
-          <ul style="margin:0;padding:4px 16px 8px;list-style:none;display:grid;gap:8px;font-size:12px;line-height:18px">
-            <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
-            <li><b>Oct 17</b> Confirm what we heard after a working session</li>
-            <li><b>Oct 10</b> Approve a plan from a Teams card</li>
-          </ul>
-        </details>
-        <hr>
-        <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex:1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
-      </nav>
-    </details>
-    <details class="hd-pop" style="position:relative;flex:none">
-      <summary class="hd-ring" aria-label="Maya Chen, account" style="width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#3D4B8C;color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700">MC</summary>
-      <div class="hd-menu">
-        <div style="padding:8px 16px 12px">
-          <div style="font-size:14px;line-height:18px;font-weight:700">Maya Chen</div>
-          <div style="font-size:12px;line-height:18px;color:#5F5F5F">Business owner, Merchandising</div>
+      <div class="hd-menu" style="top: auto; bottom: 56px; left: 0; right: auto; width: 248px">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{me.role}}</span>
         </div>
         <hr>
-        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex:1"></span><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;color:#5F5F5F">{{techLabel}}<sc-if value="{{techChecked}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></span></button>
+        <div style="padding: 4px 16px; font-size: 12px; line-height: 16px; color: #5F5F5F">Workspace</div>
+        <sc-for list="{{workspaces}}" as="w" hint-placeholder-count="4">
+          <button type="button" class="hd-mi" aria-pressed="{{w.on}}" onClick="{{closeMenu}}" style="font-weight: {{w.fw}}">{{w.name}}<span style="flex: 1"></span><sc-if value="{{w.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+        </sc-for>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}</span></button>
         <hr>
         <button type="button" class="hd-mi">Sign Out</button>
       </div>
     </details>
   </div>
-</header>
+</aside>
+<!-- hd-shell:side end -->
 
-<section style="background:#FFFFFF;border-bottom:1px solid #D0D0D0;padding:24px;flex:none">
-  <sc-if value="{{fromStart}}" hint-placeholder-val="{{ false }}">
-    <nav aria-label="Breadcrumb" style="display:flex;gap:8px;font-size:12px;line-height:18px;color:#5F5F5F">
-      <a href="Projects.dc.html" class="hd-crumb" style="color:#5F5F5F;text-decoration:none">Projects</a><span aria-hidden="true">/</span>
-      <a href="Start.dc.html" class="hd-crumb" style="color:#5F5F5F;text-decoration:none">Start a Project</a><span aria-hidden="true">/</span>
-      <span aria-current="page">Facts for This Idea</span>
+<div style="min-width: 0; display: flex; flex-direction: column">
+<!-- hd-shell:top start -->
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #F0F0F0; position: relative; z-index: 20">
+  <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">Library</span>
+  <span style="flex: 1"></span>
+  <details class="hd-pop" style="position: relative; flex: none">
+    <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+    </summary>
+    <nav class="hd-menu" aria-label="Help">
+      <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+      <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+      <hr>
+      <details class="hd-sub">
+        <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>⌘/</kbd></summary>
+        <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+          <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+          <dt><kbd>⌘⇧O</kbd></dt><dd style="margin: 0">New Project</dd>
+          <dt><kbd>⌘B</kbd></dt><dd style="margin: 0">Hide or Show the Sidebar</dd>
+          <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention a Person or Source</dd>
+          <dt><kbd>⌘/</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+          <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+        </dl>
+      </details>
+      <details class="hd-sub">
+        <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+        <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+          <li><b>Oct 26</b> A sidebar, and every project's work in one place</li>
+          <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+          <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+        </ul>
+      </details>
+      <hr>
+      <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
     </nav>
-    <div style="margin-top:8px;display:flex;align-items:center;gap:16px;min-height:40px">
-      <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:700;white-space:nowrap">Facts for This Idea</h1>
-    </div>
-    <p style="margin:8px 0 0;display:flex;flex-wrap:wrap;gap:8px 24px;font-size:14px;line-height:20px;color:#5F5F5F">
-      <span style="white-space:nowrap">Idea <span style="color:#1D1D1D">Markdown recovery explorer</span></span>
-      <span style="white-space:nowrap">Workspace <span style="color:#1D1D1D">Merchandising</span></span>
-      <span style="white-space:nowrap"><span style="color:#1D1D1D;font-weight:700">7</span> facts apply, <span style="color:#1D1D1D;font-weight:700">5</span> agreed</span>
-    </p>
-  </sc-if>
-  <sc-if value="{{fromLibrary}}" hint-placeholder-val="{{ true }}">
-    <div style="display:flex;align-items:center;gap:16px;min-height:40px">
-      <h1 style="margin:0;font-size:32px;line-height:40px;font-weight:700;white-space:nowrap">Library</h1>
-    </div>
-    <p style="margin:8px 0 0;display:flex;flex-wrap:wrap;gap:8px 24px;font-size:14px;line-height:20px;color:#5F5F5F">
-      <span style="white-space:nowrap">Workspace <span style="color:#1D1D1D">Merchandising</span></span>
-      <span style="white-space:nowrap">Confirmed Facts <span style="color:#1D1D1D;font-weight:700">112</span></span>
-      <span style="white-space:nowrap">Reused This Quarter <span style="color:#1D1D1D;font-weight:700">38</span></span>
-      <span style="white-space:nowrap">Disputes Resolved <span style="color:#1D1D1D;font-weight:700">9</span></span>
-    </p>
-  </sc-if>
-</section>
+  </details>
+</header>
+<!-- hd-shell:top end -->
 
-<main style="flex:1;padding:32px 24px 56px;display:grid;grid-template-columns:repeat(12, minmax(0, 1fr));column-gap:16px;row-gap:24px;align-items:stretch;align-content:start">
+<main style="flex: 1; padding: 32px 24px 56px; display: flex; flex-direction: column; align-items: center">
+  <div style="width: 100%; max-width: 1080px; display: flex; flex-direction: column; gap: 40px">
+    <h1 class="hd-sr">{{pageTitle}}</h1>
 
-  <section aria-label="Facts" style="grid-column:span 9;min-width:0;display:flex;flex-direction:column;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;overflow:hidden">
-    <div role="group" aria-label="Filter facts" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 16px;background:#F9F9F9;border-bottom:1px solid #F0F0F0">
-      <sc-if value="{{fromLibrary}}" hint-placeholder-val="{{ true }}">
-        <label class="hd-field" style="width:240px;height:36px;box-sizing:border-box;display:flex;align-items:center;gap:8px;margin-right:8px;padding:0 6px 0 12px;border:1px solid #5F5F5F;border-radius:4px;background:#FFFFFF;color:#5F5F5F;flex:none">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
-          <input type="search" aria-label="Search facts" placeholder="Search facts" value="{{q}}" onChange="{{setQ}}" style="flex:1;min-width:0;height:34px;border:0;padding:0;outline:none;font-family:inherit;font-size:14px;line-height:20px;background:transparent;color:#1D1D1D">
-          <kbd style="font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;padding:2px 6px;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">/</kbd>
-        </label>
-      </sc-if>
-      <sc-for list="{{filters}}" as="x" hint-placeholder-count="6">
-        <button type="button" class="{{x.cls}}" onClick="{{x.pick}}" aria-pressed="{{x.pressed}}" style="height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border:0;border-radius:4px;background:{{x.bg}};color:{{x.fg}};box-shadow:{{x.ring}};font-family:inherit;font-size:14px;line-height:18px;font-weight:{{x.weight}};white-space:nowrap;cursor:pointer">
-          <sc-if value="{{x.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
-          <span>{{x.label}}</span><span style="font-weight:400;color:{{x.countColor}}">{{x.n}}</span>
-        </button>
-      </sc-for>
-    </div>
-
-    <sc-if value="{{fromLibrary}}" hint-placeholder-val="{{ true }}">
-      <div role="table" aria-label="Facts">
-        <div role="row" style="display:grid;grid-template-columns:112px minmax(0,1fr) 192px 96px 120px;column-gap:16px;align-items:center;height:40px;padding:0 16px;border-bottom:1px solid #D0D0D0;font-size:12px;line-height:16px;font-weight:700;color:#5F5F5F">
-          <span role="columnheader">Type</span>
-          <span role="columnheader">Fact and Source</span>
-          <span role="columnheader">Confirmed By</span>
-          <span role="columnheader">Used In</span>
-          <span role="columnheader">Status</span>
+    <section aria-labelledby="lib-facts" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+        <h2 id="lib-facts" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">{{factsTitle}}</h2>
+        <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">{{factsSummary}}</span>
+      </div>
+      <div style="border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden; background: #FFFFFF">
+        <div role="group" aria-label="Filter facts" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; background: #F9F9F9; border-bottom: 1px solid #F0F0F0">
+            <label class="hd-field" style="width: 240px; height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; margin-right: 8px; padding: 0 6px 0 12px; border: 1px solid #5F5F5F; border-radius: 4px; background: #FFFFFF; color: #5F5F5F; flex: none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+              <input id="lib-search" data-hd-search="1" type="search" aria-label="Search facts" aria-keyshortcuts="/" placeholder="Search facts" value="{{q}}" onChange="{{setQ}}" style="flex: 1; min-width: 0; height: 34px; border: 0; padding: 0; outline: none; font-family: inherit; font-size: 14px; line-height: 20px; background: transparent; color: #1D1D1D">
+              <kbd style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 2px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">/</kbd>
+            </label>
+          <sc-for list="{{filters}}" as="x" hint-placeholder-count="6">
+            <button type="button" class="{{x.cls}}" onClick="{{x.pick}}" aria-pressed="{{x.pressed}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 4px; background: {{x.bg}}; color: {{x.fg}}; box-shadow: {{x.ring}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: {{x.weight}}; white-space: nowrap; cursor: pointer">
+              <span>{{x.label}}</span><span style="font-weight: 400; color: {{x.countColor}}">{{x.n}}</span>
+            </button>
+          </sc-for>
         </div>
-        <sc-for list="{{facts}}" as="f" hint-placeholder-count="7">
-          <div role="row" style="display:grid;grid-template-columns:112px minmax(0,1fr) 192px 96px 120px;column-gap:16px;align-items:start;padding:12px 16px;border-bottom:1px solid #F0F0F0">
-            <span role="cell" style="min-height:24px;display:flex;align-items:center">
-              <span style="height:20px;display:inline-flex;align-items:center;padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap">{{f.badge}}</span>
-            </span>
-            <div role="cell" style="min-width:0;padding-top:2px">
-              <div style="font-size:14px;line-height:20px;color:#1D1D1D">{{f.text}}</div>
-              <div style="margin-top:8px;display:flex">
-                <span title="{{f.ref}}" style="height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis">
-                  <sc-if value="{{f.hasLogo}}" hint-placeholder-val="{{ true }}"><img src="{{f.logo}}" width="16" height="16" alt="" style="flex:none"></sc-if>
-                  <sc-if value="{{f.isDecision}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg></sc-if>
-                  <span style="overflow:hidden;text-overflow:ellipsis">{{f.source}}</span>
+
+          <div role="table" aria-label="Confirmed facts">
+            <div role="row" style="display: grid; grid-template-columns: 112px minmax(0, 1fr) 200px 104px 128px; column-gap: 16px; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #D0D0D0; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">
+              <span role="columnheader">Type</span>
+              <span role="columnheader">Fact and Source</span>
+              <span role="columnheader">Confirmed By</span>
+              <span role="columnheader">Reused In</span>
+              <span role="columnheader">Status</span>
+            </div>
+            <sc-for list="{{facts}}" as="f" hint-placeholder-count="7">
+              <div role="row" style="display: grid; grid-template-columns: 112px minmax(0, 1fr) 200px 104px 128px; column-gap: 16px; align-items: start; padding: 12px 16px; border-bottom: 1px solid #F0F0F0">
+                <span role="cell" style="min-height: 24px; display: flex; align-items: center">
+                  <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; font-weight: 600; white-space: nowrap">{{f.badge}}</span>
+                </span>
+                <div role="cell" style="min-width: 0; padding-top: 2px">
+                  <div style="font-size: 14px; line-height: 20px">{{f.text}}</div>
+                  <div style="margin-top: 8px; display: flex">
+                    <span title="{{f.ref}}" style="height: 24px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap; max-width: 100%; overflow: hidden">
+                      <sc-if value="{{f.hasLogo}}" hint-placeholder-val="{{ true }}"><img src="{{f.logo}}" width="16" height="16" alt="" style="flex: none"></sc-if>
+                      <sc-if value="{{f.isDecision}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg></sc-if>
+                      <span style="overflow: hidden; text-overflow: ellipsis">{{f.source}}</span>
+                    </span>
+                  </div>
+                </div>
+                <div role="cell" style="min-width: 0; display: flex; align-items: flex-start; gap: 8px">
+                  <sc-if value="{{f.byPerson}}" hint-placeholder-val="{{ true }}"><span title="{{f.byName}}" aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{f.byFill}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700; flex: none">{{f.byIni}}</span></sc-if>
+                  <sc-if value="{{f.byGroup}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #F0F0F0; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 1 0 0-7zM2.5 20c.7-3.3 3.3-5.5 6.5-5.5s5.8 2.2 6.5 5.5M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.5 2.6 4 5.2"></path></svg></span></sc-if>
+                  <sc-if value="{{f.byNone}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 999px; border: 1px dashed #949494; flex: none"></span></sc-if>
+                  <span style="min-width: 0; display: flex; flex-direction: column; padding-top: 2px">
+                    <span style="font-size: 14px; line-height: 20px; color: {{f.byColor}}">{{f.byName}}</span>
+                    <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{f.byNote}}</span>
+                  </span>
+                </div>
+                <span role="cell" style="padding-top: 2px; font-size: 14px; line-height: 20px; color: {{f.usedColor}}; white-space: nowrap">{{f.usedIn}}</span>
+                <span role="cell" style="padding-top: 4px">
+                  <sc-if value="{{f.agreed}}" hint-placeholder-val="{{ true }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: #00834B; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{f.status}}</span></sc-if>
+                  <sc-if value="{{f.open}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>{{f.status}}</span></sc-if>
                 </span>
               </div>
-            </div>
-            <div role="cell" style="min-width:0;display:flex;align-items:flex-start;gap:8px">
-              <sc-if value="{{f.byPerson}}" hint-placeholder-val="{{ true }}"><span title="{{f.byName}}" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{f.byFill}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">{{f.byIni}}</span></sc-if>
-              <sc-if value="{{f.byGroup}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#F0F0F0;color:#1D1D1D;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 1 0 0-7zM2.5 20c.7-3.3 3.3-5.5 6.5-5.5s5.8 2.2 6.5 5.5M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.5 2.6 4 5.2"></path></svg></span></sc-if>
-              <sc-if value="{{f.byNone}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:24px;height:24px;box-sizing:border-box;border-radius:999px;border:1px dashed #949494;flex:none"></span></sc-if>
-              <span style="min-width:0;display:flex;flex-direction:column;padding-top:2px">
-                <span style="font-size:14px;line-height:20px;color:{{f.byColor}}">{{f.byName}}</span>
-                <span style="font-size:12px;line-height:18px;color:#5F5F5F">{{f.byNote}}</span>
-              </span>
-            </div>
-            <span role="cell" style="padding-top:2px;font-size:14px;line-height:20px;color:{{f.usedColor}};white-space:nowrap">{{f.usedIn}}</span>
-            <span role="cell" style="padding-top:4px">
-              <sc-if value="{{f.agreed}}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#00834B;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{f.status}}</span></sc-if>
-              <sc-if value="{{f.open}}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#1D1D1D;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>{{f.status}}</span></sc-if>
-            </span>
-          </div>
-        </sc-for>
-      </div>
-      <sc-if value="{{noFacts}}" hint-placeholder-val="{{ false }}">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 24px;text-align:center">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
-          <h2 style="margin:8px 0 0;font-size:16px;line-height:20px;font-weight:700">No Facts Match</h2>
-          <p style="margin:0;max-width:360px;font-size:14px;line-height:20px;color:#5F5F5F">Try another word, or clear the search to see every fact.</p>
-          <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{clearQ}}" style="margin-top:8px;height:36px;display:inline-flex;align-items:center;padding:0 16px;border:0;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;cursor:pointer">Clear Search</button>
-        </div>
-      </sc-if>
-      <div style="margin-top:auto;height:52px;box-sizing:border-box;display:flex;align-items:center;gap:16px;padding:0 16px;font-size:12px;line-height:18px;color:#5F5F5F">
-        <span>{{summary}}</span>
-        <span style="flex:1"></span>
-        <sc-if value="{{hasMore}}" hint-placeholder-val="{{ true }}">
-          <button type="button" class="hd-btn-secondary hd-ring-ink" style="height:36px;display:inline-flex;align-items:center;padding:0 16px;border:0;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;font-family:inherit;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap;cursor:pointer">Show More</button>
-        </sc-if>
-      </div>
-    </sc-if>
-
-    <sc-if value="{{fromStart}}" hint-placeholder-val="{{ false }}">
-      <div role="table" aria-label="Facts that apply to this idea">
-        <div role="row" style="display:grid;grid-template-columns:24px 112px minmax(0,1fr) 120px;column-gap:16px;align-items:center;height:40px;padding:0 16px;border-bottom:1px solid #D0D0D0;font-size:12px;line-height:16px;font-weight:700;color:#5F5F5F">
-          <span role="columnheader">Use</span>
-          <span role="columnheader">Type</span>
-          <span role="columnheader">Fact and Source</span>
-          <span role="columnheader">Status</span>
-        </div>
-        <sc-for list="{{facts}}" as="g" hint-placeholder-count="7">
-          <div role="row" style="display:grid;grid-template-columns:24px 112px minmax(0,1fr) 120px;column-gap:16px;align-items:start;padding:12px 16px;border-bottom:1px solid #F0F0F0">
-            <span role="cell" style="padding-top:4px;display:flex"><input type="checkbox" checked="{{g.on}}" onChange="{{g.toggle}}" aria-label="{{g.useLabel}}" style="width:16px;height:16px;margin:0;accent-color:#1D1D1D"></span>
-            <span role="cell" style="min-height:24px;display:flex;align-items:center">
-              <span style="height:20px;display:inline-flex;align-items:center;padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap">{{g.badge}}</span>
-            </span>
-            <div role="cell" style="min-width:0">
-              <div style="font-size:16px;line-height:24px;color:{{g.textColor}}">{{g.text}}</div>
-              <div style="margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:12px;line-height:18px;color:#5F5F5F">
-                <span title="{{g.ref}}" style="height:24px;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;border-radius:4px;background:#F9F9F9;box-shadow:inset 0 0 0 1px #D0D0D0;color:#1D1D1D;font-size:12px;line-height:16px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis">
-                  <sc-if value="{{g.hasLogo}}" hint-placeholder-val="{{ true }}"><img src="{{g.logo}}" width="16" height="16" alt="" style="flex:none"></sc-if>
-                  <sc-if value="{{g.isDecision}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"></path><path d="M14 3v5h5"></path></svg></sc-if>
-                  <span>{{g.source}}</span>
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap">
-                  <sc-if value="{{g.hasAvatar}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{g.avatarBg}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">{{g.initials}}</span></sc-if>
-                  <span>{{g.who}}</span>
-                </span>
-                <span style="white-space:nowrap">{{g.usedLabel}}</span>
-              </div>
-            </div>
-            <span role="cell" style="padding-top:4px">
-              <sc-if value="{{g.agreed}}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#00834B;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{g.status}}</span></sc-if>
-              <sc-if value="{{g.open}}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:16px;font-weight:700;color:#1D1D1D;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L2.8 19.5h18.4z"></path><path d="M12 10v4"></path><circle cx="12" cy="16.75" r="0.9" fill="currentColor" stroke="none"></circle></svg>{{g.status}}</span></sc-if>
-            </span>
-          </div>
-        </sc-for>
-      </div>
-    </sc-if>
-  </section>
-
-  <aside aria-label="Golden paths and recently accepted projects" style="grid-column:span 3;min-width:0;display:flex">
-    <div style="flex:1;min-width:0;box-sizing:border-box;background:#FFFFFF;border:1px solid #D0D0D0;border-radius:8px;padding:16px;display:flex;flex-direction:column">
-      <section aria-labelledby="gp-title" style="display:flex;flex-direction:column;padding-bottom:16px">
-        <h2 id="gp-title" style="margin:0 0 8px;font-size:16px;line-height:20px;font-weight:700">Golden Paths</h2>
-        <sc-if value="{{fromStart}}" hint-placeholder-val="{{ false }}">
-          <div role="radiogroup" aria-labelledby="gp-title" onKeyDown="{{gpKey}}" style="display:flex;flex-direction:column;gap:4px">
-            <sc-for list="{{templates}}" as="t" hint-placeholder-count="3">
-              <button type="button" role="radio" class="{{t.cls}}" tabIndex="{{t.tab}}" onClick="{{t.pick}}" aria-checked="{{t.checked}}" style="width:100%;min-width:0;display:flex;align-items:flex-start;gap:12px;padding:12px;border:0;border-radius:4px;background:{{t.bg}};box-shadow:{{t.ring}};font-family:inherit;color:#1D1D1D;text-align:left;cursor:pointer">
-                <span style="position:relative;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">
-                  <span aria-hidden="true" style="font-size:12px;line-height:16px;font-weight:700;color:transparent">{{t.mono}}</span>
-                  <img src="{{t.logo}}" width="24" height="24" alt="" onError="{{showMonogram}}" style="position:absolute;top:8px;left:8px;width:24px;height:24px">
-                </span>
-                <span style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px">
-                  <sc-if value="{{t.suggested}}" hint-placeholder-val="{{ false }}"><span style="margin-bottom:4px;height:20px;display:inline-flex;align-items:center;gap:4px;padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>RECOMMENDED</span></sc-if>
-                  <span style="font-size:16px;line-height:20px;font-weight:700">{{t.name}}</span>
-                  <span style="font-size:14px;line-height:20px;color:#5F5F5F">{{t.text}}</span>
-                </span>
-              </button>
             </sc-for>
           </div>
-        </sc-if>
-        <sc-if value="{{fromLibrary}}" hint-placeholder-val="{{ true }}">
-          <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column">
-            <sc-for list="{{templates}}" as="u" hint-placeholder-count="3">
-              <li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:{{u.divider}}">
-                <span style="position:relative;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:4px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0">
-                  <span aria-hidden="true" style="font-size:12px;line-height:16px;font-weight:700;color:transparent">{{u.mono}}</span>
-                  <img src="{{u.logo}}" width="24" height="24" alt="" onError="{{showMonogram}}" style="position:absolute;top:8px;left:8px;width:24px;height:24px">
-                </span>
-                <span style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px">
-                  <sc-if value="{{u.suggested}}" hint-placeholder-val="{{ false }}"><span style="margin-bottom:4px;height:20px;display:inline-flex;align-items:center;gap:4px;padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px #1D1D1D;font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>RECOMMENDED</span></sc-if>
-                  <span style="font-size:16px;line-height:20px;font-weight:700">{{u.name}}</span>
-                  <span style="font-size:14px;line-height:20px;color:#5F5F5F">{{u.text}}</span>
-                </span>
-              </li>
-            </sc-for>
-          </ul>
-        </sc-if>
-      </section>
+          <sc-if value="{{noFacts}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px">
+              <h3 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 700">No Facts Match</h3>
+              <p style="margin: 0; font-size: 14px; line-height: 24px; color: #5F5F5F">Try another word, or clear the search to see every fact.</p>
+              <button type="button" class="hd-btn-secondary hd-ring-ink" onClick="{{clearQ}}" style="margin-top: 8px; height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; color: #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; cursor: pointer">Clear Search</button>
+            </div>
+          </sc-if>
+          <div style="height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 16px; padding: 0 16px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+            <span>{{summary}}</span>
+          </div>
+      </div>
+    </section>
 
-      <section aria-labelledby="ra-title" style="display:flex;flex-direction:column;padding-top:16px;border-top:1px solid #F0F0F0">
-        <h2 id="ra-title" style="margin:0 0 8px;font-size:16px;line-height:20px;font-weight:700">Recently Accepted</h2>
-        <sc-for list="{{past}}" as="p" hint-placeholder-count="3">
-          <a href="Activity.dc.html" class="hd-ring-in" style="display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:{{p.divider}};color:#1D1D1D;text-decoration:none">
-            <span style="display:flex;align-items:center;gap:8px;min-width:0">
-              <span title="{{p.owner}}" aria-hidden="true" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:{{p.avatarBg}};color:#FFFFFF;font-size:12px;line-height:16px;font-weight:700;flex:none">{{p.initials}}</span>
-              <span style="font-size:16px;line-height:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0" title="{{p.name}}">{{p.name}}</span>
-            </span>
-            <span style="font-size:12px;line-height:18px;color:#5F5F5F">{{p.meta}}</span>
-            <sc-if value="{{p.accepted}}" hint-placeholder-val="{{ true }}">
-              <span role="img" aria-label="{{p.label}}" style="display:grid;grid-template-columns:minmax(0,1fr) 8px minmax(0,1fr) 8px minmax(0,1fr) 8px minmax(0,1fr);align-items:center;width:100%">
-                <span style="height:2px;background:#1D1D1D"></span><span style="width:8px;height:8px;background:#1D1D1D"></span>
-                <span style="height:2px;background:#1D1D1D"></span><span style="width:8px;height:8px;background:#1D1D1D"></span>
-                <span style="height:2px;background:#1D1D1D"></span><span style="width:8px;height:8px;background:#1D1D1D"></span>
-                <span style="height:2px;background:#1D1D1D"></span>
+    <section aria-labelledby="gp-title" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+        <h2 id="gp-title" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">Golden Paths</h2>
+        <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">{{pathsSummary}}</span>
+      </div>
+        <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+          <sc-for list="{{templates}}" as="u" hint-placeholder-count="3">
+            <li style="min-width: 0; display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0; background: #FFFFFF">
+              <span aria-hidden="true" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><img src="{{u.logo}}" width="24" height="24" alt=""></span>
+              <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 16px; line-height: 20px; font-weight: 700">{{u.name}}</span>
+                <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">{{u.text}}</span>
+                <span style="margin-top: 4px; font-size: 12px; line-height: 18px; color: #1D1D1D">{{u.used}}</span>
               </span>
-            </sc-if>
-            <sc-if value="{{p.graduated}}" hint-placeholder-val="{{ false }}">
-              <span role="img" aria-label="{{p.label}}" style="display:grid;grid-template-columns:minmax(0,1fr) 8px minmax(0,1fr) 8px minmax(0,1fr) 8px minmax(0,1fr) 8px minmax(0,0.5fr);align-items:center;width:100%">
-                <span style="height:2px;background:#1D1D1D"></span><span style="width:8px;height:8px;background:#1D1D1D"></span>
-                <span style="height:2px;background:#1D1D1D"></span><span style="width:8px;height:8px;background:#1D1D1D"></span>
-                <span style="height:2px;background:#1D1D1D"></span><span style="width:8px;height:8px;background:#1D1D1D"></span>
-                <span style="height:2px;background:#1D1D1D"></span><span style="width:8px;height:8px;background:#1D1D1D"></span>
-                <span style="height:4px;background:#1D1D1D"></span>
-              </span>
-            </sc-if>
-          </a>
-        </sc-for>
+            </li>
+          </sc-for>
+        </ul>
+    </section>
+
+      <section aria-labelledby="ho-title" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; gap: 12px">
+          <h2 id="ho-title" style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">Recently Handed Off</h2>
+          <span style="font-size: 14px; line-height: 20px; color: #5F5F5F">Across UA, last 14 days</span>
+          <span style="flex: 1"></span>
+          <a href="Projects.dc.html" class="hd-ring" style="display: inline-block; margin: -12px 0; padding: 12px 0; font-size: 14px; line-height: 20px; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap">All Projects</a>
+        </div>
+        <ul style="margin: 0; padding: 0; list-style: none; border: 1px solid #D0D0D0; border-radius: 8px; overflow: hidden">
+          <sc-for list="{{handed}}" as="p" hint-placeholder-count="4">
+            <li style="border-top: {{p.rule}}">
+              <a href="{{p.href}}" class="hd-row hd-ring-in" aria-label="{{p.aria}}" style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 160px 272px; column-gap: 16px; align-items: center; padding: 14px 20px; color: #1D1D1D; text-decoration: none; background: #FFFFFF">
+                <span aria-hidden="true" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{p.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{p.initials}}</span>
+                <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                  <span style="font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
+                  <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.meta}}</span>
+                </span>
+                <span aria-hidden="true" style="display: grid; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr); align-items: center">
+                  <span style="height: 2px; background: #1D1D1D"></span><span style="width: 8px; height: 8px; background: #1D1D1D"></span>
+                  <span style="height: 2px; background: #1D1D1D"></span><span style="width: 8px; height: 8px; background: #1D1D1D"></span>
+                  <span style="height: 2px; background: #1D1D1D"></span><span style="width: 8px; height: 8px; background: #1D1D1D"></span>
+                  <span style="height: 2px; background: #1D1D1D"></span>
+                </span>
+                <span style="justify-self: end; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; white-space: nowrap">
+                  <sc-if value="{{p.pending}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 8px; height: 8px; box-sizing: border-box; border: 1.5px solid #1D1D1D; flex: none"></span></sc-if>
+                  {{p.status}}
+                </span>
+              </a>
+            </li>
+          </sc-for>
+        </ul>
       </section>
-    </div>
-  </aside>
+  </div>
 </main>
 
-<sc-if value="{{fromStart}}" hint-placeholder-val="{{ false }}">
-  <div style="position:sticky;bottom:0;z-index:10;height:72px;box-sizing:border-box;display:flex;align-items:center;gap:16px;padding:0 24px;background:#FFFFFF;border-top:1px solid #D0D0D0;flex:none">
-    <a href="Project.dc.html" class="hd-btn-primary hd-ring" style="height:44px;min-width:96px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:999px;background:#1D1D1D;color:#FFFFFF;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">{{ctaLabel}}</a>
-    <a href="Start.dc.html" class="hd-btn-secondary hd-ring-ink" style="height:44px;min-width:96px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:999px;background:#FFFFFF;box-shadow:inset 0 0 0 1px #1D1D1D;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:20px;font-weight:700;white-space:nowrap">Back</a>
-    <span style="font-size:14px;line-height:20px;color:#5F5F5F">{{barSummary}}</span>
-  </div>
-</sc-if>
+</div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"from":{"editor":"enum","options":["library","start"],"default":"library"},"$preview":{"width":1440,"height":990}}'>
+<script type="text/x-dc" data-dc-script data-props='{"rail":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1483}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { off: { f7: true }, type: 'All', path: 'semantic', q: '', tech: false };
+    this.state = { rail: null, tech: false, type: 'All', q: '' };
   }
   componentDidMount() {
     this.hdClose = (e) => {
@@ -367,145 +327,204 @@ class Component extends DCLogic {
         if (esc || !d.contains(e.target)) {
           const hadFocus = d.contains(document.activeElement);
           d.open = false;
+          d.querySelectorAll('details.hd-sub[open]').forEach((s) => { s.open = false; });
           if (esc && hadFocus) d.querySelector('summary').focus();
         }
       });
     };
+    // hd-shell keys, as the Help menu lists them: Command K searches, Command Shift O starts a project,
+    // Command B folds the side nav, Command / opens the shortcut list.
+    this.hdSearch = () => {
+      const f = document.querySelector('[data-hd-search]');
+      if (f) { f.focus(); if (f.select) f.select(); return; }
+      window.location.href = 'Projects.dc.html#search';
+    };
+    this.hdShellKeys = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.defaultPrevented) return;
+      const key = (e.key || '').toLowerCase();
+      if (key === 'k' && !e.shiftKey) { e.preventDefault(); this.hdSearch(); return; }
+      if (key === 'o' && e.shiftKey) {
+        e.preventDefault();
+        const idea = document.getElementById('hd-idea');
+        if (idea) idea.focus(); else window.location.href = 'Main.dc.html';
+        return;
+      }
+      if (key === 'b' && !e.shiftKey) {
+        const fold = document.querySelector('.hd-side button[aria-expanded]');
+        if (fold) { e.preventDefault(); fold.click(); }
+        return;
+      }
+      if (key === '/' || e.code === 'Slash') {
+        const help = document.querySelector('summary[aria-label="Help"]');
+        if (!help) return;
+        e.preventDefault();
+        help.parentElement.open = true;
+        const keys = help.parentElement.querySelector('details.hd-sub');
+        if (keys) { keys.open = true; keys.querySelector('summary').focus(); }
+      }
+    };
     document.addEventListener('mousedown', this.hdClose);
     document.addEventListener('keydown', this.hdClose);
+    document.addEventListener('keydown', this.hdShellKeys);
+    // The '/' hint in the search field: focus it unless the viewer is already typing somewhere.
+    this.hdSlash = (e) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const f = document.getElementById('lib-search');
+      if (f) { e.preventDefault(); f.focus(); }
+    };
+    document.addEventListener('keydown', this.hdSlash);
   }
   componentWillUnmount() {
     document.removeEventListener('mousedown', this.hdClose);
     document.removeEventListener('keydown', this.hdClose);
+    document.removeEventListener('keydown', this.hdShellKeys);
+    document.removeEventListener('keydown', this.hdSlash);
   }
   renderVals() {
-    // One literal map; the publish script rewrites each path to its uploaded asset.
-    const LOGO = { snowflake: 'logos/snowflake.svg', confluence: 'logos/confluence.svg', microsoftteams: 'logos/microsoftteams.svg', microsoftexcel: 'logos/microsoftexcel.svg', streamlit: 'logos/streamlit.svg', webbrowser: 'logos/web-browser.svg' };
-    const fromStart = (this.props.from ?? 'library') === 'start';
     const st = this.state;
-    const active = { current: 'page', weight: '700', color: '#1D1D1D', bar: 'inset 0 -2px 0 #1D1D1D' };
-    const idle = { current: null, weight: '400', color: '#5F5F5F', bar: 'none' };
-    const proj = fromStart ? active : idle;
-    const lib = fromStart ? idle : active;
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = {
+      snowflake: 'logos/snowflake.svg',
+      confluence: 'logos/confluence.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      microsoftexcel: 'logos/microsoftexcel.svg',
+      streamlit: 'logos/streamlit.svg',
+      webbrowser: 'logos/web-browser.svg'
+    };
+    const closeMenu = (e) => { const d = e && e.currentTarget && e.currentTarget.closest('details'); if (d) { d.open = false; const s = d.querySelector(':scope > summary'); if (s) s.focus(); } };
+    const INK = '#1D1D1D', RED = '#DC0019', MUTED = '#5F5F5F', GREY = '#949494';
+
+    // hd-shell: the side nav. Same items, order and recent projects on every board; only the active
+    // area, the viewer and the role-gated items change (design-system.md section 7).
+    const rail = st.rail === null ? (this.props.rail ?? false) : st.rail;
+    const ICON = {
+      home: 'M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z',
+      inbox: 'M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z',
+      projects: 'M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z',
+      library: 'M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z',
+      portfolio: 'M5 20v-8M12 20V4M19 20v-11',
+      admin: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 4.5v5M9 14.5v5'
+    };
+    const ACTIVE = 'library';
+    const INBOX_COUNT = 4;
+    const navItem = (key, label, href, extra) => {
+      const on = key === ACTIVE;
+      return Object.assign({ label, href, icon: ICON[key], current: on ? 'page' : 'false', aria: label,
+        bg: 'transparent', ring: 'none', fw: on ? '700' : '400', fg: on ? '#1D1D1D' : '#5F5F5F',
+        hasCount: false, count: '', hasTag: false, tag: '' }, extra || {});
+    };
+    const nav = [
+      navItem('home', 'Home', 'Main.dc.html'),
+      navItem('inbox', 'Inbox', 'Inbox.dc.html', INBOX_COUNT
+        ? { hasCount: true, count: String(INBOX_COUNT), aria: 'Inbox, ' + INBOX_COUNT + ' waiting on you' } : {}),
+      navItem('projects', 'Projects', 'Projects.dc.html'),
+      navItem('library', 'Library', 'Library.dc.html', { hasTag: true, tag: 'Enterprise' })
+    ];
+    // Portfolio and Admin appear only for the roles that use them; a business owner never sees them.
+    const admin = [];
+    // Recent projects carry the mini line's own marks: red notch waits on you, an outline notch on
+    // someone else, the spinner is work running, an ink notch is an accepted prototype.
+    const MARK = {
+      you: { bg: RED, bd: 'none', word: 'waiting on you' },
+      other: { bg: '#FFFFFF', bd: '1.5px solid ' + INK, word: 'waiting on someone else' },
+      done: { bg: INK, bd: 'none', word: 'prototype accepted' },
+      draft: { bg: '#FFFFFF', bd: '1.5px dashed ' + GREY, word: 'draft' }
+    };
+    const recentItem = (name, href, kind, on) => Object.assign({ name, href,
+      isWork: kind === 'work', isNotch: kind !== 'work', bg: '', bd: '',
+      current: on ? 'page' : 'false', rowBg: 'transparent', rowRing: 'none', fw: on ? '700' : '400',
+      aria: name + ', ' + (kind === 'work' ? 'working' : MARK[kind].word) }, kind === 'work' ? {} : { bg: MARK[kind].bg, bd: MARK[kind].bd });
+    const recent = [
+      recentItem('SKU productivity workbench', 'Project.dc.html', 'you'),
+      recentItem('Wholesale sell-through tracker', 'Gate.dc.html', 'you'),
+      recentItem('Tariff scenario planner', 'Activity.dc.html', 'work'),
+      recentItem('Product master quality monitor', 'Inbox.dc.html#q', 'you'),
+      recentItem('Activation scorecard', 'Graduation.dc.html', 'done')
+    ];
+    const me = { name: 'Maya Chen', initials: 'MC', bg: '#3D4B8C', role: 'Business owner, Merchandising', workspace: 'Merchandising',
+      aria: 'Maya Chen, Merchandising, account and workspace' };
+    const workspaces = ['Merchandising', 'Sourcing', 'Wholesale', 'EDM'].map((name, i) => ({ name, on: i === 0, fw: i === 0 ? '700' : '400' }));
+
+    // What UA already knows: facts confirmed once and reused by every project that needs them.
     const canon = { status: 'Canonical', agreed: true, open: false };
     const conf = { status: 'Confirmed', agreed: true, open: false };
     const notAgreed = { status: 'Not Yet Agreed', agreed: false, open: true };
     const src = (logo, source, ref) => ({ hasLogo: true, isDecision: false, logo, source, ref });
     const person = (initials, avatarBg) => ({ hasAvatar: true, initials, avatarBg });
     const none = { hasAvatar: false, initials: '', avatarBg: '' };
-    // Who confirmed a fact, for the Library's Confirmed By column.
-    const by = (kind, byName, byNote, byIni, byFill) => ({ byPerson: kind === 'person', byGroup: kind === 'group', byNone: kind === 'none', byName, byNote, byIni: byIni || '', byFill: byFill || '', byColor: kind === 'none' ? '#5F5F5F' : '#1D1D1D' });
+    const by = (kind, byName, byNote, byIni, byFill) => ({ byPerson: kind === 'person', byGroup: kind === 'group', byNone: kind === 'none', byName, byNote, byIni: byIni || '', byFill: byFill || '', byColor: kind === 'none' ? MUTED : INK });
     const base = [
       Object.assign({ id: 'f1', type: 'Metric', badge: 'METRIC', text: 'Margin dollars per door comes from the Daily Product Margin golden report.', who: 'Steward Luis Romero', used: 4 }, src(LOGO.snowflake, 'Daily Product Margin', 'MERCH.GOLDEN.DAILY_PRODUCT_MARGIN'), person('LR', '#2E6A8E'), by('person', 'Luis Romero', 'Steward', 'LR', '#2E6A8E'), canon),
       Object.assign({ id: 'f2', type: 'Term', badge: 'TERM', text: 'Full-price sell-through excludes units sold below 70% of ticket.', who: 'Confirmed by Finance and Merchandising', used: 3 }, src(LOGO.snowflake, 'Sales performance view', 'SV_SALES_PERF'), none, by('group', 'Finance, Merchandising', 'Both teams agreed'), canon),
       Object.assign({ id: 'f3', type: 'Rule', badge: 'RULE', text: 'Markdown cadence is reviewed at weeks 6, 10 and 14 of a season.', who: 'Confirmed by Maya Chen', used: 2 }, src(LOGO.confluence, 'Markdown playbook', 'Version 12'), person('MC', '#3D4B8C'), by('person', 'Maya Chen', 'Oct 14', 'MC', '#3D4B8C'), conf),
-      Object.assign({ id: 'f4', type: 'Constraint', badge: 'CONSTRAINT', text: 'Brand House and Factory House doors are reported separately.', who: 'Steward Retail analytics', used: 5 }, src(LOGO.snowflake, 'Store attributes view', 'MERCH.STORE_ATTRIBUTES_V'), none, by('group', 'Retail Analytics', 'Steward'), canon),
+      Object.assign({ id: 'f4', type: 'Constraint', badge: 'CONSTRAINT', text: 'Brand House and Factory House doors are reported separately.', who: 'Steward Retail Analytics', used: 5 }, src(LOGO.snowflake, 'Store attributes view', 'MERCH.STORE_ATTRIBUTES_V'), none, by('group', 'Retail Analytics', 'Steward'), canon),
       Object.assign({ id: 'f5', type: 'Term', badge: 'TERM', text: 'One style means style-color in merchandising tools.', who: 'Disputed, asked Luis Romero', used: 1 }, src(LOGO.microsoftteams, 'Working session recording, Oct 21', 'At 18:22'), person('LR', '#2E6A8E'), by('none', 'No one yet', 'Asked Luis Romero'), notAgreed),
       Object.assign({ id: 'f6', type: 'Decision', badge: 'DECISION', text: 'Wholesale accounts stay out of DTC productivity views.', who: 'Decided by Maya Chen, Oct 22', used: 2, hasLogo: false, isDecision: true, logo: '', source: 'Decision record, SKU workbench', ref: 'D-5' }, person('MC', '#3D4B8C'), by('person', 'Maya Chen', 'Decided Oct 22', 'MC', '#3D4B8C'), conf),
       Object.assign({ id: 'f7', type: 'Metric', badge: 'METRIC', text: 'Recovery rate is recovered margin dollars over markdown dollars.', who: 'Proposed, no certified definition', used: 0 }, src(LOGO.microsoftexcel, 'Pricing team workbook, Recovery tab', 'Recovery tab'), none, by('none', 'No one yet', 'No certified definition'), notAgreed)
     ];
-    const all = base.map((f) => {
-      const on = !st.off[f.id];
-      return Object.assign(f, {
-        on,
-        textColor: on ? '#1D1D1D' : '#5F5F5F',
-        useLabel: 'Use: ' + f.text,
-        usedLabel: f.used === 0 ? 'Not used in a project yet' : ('Used in ' + f.used + (f.used === 1 ? ' project' : ' projects')),
-        usedIn: f.used === 0 ? 'None yet' : (f.used + (f.used === 1 ? ' project' : ' projects')),
-        usedColor: f.used === 0 ? '#5F5F5F' : '#1D1D1D',
-        toggle: () => this.setState({ off: Object.assign({}, this.state.off, { [f.id]: on }) })
-      });
-    });
+    const all = base.map((f) => Object.assign(f, {
+      usedIn: f.used === 0 ? 'None yet' : (f.used + (f.used === 1 ? ' project' : ' projects')),
+      usedColor: f.used === 0 ? MUTED : INK
+    }));
     const type = st.type;
-    // Workspace-wide counts for the Library; the idea view counts only the facts that apply.
+    // Workspace-wide counts; the table shows the first seven.
     const LIB_N = { All: 118, Metric: 34, Term: 29, Rule: 21, Constraint: 18, Decision: 16 };
     const kinds = ['All', 'Metric', 'Term', 'Rule', 'Constraint', 'Decision'];
     const filters = kinds.map((k) => {
       const on = type === k;
       return {
         label: k === 'All' ? 'All' : k + 's',
-        n: String(fromStart ? (k === 'All' ? all.length : all.filter((f) => f.type === k).length) : LIB_N[k]),
-        on,
+        n: String(LIB_N[k]),
         pressed: on ? 'true' : 'false',
-        bg: on ? '#1D1D1D' : '#FFFFFF',
-        fg: on ? '#FFFFFF' : '#1D1D1D',
-        ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0',
-        cls: on ? 'hd-ring' : 'hd-chip hd-ring-edge',
-        weight: on ? '700' : '400',
-        countColor: on ? '#D0D0D0' : '#5F5F5F',
+        bg: on ? INK : '#FFFFFF', fg: on ? '#FFFFFF' : INK, ring: on ? 'none' : 'inset 0 0 0 1px #D0D0D0',
+        cls: on ? 'hd-ring' : 'hd-chip hd-ring-edge', weight: on ? '700' : '400', countColor: on ? '#D0D0D0' : MUTED,
         pick: () => this.setState({ type: k })
       };
     });
-    const q = fromStart ? '' : st.q.trim().toLowerCase();
+    const q = st.q.trim().toLowerCase();
     const byType = type === 'All' ? all : all.filter((f) => f.type === type);
     const facts = q ? byType.filter((f) => (f.text + ' ' + f.source).toLowerCase().indexOf(q) >= 0) : byType;
     const noun = type === 'All' ? 'facts' : type.toLowerCase() + 's';
     const summary = q
       ? (facts.length + (facts.length === 1 ? ' fact matches' : ' facts match'))
       : ('Showing ' + facts.length + ' of ' + LIB_N[type] + ' ' + noun);
-    const onFacts = all.filter((f) => f.on);
-    const openOn = onFacts.filter((f) => !f.agreed).length;
-    const path = st.path;
-    const tplBase = [
-      { id: 'semantic', name: 'Analytics App on Certified Numbers', text: 'Uses the same certified numbers as UA’s reports.', suggested: true, logo: LOGO.snowflake, mono: 'S' },
-      { id: 'streamlit', name: 'Data App Inside Snowflake', text: 'Runs where the data lives, so rows never leave.', suggested: false, logo: LOGO.streamlit, mono: 'S' },
-      { id: 'web', name: 'Internal Web App', text: 'For work that crosses teams, with UA sign-in.', suggested: false, logo: LOGO.webbrowser, mono: 'W' }
+
+    // Golden paths: the shapes UA already supports. A prototype is built on one in the sandbox;
+    // Construction builds the production version on the same path.
+    const templates = [
+      { name: 'Analytics App on Certified Numbers', text: 'Uses the same certified numbers as UA’s reports.', used: 'Used by 14 projects', logo: LOGO.snowflake },
+      { name: 'Data App Inside Snowflake', text: 'Runs where the data lives, so rows never leave Snowflake.', used: 'Used by 6 projects', logo: LOGO.streamlit },
+      { name: 'Internal Web App', text: 'For work that crosses teams; opens with your UA account.', used: 'Used by 3 projects', logo: LOGO.webbrowser }
     ];
-    const ids = tplBase.map((t) => t.id);
-    const templates = tplBase.map((t, i) => {
-      const on = path === t.id;
-      return Object.assign(t, {
-        checked: on ? 'true' : 'false',
-        tab: on ? 0 : -1,
-        bg: on ? '#F0F0F0' : '#FFFFFF',
-        ring: on ? 'inset 0 0 0 2px #1D1D1D' : 'none',
-        cls: on ? 'hd-ring-sel' : 'hd-row hd-ring',
-        divider: i === 0 ? '0' : '1px solid #F0F0F0',
-        pick: () => this.setState({ path: t.id })
-      });
-    });
+
+    // Recently handed off, moved here from Home. HyperDelivery's output ends at the handoff;
+    // Construction is engineering's, so these rows say who decides and how it is being built.
+    const HANDED = [
+      { name: 'Activation scorecard', initials: 'TG', bg: '#444444', meta: 'Theo Grant, Marketing, handed off Oct 23', status: 'Construction decision: Kim Patel, 1d', pending: true, href: 'Graduation.dc.html' },
+      { name: 'Licensee price-compliance check', initials: 'HB', bg: '#444444', meta: 'Hana Brooks, Licensing, handed off Oct 21', status: 'Construction: AI-driven', pending: false, href: 'Projects.dc.html' },
+      { name: 'Store labor forecast', initials: 'AR', bg: '#2D6470', meta: 'Ana Ruiz, Retail ops, handed off Oct 20', status: 'Construction: AI-assisted with engineers', pending: false, href: 'Projects.dc.html' },
+      { name: 'Promo dependency monitor', initials: 'LB', bg: '#444444', meta: 'Leah Brooks, Pricing, handed off Oct 14', status: 'Construction: AI-driven', pending: false, href: 'Projects.dc.html' }
+    ];
+    const handed = HANDED.map((p, i) => Object.assign({}, p, { rule: i ? '1px solid #F0F0F0' : '0',
+      aria: p.name + ', all three approvals signed, handed off. ' + p.status }));
+
     return {
-      logos: LOGO,
-      // A logo can fail once when many frames load together, so retry before showing the monogram.
-      showMonogram: (e) => { const i = e.currentTarget; if (!i.dataset.retry && i.getAttribute('src')) { i.dataset.retry = '1'; const s = i.getAttribute('src'); i.src = s + (s.indexOf('?') >= 0 ? '&' : '?') + 'r=1'; return; } i.style.display = 'none'; if (i.previousElementSibling) i.previousElementSibling.style.color = '#444444'; },
-      closePop: (e) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; },
-      techOn: st.tech ? 'true' : 'false',
-      techLabel: st.tech ? 'On' : 'Off',
-      techChecked: st.tech,
-      toggleTech: () => this.setState({ tech: !this.state.tech }),
-      fromStart,
-      fromLibrary: !fromStart,
-      showStart: !fromStart,
-      nav: {
-        projCurrent: proj.current, projWeight: proj.weight, projColor: proj.color, projBar: proj.bar,
-        libCurrent: lib.current, libWeight: lib.weight, libColor: lib.color, libBar: lib.bar
-      },
-      filters,
-      facts,
-      noFacts: facts.length === 0,
-      hasMore: !q && facts.length > 0,
-      summary,
-      q: st.q,
-      setQ: (e) => this.setState({ q: e.target.value }),
-      clearQ: () => this.setState({ q: '' }),
-      ctaLabel: 'Start With ' + onFacts.length + (onFacts.length === 1 ? ' Fact' : ' Facts'),
-      barSummary: onFacts.length + ' of ' + all.length + ' facts, ' + (openOn === 0 ? 'all agreed' : openOn + ' not yet agreed'),
+      railAttr: rail ? 'on' : 'off', sideW: rail ? '64px' : '248px', sideOpen: rail ? 'false' : 'true',
+      railLabel: rail ? 'Show the sidebar' : 'Hide the sidebar',
+      openSearch: () => this.hdSearch(),
+      toggleRail: () => this.setState({ rail: !rail }),
+      nav, admin, recent, me, workspaces, closeMenu, logos: LOGO,
+      techOn: st.tech ? 'true' : 'false', techWord: st.tech ? 'On' : 'Off', toggleTech: () => this.setState({ tech: !st.tech }),
+      pageTitle: 'Library',
+      factsTitle: 'What UA Already Knows',
+      factsSummary: '112 confirmed facts in Merchandising, reused 38 times this quarter',
+      pathsSummary: 'Shapes UA already supports',
+      filters, facts, noFacts: facts.length === 0, summary,
+      q: st.q, setQ: (e) => this.setState({ q: e.target.value }), clearQ: () => this.setState({ q: '' }),
       templates,
-      gpKey: (e) => {
-        const k = e.key;
-        if (['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].indexOf(k) < 0) return;
-        e.preventDefault();
-        const i = ids.indexOf(this.state.path);
-        const n = k === 'Home' ? 0 : (k === 'End' ? ids.length - 1 : ((k === 'ArrowDown' || k === 'ArrowRight') ? (i + 1) % ids.length : (i - 1 + ids.length) % ids.length));
-        this.setState({ path: ids[n] });
-        const btns = e.currentTarget.querySelectorAll('[role="radio"]');
-        if (btns[n]) btns[n].focus();
-      },
-      past: [
-        { name: 'Licensee price-compliance check', owner: 'Hana Brooks', meta: 'Hana Brooks, Licensing, accepted Oct 21', label: 'Licensee price-compliance check: all three approvals signed, live', initials: 'HB', avatarBg: '#56603A', accepted: true, graduated: false, divider: '0' },
-        { name: 'Promo dependency monitor', owner: 'Leah Brooks', meta: 'Leah Brooks, Pricing, accepted Oct 20', label: 'Promo dependency monitor: all three approvals signed, live', initials: 'LB', avatarBg: '#444444', accepted: true, graduated: false, divider: '1px solid #F0F0F0' },
-        { name: 'Factory House clearance tracker', owner: 'Ana Ruiz', meta: 'Ana Ruiz, Retail ops, now in production', label: 'Factory House clearance tracker: all three approvals signed, handed off to production', initials: 'AR', avatarBg: '#2D6470', accepted: false, graduated: true, divider: '1px solid #F0F0F0' }
-      ]
+      handed
     };
   }
 }

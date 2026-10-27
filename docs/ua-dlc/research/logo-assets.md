@@ -1,5 +1,5 @@
 <!-- Point-in-time research, retrieved 2026-10-25 for the UA-DLC plan. Claims carry source links; vendor features and dates change quickly, so verify before acting. See README.md in this folder. -->
-<!-- cspell:words Atlassians Fivetran Iconify Invertocat Octicon amazonbedrock amazonnova amazonwebservices deepseek firecrawl gilbarbara lobehub lobehub's logomark microsoftcopilot microsoftexcel microsoftonedrive microsoftoutlook microsoftsharepoint microsoftteams onedrive powerbi qwen slackhq svgl -->
+<!-- cspell:words Anysphere Atlassians Fivetran Kiro SpaceX Windsurf Iconify Invertocat Octicon amazonbedrock amazonnova amazonwebservices deepseek firecrawl gilbarbara lobehub lobehub's logomark microsoftcopilot microsoftexcel microsoftonedrive microsoftoutlook microsoftsharepoint microsoftteams onedrive powerbi qwen slackhq svgl -->
 
 # Logo assets for HyperDelivery: what was collected, where from, and what the brands allow
 
@@ -195,3 +195,27 @@ exposure a great deal. Most guidelines still separate two kinds of use:
 Mono marks for removed brands (Microsoft products, Power BI, AWS, Tableau, dbt, Slack) come from the last Simple Icons
 release that still shipped them: 12.0.0, 14.0.0, 13.0.0 and 15.0.0. They were CC0 at that version, but were withdrawn
 for the trademark reasons in section 3.
+
+## 7. Tool-comparison marks (added 2026-10-26)
+
+Three marks for the plan's two comparison visuals, `plan/visuals/tool-matrix.html` and `use-case-matrix.html`.
+Unlike the pack above, these live in the repository, in `docs/ua-dlc/site/concepts/project/logos/` beside the
+concept screens' other logos. Retrieved 2026-10-26.
+
+| name | source | license and trademark | what was cleaned |
+|---|---|---|---|
+| factory | The square symbol inlined on [factory.com](https://factory.com/): `<svg id="factory-logo" viewBox="0 0 67 65">`, one path, the same path the site uses in its mobile nav and footer. The site also serves a 127 by 19 header lockup (the symbol plus the FACTORY wordmark, 15 paths) and `/favicon.svg` (the symbol on a black tile). I kept the symbol, which fits an 18 to 20px slot | No license stated, and no public brand page found (`/brand` and `/press` return 404). Factory's [SaaS Product Terms](https://factory.com/legal/terms) (updated October 15, 2026) say nothing in the agreement grants either party the right to use the other's name, brand or logo. Owner: The San Francisco AI Factory Inc. | Path data and viewBox copied exactly. Removed `id`, `class` and the root `fill="none"`; fill is `currentColor` on a wrapping `<g>`; added `role`, `aria-label` and `<title>` like the other files |
+| cursor | simple-icons 16.36.0 `cursor` (`https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/cursor.svg`), whose listed source is [cursor.com/brand](https://cursor.com/brand). It renders the same as the cube in that page's header lockup | CC0-1.0 drawing; the trademark stays with Anysphere, Inc. The brand page offers official logos (2D cube, wordmark, lockups) as a download and asks to be called "Cursor", not "Cursor AI" or "Cursor Code". Its text states no terms for third-party logo use. Cursor has been part of SpaceX since August 14, 2026 | Path and viewBox unchanged. Fill is `currentColor` on a wrapping `<g>`, plus `aria-label` and `<title>` |
+| agentic-ide | Drawn for this repository: a window holding `</>`, standing for the agentic IDEs other than Cursor (Devin Desktop, formerly Windsurf, and Kiro) | Our own drawing, with no third-party rights. Not a brand mark | A 24 viewBox with a 1.5 `currentColor` stroke and round caps and joins. That is the Phosphor `regular` weight (16 on 256) of `terminal`, `file` and `web-browser` |
+
+The visuals now show Factory's symbol where they showed an "F" monogram, and the agentic-IDE group shows Cursor's
+cube beside the generic mark, labeled "Cursor and other agentic IDEs". The untouched sources (the factory.com symbol,
+lockup and favicon, and the Simple Icons file) are kept in the planning scratch folder. Section 4's advice applies to
+both brands: neither Factory's terms nor Cursor's page grants logo use, so pair each mark with its text name and list
+both for the Brand review before product use.
+
+The competitor visual, `plan/visuals/dlc-matrix.html` (round 8), inlines its marks rather than loading files:
+the repository's own logos for GitHub, Claude, AWS, Factory, Microsoft, Atlassian and Snowflake; simple-icons 16.18.1
+(CC0-1.0 drawings, trademarks with their owners) for Google, v0, Replit and Palantir; and plain monograms ("D" for
+Cognition Devin, "80" for 8090) where no mark exists in either source. The same Brand-review caveat applies: each mark
+sits beside its text name, and none is used in product UI.

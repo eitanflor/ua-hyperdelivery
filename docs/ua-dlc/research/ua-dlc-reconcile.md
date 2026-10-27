@@ -3,6 +3,13 @@
 
 # Reconciling the UA-DLC phase model
 
+> **Superseded in part (2026-10-26):** approval 1 now ends Ideation and signs the Brief and a mockup; the working
+> prototype is built in Inception, in the sandbox on dev data; Construction (engineering's Code, Review, Manual QA,
+> Visual QA, Deploy) and Operations are outside HyperDelivery for now; Graduate is replaced by the handoff and a
+> Construction decision; and the tiers became target tiers built in Construction. This note covers bottom lines 2, 4
+> and 5; sections 2, 4, 5, 6, 8, 9 and 10 carry dated notes where they differ. See
+> [operating-model.md section 1](../operating-model.md#1-the-line) and docs/decisions.md.
+
 Research key: `ua-dlc-reconcile`. Date: 2026-10-25. Status: proposal for the owner and for UA
 engineering. Builds on `docs/ua-dlc/operating-model.md`
 (the line, tier contract, signer matrix, roles, glossary), `platform-architecture.md` (specialists,
@@ -108,6 +115,9 @@ research set (`aws-aidlc.md`, `anthropic-playbook.md`, `software-factories.md`,
 
 ## 2. The unified UA-DLC at a glance
 
+> **2026-10-26:** the current line, with approval 1 at the end of Ideation and Construction and Operations outside
+> HyperDelivery, is the diagram in [enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-ua-dlc-on-hyperdelivery).
+
 ```mermaid
 flowchart LR
   subgraph IDEATION
@@ -211,6 +221,10 @@ engineering-only work adds. "Matrix" means operating-model.md section 4.
 
 ### Phase 3: Construction (approval 3, then Deploy)
 
+> **2026-10-26:** steps 3.1 to 3.5 and approval 3 are now Inception's prototype stretch, with their own names
+> (Prototype build, Checks, Evidence, Looks like the mockup, Try it), built in the sandbox on dev data. 3.6 Deploy
+> and all of Phase 4 are outside HyperDelivery for now, in Construction and Operations.
+
 | Step | Inputs | Outputs (artifacts) | Owning agent | Human role | Automated or approved |
 |---|---|---|---|---|---|
 | 3.1 Code | Signed tickets; golden-path repository template; generated agent instructions (one-command build, test, lint; review rules); failing acceptance tests | Commits and PRs per unit in the prototype organization, each linking back to the project timeline; an ephemeral preview per slice | Coding agent in a sandbox; orchestrator narrates; data specialist creates objects only in the project's sandbox schema | None | Automated; bounded loops (2 CI rounds) |
@@ -233,6 +247,9 @@ engineering-only work adds. "Matrix" means operating-model.md section 4.
 
 ### Phase 4: Operation (Show, Operate, Learn, Renew or retire; Graduate optional)
 
+> **2026-10-26:** outside HyperDelivery for now, and renamed Operations (deployments, promotions and running).
+> HyperDelivery ends at the handoff after approval 3; Graduate is replaced by the Construction decision.
+
 | Step | Inputs | Outputs (artifacts) | Owning agent | Human role | Automated or approved |
 |---|---|---|---|---|---|
 | 4.1 Show | Live app, evidence, decisions | Demo package and talk track in UA's three parts (what it is, what it does, how it makes you better); recorded showcase with the provenance bar; notes to the people who asked, contributors credited; changelog and digest entries | Orchestrator (demo skill); Microsoft 365 delegate | Requester presents | Automated |
@@ -250,6 +267,10 @@ engineering-only work adds. "Matrix" means operating-model.md section 4.
 | Renew or retire | Yes. Inbox "Renew or retire"; expiry on the banner | Same | Engineering lifecycle at T3 |
 
 ## 5. The approvals
+
+> **2026-10-26:** approval 1 now signs the Brief and the mockup; requirements, stories and criteria move to
+> approval 2; approval 3 releases the handoff package instead of a deploy. Graduate is replaced by the Construction
+> decision (AI-driven, AI-assisted with engineers, or not now), a decision record rather than an approval.
 
 | | Product label | What is signed | Binds to | Unlocks |
 |---|---|---|---|---|
@@ -283,6 +304,10 @@ or failed) and Kiro's bugfix spec.
 
 **Depth** changes how much each step writes and asks (the per-step columns above) and the time
 budgets in operating-model.md section 6. It never changes the approval count.
+
+> **2026-10-26:** the maturity path below is superseded by the prototype contract and target tiers
+> ([operating-model.md section 3](../operating-model.md#3-the-prototype-contract-and-target-tiers)): every
+> prototype runs in the sandbox on dev data, and T1 to T3 are target tiers built in Construction.
 
 **Tier and the maturity path.** A project's app moves up the tier contract: T0 Sandbox, T1 Team
 prototype, T2 Department app, T3 Production handoff. Each move is one Graduate approval. Hardening attaches to
@@ -355,6 +380,11 @@ line with these additions, drawn from AI-DLC, Kiro and Anthropic's playbook:
 12. **An Operation phase is added, with the optional Graduate gate.** Engineering's variant ends at
     Deploy. Without Operation nothing owns expiry, the kill switch, support, feedback or learned
     rules, and every other framework reviewed closes the loop.
+
+    > **2026-10-26:** divergences 11 and 12 no longer apply to HyperDelivery: Deploy and Operations are outside
+    > its build for now. Approval 3 still comes before anything leaves the sandbox, and a pipeline, never a
+    > model, deploys in Construction.
+
 13. **Review is automated except where the matrix calls for a person.** Prototype repositories at
     T0 and T1, Low risk, need no human code review; existing repositories, T2 and above, and High
     risk keep a code owner. This needs a logged decision (the critique's contradiction 6).
@@ -367,6 +397,9 @@ Data discovery, Deploy, Operate and Renew or retire become explicit. In code, Di
 for this to be adopted.
 
 ## 9. Labels people see
+
+> **2026-10-26:** the line's business labels are now Discover, Plan, Prototype and Handoff; "Live for
+> (audience)" is retired with the Deploy step, and "Looks like the plan" became "Looks like the mockup".
 
 Process terms stay out of Layer 1, as the glossary already requires for "UA-DLC" and "depth". To be
 tested with teammates before shipping.
@@ -388,6 +421,11 @@ tested with teammates before shipping.
 | Learn | "What we learned" |
 
 ## 10. Open questions
+
+> **2026-10-26:** question 1 is closed: approval 3 releases the handoff package, and nothing deploys from
+> HyperDelivery. Question 3 now applies to prototype repositories only. Question 4 is answered: Jira is filed at
+> the handoff. Question 7 is answered: business testers "Try it" in Inception, and Manual QA belongs to
+> Construction.
 
 1. **Does approval 3 authorize deploying at the tier signed at approval 2?** This proposal says yes,
    and operating-model.md now adopts it: a project whose plan set T1 goes live for its named testers
