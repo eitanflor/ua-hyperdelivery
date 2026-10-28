@@ -2,18 +2,21 @@
 
 # UA-DLC: planning HyperDelivery's next phase
 
-The Under Armour AI Delivery Lifecycle (UA-DLC) is the process; HyperDelivery is the platform
-that runs it. This folder holds the plan for taking HyperDelivery from an Enterprise Data
-Management pilot to a platform several departments can use safely, and the evidence behind it.
+HyperDelivery is Under Armour's AI delivery platform. It runs UA-DLC, the Under Armour AI Delivery
+Lifecycle: UA-DLC is the playbook (phases, steps, approvals and outputs), and HyperDelivery is the
+platform people open, which runs it from idea to handoff. This folder holds the plan for taking HyperDelivery from an
+Enterprise Data Management pilot to a platform several departments can use safely, where it goes
+after that, and the evidence behind it.
 
 | Document | Read it when |
 |---|---|
 | [enterprise-plan.md](enterprise-plan.md) | You want the proposal: the narrative, where HyperDelivery stops (at Inception, with a handoff to Construction), where it fits beside other tools (a complexity matrix and a use-case matrix) and who else is building toward UA-DLC, the ask in three tranches, the three phases (Current State, Final MVP, Enterprise) with an architecture diagram for each, the milestones, measures, cost and risks |
+| [north-star.md](north-star.md) | You want where HyperDelivery goes from the Enterprise phase on: what HyperDelivery is versus UA-DLC and the summary to use, the path from human-led to AI-assisted to AI-driven, earned per step and never by date, with the approvals fixed at every level; reading Teams meetings their organizer links to a project once they end; asking the people who own an answer in Teams; the record of how UA decides as the advantage that stays UA's, with approved FSDs as the cold start; and what the Final MVP records now without building ahead |
 | [operating-model.md](operating-model.md) | You need how UA-DLC works: the line through Ideation and Inception, each step's inputs and outputs, how artifacts are shown, where projects start, the prototype contract and target tiers, who signs, roles, time budgets, support, the handoff to Construction, glossary |
 | [platform-architecture.md](platform-architecture.md) | You are building it: how it connects, the orchestrator and its specialists, delegation contracts, identity, authorization, Snowflake and Cortex Code, resources and per-project memory, telemetry, sandboxes, generated-code security, what lands in which phase |
 | [ux-direction.md](ux-direction.md) | You are designing or reviewing the experience: information architecture (three UI directions put to a team vote; the reference build is a collapsible side nav, a chat-first Home, each project as a conversation beside an artifact panel), key screens, help behind the "?", tool chips, trace, data tables, decision timeline, architecture canvas, UI Arc mapping. Desktop and laptop only, light theme only |
 | [design-system.md](design-system.md) | You are building or reviewing the look: HyperDelivery on UA Baselayer, with light-theme tokens, type, spacing, the app shell, components, icons and the red rule |
-| [Concept canvas](https://claude.ai/artifact/BUcEKzAz1CXa27EY398sAF) | You want to see it, or vote on the UI direction: concept artboards on UA Baselayer with the UA logo, on four pages. **Compare and Vote** (opened first) sets the three UI directions side by side with their pros and cons and links to the vote page; **A · Top Bar** and **C · Guided Path** draw seven screens each (Home, Inbox, Projects, New project, Project, Approval, Handoff) at the same positions as on **B · Side Nav and Chat**, so switching pages swaps the UI in place. Page B, the reference build, holds 22 artboards in rows by phase, each titled with the phase it belongs to. They include the generic Start, Inbox and Projects, the Handoff screen where the Construction decision is recorded, the trace, a project's own architecture, HyperDelivery's platform architecture by phase, the lifecycle map and three design-system boards; desktop and light only. Every product board on page B shares one shell: a collapsible side nav, a slim top bar with help behind the "?", and on project boards the conversation beside an artifact panel (private until the owner shares it). Every name, project and number on it is invented to show the design; none is a measured result |
+| [Concept canvas](https://claude.ai/artifact/BUcEKzAz1CXa27EY398sAF) | You want to see it, or vote on the UI direction: concept artboards on UA Baselayer with the UA logo, on five pages. **North Star** holds four Enterprise-or-later screens from [north-star.md](north-star.md), a linked meeting after it ends, a question in Teams, approved precedent in the plan and autonomy by step in Admin. **Compare and Vote** (opened first) sets the three UI directions side by side with their pros and cons and links to the vote page; **A · Top Bar** and **C · Guided Path** draw seven screens each (Home, Inbox, Projects, New project, Project, Approval, Handoff) at the same positions as on **B · Side Nav and Chat**, so switching pages swaps the UI in place. Page B, the reference build, holds 22 artboards in rows by phase, each titled with the phase it belongs to. They include the generic Start, Inbox and Projects, the Handoff screen where the Construction decision is recorded, the trace, a project's own architecture, HyperDelivery's platform architecture by phase, the lifecycle map and three design-system boards; desktop and light only. Every product board on page B shares one shell: a collapsible side nav, a slim top bar with help behind the "?", and on project boards the conversation beside an artifact panel (private until the owner shares it). Every name, project and number on it is invented to show the design; none is a measured result |
 | [Plan page](https://claude.ai/artifact/FTURRJS2HcSGEDT7QQYowh) | You want to share the plan as a page: rendered from enterprise-plan.md, which stays the source (private until shared) |
 | [Concept site](site/) | You want both without a claude.ai account: `make site` serves `docs/ua-dlc/site/` at http://localhost:8766/, with the plan page (`plan/index.html`, rebuilt from enterprise-plan.md with `make site-plan`, which needs pandoc) and the concept canvas (`concepts/`), which pans and zooms like a design canvas and opens each board live. Static HTML with no build step; the site's README says how to open, rebuild and publish it |
 | [current-state.md](current-state.md) | You need an honest, file-referenced picture of what the repo does today |
@@ -53,7 +56,16 @@ read how ChatGPT, Claude, Gemini and Microsoft Copilot lay out their apps
 ([research/ai-app-layouts.md](research/ai-app-layouts.md)), made a second read-only pass over UA's Figma
 libraries ([research/figma-libraries.md](research/figma-libraries.md)), and rebuilt the concept screens around a
 side nav, a chat-first Home and one workspace per project, with Home and New project as the reference
-boards every product screen copies.
+boards every product screen copies. A ninth round set the north star ([north-star.md](north-star.md)):
+five researchers covered the path from human-led to AI-driven
+([research/autonomy-levels.md](research/autonomy-levels.md)), capturing Teams meetings once they end
+([research/meeting-capture-automation.md](research/meeting-capture-automation.md)), asking experts in
+Teams ([research/proactive-sme-outreach.md](research/proactive-sme-outreach.md)), UA's approved FSDs
+as a corpus ([research/fsd-corpus-index.md](research/fsd-corpus-index.md)) and the advantages that hold
+at feature parity ([research/context-moats.md](research/context-moats.md)); a fact-checker verified
+each against primary sources and a critic cross-checked all five. The same round separated the two
+names (HyperDelivery is the platform, UA-DLC the framework it runs), retitled the plan, and added a
+North Star page of concept screens.
 
 **Status:** draft v3 for leadership review, revised for the Inception boundary, October 2026. Until the decisions in the plan are made,
 [docs/hyperdelivery-plan.md](../hyperdelivery-plan.md) remains the MVP plan of record and

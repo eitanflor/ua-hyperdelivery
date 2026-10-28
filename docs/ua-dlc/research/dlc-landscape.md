@@ -30,7 +30,7 @@ When this was written the plan's diagram still put the prototype build in Constr
 clickable mock in Tech Design. The plan and the operating model were revised the same day: a first
 visual mockup now ends Ideation, the prototype build belongs to Inception, and every project ends
 with a handoff package
-([enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-ua-dlc-on-hyperdelivery),
+([enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-hyperdelivery-running-ua-dlc),
 [operating-model.md section 1](../operating-model.md#1-the-line)).
 
 ## 1. The short answer
@@ -346,14 +346,14 @@ true yet ([enterprise-plan.md section 5](../enterprise-plan.md#5-why-hyperdelive
 2. **Numbers that tie to UA's certified definitions, with rows that stay in Snowflake.** Every
    number cites a Snowflake golden report or is labeled "uncertified", and Snowflake work goes to
    Cortex Code, which returns schema, counts and aggregates, never rows
-   ([enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-ua-dlc-on-hyperdelivery)).
+   ([enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-hyperdelivery-running-ua-dlc)).
    Snowflake's own apps inherit policy but do not write a brief; v0 respects a role but not a
    definition; engineering agents can query Snowflake through MCP, but none binds a number to a
    golden report. Today the Snowflake tool returns raw rows, read-only by prompt; fixing that is
    do-no-harm work.
 3. **Mixed-function input, attributed, in Teams.** Questions go to the person who can answer them,
    in Teams, and decisions are recorded with who made them and why
-   ([enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-ua-dlc-on-hyperdelivery)).
+   ([enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-hyperdelivery-running-ua-dlc)).
    Chopin is the only other tool with real multi-party decisions, and it lives on GitHub; AI-DLC's
    Mob Elaboration is a meeting ritual, not a product feature
    ([aws-aidlc.md](aws-aidlc.md#6-rituals-mob-elaboration-mob-construction-bolts)). Today this is

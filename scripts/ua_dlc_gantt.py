@@ -105,6 +105,10 @@ SECTIONS: tuple[tuple[str, tuple[Row, ...]], ...] = (
             ("InfoSec heads-up, threat model draft", 1, 12),
             ("Snowflake reference design", 4, 12),
             ("Privacy and Legal, meeting capture", 8, 20),
+            ("FSD owner, access and labels (north star)", 1, 12),
+            ("Pilot consents and Teams setup (north star)", 1, 10),
+            ("Notice, HR, DPDP, retention (north star)", 2, 15),
+            ("Handoff outcome agreement", 2, 15),
         ),
     ),
 )

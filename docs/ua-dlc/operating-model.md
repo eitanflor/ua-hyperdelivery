@@ -90,6 +90,27 @@ releases and runs it. The Construction decision is recorded in HyperDelivery as 
 but it is UA's sourcing decision about production work, made by different people outside
 HyperDelivery's build, so it is not a fourth approval (section 10).
 
+### Who does the work between the approvals
+
+Each step runs at one of three levels. **Human-led:** people do the work and AI answers when asked.
+**AI-assisted:** AI drafts the artifact and people edit and complete it. **AI-driven:** AI does the
+stretch's work, including finding sources and asking the people who know, within an agreed policy,
+and people make the decisions it brings them. AI-driven never means auto-approval: the three
+approvals, the signer matrix, the Construction decision, decisions inside a project and every
+confirmation are a named person's at every level. What changes is who does the work, who starts it,
+and what a signer reads (the whole artifact, or what changed, the evidence and the flagged items,
+which must all be answered before signing).
+
+A level belongs to one step, in one workspace, at one risk tier, never to HyperDelivery as a whole.
+The Final MVP is designed to run most of the prototype stretch AI-driven inside the signed plan and
+the sandbox (those cells start there by design and carry the same measures and demotion triggers as
+any promoted cell), Discover and Plan are AI-assisted, and Try it is human by design. From the Enterprise phase a step
+moves up only on evidence, through a decision record the workspace admin and the line owner sign,
+and drops back automatically on a severe escape, an evaluation regression or falling acceptance
+(the dial in section 2; the bars and the order in
+[north-star.md section 4](north-star.md#4-from-human-led-to-ai-driven)). "AI-driven" and "AI-assisted
+with engineers" in the Construction decision are the same words applied to Construction.
+
 ### Where a project starts
 
 Nothing has to be uploaded. People describe the idea, point at what already exists, or both, and
@@ -326,6 +347,7 @@ prototype contract (section 3).
 | **Path** | New idea, change something that exists, report into an app, fix, change this prototype | Proposed at Intake, confirmed in the Brief | Which steps run, and which run only on the delta |
 | **Depth** | Light, Standard, Thorough | Proposed in the Brief, confirmed by the requester, with the time cost shown | How much the agents write and ask, whether a working session is suggested, review depth, whether approvals 1 and 2 share one sitting |
 | **Risk tier** | Low, Medium, High | Deterministic rules set the floor; an AI classifier may raise it, never lower it | Adds co-signers and blocking reviews on top of the target tier's minimum; sets the default Construction mode (section 10) |
+| **Autonomy level** (Enterprise) | Human-led, AI-assisted, AI-driven, per step, workspace and risk tier | The workspace admin and the line owner, on evidence, by a signed decision record; demotion is automatic; a requester can lower any step for their own project ("Ask me first on this project") | Who does the work between the approvals and what a signer reads; never the approvals, the signers or the number of approvals |
 | **Target tier** | Prototype only, T1 Team app, T2 Department app, T3 Engineering-owned system | Proposed in the Brief from the workspace's data envelope and the risk floor, signed with approval 1, confirmed at approval 2 with the plan's data classification; HyperDelivery never moves a project up a tier | Who signs (section 4), what the handoff package must contain (section 10) and the default Construction mode. "Prototype only" is for work that ends with the prototype and what it taught; its Construction decision defaults to "Not now" |
 
 The deterministic risk floor reads: the Snowflake classification tags on the objects the plan
@@ -470,6 +492,8 @@ high or critical findings. Other specialists advise unless the cell says they bl
 | Platform team | Runs HyperDelivery, golden paths, evaluations; operates the prototype sandbox | Platform Admin | n/a | (new) | Layer 3 |
 | Champion | Helps teammates frame ideas, facilitates working sessions, first-line help, about 10% of their time | Builder | Any | (new) | Layers 1 to 2 |
 | Sponsor | Owns the portfolio, priorities and value | Viewer | Viewer | Leadership (Lee) | Layer 1, aggregated |
+| Workspace admin (proposed, Enterprise) | Accountable for a workspace's envelope, budget and how its people work; co-signs every change to a step's autonomy level in that workspace. Until named, the workspace's sponsor or business lead | Governance Admin | n/a | (new) | Layer 2 |
+| Line owner (proposed, Enterprise) | Accountable for UA-DLC as a process across workspaces; co-signs autonomy changes. Today the plan owner in EDM; may become a joint role with engineering | Platform Admin | n/a | (new) | Layers 2 to 3 |
 
 Data owners and stewards come from UA's existing domain stewardship, not new hires. Estimated
 load: per project, one access review and 2 to 5 definition questions, about 2 steward hours; about
@@ -711,13 +735,26 @@ release). Nothing is built for it before then.
 
 | Event | Who | Channel | Batching | Reminder | Escalation |
 |---|---|---|---|---|---|
-| Question for you | The named person | Teams card | One card per project per day | 1 business day | Suggested alternative after 3 |
+| Question for you | The named person, from the HyperDelivery bot, saying it is an AI asking for the requester | Teams card, at most 3 questions | One card per project per day | 1 business day, once | Back to the requester after the one reminder: nudge the person, ask someone else, or record an assumption; never a third message, never to a manager |
+| Confirm what you said in a linked meeting (Enterprise) | Each speaker, for their own statements, checked by Entra identity; the organizer for unattributed ones (meeting rooms, dial-ins, guests), marked "speaker unknown", which are never attributed to a named person and cannot settle a definition | Teams card | One card per person per meeting | 2 business days, once | Unconfirmed statements stay unused; silence never confirms |
 | Approval waiting | The assigned approver | Teams card, opening the evidence to sign | Immediate | 2 business days | Delegate or business owner after 5 |
 | Construction decision waiting | Construction owner | Teams card, opening the handoff package | Immediate | 2 business days | Engineering leadership after 5 |
 | Your project moved | Requester, owner | Teams activity feed | Grouped hourly | n/a | n/a |
 | A source changed or lost access | Project owner, the person who pointed at it | Console; Teams activity feed | Grouped daily | n/a | n/a |
 | Something failed | Requester, platform engineer on duty | Teams; console | Immediate | n/a | Platform team |
 | Weekly digest | Workspace members, sponsor | Channel post | Weekly | n/a | n/a |
+
+From the Final MVP, HyperDelivery enforces one card per project per day and at most 3 questions per
+card, and counts every card that asks something of a person (questions, confirmations, invitations
+to try a prototype) per person per week across all projects. Every card offers Pause Questions and a
+full opt-out, and one opt-out covers questions and confirmation cards alike. From the Enterprise
+phase that count becomes a budget: at most 5 cards a week (proposed, calibrated on the pilot's
+counts), with a separate agreed allowance for data stewards. Approvals and the Construction decision
+are outside it, because they are the signer's job. Over budget, HyperDelivery queues the card,
+batches it into the next one or tells the requester; it never sends anyway, and it checks the
+project's record for an answer before asking. In the Final MVP, drafted questions go only to
+recipients in the US; the requester asks colleagues elsewhere directly until Privacy (and, for EMEA,
+the works council) clears them ([north-star.md section 6](north-star.md#6-questions-to-the-people-who-know)).
 
 All timing uses the recipient's working hours and time zone (Baltimore, Amsterdam, Bengaluru).
 Until the Teams cards ship in the Final MVP (the Teams app is a long-lead request due by about
@@ -768,6 +805,10 @@ read "decision" as "already decided").
 | Prototype contract (what every HyperDelivery project produces: a prototype in the sandbox on dev data, for members and named testers, with an expiry) | Prototype | Yes |
 | Target tier (where the production version is meant to land, built in Construction: T1 Team app, T2 Department app, T3 Engineering-owned system; "Prototype only" for work that ends with the prototype) | "Target: T1 Team app", "Target: T2 Department app", "Target: T3 Engineering-owned", "Prototype only" | Plain names only |
 | UA-DLC, golden path, depth | Not shown | No |
+| UA-DLC (the framework: phases, steps, approvals and outputs) versus HyperDelivery (the platform people open, which runs it) | "HyperDelivery" only | HyperDelivery yes; UA-DLC no ([which name to use](north-star.md#which-name-to-use)) |
+| Autonomy level (Human-led, AI-assisted, AI-driven; set per step, workspace and risk tier; Enterprise) | Shown in Admin and in Layer 2 with the decision record behind it | No |
+| Linked meeting (a Teams meeting its organizer or a presenter linked to a project before it started, so HyperDelivery reads its transcript once it ends; attendees are told and can keep their words out; Enterprise) | "Linked meeting" | Yes |
+| Approved precedent (a past FSD labeled approved under the owner's rule, cited by section; Enterprise) | "Approved spec", with its year and section | Yes |
 
 ## 13. Second department criteria
 

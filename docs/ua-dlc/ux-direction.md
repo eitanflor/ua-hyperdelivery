@@ -8,7 +8,7 @@
 | Scope | Desktop and laptop browsers, 1280 px wide and up; phone layouts are out of scope. Light theme only; dark is out of scope for now. Teams means Teams on the desktop |
 | Builds on | [docs/design/](../design/README.md): personas, principles, audit and patterns. This document says what changes and why |
 | Design system | [design-system.md](design-system.md), "HyperDelivery on Baselayer": tokens, type, space, shape, the app shell, component specs and icons. It is the visual source of truth; where the two disagree on a visual value, it wins |
-| Concept screens | [HyperDelivery concepts canvas](https://claude.ai/artifact/BUcEKzAz1CXa27EY398sAF) (private until shared), with a standalone copy in the repo under `docs/ua-dlc/site/concepts/`, on four pages: Compare and Vote (one board), A · Top Bar and C · Guided Path (seven screens each), and B · Side Nav and Chat, which holds the 22 artboards described here in rows: Final MVP, Enterprise, Help and the design system. On page B, Home (`Main.dc.html`) and New project (`Start.dc.html`) are the reference boards: every product board copies their side nav, top bar and project workspace. Nineteen carry product copy only and three are design-system galleries; the reasoning lives here. Every name, project and number on the canvas is invented to show the design; none is a measured result |
+| Concept screens | [HyperDelivery concepts canvas](https://claude.ai/artifact/BUcEKzAz1CXa27EY398sAF) (private until shared), with a standalone copy in the repo under `docs/ua-dlc/site/concepts/`, on five pages (the fifth, North Star, holds items 21 to 24 below): Compare and Vote (one board), A · Top Bar and C · Guided Path (seven screens each), and B · Side Nav and Chat, which holds the 22 artboards described here in rows: Final MVP, Enterprise, Help and the design system. On page B, Home (`Main.dc.html`) and New project (`Start.dc.html`) are the reference boards: every product board copies their side nav, top bar and project workspace. Nineteen carry product copy only and three are design-system galleries; the reasoning lives here. Every name, project and number on the canvas is invented to show the design; none is a measured result |
 | Companions | [enterprise-plan.md](enterprise-plan.md), [operating-model.md](operating-model.md) (the line, inputs and outputs per step, roles, notifications, glossary), [platform-architecture.md](platform-architecture.md) (orchestrator and specialists) |
 | Research | [ui-ux-references.md](research/ui-ux-references.md), [chips-tables-diagrams.md](research/chips-tables-diagrams.md), [logo-assets.md](research/logo-assets.md), [uiarc-inventory.md](research/uiarc-inventory.md), [baselayer-for-hyperdelivery.md](research/baselayer-for-hyperdelivery.md), [ai-app-layouts.md](research/ai-app-layouts.md), [figma-libraries.md](research/figma-libraries.md) |
 
@@ -185,7 +185,7 @@ prototype with its data, sources and decisions; questions and approvals in Teams
 where the evidence is; and the same facts on every screen (Maya's approval of The Plan has waited
 1d 4h in all three).
 
-**How the vote works.** The concept canvas has four pages: **Compare and Vote** (`Compare.dc.html`,
+**How the vote works.** The concept canvas has four voting pages (its fifth page, North Star, is not part of the vote): **Compare and Vote** (`Compare.dc.html`,
 the three variants side by side, opened first), **A · Top Bar**, **B · Side Nav and Chat** and
 **C · Guided Path**. Teammates click through pages A, B and C, then vote on the
 [vote page](https://claude.ai/artifact/CWBVHp8AvGL9YYp9xP2pVT) (private until the owner shares it; teammates need Contributor access to vote, and
@@ -487,7 +487,10 @@ person looking at it is cut, and no block holds open space it cannot fill.
     enforced in Enterprise, a workspace budget reached. The Needs Attention filter in Projects
     gathers them. Codes, test names and repositories sit behind "Open Trace". None uses red unless
     the failure waits on the viewer to decide what happens next (HD-R1).
-12. **Teams.** A question card answered in place (with "Not Me, Suggest Who" and "I Don't Know"); an
+12. **Teams.** A question card answered in place, headed "HyperDelivery, an AI assistant, asking for"
+    the requester, with "Question 1 of 2", why you, what was already checked, a deadline tied to the
+    next approval, "Not Me, Suggest Who" and "I Don't Know", and Pause Questions and Why Am I Getting
+    This? in its footer ([north-star.md section 6](north-star.md#6-questions-to-the-people-who-know)); an
     approval card with the mini line, a short summary and "Review and Sign", which opens the
     project's decision view; the evidence view with a strong sign-in where required; the refreshed
     receipt with an "Open Project" link; and the weekly digest, "This Week Across UA", whose one
@@ -496,7 +499,10 @@ person looking at it is cut, and no block holds open space it cannot fill.
     and "Captured (Proposed)" in the side panel, the living document on the shared stage, and a
     capture indicator every participant can see: "Notes Only: Not Recording" by default, with a
     named scribe, or "Transcript On, Organizer Consented 14:02". "Confirm What We Heard" links to the
-    review after the session.
+    review after the session. The live "Now Asking" and "Captured (Proposed)" panel depends on
+    real-time transcript access for apps, which Microsoft has not shipped (roadmap item RM570651);
+    until it is generally available and reviewed, statements arrive after the meeting ends, as on
+    the North Star page's "After a linked meeting" board.
 14. **Library (Enterprise).** What UA already knows: confirmed facts, each with its source chip, who
     confirmed it, status (certified, canonical, confirmed, or not yet agreed) and reuse count;
     golden paths; and Recently Handed Off projects, the showcase that left Home. Reached from a new
@@ -542,6 +548,31 @@ person looking at it is cut, and no block holds open space it cannot fill.
     HyperDelivery's own production environment and a Construction intake with engineering.
 20. **The line.** Every state and the four scales on one artboard, including Handed Off with its
     dashed Construction stub.
+
+**The North Star page** draws four screens from [north-star.md](north-star.md), in Variant B's shell.
+They are Enterprise rollout or later, and the canvas titles say so:
+
+21. **After a linked meeting (Enterprise).** The project workspace the afternoon after "Line review
+    prep": the assistant says the meeting ended, what it read (the transcript and the Copilot
+    recap) and where each statement went; the Sources tab shows the meeting with who linked it and
+    how attendees were told, then each statement by speaker with its transcript time and state:
+    confirmed, waiting on the speaker, corrected, sent to the steward because it conflicts with a
+    certified definition, not used at the speaker's request, or from AI notes with no transcript
+    match and so unused. Loop notes are read only when someone points at them.
+22. **A question in Teams (Enterprise).** Dana's 1:1 chat with HyperDelivery: a card that says it is
+    an AI asking for Maya, "Question 1 of 2", why Dana, what was already checked, the deadline tied to
+    the plan approval, "Not Me (Suggest Who)", and Pause Questions and Why Am I Getting This? in the
+    footer; Dana's free-text answer, one clarifying follow-up, a receipt of what was recorded and
+    where it goes, and two days later the note that her answer changed the plan.
+23. **Approved precedent in the plan (Enterprise).** The Plan tab drafting from three approved specs,
+    each with its template, approval date, what happened after and the section used, a superseded
+    one hidden; what precedent has and this plan lacks appears as questions for named people, and
+    effort ranges come from Jira actuals.
+24. **Admin: autonomy by step (Enterprise).** A grid of steps by risk tier with each cell's level,
+    the evidence against the promotion bars for a selected cell, "Propose Promotion" enabled only
+    when every bar is met and signed by the workspace admin and the line owner, a disabled example
+    with its reason, recent promotions and an automatic demotion. The approvals, Try It and the
+    Construction decision read "A person's decision at every level".
 
 **Prototypes carry a persistent banner:** Prototype, "Sandbox, dev data" or "Synthetic data", the
 owner, the expiry, and "Report a Problem", which opens a change request back into the line.

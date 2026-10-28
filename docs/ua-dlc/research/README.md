@@ -1,8 +1,8 @@
 <!-- cspell:words Baselayer Firecrawl Snowsight -->
 # UA-DLC research library
 
-Twenty-five research reports, a completeness critique and an index of every source the owner shared,
-gathered on 2026-10-25 and 2026-10-26 in seven rounds to inform the
+Thirty research reports, a completeness critique and an index of every source the owner shared,
+gathered from 2026-10-25 to 2026-10-27 in eight rounds to inform the
 [enterprise plan](../enterprise-plan.md), the [platform architecture](../platform-architecture.md),
 the [operating model](../operating-model.md) and the [UX direction](../ux-direction.md). Each report was
 written by a separate researcher with one brief. In the first round, the critique read all nine
@@ -19,7 +19,11 @@ sandbox account, behind a swappable `Builder` port. The sixth, labeled Round 7, 
 with the other tools UA teammates can use and placed each on the plan's complexity and use-case
 matrices. The seventh, labeled Round 8, compared HyperDelivery with the products building toward
 UA-DLC, read how the leading AI work apps lay out their screens, and made a second read-only pass over
-UA's Figma libraries for an app shell and a chat-first workspace.
+UA's Figma libraries for an app shell and a chat-first workspace. The eighth, labeled Round 9, set the north star: five researchers
+covered the maturity path from human-led to AI-driven, capturing Teams meetings once they end, asking
+experts in Teams, UA's approved FSDs as a corpus, and which advantages hold at feature parity; each
+report was fact-checked against primary sources, and a critic cross-checked all five and fixed their
+contradictions.
 
 These are point-in-time notes. Vendor products, prices and dates in this space change monthly.
 Every non-obvious claim carries a source link; claims from secondary sources are marked in the
@@ -64,6 +68,12 @@ build stops at Inception, with a handoff to Construction.
 | [dlc-landscape.md](dlc-landscape.md) | Who else is building toward UA-DLC (Chopin, Anthropic's AI-native SDLC playbook, AWS AI-DLC and Kiro, Spec Kit and Copilot, Factory, Devin, Microsoft, Rovo Dev, Google, app builders, Snowflake apps, 8090): how much of each phase each covers, what makes HyperDelivery different, where others beat it, and prepared answers for leadership |
 | [ai-app-layouts.md](ai-app-layouts.md) | How ChatGPT, Claude, Gemini, Microsoft Copilot and the agentic builders lay out their apps, and the layout proposed for HyperDelivery: a side nav, a chat-first Home, the conversation beside an artifact panel, and ten rules that keep it simple |
 | [figma-libraries.md](figma-libraries.md) | A second read-only pass over UA's Figma libraries for an app shell: Baselayer's account side nav, preview sections, three-dot loader, snackbar and dialogs, what Baselayer Ignite and the community kits offer, and the conflicts with design-system.md |
+| **Round 9** | |
+| [autonomy-levels.md](autonomy-levels.md) | Human-led, AI-assisted and AI-driven defined for UA-DLC: what never moves, every step at each level and where the Final MVP sits, earned autonomy per cell with promotion bars and demotion triggers, reviewer complacency and its mitigations, and a worked example |
+| [meeting-capture-automation.md](meeting-capture-automation.md) | Capturing a project's Teams meetings once they end: which Graph signal to trust, the Copilot recap and Loop notes, consent and governance (tenant controls, notice, Purview, works councils, US recording law), a reference design on AWS, and the ladder |
+| [proactive-sme-outreach.md](proactive-sme-outreach.md) | Asking experts in Teams: proactive messages and Adaptive Cards, who the message is from, routing to the right person, card design people do not learn to ignore, policy, HR and legal, prior art, and the gate for AI-driven sending |
+| [fsd-corpus-index.md](fsd-corpus-index.md) | UA's historical approved FSDs as a durable advantage: what exists in the code, sourcing and approval labels, structure-aware ingestion into typed records, uses, AWS options and cost, and what decays it |
+| [context-moats.md](context-moats.md) | What keeps HyperDelivery better than generic tools at feature parity: corpus, process-generated records and position, 37 candidates ranked to twelve, the counter-view, moat versus lock-in, and how to prove it |
 | [sources.md](sources.md) | The index of every link the owner shared, across all rounds, and the report that read each one |
 
 Re-check the reports each quarter, or before any decision that depends on a product's status.

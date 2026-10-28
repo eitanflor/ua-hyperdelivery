@@ -19,6 +19,168 @@ Template for new entries:
 
 ---
 
+## 2026-10-27 - The Final MVP records the north star's data from its first project and builds none of its machinery
+- **Status**: Proposed (the owner confirms with the build team in week 1)
+- **Context**: The north star (`docs/ua-dlc/north-star.md`) depends on records that cannot be
+  backfilled: the AI's first draft of each section, what people changed before signing, why work was
+  sent back, who was asked what, and what engineering did with each handoff. The five round 9 research
+  reports proposed about 45 "prepare now" items, several overlapping, and AGENTS.md forbids building
+  infrastructure before a use case needs it.
+- **Decision**: The Final MVP adds what north-star.md section 8 lists: ten records and notices that
+  cannot be backfilled (drafts kept with derived authorship, reason codes, decision records with
+  options and who wrote them, ask records separate from the model's `OpenQuestion`, provenance on
+  sources, corrections and rulings as events, outcomes, cell-stamped run events, a retention class, and
+  a notice to everyone recorded), the FSD groundwork (about 40 analyst hours and 10 hours of owner
+  review to label 20 approved FSDs, plus an evaluation seed) and two pilot practices, sized with the
+  build team in week 1. None of it moves MVP ready or the pilot readout, and it is cut early in the
+  plan's cut order if the build runs long. Meeting webhooks and ingestion, automatic sending, routing scores, the
+  cross-project Library, an FSD knowledge base, the context server, the shadow runner, the Autonomy page
+  and seeded challenge items wait for the Enterprise phase.
+- **Alternatives considered**: *Build meeting capture and proactive questions in the Final MVP* - not
+  chosen: they need Privacy, Legal, works council and tenant decisions that will not land by week 14, and
+  would take build time from the pilot. *Record nothing until Enterprise* - not chosen: a year of pilot
+  and early projects would leave no edit, authorship or outcome history, and the promotion evidence
+  would start from zero. *All 45 items* - not chosen: they overlapped, and some (a reserved seeded-item
+  field, an AI-driven send mode, per-topic opt-outs) serve nothing the pilot does.
+- **Consequences**: Small schema work in `core/domain/` during the build, and a pilot notice that HR,
+  Privacy and Internal Communications must clear by week 15. Revisit the list at MVP ready (week 14)
+  against what the pilot will actually measure.
+
+---
+
+## 2026-10-27 - The lasting advantage is the record of how UA decides, in schemas UA-DLC owns; approved FSDs are the cold start
+- **Status**: Proposed
+- **Context**: The owner asked for advantages that hold even when other tools reach feature parity,
+  starting with indexing UA's historical approved FSDs. Inside UA the competitor is another tool
+  (Microsoft 365 Copilot with Work IQ, Rovo with the Teamwork Graph, Snowflake CoWork, coding agents)
+  pointed at the same SharePoint, Confluence, Jira and Snowflake, so any document that already sits
+  there can be indexed by all of them.
+- **Decision**: Treat process-generated records (decisions with rejected options, approval edits, the
+  answer ledger, definition disputes, handoff outcomes, redirects) as the main advantage, and the
+  approved FSD corpus as the cold start, made distinctive by an owner-signed approval label, typed
+  records in the plan's shape and links to what was built. Prefer retrieval, evaluation, routing and
+  guardrails over fine-tuning. The record schemas belong to UA-DLC, not to HyperDelivery:
+  HyperDelivery writes first, canonical copies live in UA's systems of record, a replacement tool must
+  write the same records, and a read-only context server serves only records with no canonical home,
+  and only when a named consumer asks.
+- **Alternatives considered**: *The FSD corpus as the moat* - not chosen as the main bet: any tool with
+  SharePoint access can read the same files. *Fine-tuning a model on UA data* - not chosen: models change
+  faster than the corpus grows, and retrieval and evals carry over. *A knowledge graph database* - not
+  now: typed link records answer the known questions. *Keeping records in HyperDelivery's own formats* -
+  not chosen: it would turn the advantage into lock-in and empty the plan's exit ramp.
+- **Consequences**: The exit ramp now keeps approval edits, answers on record, handoff outcomes and
+  evaluation cases too, and asks a replacement to write UA-DLC's records. The claim is tested by a
+  three-arm comparison (a generic tool, the same tool with the exported records, HyperDelivery) on
+  held-out intakes, with its reading agreed in advance; if HyperDelivery is no better than the generic
+  tool, nothing cross-project is funded on this claim. Revisit at the scale decision.
+
+---
+
+## 2026-10-27 - AI-driven questions to experts run inside a per-project policy the requester signs
+- **Status**: Proposed (the owner decides opt-in or opt-out for recipients; opt-in is recommended)
+- **Context**: The north star has HyperDelivery ask the person who owns an answer in Teams on its own.
+  A Teams message is a side effect outside the conversation, and AGENTS.md keeps a gate on side-effect
+  tools; approving every card would make the requester the bottleneck the feature is meant to remove.
+- **Decision**: Final MVP: HyperDelivery drafts each question and proposes the person with its
+  evidence, and the requester sends with one click, to recipients in the US only until Privacy (and,
+  for EMEA, the works council) clears others. Routing uses ownership of record and the referrals
+  people give, never a score of how well or how fast anyone answers. From Enterprise rollout, and only after a gate over
+  at least eight pilot weeks (70% answered within two business days, re-routes under 20% at high
+  confidence, pauses and opt-outs under 2% of distinct recipients, requester edits under 20%, no senior
+  leader reached, no complaint upheld by Internal Communications or HR, Privacy and Legal signed off
+  with works council consent where required), HyperDelivery may send on its own inside an outreach policy the requester signs
+  once per project, naming the roles or people it may ask, to recipients who opted in, with a live log
+  the requester can withdraw from. Messages always come from the HyperDelivery bot and say they are from
+  an AI asking for the named requester. After one reminder a question goes back to the requester, never
+  to a manager, and every card counts against one weekly attention budget per person.
+- **Alternatives considered**: *Approve every send forever* - safe, but it keeps the requester chasing,
+  which is the problem. *Send freely under caps alone* - not chosen: no person's signature behind any
+  send. *Post as the requester through Graph* - not chosen: AI-drafted text under a person's name.
+  *Agent 365 agents with their own identity* - not now: a Frontier preview with persistent, accumulating
+  access. *Route on who answered well before* - not chosen: it ranks staff on their behavior, close to
+  the EU AI Act's high-risk use in Annex III point 4(b), and contradicts the commitment that answers
+  are never used to evaluate people.
+- **Consequences**: The notification policy changes now (operating-model.md section 11): one reminder,
+  then back to the requester, plus the weekly budget. The ask record has to exist from the first pilot
+  card to measure the gate. Revisit the gate values after the pilot readout.
+
+---
+
+## 2026-10-27 - Linked meetings are captured from the transcript notification, never by watching the recording
+- **Status**: Proposed (Enterprise; needs the Privacy and Legal review, tenant decisions and, for EMEA
+  staff, works council consent)
+- **Context**: The owner's idea was to notice when a meeting's recording lands in the organizer's
+  OneDrive and pull it with the Copilot or Loop notes. Round 9 research checked every way to learn that a
+  meeting is over and its artifacts are ready.
+- **Decision**: A meeting is captured only if its organizer or a presenter linked it to a project
+  before it started, which installs the HyperDelivery Teams app in it with resource-specific consent.
+  That is the organizer's authorization for the app, not the attendees' consent: attendees are told in
+  the invite and at the start, can keep their words out, and are covered by Teams' participant-agreement
+  policy for linking organizers. Unconfirmed statements are not retrievable by any agent, and meetings
+  with an attendee outside the US wait until Privacy (and, for EMEA, the works council) clears them. A per-meeting Graph
+  transcript subscription starts ingest; the Copilot recap is read through the Meeting AI Insights API
+  only once its license rule and how it is read are settled, and until then only when the organizer
+  points at it; Loop and Facilitator notes are read only when someone
+  points at them. Each speaker confirms their own statements, and only confirmed statements ground a
+  plan. Text only: never audio or video.
+- **Alternatives considered**: *Watch the OneDrive Recordings folder* - not chosen: work and school
+  drive notifications fire only at the drive root and can take six hours, it needs read access to the
+  organizer's whole drive, and it yields video HyperDelivery should not read. *Call records* - tenant-wide
+  and up to 150 minutes late. *The bot's meeting-end event alone* - says the meeting ended, not that the
+  transcript is ready. *Transcribing recordings ourselves* - out of bounds where the transcript control is
+  off. *A real-time media bot* - not chosen: audio capture, and Microsoft's real-time transcript access
+  is not generally available.
+- **Consequences**: The link must happen before the meeting starts, so the "Add this meeting?"
+  suggestion asks ahead of time. Subscriptions expire after three days and need renewal and nightly
+  reconciliation. Revisit Loop notes when Microsoft moves them to the organizer's OneDrive (RM576194)
+  and the app-installed subscription scope reaches v1.0.
+
+---
+
+## 2026-10-27 - Autonomy rises per step on evidence, never by date, and the approvals never move
+- **Status**: Proposed (leadership endorses the rule before Enterprise; the bars are calibrated in the
+  pilot)
+- **Context**: The owner's north star moves UA-DLC from human-led to AI-assisted to AI-driven.
+  "AI-driven" is easily heard as "no humans", and AGENTS.md treats the approval gates as the product.
+- **Decision**: A level (human-led, AI-assisted, AI-driven) belongs to one step, in one workspace, at
+  one risk tier. It rises only through shadow runs and evidence against proposed bars (at least 20 runs at Low
+  risk from at least 3 requesters and 5 approvers over at least 6 weeks, first-pass acceptance without
+  material edits, corrections by the people quoted, an evaluation floor, no severe escapes, evidence
+  opened by signers), by a decision record the workspace admin and the line owner
+  sign. Demotion is automatic on defined triggers. The three approvals, the signer matrix, the
+  Construction decision, decisions inside a project and confirmations stay with named people at every
+  level. High risk stays AI-assisted at least until the scale decision.
+- **Alternatives considered**: *Product-wide maturity levels by date or phase* - not chosen: steps earn
+  trust at different rates, and dates invite promotion without evidence. *Automatic promotion when
+  metrics pass* - not chosen: a change to how work is governed needs a person's signature. *Auto-approval
+  at AI-driven* - not chosen: it removes the decision the product exists to keep.
+- **Consequences**: The Final MVP must record authorship, edits, reason codes and cell keys from its
+  first project, or promotions start without evidence. Two new roles (workspace admin, line owner) are
+  needed by Enterprise. With 8 to 12 pilot users, content steps are unlikely to be promoted before
+  Enterprise rollout.
+
+---
+
+## 2026-10-27 - HyperDelivery is the platform; UA-DLC is the framework it runs
+- **Status**: Proposed (the owner adopts the wording)
+- **Context**: People conflate the two names, and the plan led with "UA-DLC and HyperDelivery" and
+  "UA-DLC on HyperDelivery", which put the framework first.
+- **Decision**: UA-DLC is the framework, the playbook (phases, steps, approvals, outputs, roles);
+  HyperDelivery is the platform people open, which runs its Ideation and Inception phases from idea to
+  handoff. UA-DLC is owned by the plan owner in EDM today; joint ownership with engineering is decided
+  by the pilot readout. The plan is retitled "HyperDelivery, powered by UA-DLC", its
+  section 4 "The proposal: HyperDelivery, running UA-DLC", and north-star.md section 1 holds the
+  summary to use today and the north-star version, with a which-name-to-use table. Business teammates
+  see only HyperDelivery.
+- **Alternatives considered**: *Keep the two names co-equal* - not chosen: that is the source of the
+  confusion. *Drop one name* - not chosen: engineering already runs UA-DLC's Construction steps in its
+  own tools, so the framework needs a name of its own.
+- **Consequences**: Anchor links to plan section 4 changed and were updated. The north-star line says
+  "production systems" only with the caveat that HyperDelivery reads them and builds on dev data until
+  Construction is in scope.
+
+---
+
 ## 2026-10-27 - The UI direction goes to a team vote between three variants
 - **Status**: Proposed (open until the team vote closes; the result is logged here and the design docs
   follow it). Amends "The concept app gets a side nav, a chat-first Home and one workspace per project"

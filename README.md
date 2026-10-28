@@ -11,8 +11,8 @@ and [docs/decisions.md](docs/decisions.md) for the log of architecture/tradeoff
 decisions (why things are built the way they are, kept up to date via the
 `log-decision` skill). Conventions and the Definition of Done live in
 [AGENTS.md](AGENTS.md); setup and the gate are in [CONTRIBUTING.md](CONTRIBUTING.md).
-The proposal for the next phase, taking the EDM pilot to an enterprise platform under the UA-DLC
-process, is in [docs/ua-dlc/](docs/ua-dlc/README.md) (draft for leadership review). `make site`
+The proposal for the next phase, taking the EDM pilot to an enterprise platform that runs the UA-DLC
+framework, is in [docs/ua-dlc/](docs/ua-dlc/README.md) (draft for leadership review). `make site`
 serves its standalone concept site from [docs/ua-dlc/site/](docs/ua-dlc/site/) at
 http://localhost:8766/: the plan as a page and a clickable canvas of the concept screens.
 
@@ -186,4 +186,7 @@ and never holding up the Final MVP. HyperDelivery's build ends at Inception: a m
 prototype on dev data in a hosted sandbox and a handoff package; whether Construction is AI-driven
 or AI-assisted with engineers is decided per project after Inception. The concept screens put
 it in a chat-first shell (a side nav, and each project as a conversation beside its artifacts),
-and the plan compares it with the products building toward UA-DLC.
+and the plan compares it with the products building toward UA-DLC. From the Enterprise phase
+on, [north-star.md](docs/ua-dlc/north-star.md) sets the direction: UA-DLC steps move from human-led to
+AI-driven on evidence with people still making every decision, linked meetings and expert answers
+come in through Teams, and the record of how UA decides becomes an advantage that stays UA's.

@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HyperDelivery - After a Linked Meeting</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#FFFFFF}
+a{color:#1D1D1D}a:hover{color:#444444}
+:focus-visible{outline:2px solid #0096FA;outline-offset:2px}
+.hd-ring:focus-visible{outline-color:transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-edge:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #D0D0D0,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-ink:focus-visible{outline-color:transparent;box-shadow:inset 0 0 0 1px #1D1D1D,0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-ring-in:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-btn-primary:hover{background:#444444!important}.hd-btn-primary:active{background:#5F5F5F!important}
+.hd-btn-secondary:hover,.hd-btn-ghost:hover,.hd-chip:hover{background:#F0F0F0!important}
+.hd-row:hover{background:#F9F9F9!important}
+.hd-pop>summary,.hd-sub>summary{list-style:none;cursor:pointer}
+.hd-pop>summary::-webkit-details-marker,.hd-sub>summary::-webkit-details-marker{display:none}
+.hd-iconbtn{width:32px;height:32px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;color:#1D1D1D;background:transparent;border:0;padding:0;cursor:pointer}
+.hd-iconbtn:hover,.hd-pop[open]>.hd-iconbtn,.hd-iconbtn.hd-sel{background:#F0F0F0}
+.hd-menu{position:absolute;top:44px;right:0;width:256px;box-sizing:border-box;padding:8px 0;background:#FFFFFF;border-radius:8px;box-shadow:0 0 10px rgba(29,29,29,0.15),0 0 0 1px #D0D0D0;z-index:30}
+.hd-mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;height:32px;padding:0 16px;border:0;background:transparent;font:inherit;font-size:14px;line-height:18px;color:#1D1D1D;text-decoration:none;text-align:left;cursor:pointer}
+.hd-mi:hover{background:#F0F0F0;color:#1D1D1D}
+.hd-mi:focus-visible{outline:2px solid #0096FA;outline-offset:-2px}
+.hd-menu hr{height:1px;border:0;margin:8px 0;background:#F0F0F0}
+.hd-menu kbd{font-family:'Chivo Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#5F5F5F;background:#FFFFFF;box-shadow:inset 0 0 0 1px #D0D0D0;border-radius:4px;padding:2px 6px}
+/* hd-shell: the side nav, the same on every product board (design-system.md section 7) */
+.hd-side{background:#F9F9F9;border-right:1px solid #F0F0F0;min-width:0}
+.hd-side-in{position:sticky;top:0;height:100vh;max-height:900px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:12px}
+.hd-sn{height:36px;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:8px;color:#1D1D1D;text-decoration:none;font-size:14px;line-height:18px;white-space:nowrap;min-width:0}
+.hd-sn:not([aria-current="page"]):hover{background:#F0F0F0!important;color:#1D1D1D}
+.hd-sn:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #0096FA,inset 0 0 0 4px #FFFFFF!important}
+.hd-sn-sm{height:32px;font-size:13px;line-height:18px}
+.hd-sl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hd-new:hover{background:#F0F0F0!important}
+[data-rail="on"] .hd-sl,[data-rail="on"] .hd-recent,[data-rail="on"] .hd-word{display:none!important}
+[data-rail="on"] .hd-sn,[data-rail="on"] .hd-new{justify-content:center;padding:0}
+[data-rail="on"] .hd-sn[aria-current="page"]{background:#F0F0F0!important}
+[data-rail="on"] .hd-sn{position:relative}
+[data-rail="on"] .hd-count{position:absolute;top:1px;right:6px;min-width:16px!important;height:16px!important;padding:0 4px!important;font-size:11px!important;line-height:16px!important;box-shadow:0 0 0 2px #F9F9F9}
+[data-rail="on"] .hd-lock{justify-content:center;padding:0;flex-direction:column;height:auto;gap:12px}
+.hd-dots{display:inline-flex;align-items:center;gap:4px;flex:none}
+.hd-dots i{width:5px;height:5px;border-radius:999px;background:#444444;opacity:.3;animation:hd-dot 1.2s infinite}
+.hd-dots i:nth-child(2){animation-delay:.2s}.hd-dots i:nth-child(3){animation-delay:.4s}
+@keyframes hd-dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hd-dots i{animation:none;opacity:.6}}
+/* hd-workspace: the conversation beside the artifact panel (design-system.md section 7.4) */
+.hd-tab:hover{background:#F0F0F0!important}
+.hd-tool>summary{list-style:none;cursor:pointer}
+.hd-tool>summary::-webkit-details-marker{display:none}
+.hd-tool>summary:hover{background:#F9F9F9}
+.hd-tool[open] .hd-chev{transform:rotate(90deg)}
+.hd-opt:hover{background:#F9F9F9!important}
+.hd-compose:focus-within{box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0096FA!important}
+.hd-look:hover{box-shadow:inset 0 0 0 1px #1D1D1D!important}
+/* Project: the workspace across Discover, Plan, Prototype build and review */
+input::placeholder,textarea::placeholder{color:#5F5F5F}
+.hd-tablist{scrollbar-width:none}.hd-tablist::-webkit-scrollbar{display:none}
+.hd-pop[open]>.hd-more{background:#F0F0F0!important}
+.hd-txt:hover{color:#444444!important}
+.hd-log>*{flex:none}
+@media (max-width:1439px){.hd-tab:not(.hd-more)>svg{display:none}.hd-mock{grid-template-columns:minmax(0,1fr)!important}.hd-mock-side{border-left:0!important;border-top:1px solid #F0F0F0;border-radius:0 0 8px 8px!important}}
+/* this board: a linked meeting as a source, and what each statement from it is waiting on */
+.hd-cue:hover{background:#F0F0F0!important}
+</style>
+</helmet>
+<div class="hd-app" data-rail="{{railAttr}}" style="display: grid; grid-template-columns: {{sideW}} minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 1200px; min-height: 1200px; overflow: hidden; background: #FFFFFF; font-family: Archivo, Arial, sans-serif; color: #1D1D1D; font-variant-numeric: tabular-nums">
+
+<!-- hd-shell:side start -->
+<aside class="hd-side" aria-label="HyperDelivery">
+  <div class="hd-side-in">
+    <div class="hd-lock" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 2px 0 8px; margin-bottom: 8px">
+      <a href="Main.dc.html" class="hd-ring" style="display: flex; align-items: center; gap: 10px; color: #1D1D1D; text-decoration: none; min-width: 0">
+        <svg width="28" height="17" viewBox="0 0 232.5 137" role="img" aria-label="Under Armour" style="flex: none"><path d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z" fill="currentColor"></path></svg>
+        <span class="hd-word" style="font-size: 16px; line-height: 20px; font-weight: 700; white-space: nowrap">HyperDelivery</span>
+      </a>
+      <span class="hd-word" style="flex: 1"></span>
+      <button type="button" class="hd-iconbtn" onClick="{{toggleRail}}" aria-label="{{railLabel}}" aria-expanded="{{sideOpen}}" title="{{railLabel}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><path d="M9.5 4.5v15"></path></svg>
+      </button>
+    </div>
+    <a href="Main.dc.html" class="hd-new hd-ring-ink" aria-label="New Project" style="height: 40px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 14px; margin-bottom: 4px; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; color: #1D1D1D; text-decoration: none; font-size: 14px; line-height: 18px; font-weight: 700; white-space: nowrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 5v14M5 12h14"></path></svg><span class="hd-sl">New Project</span>
+    </a>
+    <button type="button" class="hd-sn" aria-label="Search projects and facts, Command K" aria-keyshortcuts="Meta+K" onClick="{{openSearch}}" style="border: 0; background: transparent; font-family: inherit; cursor: pointer; text-align: left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4.4-4.4"></path></svg>
+      <span class="hd-sl" style="flex: 1">Search</span>
+      <kbd class="hd-sl" style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F; padding: 1px 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0">⌘K</kbd>
+    </button>
+    <nav aria-label="Primary" style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+        <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" aria-label="{{n.aria}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}; color: {{n.fg}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+          <span class="hd-sl" style="flex: 1">{{n.label}}</span>
+          <sc-if value="{{n.hasTag}}" hint-placeholder-val="{{ false }}"><span class="hd-sl" style="font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">{{n.tag}}</span></sc-if>
+          <sc-if value="{{n.hasCount}}" hint-placeholder-val="{{ false }}"><span class="hd-count" aria-hidden="true" style="min-width: 18px; height: 18px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #DC0019; color: #FFFFFF; font-size: 12px; line-height: 18px; font-weight: 700; text-align: center">{{n.count}}</span></sc-if>
+        </a>
+      </sc-for>
+    </nav>
+    <div class="hd-recent" style="display: flex; flex-direction: column; gap: 2px; margin-top: 16px; min-height: 0">
+      <h2 style="margin: 0; padding: 0 10px 6px; font-size: 12px; line-height: 16px; font-weight: 400; color: #5F5F5F">Recent</h2>
+      <sc-for list="{{recent}}" as="r" hint-placeholder-count="5">
+        <a href="{{r.href}}" class="hd-sn hd-sn-sm" aria-label="{{r.aria}}" aria-current="{{r.current}}" title="{{r.name}}" style="background: {{r.rowBg}}; box-shadow: {{r.rowRing}}; font-weight: {{r.fw}}">
+          <span aria-hidden="true" style="width: 14px; height: 14px; flex: none; display: inline-flex; align-items: center; justify-content: center">
+            <sc-if value="{{r.isWork}}" hint-placeholder-val="{{ false }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+            <sc-if value="{{r.isNotch}}" hint-placeholder-val="{{ true }}"><span style="width: 8px; height: 8px; box-sizing: border-box; background: {{r.bg}}; border: {{r.bd}}"></span></sc-if>
+          </span>
+          <span class="hd-sl" style="flex: 1">{{r.name}}</span>
+        </a>
+      </sc-for>
+      <a href="Projects.dc.html" class="hd-sn hd-sn-sm" style="color: #5F5F5F"><span aria-hidden="true" style="width: 14px; flex: none"></span><span class="hd-sl">All Projects</span></a>
+    </div>
+    <span style="flex: 1"></span>
+    <sc-for list="{{admin}}" as="n" hint-placeholder-count="0">
+      <a href="{{n.href}}" class="hd-sn" aria-current="{{n.current}}" title="{{n.label}}" style="background: {{n.bg}}; box-shadow: {{n.ring}}; font-weight: {{n.fw}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{n.icon}}"></path></svg>
+        <span class="hd-sl">{{n.label}}</span>
+      </a>
+    </sc-for>
+    <details class="hd-pop" style="position: relative; margin-top: 8px">
+      <summary class="hd-sn hd-ring-in" aria-label="{{me.aria}}" style="height: 48px; padding: 0 8px">
+        <span aria-hidden="true" style="width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{me.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{me.initials}}</span>
+        <span class="hd-sl" style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+          <span class="hd-sl" style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span class="hd-sl" style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{me.workspace}}</span>
+        </span>
+        <svg class="hd-sl" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"></path></svg>
+      </summary>
+      <div class="hd-menu" style="top: auto; bottom: 56px; left: 0; right: auto; width: 248px">
+        <div style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; line-height: 18px; font-weight: 700">{{me.name}}</span>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{me.role}}</span>
+        </div>
+        <hr>
+        <div style="padding: 4px 16px; font-size: 12px; line-height: 16px; color: #5F5F5F">Workspace</div>
+        <sc-for list="{{workspaces}}" as="w" hint-placeholder-count="4">
+          <button type="button" class="hd-mi" aria-pressed="{{w.on}}" onClick="{{closeMenu}}" style="font-weight: {{w.fw}}">{{w.name}}<span style="flex: 1"></span><sc-if value="{{w.on}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+        </sc-for>
+        <hr>
+        <button type="button" class="hd-mi" aria-pressed="{{techOn}}" onClick="{{toggleTech}}">Show Technical Detail<span style="flex: 1"></span><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{techWord}}</span></button>
+        <hr>
+        <button type="button" class="hd-mi">Sign Out</button>
+      </div>
+    </details>
+  </div>
+</aside>
+<!-- hd-shell:side end -->
+
+<div style="min-width: 0; min-height: 0; display: flex; flex-direction: column">
+<!-- hd-shell:top start (project variant: breadcrumb, then the project's people and actions, then Help) -->
+<header style="height: 56px; box-sizing: border-box; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #FFFFFF; border-bottom: 1px solid #F0F0F0; position: relative; z-index: 20">
+  <nav aria-label="Breadcrumb" style="display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; line-height: 20px; color: #5F5F5F; white-space: nowrap">
+    <a href="Projects.dc.html" style="color: #5F5F5F; text-decoration: none">Projects</a><span aria-hidden="true">/</span>
+    <span aria-current="page" style="color: #1D1D1D; font-weight: 700; overflow: hidden; text-overflow: ellipsis">{{title}}</span>
+    <span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; background: #F0F0F0; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 400">Target: T1 Team App</span>
+  </nav>
+  <span style="flex: 1"></span>
+  <span role="img" aria-label="People: Maya Chen, Priya Nair, Luis Romero, Dana Ortiz and Sam Kim" style="display: inline-flex; align-items: center; gap: 2px">
+    <sc-for list="{{crew}}" as="p" hint-placeholder-count="4"><span aria-hidden="true" title="{{p.name}}" style="min-width: 28px; height: 28px; box-sizing: border-box; padding: 0 4px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{p.bg}}; color: {{p.fg}}; box-shadow: 0 0 0 2px #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{p.ini}}</span></sc-for>
+  </span>
+  <button type="button" class="hd-btn-secondary hd-ring-ink" style="height: 36px; display: inline-flex; align-items: center; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; cursor: pointer">Share</button>
+  <details class="hd-pop" style="position: relative; flex: none">
+    <summary class="hd-iconbtn hd-ring" aria-label="Help" title="Help">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.3"></path><path d="M12 16.8v.2"></path></svg>
+    </summary>
+    <nav class="hd-menu" aria-label="Help">
+      <a class="hd-mi" href="Lifecycle.dc.html">How Work Moves</a>
+      <a class="hd-mi" href="PlatformArchitecture.dc.html">How HyperDelivery Is Built</a>
+      <hr>
+      <details class="hd-sub">
+        <summary class="hd-mi">Keyboard Shortcuts<span style="flex: 1"></span><kbd>⌘/</kbd></summary>
+        <dl style="margin: 0; padding: 4px 16px 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+          <dt><kbd>⌘K</kbd></dt><dd style="margin: 0">Search</dd>
+          <dt><kbd>⌘⇧O</kbd></dt><dd style="margin: 0">New Project</dd>
+          <dt><kbd>⌘B</kbd></dt><dd style="margin: 0">Hide or Show the Sidebar</dd>
+          <dt><kbd>@</kbd></dt><dd style="margin: 0">Mention a Person or Source</dd>
+          <dt><kbd>⌘/</kbd></dt><dd style="margin: 0">Show Shortcuts</dd>
+          <dt><kbd>Esc</kbd></dt><dd style="margin: 0">Close</dd>
+        </dl>
+      </details>
+      <details class="hd-sub">
+        <summary class="hd-mi">What's New<span style="flex: 1"></span><span style="padding: 0 4px; border-radius: 4px; background: #FE9000; color: #1D1D1D; font-size: 12px; line-height: 16px; font-weight: 700">NEW</span></summary>
+        <ul style="margin: 0; padding: 4px 16px 8px; list-style: none; display: grid; gap: 8px; font-size: 12px; line-height: 18px">
+          <li><b>Oct 26</b> A sidebar, and every project's work in one place</li>
+          <li><b>Oct 24</b> Start from a Jira ticket or your files</li>
+          <li><b>Oct 17</b> Confirm what we heard after a working session</li>
+        </ul>
+      </details>
+      <hr>
+      <a class="hd-mi" href="TeamsCards.dc.html">Ask the Platform Team<span style="flex: 1"></span><img src="{{logos.microsoftteams}}" width="16" height="16" alt=""></a>
+    </nav>
+  </details>
+</header>
+<!-- hd-shell:top end -->
+
+<main aria-label="Project" style="flex: 1; min-height: 0; display: flex; flex-direction: column">
+<!-- hd-workspace:line start (the project line, full width under the top bar) -->
+<div style="display: flex; align-items: center; gap: 24px; padding: 12px 24px; border-bottom: 1px solid #F0F0F0; background: #FFFFFF">
+  <div role="img" aria-label="{{lineAria}}" style="flex: 1; max-width: 760px; display: grid; grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr); align-items: center; row-gap: 6px">
+    <sc-for list="{{lineNames}}" as="n" hint-placeholder-count="7"><span style="justify-self: center; font-size: 12px; line-height: 16px; color: {{n.c}}; font-weight: {{n.w}}; white-space: nowrap">{{n.t}}</span></sc-for>
+    <sc-for list="{{lineTrack}}" as="x" hint-placeholder-count="7">
+      <sc-if value="{{x.isSeg}}" hint-placeholder-val="{{ true }}"><span style="height: {{x.h}}; background: {{x.bg}}; border-top: {{x.bt}}"></span></sc-if>
+      <sc-if value="{{x.isNotch}}" hint-placeholder-val="{{ false }}"><span style="width: 12px; height: 12px; box-sizing: border-box; background: {{x.fill}}; border: {{x.border}}"></span></sc-if>
+    </sc-for>
+    <sc-for list="{{lineLabels}}" as="l" hint-placeholder-count="7"><span style="justify-self: center; align-self: start; text-align: center; font-size: 12px; line-height: 16px; font-weight: 700; color: {{l.c}}; white-space: nowrap">{{l.t}}<sc-if value="{{l.hasSub}}" hint-placeholder-val="{{ false }}"><span style="display: flex; justify-content: center; align-items: center; gap: 4px; font-weight: 400; color: {{l.sc}}"><sc-if value="{{l.isWait}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM12 7v5l3.5 2"></path></svg></sc-if>{{l.sub}}</span></sc-if></span></sc-for>
+  </div>
+  <span style="margin-left: auto; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">{{lineNoteA}} <b style="color: #1D1D1D">{{lineNoteB}}</b></span>
+</div>
+<!-- hd-workspace:line end -->
+
+<!-- hd-workspace:split start -->
+<div style="flex: 1; display: grid; grid-template-columns: {{splitCols}}; grid-template-rows: minmax(0, 1fr); min-height: 0">
+
+  <section aria-label="Conversation" style="display: {{convDisplay}}; flex-direction: column; border-right: 1px solid #F0F0F0; min-width: 0; min-height: 0; background: #FFFFFF">
+    <div role="log" aria-live="polite" class="hd-log" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 24px 24px 16px">
+
+      <sc-if value="{{hasEarlier}}" hint-placeholder-val="{{ false }}">
+        <button type="button" class="hd-btn-ghost hd-ring" onClick="{{toggleEarlier}}" aria-expanded="{{earlierOpen}}" style="align-self: center; height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #5F5F5F; cursor: pointer">{{earlierLabel}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{earlierD}}"></path></svg></button>
+      </sc-if>
+
+      <sc-for list="{{msgs}}" as="m" hint-placeholder-count="5">
+
+        <sc-if value="{{m.isNote}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{m.glyphColor}}" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="{{m.glyph}}"></path></svg>
+            <span>{{m.text}}<sc-if value="{{m.hasStrong}}" hint-placeholder-val="{{ false }}"><b style="color: #1D1D1D">{{m.strong}}</b>.</sc-if></span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{m.isBubble}}" hint-placeholder-val="{{ false }}">
+          <div style="align-self: flex-end; max-width: 344px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px">
+            <div style="padding: 12px 16px; border-radius: 16px 16px 4px 16px; background: #F0F0F0; font-size: 14px; line-height: 20px">{{m.text}}</div>
+            <sc-if value="{{m.hasChips}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px">
+                <sc-for list="{{m.chips}}" as="c" hint-placeholder-count="2">
+                  <span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{c.logo}}" width="16" height="16" alt="">{{c.label}}</span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.meta}}</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{m.isTurn}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><rect width="24" height="24" rx="4" fill="#1D1D1D"></rect><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"></path><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"></rect></svg>
+              <span style="font-size: 14px; line-height: 20px; font-weight: 700">HyperDelivery</span>
+              <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.when}}</span>
+            </div>
+            <sc-if value="{{m.hasSrc}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                <sc-for list="{{m.src}}" as="c" hint-placeholder-count="1">
+                  <button type="button" class="hd-chip hd-ring-edge" onClick="{{c.open}}" aria-label="{{c.aria}}" title="{{c.tip}}" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border: 0; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: inherit; font-size: 12px; line-height: 16px; color: #1D1D1D; white-space: nowrap; cursor: pointer"><img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">{{c.label}}<span style="color: #5F5F5F">{{c.meta}}</span></button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{m.hasTools}}" hint-placeholder-val="{{ true }}">
+              <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #F0F0F0">
+                <sc-for list="{{m.tools}}" as="t" hint-placeholder-count="3">
+                  <details class="hd-tool" style="border-top: {{t.rule}}">
+                    <summary class="hd-ring-in" style="display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; font-size: 13px; line-height: 18px">
+                      <svg class="hd-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; transition: transform .16s"><path d="M9.5 6l6 6-6 6"></path></svg>
+                      <sc-if value="{{t.isImg}}" hint-placeholder-val="{{ true }}"><img src="{{t.logo}}" width="16" height="16" alt="" style="flex: none"></sc-if>
+                      <sc-if value="{{t.isGlyph}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{t.glyph}}"></path></svg></sc-if>
+                      <span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.label}}</span>
+                      <sc-if value="{{t.running}}" hint-placeholder-val="{{ false }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+                      <span style="color: #5F5F5F; white-space: nowrap">{{t.result}}</span>
+                    </summary>
+                    <ul style="margin: 0; padding: 0 12px 12px 48px; display: grid; gap: 4px; font-size: 12px; line-height: 18px; color: #5F5F5F">
+                      <sc-for list="{{t.lines}}" as="l" hint-placeholder-count="2"><li>{{l}}</li></sc-for>
+                    </ul>
+                  </details>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-for list="{{m.paras}}" as="p" hint-placeholder-count="1"><p style="margin: 0; font-size: 14px; line-height: 22px">{{p}}</p></sc-for>
+            <sc-if value="{{m.hasCards}}" hint-placeholder-val="{{ true }}">
+              <div style="display: grid; grid-template-columns: {{m.cardCols}}; gap: 8px">
+                <sc-for list="{{m.cards}}" as="a" hint-placeholder-count="2">
+                  <button type="button" class="hd-row hd-ring" onClick="{{a.open}}" aria-label="{{a.aria}}" aria-pressed="{{a.pressed}}" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; border-radius: 8px; background: #FFFFFF; box-shadow: {{a.ring}}; font-family: inherit; text-align: left; cursor: pointer; color: #1D1D1D">
+                    <span aria-hidden="true" style="width: 32px; height: 32px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #F0F0F0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{a.icon}}"></path></svg></span>
+                    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 700">{{a.label}}</span><span style="font-size: 12px; line-height: 16px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{a.meta}}</span></span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M9.5 6l6 6-6 6"></path></svg>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+      </sc-for>
+
+      <sc-for list="{{chat}}" as="m" hint-placeholder-count="0">
+        <div style="align-self: flex-end; max-width: 344px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px">
+          <sc-if value="{{m.hasText}}" hint-placeholder-val="{{ true }}"><div style="padding: 12px 16px; border-radius: 16px 16px 4px 16px; background: #F0F0F0; font-size: 14px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere">{{m.text}}</div></sc-if>
+          <sc-if value="{{m.hasFiles}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px"><sc-for list="{{m.files}}" as="c" hint-placeholder-count="1"><span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">{{c.label}}</span></sc-for></div></sc-if>
+          <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{m.who}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex: none; padding: 12px 24px 20px; background: #FFFFFF">
+      <sc-if value="{{hasProgress}}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box; padding: 4px 6px 4px 14px; margin-bottom: 10px; border-radius: 8px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #F0F0F0">
+          <sc-if value="{{progressRunning}}" hint-placeholder-val="{{ true }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+          <sc-if value="{{progressPaused}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M9 5.5v13M15 5.5v13"></path></svg></sc-if>
+          <span style="flex: 1; min-width: 0; font-size: 14px; line-height: 20px">{{progressText}}</span>
+          <button type="button" class="hd-btn-ghost hd-ring" onClick="{{togglePause}}" aria-label="{{pauseAria}}" style="height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; font-family: inherit; font-size: 14px; line-height: 20px; font-weight: 700; color: #1D1D1D; cursor: pointer; flex: none">{{pauseLabel}}</button>
+        </div>
+      </sc-if>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px">
+        <sc-for list="{{suggest}}" as="s" hint-placeholder-count="2"><button type="button" class="hd-chip hd-ring-edge" onClick="{{s.pick}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; cursor: pointer">{{s.label}}</button></sc-for>
+      </div>
+      <div class="hd-compose" style="border-radius: 16px; box-shadow: inset 0 0 0 1px #949494">
+        <sc-if value="{{cmpHasFiles}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0">
+            <sc-for list="{{cmpFiles}}" as="c" hint-placeholder-count="1">
+              <span style="height: 28px; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px 0 8px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap">
+                <img src="{{c.logo}}" width="16" height="16" alt="" style="flex: none">
+                <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis"><b>{{c.kind}}</b> {{c.title}}</span>
+                <button type="button" class="hd-iconbtn" onClick="{{c.remove}}" aria-label="{{c.removeLabel}}" style="width: 24px; height: 24px; flex: none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path></svg></button>
+              </span>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 16px">
+          <textarea id="hd-reply" rows="1" aria-label="Reply to HyperDelivery" placeholder="Reply, or point at another file" value="{{reply}}" onChange="{{onReply}}" onKeyDown="{{replyKey}}" style="flex: 1; min-height: 36px; box-sizing: border-box; border: 0; outline: none; resize: none; padding: 8px 0; font-family: inherit; font-size: 14px; line-height: 20px; background: transparent; color: #1D1D1D"></textarea>
+          <details class="hd-pop" style="position: relative; flex: none">
+            <summary class="hd-iconbtn hd-ring" aria-label="Point at a file or page" title="Point at a file or page" style="width: 36px; height: 36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+            <div class="hd-menu" role="group" aria-label="Point at a file or page" style="top: auto; bottom: 44px; right: -44px; width: 320px">
+              <div style="padding: 4px 16px 8px; font-size: 12px; line-height: 16px; color: #5F5F5F">Read with your access. Nothing is copied out of Snowflake.</div>
+              <sc-for list="{{cmpSources}}" as="p" hint-placeholder-count="6">
+                <button type="button" class="hd-mi" onClick="{{p.add}}" style="height: 40px">
+                  <img src="{{p.logo}}" width="18" height="18" alt="" style="flex: none">
+                  <span style="flex: 1">{{p.label}}</span>
+                  <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{p.hint}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </details>
+          <button type="button" aria-label="Send" disabled="{{replyEmpty}}" onClick="{{sendReply}}" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 999px; background: {{sendBg}}; color: #FFFFFF; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"></path></svg></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Artifacts" style="min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #F9F9F9">
+    <div style="display: flex; align-items: center; gap: 4px; padding: 12px 24px 0">
+      <div role="tablist" aria-label="Artifacts" class="hd-tablist" style="display: flex; align-items: center; gap: 0; min-width: 0; overflow-x: auto">
+        <sc-for list="{{arts}}" as="a" hint-placeholder-count="6">
+          <button type="button" role="tab" id="{{a.tabId}}" aria-selected="{{a.selected}}" aria-controls="art-panel" aria-disabled="{{a.locked}}" tabindex="{{a.tab}}" onClick="{{a.pick}}" onKeyDown="{{artKey}}" title="{{a.tip}}" class="hd-tab hd-ring-in" style="height: 36px; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 8px 8px 0 0; background: {{a.bg}}; box-shadow: {{a.ring}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: {{a.fw}}; color: {{a.fg}}; cursor: {{a.cursor}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{a.icon}}"></path></svg>
+            {{a.label}}
+          </button>
+        </sc-for>
+      </div>
+      <span style="flex: 1"></span>
+      <details class="hd-pop" style="position: relative; flex: none">
+        <summary class="hd-tab hd-more hd-ring-in" aria-label="More project views" style="height: 36px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; border-radius: 8px 8px 0 0; font-size: 13px; line-height: 18px; color: #1D1D1D">More<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"></path></svg></summary>
+        <div class="hd-menu" role="group" aria-label="More project views" style="top: 40px; width: 288px">
+          <sc-for list="{{moreViews}}" as="v" hint-placeholder-count="2">
+            <button type="button" class="hd-mi" aria-disabled="true" title="{{v.tip}}" style="height: 48px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; color: #5F5F5F; cursor: default"><span>{{v.label}}</span><span style="font-size: 12px; line-height: 16px">{{v.tip}}</span></button>
+          </sc-for>
+        </div>
+      </details>
+    </div>
+
+    <div id="art-panel" role="tabpanel" aria-labelledby="{{artLabelledBy}}" style="flex: 1; margin: 0 24px 0; background: #FFFFFF; border-radius: 0 8px 0 0; box-shadow: inset 0 0 0 1px #F0F0F0; display: flex; flex-direction: column; min-height: 0">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #F0F0F0">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+          <h1 style="margin: 0; font-size: 20px; line-height: 24px; font-weight: 700">{{artTitle}}</h1>
+          <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{artMeta}}</span>
+        </div>
+        <span style="flex: 1"></span>
+        <sc-if value="{{hasVersions}}" hint-placeholder-val="{{ true }}">
+          <details class="hd-pop" style="position: relative; flex: none">
+            <summary class="hd-btn-ghost hd-ring" style="height: 32px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; font-size: 13px; line-height: 18px; color: #1D1D1D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0z"></path></svg>Versions</summary>
+            <div class="hd-menu" role="group" aria-label="Versions" style="top: 40px; width: 288px">
+              <sc-for list="{{versions}}" as="v" hint-placeholder-count="3">
+                <button type="button" class="hd-mi" aria-pressed="{{v.on}}" onClick="{{closeMenu}}" style="font-weight: {{v.fw}}">{{v.label}}<span style="flex: 1"></span><sc-if value="{{v.isOn}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if></button>
+              </sc-for>
+            </div>
+          </details>
+        </sc-if>
+        <button type="button" class="hd-iconbtn hd-ring" onClick="{{toggleFull}}" aria-pressed="{{fullPressed}}" aria-label="{{fullLabel}}" title="{{fullLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{fullD}}"></path></svg></button>
+      </div>
+
+      <div style="flex: 1 1 auto; height: 0; min-height: 0; padding: 24px; overflow: auto">
+        <sc-if value="{{isSources}}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{srcAll}}" hint-placeholder-val="{{ false }}">
+            <section aria-label="Where this project reads from" style="display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; align-items: center; gap: 12px">
+                <span style="font-size: 13px; line-height: 18px; color: #5F5F5F">121 sections indexed, 31 cited</span>
+                <span style="flex: 1"></span>
+                <button type="button" class="hd-btn-secondary hd-ring-ink" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: 700; color: #1D1D1D; cursor: pointer; white-space: nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add a Link</button>
+              </div>
+              <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0">
+                <sc-for list="{{srcRows}}" as="s" hint-placeholder-count="6">
+                  <div style="display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 10px 16px; border-top: {{s.rule}}">
+                    <span aria-hidden="true" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; box-shadow: inset 0 0 0 1px #D0D0D0"><img src="{{s.logo}}" width="18" height="18" alt=""></span>
+                    <span style="min-width: 0; display: flex; flex-direction: column">
+                      <span style="font-size: 14px; line-height: 20px; font-weight: 700; font-family: {{s.font}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.title}}</span>
+                      <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.kind}}</span>
+                    </span>
+                    <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: {{s.w}}; color: {{s.stColor}}; white-space: nowrap"><sc-if value="{{s.hasGlyph}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.stD}}"></path></svg></sc-if>{{s.state}}</span>
+                      <sc-if value="{{s.hasAction}}" hint-placeholder-val="{{ false }}"><button type="button" id="{{s.actId}}" class="hd-ring hd-txt" onClick="{{s.act}}" aria-label="{{s.actAria}}" style="padding: 0; border: 0; background: transparent; color: #1D1D1D; font-family: inherit; font-size: 12px; line-height: 18px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">{{s.action}}</button></sc-if>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{srcMeeting}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 16px">
+              <button type="button" id="hd-back" class="hd-btn-ghost hd-ring" onClick="{{showAll}}" style="align-self: flex-start; height: 32px; display: inline-flex; align-items: center; gap: 4px; margin: -8px 0 -8px -8px; padding: 0 12px 0 6px; border: 0; border-radius: 999px; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; cursor: pointer; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"></path></svg>All Sources</button>
+
+              <section aria-labelledby="mt-h" style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid #F0F0F0">
+                <div style="display: flex; align-items: center; gap: 12px">
+                  <span aria-hidden="true" style="width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><img src="{{logos.microsoftteams}}" width="24" height="24" alt=""></span>
+                  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+                    <h2 id="mt-h" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Line review prep</h2>
+                    <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Teams meeting, Oct 26, 14:15 to 15:02, 47 min</span>
+                  </div>
+                  <span role="img" aria-label="5 attendees: Maya Chen, Dana Ortiz, Luis Romero, Jordan Lee and Sam Kim" style="display: inline-flex; align-items: center; gap: 2px; flex: none">
+                    <sc-for list="{{attendees}}" as="p" hint-placeholder-count="4"><span aria-hidden="true" title="{{p.name}}" style="min-width: 28px; height: 28px; box-sizing: border-box; padding: 0 4px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{p.bg}}; color: {{p.fg}}; box-shadow: 0 0 0 2px #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{p.ini}}</span></sc-for>
+                  </span>
+                  <button type="button" class="hd-ring hd-txt" style="flex: none; height: 32px; padding: 0 2px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap">Open in Teams</button>
+                </div>
+                <p style="margin: 0; font-size: 12px; line-height: 18px">Linked by Maya Chen, Oct 20. Attendees were told in the invite and when the meeting started. No external attendees.</p>
+                <ul aria-label="What is read from this meeting" style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border-radius: 8px; background: #F9F9F9">
+                  <sc-for list="{{reads}}" as="r" hint-placeholder-count="3">
+                    <li style="display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; column-gap: 10px; align-items: center; min-height: 32px; padding: 0 12px; border-top: {{r.rule}}">
+                      <img src="{{r.logo}}" width="18" height="18" alt="">
+                      <span style="min-width: 0; font-size: 13px; line-height: 18px; font-weight: {{r.fw}}; color: {{r.lc}}">{{r.label}}</span>
+                      <span style="display: inline-flex; align-items: center; gap: 12px; font-size: 12px; line-height: 18px; color: {{r.c}}; white-space: nowrap">
+                        <sc-if value="{{r.isReading}}" hint-placeholder-val="{{ false }}"><span class="hd-dots" aria-hidden="true"><i></i><i></i><i></i></span></sc-if>
+                        <span id="{{r.stId}}" tabindex="-1">{{r.state}}</span>
+                        <sc-if value="{{r.hasAct}}" hint-placeholder-val="{{ false }}"><button type="button" id="{{r.actId}}" class="hd-ring hd-txt" onClick="{{r.act}}" aria-label="{{r.actAria}}" style="height: 32px; padding: 0 2px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap">{{r.actLabel}}</button></sc-if>
+                      </span>
+                    </li>
+                  </sc-for>
+                </ul>
+              </section>
+
+              <section aria-labelledby="ft-h" style="display: flex; flex-direction: column; gap: 12px">
+                <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px"><h2 id="ft-h" tabindex="-1" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">From This Meeting</h2><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">{{tally}}</span></div>
+                <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+                  <section aria-label="{{g.aria}}" style="display: flex; flex-direction: column; gap: 6px">
+                    <div style="display: flex; align-items: center; gap: 8px; min-height: 24px">
+                      <sc-if value="{{g.isPerson}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{g.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{g.ini}}</span></sc-if>
+                      <sc-if value="{{g.isAi}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #D0D0D0"><img src="{{logos.microsoftcopilot}}" width="16" height="16" alt=""></span></sc-if>
+                      <h3 style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap">{{g.name}}</h3>
+                      <span style="min-width: 0; font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{g.role}}</span>
+                      <span style="flex: 1"></span>
+                      <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">{{g.count}}</span>
+                    </div>
+                    <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0">
+                      <sc-for list="{{g.rows}}" as="r" hint-placeholder-count="2">
+                        <div style="display: grid; grid-template-columns: 72px minmax(0, 1fr); column-gap: 16px; padding: 10px 16px; border-top: {{r.rule}}">
+                          <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px">
+                            <sc-if value="{{r.hasBadge}}" hint-placeholder-val="{{ true }}"><span style="height: 20px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px #1D1D1D; background: #FFFFFF; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; font-weight: 600; white-space: nowrap">{{r.badge}}</span></sc-if>
+                            <sc-if value="{{r.hasCue}}" hint-placeholder-val="{{ true }}"><button type="button" class="hd-cue hd-ring-edge" aria-label="{{r.cueAria}}" title="{{r.cueAria}}" style="height: 20px; display: inline-flex; align-items: center; gap: 4px; padding: 0 6px 0 4px; border: 0; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #1D1D1D; white-space: nowrap; cursor: pointer"><img src="{{r.cueLogo}}" width="12" height="12" alt="" style="flex: none">{{r.cue}}</button></sc-if>
+                          </span>
+                          <div style="min-width: 0; display: flex; flex-direction: column; gap: 4px">
+                            <sc-if value="{{r.isHidden}}" hint-placeholder-val="{{ false }}"><span style="font-size: 14px; line-height: 20px; color: #5F5F5F">{{r.hiddenText}}</span></sc-if>
+                            <sc-if value="{{r.showText}}" hint-placeholder-val="{{ true }}"><span style="font-size: 14px; line-height: 20px">{{r.text}}</span></sc-if>
+                            <sc-if value="{{r.editing}}" hint-placeholder-val="{{ false }}">
+                              <label style="display: flex; flex-direction: column; gap: 6px">
+                                <span style="font-size: 14px; line-height: 18px; font-weight: 700">Corrected Statement</span>
+                                <textarea id="hd-fix" rows="2" value="{{r.draft}}" onChange="{{r.onDraft}}" style="width: 100%; box-sizing: border-box; border: 1px solid #949494; border-radius: 8px; padding: 8px 12px; resize: none; font-family: inherit; font-size: 14px; line-height: 20px; color: #1D1D1D"></textarea>
+                              </label>
+                              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+                                <button type="button" class="{{r.saveCls}}" onClick="{{r.save}}" disabled="{{r.saveOff}}" aria-describedby="hd-fix-hint" style="height: 32px; display: inline-flex; align-items: center; padding: 0 14px; border: 0; border-radius: 999px; background: {{r.saveBg}}; box-shadow: {{r.saveRing}}; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: 700; color: {{r.saveFg}}; cursor: {{r.saveCursor}}; white-space: nowrap">Save Correction</button>
+                                <button type="button" class="hd-ring hd-txt" onClick="{{r.cancel}}" style="height: 32px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Cancel</button>
+                                <sc-if value="{{r.saveOff}}" hint-placeholder-val="{{ false }}"><span id="hd-fix-hint" style="font-size: 12px; line-height: 18px; color: #5F5F5F">Change the wording to save a correction.</span></sc-if>
+                              </div>
+                            </sc-if>
+                            <sc-if value="{{r.hasHeard}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Heard: <s>{{r.heard}}</s></span></sc-if>
+                            <sc-if value="{{r.hasConflict}}" hint-placeholder-val="{{ false }}">
+                              <span style="display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 18px">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M12 4L2.8 19.5h18.4zM12 10v4M12 16.8v.01"></path></svg>
+                                <span style="flex: 1; min-width: 0">{{r.conflict}}</span>
+                                <span title="Golden report MERCH.GOLDEN.DAILY_PRODUCT_MARGIN, owner Luis Romero" style="height: 20px; display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{logos.snowflake}}" width="12" height="12" alt="">Daily Product Margin</span>
+                              </span>
+                            </sc-if>
+                            <sc-if value="{{r.hasState}}" hint-placeholder-val="{{ true }}">
+                              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 20px">
+                                <sc-if value="{{r.isOk}}" hint-placeholder-val="{{ true }}"><span id="{{r.stId}}" tabindex="-1" style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00834B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg><b style="color: #00834B">{{r.okWord}}</b><span style="color: #5F5F5F">{{r.okBy}}</span></span></sc-if>
+                                <sc-if value="{{r.isWait}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; line-height: 16px; color: #1D1D1D; white-space: nowrap">{{r.waitText}}</span></sc-if>
+                                <sc-if value="{{r.isYou}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; font-weight: 700; color: #DC0019; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; background: #DC0019"></span>Waiting on You</span></sc-if>
+                                <sc-if value="{{r.isQuiet}}" hint-placeholder-val="{{ false }}"><span id="{{r.stId}}" tabindex="-1" style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{r.quietText}}</span></sc-if>
+                                <span style="flex: 1"></span>
+                                <sc-if value="{{r.canAct}}" hint-placeholder-val="{{ false }}">
+                                  <span style="display: inline-flex; align-items: center; gap: 8px">
+                                    <button type="button" id="hd-mine-confirm" class="hd-btn-secondary hd-ring-ink" onClick="{{r.confirm}}" aria-label="{{r.confirmAria}}" style="height: 32px; display: inline-flex; align-items: center; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #1D1D1D; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: 700; color: #1D1D1D; cursor: pointer; white-space: nowrap">Confirm</button>
+                                    <button type="button" class="hd-btn-ghost hd-ring" onClick="{{r.correct}}" aria-label="{{r.correctAria}}" style="height: 32px; display: inline-flex; align-items: center; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; font-weight: 700; color: #1D1D1D; cursor: pointer; white-space: nowrap">Correct</button>
+                                    <button type="button" class="hd-ring hd-txt" onClick="{{r.drop}}" aria-label="{{r.dropAria}}" style="height: 32px; padding: 0 2px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap">Don't Use</button>
+                                  </span>
+                                </sc-if>
+                                <sc-if value="{{r.canLink}}" hint-placeholder-val="{{ false }}">
+                                  <span style="display: inline-flex; align-items: center; gap: 12px">
+                                    <button type="button" id="hd-ai-confirm" class="hd-ring hd-txt" onClick="{{r.confirm}}" aria-label="{{r.confirmAria}}" style="height: 32px; padding: 0 2px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap">Confirm</button>
+                                    <button type="button" class="hd-ring hd-txt" onClick="{{r.drop}}" aria-label="{{r.dropAria}}" style="height: 32px; padding: 0 2px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap">Don't Use</button>
+                                  </span>
+                                </sc-if>
+                                <sc-if value="{{r.canUndo}}" hint-placeholder-val="{{ false }}"><button type="button" class="hd-ring hd-txt" onClick="{{r.undo}}" aria-label="{{r.undoAria}}" style="height: 32px; padding: 0 2px; border: 0; background: transparent; font-family: inherit; font-size: 13px; line-height: 18px; color: #1D1D1D; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap">Undo</button></sc-if>
+                              </div>
+                            </sc-if>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </section>
+                </sc-for>
+              </section>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{isBrief}}" hint-placeholder-val="{{ false }}">
+          <article style="max-width: 640px; display: flex; flex-direction: column; gap: 20px">
+            <sc-for list="{{brief}}" as="b" hint-placeholder-count="5">
+              <section style="display: flex; flex-direction: column; gap: 6px">
+                <h2 style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">{{b.h}}</h2>
+                <p style="margin: 0; font-size: 16px; line-height: 24px">{{b.text}}
+                  <sc-for list="{{b.cites}}" as="c" hint-placeholder-count="1"><span title="{{c.tip}}" style="margin-left: 4px; height: 20px; display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; vertical-align: 2px; white-space: nowrap"><img src="{{c.logo}}" width="12" height="12" alt="">{{c.label}}</span></sc-for>
+                </p>
+              </section>
+            </sc-for>
+            <sc-if value="{{hasOpenQs}}" hint-placeholder-val="{{ false }}">
+              <section style="display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: 8px; background: #F9F9F9">
+                <h2 style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">Not in the Brief Until Confirmed</h2>
+                <sc-for list="{{openQs}}" as="q" hint-placeholder-count="2"><p style="margin: 0; font-size: 14px; line-height: 20px">{{q.text}} <span style="color: #5F5F5F">{{q.who}}</span></p></sc-for>
+              </section>
+            </sc-if>
+          </article>
+        </sc-if>
+
+        <sc-if value="{{isMockup}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 16px">
+            <figure style="margin: 0; display: flex; flex-direction: column; border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px 8px 0 0; background: #F9F9F9; border-top: 2px solid #FE9000; font-size: 12px; line-height: 18px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 4L2.8 19.5h18.4zM12 10v4M12 16.8v.01"></path></svg>
+                <span><b>Synthetic data.</b> Workbench Table look, version 2.</span>
+              </div>
+              <div role="img" aria-label="Mockup of the SKU workbench: a header with Export, four filters, a table of styles with sell-through, margin per door and why each is flagged, and a panel that explains the selected flag." class="hd-mock" style="display: grid; grid-template-columns: minmax(0, 1fr) 196px; border-top: 1px solid #F0F0F0">
+                <div style="min-width: 0; display: flex; flex-direction: column">
+                  <div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1D1D1D; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">Style Productivity, FW27<span style="flex: 1"></span><span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px #FFFFFF; font-weight: 700">Export</span><span style="width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: #FFFFFF; color: #1D1D1D; font-size: 12px; line-height: 16px">3</span></div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px">
+                    <span style="width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: #1D1D1D; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">2</span>
+                    <sc-for list="{{mockFilters}}" as="f" hint-placeholder-count="4"><span style="height: 24px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; background: {{f.bg}}; color: {{f.fg}}; box-shadow: {{f.ring}}; font-size: 12px; line-height: 16px; white-space: nowrap">{{f.t}}</span></sc-for>
+                  </div>
+                  <div style="padding: 0 12px 12px">
+                    <div style="display: grid; grid-template-columns: minmax(0, 1.5fr) 60px 76px minmax(0, 1.6fr); column-gap: 8px; font-size: 12px; line-height: 16px; color: #5F5F5F; border-bottom: 1px solid #D0D0D0; padding: 6px 4px 6px 6px">
+                      <span>Style</span><span style="text-align: right">Sell-Thru</span><span style="text-align: right">Margin/Door</span><span style="display: inline-flex; align-items: center; gap: 4px">Why It Is Flagged<span style="width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: #1D1D1D; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">1</span></span>
+                    </div>
+                    <sc-for list="{{mockRows}}" as="r" hint-placeholder-count="5">
+                      <div style="display: grid; grid-template-columns: minmax(0, 1.5fr) 60px 76px minmax(0, 1.6fr); column-gap: 8px; align-items: center; font-size: 12px; line-height: 16px; border-bottom: 1px solid #F0F0F0; padding: 8px 4px 8px 6px; background: {{r.bg}}; box-shadow: {{r.edge}}">
+                        <span style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</span><span style="text-align: right">{{r.st}}</span><span style="text-align: right; font-weight: 700">{{r.m}}</span>
+                        <span style="display: flex; align-items: center; gap: 4px; min-width: 0"><sc-if value="{{r.flag}}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 4L2.8 19.5h18.4zM12 10v4"></path></svg></sc-if><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.why}}</span></span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="hd-mock-side" style="border-left: 1px solid #F0F0F0; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border-radius: 0 0 8px 0">
+                  <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">Why It Is Flagged</span>
+                  <span style="font-size: 13px; line-height: 18px; font-weight: 700">Shell run jacket</span>
+                  <span style="font-size: 12px; line-height: 18px">Margin per door is $96, 36% under the $150 line.</span>
+                  <span style="font-size: 12px; line-height: 18px">Sell-through fell 9 points in 8 weeks across 188 doors.</span>
+                  <span aria-hidden="true" style="height: 6px; display: flex; gap: 2px; margin-top: 4px"><span style="width: 36%; background: #1D1D1D"></span><span style="flex: 1; background: #D0D0D0"></span></span>
+                  <span style="font-size: 12px; line-height: 16px; color: #5F5F5F">Productivity line $150</span>
+                </div>
+              </div>
+            </figure>
+            <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+              <sc-for list="{{pins}}" as="p" hint-placeholder-count="3">
+                <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 20px">
+                  <span aria-hidden="true" style="width: 20px; height: 20px; flex: none; display: inline-flex; align-items: center; justify-content: center; background: #1D1D1D; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{p.n}}</span>
+                  <span style="flex: 1">{{p.text}}</span>
+                  <span style="height: 20px; display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 4px; background: #F9F9F9; box-shadow: inset 0 0 0 1px #D0D0D0; font-size: 12px; line-height: 16px; white-space: nowrap"><img src="{{p.logo}}" width="12" height="12" alt="">{{p.cite}}</span>
+                </li>
+              </sc-for>
+            </ol>
+            <section aria-labelledby="mk-looks" style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid #F0F0F0">
+              <h2 id="mk-looks" style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 700; color: #5F5F5F">Starting Looks</h2>
+              <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+                <sc-for list="{{looks}}" as="l" hint-placeholder-count="3">
+                  <li style="display: flex; flex-direction: column; gap: 8px; padding: 8px 8px 10px; border-radius: 8px; box-shadow: {{l.ring}}">
+                    <span aria-hidden="true" style="height: 64px; display: flex; flex-direction: column; gap: 4px; padding: 6px; box-sizing: border-box; background: #F9F9F9">
+                      <sc-for list="{{l.rows}}" as="r" hint-placeholder-count="4"><span style="display: flex; gap: 4px; height: {{r.h}}"><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="3"><span style="flex: {{c.f}}; background: {{c.bg}}"></span></sc-for></span></sc-for>
+                    </span>
+                    <span style="display: flex; flex-direction: column; font-size: 13px; line-height: 18px"><b>{{l.title}}</b><span style="font-size: 12px; line-height: 16px; color: #5F5F5F">{{l.note}}</span></span>
+                  </li>
+                </sc-for>
+              </ul>
+            </section>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isData}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 24px">
+            <section aria-labelledby="dt-map" style="display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px"><h2 id="dt-map" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Data Map</h2><span style="font-size: 12px; line-height: 18px; color: #5F5F5F">Read in Snowflake: metadata and aggregates only. 0 rows stored.</span></div>
+              <div style="border-radius: 8px; box-shadow: inset 0 0 0 1px #D0D0D0">
+                <sc-for list="{{dataMap}}" as="d" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: start; padding: 12px 16px; border-top: {{d.rule}}">
+                    <span style="min-width: 0; display: flex; flex-direction: column; gap: 4px">
+                      <span style="font-size: 14px; line-height: 20px"><b>{{d.metric}}</b> <span style="color: #5F5F5F; font-size: 12px">{{d.cls}}, {{d.grain}}</span></span>
+                      <span style="display: inline-flex; align-items: center; gap: 6px; min-width: 0"><img src="{{logos.snowflake}}" width="14" height="14" alt="" style="flex: none"><span style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{d.view}}</span></span>
+                    </span>
+                    <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 700; color: {{d.stColor}}; white-space: nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.stD}}"></path></svg>{{d.status}}</span>
+                      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap"><span aria-hidden="true" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: {{d.bg}}; color: #FFFFFF; font-size: 12px; line-height: 16px; font-weight: 700">{{d.initials}}</span>{{d.owner}}</span>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+              <p style="margin: 0; font-size: 14px; line-height: 22px">All 4 metrics exist at style, door and week. Groups under 5 doors are suppressed. {{markdownNote}}</p>
+              <span style="font-size: 14px; line-height: 20px; font-weight: 700">Target tier this data allows: T1 Team App, built in Construction</span>
+            </section>
+            <section aria-labelledby="dt-dev" style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 8px; background: #F9F9F9">
+              <h2 id="dt-dev" style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 700">What the Prototype Reads</h2>
+              <p style="margin: 0; font-size: 14px; line-height: 22px"><span style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px">MERCH_DEV.DAILY_PRODUCT_MARGIN</span>: dev data with the golden report's layout, 1,284 synthetic styles. Production connections come in Construction.</p>
+            </section>
+            <section aria-labelledby="dt-q" style="display: flex; flex-direction: column; gap: 8px">
+              <h2 id="dt-q" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 700">Queries Run</h2>
+              <div style="border-top: 1px solid #F0F0F0">
+                <sc-for list="{{queries}}" as="q" hint-placeholder-count="3">
+                  <div style="display: grid; grid-template-columns: 80px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; min-height: 40px; border-bottom: 1px solid #F0F0F0; font-size: 14px; line-height: 20px">
+                    <span style="font-family: 'Chivo Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #5F5F5F">{{q.id}}</span>
+                    <span>{{q.purpose}}</span>
+                    <span style="font-size: 12px; line-height: 18px; color: #5F5F5F; white-space: nowrap">{{q.cost}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+    <div style="height: 24px"></div>
+  </section>
+</div>
+<!-- hd-workspace:split end -->
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"rail":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { rail: null, chat: [], att: [], tech: false, art: 'sources', srcView: 'meeting', full: false, earlier: false, reply: '',
+      mine: '', fixed: '', draft: '', editing: false, ai: '', notes: '' };
+  }
+  componentDidMount() {
+    this.hdClose = (e) => {
+      const esc = e.type === 'keydown' && e.key === 'Escape';
+      if (e.type === 'keydown' && !esc) return;
+      document.querySelectorAll('details.hd-pop[open]').forEach((d) => {
+        if (esc || !d.contains(e.target)) {
+          const hadFocus = d.contains(document.activeElement);
+          d.open = false;
+          d.querySelectorAll('details.hd-sub[open]').forEach((s) => { s.open = false; });
+          if (esc && hadFocus) d.querySelector('summary').focus();
+        }
+      });
+    };
+    // hd-shell keys, as the Help menu lists them: Command K searches, Command Shift O starts a project,
+    // Command B folds the side nav, Command / opens the shortcut list.
+    this.hdSearch = () => {
+      const f = document.querySelector('[data-hd-search]');
+      if (f) { f.focus(); if (f.select) f.select(); return; }
+      window.location.href = 'Projects.dc.html#search';
+    };
+    this.hdShellKeys = (e) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.defaultPrevented) return;
+      const key = (e.key || '').toLowerCase();
+      if (key === 'k' && !e.shiftKey) { e.preventDefault(); this.hdSearch(); return; }
+      if (key === 'o' && e.shiftKey) {
+        e.preventDefault();
+        const idea = document.getElementById('hd-idea');
+        if (idea) idea.focus(); else window.location.href = 'Main.dc.html';
+        return;
+      }
+      if (key === 'b' && !e.shiftKey) {
+        const fold = document.querySelector('.hd-side button[aria-expanded]');
+        if (fold) { e.preventDefault(); fold.click(); }
+        return;
+      }
+      if (key === '/' || e.code === 'Slash') {
+        const help = document.querySelector('summary[aria-label="Help"]');
+        if (!help) return;
+        e.preventDefault();
+        help.parentElement.open = true;
+        const keys = help.parentElement.querySelector('details.hd-sub');
+        if (keys) { keys.open = true; keys.querySelector('summary').focus(); }
+      }
+    };
+    document.addEventListener('mousedown', this.hdClose);
+    document.addEventListener('keydown', this.hdClose);
+    document.addEventListener('keydown', this.hdShellKeys);
+    // Like any chat, the conversation opens at its latest message.
+    setTimeout(() => { const l = document.querySelector('[role="log"]'); if (l) l.scrollTop = l.scrollHeight; }, 0);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('mousedown', this.hdClose);
+    document.removeEventListener('keydown', this.hdClose);
+    document.removeEventListener('keydown', this.hdShellKeys);
+    clearTimeout(this.notesTimer);
+  }
+  renderVals() {
+    const st = this.state;
+    const tech = !!st.tech;
+    // One literal map per artboard; the publish step rewrites each path to its uploaded asset.
+    const LOGO = {
+      snowflake: 'logos/snowflake.svg',
+      jira: 'logos/jira.svg',
+      confluence: 'logos/confluence.svg',
+      microsoftteams: 'logos/microsoftteams.svg',
+      microsoftcopilot: 'logos/microsoftcopilot.svg',
+      onedrive: 'logos/onedrive.svg',
+      sharepoint: 'logos/sharepoint.svg',
+      file: 'logos/file.svg'
+    };
+    const closeMenu = (e) => { const d = e && e.currentTarget && e.currentTarget.closest('details'); if (d) { d.open = false; const s = d.querySelector(':scope > summary'); if (s) s.focus(); } };
+    const INK = '#1D1D1D', RED = '#DC0019', MUTED = '#5F5F5F', GREY = '#949494', GREEN = '#00834B';
+    const SELECTED = 'inset 0 0 0 2px #1D1D1D', REST = 'inset 0 0 0 1px #D0D0D0';
+    const RULE = '1px solid #F0F0F0', NO_RULE = '0 none transparent';
+    // design-system.md glyph bodies, flattened to one path each.
+    const G = {
+      check: 'M5 12.5l4.5 4.5L19 7.5',
+      clock: 'M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM12 7v5l3.5 2',
+      alert: 'M12 4L2.8 19.5h18.4zM12 10v4M12 16.8v.01',
+      lock: 'M6.5 10.5h11a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19v-7a1.5 1.5 0 0 1 1.5-1.5zM8 10.5v-3a4 4 0 0 1 8 0v3',
+      file: 'M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5M8.5 13h7M8.5 16.5h5',
+      chevDown: 'M6 9.5l6 6 6-6',
+      chevUp: 'M6 14.5l6-6 6 6',
+      expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+      collapse: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'
+    };
+    const PERSON = { MC: '#3D4B8C', LR: '#2E6A8E', DO: '#6A4C8C', SK: '#2F6F78', JL: '#2F6B5E', PN: '#3F5FA0' };
+    const fill = (ini) => PERSON[ini] || '#444444';
+    const focusLater = (sel) => setTimeout(() => { const el = document.querySelector(sel); if (el) el.focus(); }, 60);
+    // New messages land at the foot of the conversation, so it follows them.
+    const toLatest = () => setTimeout(() => { const l = document.querySelector('[role="log"]'); if (l) l.scrollTop = l.scrollHeight; }, 80);
+
+    // Maya's one statement from the meeting that still waits on her: '' waiting, 'ok', 'fixed' or 'drop'.
+    const mine = st.mine;
+    const mineIn = mine === 'ok' || mine === 'fixed';
+    const waitsOnMe = !mine;
+    const ai = st.ai;
+    const notes = st.notes;
+
+    // hd-shell: the side nav (design-system.md section 7).
+    const rail = st.rail === null ? (this.props.rail ?? false) : st.rail;
+    const ICON = {
+      home: 'M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z',
+      inbox: 'M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z',
+      projects: 'M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z',
+      library: 'M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z'
+    };
+    const ACTIVE = 'projects';
+    // Maya's Inbox: three items from other projects, plus her statement from this meeting while it waits on her.
+    const INBOX_COUNT = 3 + (waitsOnMe ? 1 : 0);
+    const navItem = (key, label, href, extra) => {
+      const on = key === ACTIVE;
+      return Object.assign({ label, href, icon: ICON[key], current: on ? 'page' : 'false', aria: label,
+        bg: 'transparent', ring: 'none', fw: on ? '700' : '400', fg: on ? '#1D1D1D' : '#5F5F5F',
+        hasCount: false, count: '', hasTag: false, tag: '' }, extra || {});
+    };
+    const nav = [
+      navItem('home', 'Home', 'Main.dc.html'),
+      navItem('inbox', 'Inbox', 'Inbox.dc.html', { hasCount: true, count: String(INBOX_COUNT), aria: 'Inbox, ' + INBOX_COUNT + ' waiting on you' }),
+      navItem('projects', 'Projects', 'Projects.dc.html'),
+      navItem('library', 'Library', 'Library.dc.html', { hasTag: true, tag: 'Enterprise' })
+    ];
+    // A business owner sees no Portfolio or Admin.
+    const admin = [];
+    const MARK = {
+      you: { bg: RED, bd: 'none', word: 'waiting on you' },
+      other: { bg: '#FFFFFF', bd: '1.5px solid ' + INK, word: 'waiting on someone else' },
+      done: { bg: INK, bd: 'none', word: 'prototype accepted' }
+    };
+    const recentItem = (name, href, kind, on) => Object.assign({ name, href,
+      isWork: kind === 'work', isNotch: kind !== 'work', bg: '', bd: '',
+      current: on ? 'page' : 'false', rowBg: 'transparent', rowRing: 'none', fw: on ? '700' : '400',
+      aria: name + ', ' + (kind === 'work' ? 'working' : MARK[kind].word) }, kind === 'work' ? {} : { bg: MARK[kind].bg, bd: MARK[kind].bd });
+    const title = 'SKU productivity workbench';
+    const recent = [
+      recentItem(title, 'Project.dc.html', waitsOnMe ? 'you' : 'other', true),
+      recentItem('Wholesale sell-through tracker', 'Gate.dc.html', 'you'),
+      recentItem('Tariff scenario planner', 'Activity.dc.html', 'work'),
+      recentItem('Product master quality monitor', 'Inbox.dc.html#q', 'you'),
+      recentItem('Activation scorecard', 'Graduation.dc.html', 'done')
+    ];
+    const me = { name: 'Maya Chen', initials: 'MC', bg: '#3D4B8C', role: 'Business owner, Merchandising', workspace: 'Merchandising',
+      aria: 'Maya Chen, Merchandising, account and workspace' };
+    const workspaces = ['Merchandising', 'Sourcing', 'Wholesale', 'EDM'].map((name, i) => ({ name, on: i === 0, fw: i === 0 ? '700' : '400' }));
+    // At most three avatars plus +N, touching with no overlap (design-system.md section 9.8).
+    const crew = [['MC', fill('MC'), 'Maya Chen'], ['PN', fill('PN'), 'Priya Nair'], ['LR', fill('LR'), 'Luis Romero'], ['+2', '#F0F0F0', 'Dana Ortiz and Sam Kim']]
+      .map((p) => ({ ini: p[0], bg: p[1], name: p[2], fg: p[0] === '+2' ? INK : '#FFFFFF' }));
+
+    // The line: Discover, Plan, Prototype, Handoff. This project is in Discover, before approval 1.
+    const SEG = ['Discover', 'Plan', 'Prototype', 'Handoff'];
+    const LINE = { seg: ['current', 'future', 'future', 'future'], gates: [['up', "What We're Building", ''], ['up', 'The Plan', ''], ['up', 'The Working Prototype', '']] };
+    const lineNames = [], lineTrack = [], lineLabels = [];
+    for (let i = 0; i < 7; i++) {
+      if (i % 2 === 0) {
+        const s = LINE.seg[i / 2];
+        lineNames.push({ t: SEG[i / 2], c: s === 'current' ? INK : MUTED, w: s === 'current' ? 700 : 400 });
+        lineTrack.push({ isSeg: true, isNotch: false, h: s === 'current' ? '4px' : (s === 'done' ? '2px' : '0'), bg: s === 'future' ? 'transparent' : INK, bt: s === 'future' ? '2px dashed ' + GREY : '0 none transparent', fill: '', border: '' });
+        lineLabels.push({ t: '', c: MUTED, hasSub: false, isWait: false, sub: '', sc: MUTED });
+      } else {
+        const g = LINE.gates[(i - 1) / 2];
+        lineNames.push({ t: '', c: MUTED, w: 400 });
+        lineTrack.push({ isSeg: false, isNotch: true, h: '', bg: '', bt: '',
+          fill: g[0] === 'signed' ? INK : (g[0] === 'you' ? RED : '#FFFFFF'),
+          border: g[0] === 'up' ? '2px solid ' + GREY : (g[0] === 'other' ? '2px solid ' + INK : '0 none transparent') });
+        lineLabels.push({ t: g[1], c: g[0] === 'you' ? RED : (g[0] === 'up' ? MUTED : INK), hasSub: !!g[2], isWait: g[3] === 'wait', sub: g[2], sc: g[0] === 'you' ? INK : MUTED });
+      }
+    }
+    const lineAria = "Discover in progress. What we're building, the plan and the working prototype are upcoming.";
+
+    // The artifact panel: tabs only for what exists in Discover; the plan and the prototype show locked.
+    const ART_ICON = {
+      brief: 'M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5M8.5 13h7M8.5 16.5h5',
+      mockup: 'M4 4.5h16v15H4zM4 9h16M9 9v10.5',
+      plan: 'M5 5h14M5 12h14M5 19h9',
+      prototype: 'M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z',
+      data: 'M4 6.5c0-1.4 3.6-2.5 8-2.5s8 1.1 8 2.5v11c0 1.4-3.6 2.5-8 2.5s-8-1.1-8-2.5zM4 6.5c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5M4 12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5',
+      sources: 'M10 14a4 4 0 0 0 6 .5l3-3a4 4 0 0 0-5.7-5.7l-1.1 1.1M14 10a4 4 0 0 0-6-.5l-3 3a4 4 0 0 0 5.7 5.7l1.1-1.1'
+    };
+    const LABEL = { brief: 'Brief', mockup: 'Mockup', plan: 'Plan', prototype: 'Prototype', data: 'Data', sources: 'Sources' };
+    const openIds = ['brief', 'mockup', 'data', 'sources'];
+    const art = openIds.includes(st.art) ? st.art : 'sources';
+    const pickArt = (id) => this.setState({ art: id });
+    const LOCKED = [['plan', "The plan is drafted after what we're building is signed"], ['prototype', 'The prototype is built after the plan is signed']];
+    const arts = openIds.map((id) => {
+      const on = art === id;
+      return { label: LABEL[id], icon: ART_ICON[id], tabId: 'art-tab-' + id, selected: on ? 'true' : 'false', tab: on ? 0 : -1, locked: 'false', tip: LABEL[id],
+        bg: on ? '#FFFFFF' : 'transparent', ring: on ? 'inset 1px 1px 0 #F0F0F0, inset -1px 0 0 #F0F0F0' : 'none', fw: on ? '700' : '400', fg: INK, cursor: 'pointer',
+        pick: () => pickArt(id) };
+    }).concat(LOCKED.map((l) => ({ label: LABEL[l[0]], icon: ART_ICON[l[0]], tabId: 'art-tab-' + l[0], selected: 'false', tab: -1, locked: 'true', tip: l[1],
+      bg: 'transparent', ring: 'none', fw: '400', fg: GREY, cursor: 'not-allowed', pick: () => {} })));
+    const artKey = (e) => {
+      const i = Math.max(0, openIds.indexOf(art));
+      let n = -1;
+      if (e.key === 'ArrowRight') n = (i + 1) % openIds.length;
+      else if (e.key === 'ArrowLeft') n = (i - 1 + openIds.length) % openIds.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = openIds.length - 1;
+      if (n < 0) return;
+      e.preventDefault();
+      pickArt(openIds[n]);
+      const t = document.getElementById('art-tab-' + openIds[n]);
+      if (t) t.focus();
+    };
+    const openMeeting = () => { this.setState({ art: 'sources', srcView: 'meeting', full: false }); focusLater('#hd-back'); };
+    const showAll = () => { this.setState({ srcView: 'all' }); focusLater('#hd-src-open'); };
+
+    // The meeting as a source: what was read, and the Loop notes, read only when Maya points at them.
+    const TEAMS = LOGO.microsoftteams;
+    const pointNotes = () => {
+      this.setState({ notes: 'reading' });
+      clearTimeout(this.notesTimer);
+      this.notesTimer = setTimeout(() => {
+        if (this.state.notes !== 'reading') return;
+        // Both Stop buttons go away when reading ends, so focus that sat on one moves to the result.
+        const a = document.activeElement, held = !a || a === document.body || a.id === 'hd-notes-act' || !!a.closest('[role="status"]');
+        this.setState({ notes: 'done' }); toLatest();
+        if (held) focusLater('#hd-notes-st');
+      }, 2600);
+      focusLater('#hd-notes-act');
+    };
+    const stopNotes = () => { clearTimeout(this.notesTimer); this.setState({ notes: '' }); focusLater('#hd-notes-act'); };
+    const reads = [
+      { logo: TEAMS, label: 'Transcript, attributed', fw: '700', lc: INK, state: 'Read Oct 26, 15:04', c: INK, hasAct: false },
+      { logo: LOGO.microsoftcopilot, label: 'Copilot recap', fw: '700', lc: INK, state: 'Read Oct 26, 16:12', c: INK, hasAct: false },
+      notes === 'done'
+        ? { logo: LOGO.file, label: 'Meeting Notes (Loop)', fw: '700', lc: INK, state: 'Read just now. Nothing beyond the transcript.', c: INK, hasAct: false, stId: 'hd-notes-st' }
+        : { logo: LOGO.file, label: 'Meeting Notes (Loop)', fw: '400', lc: MUTED, state: notes === 'reading' ? 'Reading' : 'Read when you point at them', c: MUTED, hasAct: true,
+          actId: 'hd-notes-act', actLabel: notes === 'reading' ? 'Stop' : 'Point at Notes', actAria: notes === 'reading' ? 'Stop reading the Meeting Notes' : 'Point at the Meeting Notes in Loop',
+          act: notes === 'reading' ? stopNotes : pointNotes }
+    ].map((r, i) => Object.assign({ isReading: r.hasAct && notes === 'reading', actId: '', actLabel: '', actAria: '', act: () => {}, stId: '' }, r, { rule: i ? RULE : NO_RULE }));
+    const attendees = [['MC', fill('MC'), 'Maya Chen'], ['DO', fill('DO'), 'Dana Ortiz'], ['LR', fill('LR'), 'Luis Romero'], ['+2', '#F0F0F0', 'Jordan Lee and Sam Kim']]
+      .map((p) => ({ ini: p[0], bg: p[1], name: p[2], fg: p[0] === '+2' ? INK : '#FFFFFF' }));
+
+    // From this meeting: each statement with its type, the moment in the transcript and what it waits on.
+    const noop = () => {};
+    const ROW = { hasBadge: true, badge: '', hasCue: false, cue: '', cueLogo: '', cueAria: '', isHidden: false, hiddenText: '', showText: true, text: '',
+      editing: false, draft: '', onDraft: noop, save: noop, cancel: noop, saveOff: true, saveCls: '', saveBg: '#D0D0D0', saveRing: 'none', saveFg: '#FFFFFF', saveCursor: 'not-allowed',
+      hasHeard: false, heard: '', hasConflict: false, conflict: '', hasState: true, stId: '', isOk: false, okWord: '', okBy: '', isWait: false, waitText: '',
+      isYou: false, isQuiet: false, quietText: '', canAct: false, canLink: false, canUndo: false, confirm: noop, correct: noop, drop: noop, undo: noop,
+      confirmAria: '', correctAria: '', dropAria: '', undoAria: '' };
+    const row = (...parts) => Object.assign({}, ROW, ...parts);
+    const cue = (t) => ({ hasCue: true, cue: t, cueLogo: TEAMS, cueAria: 'Open the transcript at ' + t });
+    const ok = (word, by) => ({ isOk: true, okWord: word, okBy: by });
+    const hidden = (text, when) => ({ hasBadge: false, hasCue: false, showText: false, isHidden: true, hiddenText: text, isQuiet: true, quietText: when });
+
+    const MINE_TEXT = 'A style needs at least 8 weeks of selling before it can be flagged.';
+    const mineWords = mine === 'fixed' ? st.fixed : MINE_TEXT;
+    const draft = st.draft || '';
+    const draftOff = !draft.trim() || draft.trim() === MINE_TEXT;
+    const undoMine = () => { this.setState({ mine: '', fixed: '', editing: false }); focusLater('#hd-mine-confirm'); };
+    const mineRow = row({ badge: 'RULE', text: mineWords }, cue('31:48'),
+      st.editing ? {
+        showText: false, editing: true, hasState: false, draft, onDraft: (e) => this.setState({ draft: e.target.value }),
+        saveOff: draftOff, saveCls: draftOff ? '' : 'hd-btn-secondary hd-ring-ink', saveBg: draftOff ? '#D0D0D0' : '#FFFFFF',
+        saveRing: draftOff ? 'none' : 'inset 0 0 0 1px #1D1D1D', saveFg: draftOff ? '#FFFFFF' : INK, saveCursor: draftOff ? 'not-allowed' : 'pointer',
+        save: () => { if (draftOff) return; this.setState({ mine: 'fixed', fixed: draft.trim(), editing: false }); toLatest(); focusLater('#hd-mine-st'); },
+        cancel: () => { this.setState({ editing: false }); focusLater('#hd-mine-confirm'); }
+      } : {},
+      !mine && !st.editing ? {
+        isYou: true, canAct: true, confirmAria: 'Confirm: ' + MINE_TEXT, correctAria: 'Correct: ' + MINE_TEXT, dropAria: "Don't use: " + MINE_TEXT,
+        confirm: () => { this.setState({ mine: 'ok' }); toLatest(); focusLater('#hd-mine-st'); },
+        correct: () => { this.setState({ editing: true, draft: MINE_TEXT }); focusLater('#hd-fix'); },
+        drop: () => { this.setState({ mine: 'drop' }); toLatest(); focusLater('#hd-mine-st'); }
+      } : {},
+      mine === 'ok' ? Object.assign(ok('Confirmed', 'by you, just now'), { stId: 'hd-mine-st', canUndo: true, undo: undoMine, undoAria: 'Undo your confirmation' }) : {},
+      mine === 'fixed' ? Object.assign(ok('Corrected', 'by you, just now'), { stId: 'hd-mine-st', hasHeard: true, heard: MINE_TEXT, canUndo: true, undo: undoMine, undoAria: 'Undo your correction' }) : {},
+      mine === 'drop' ? Object.assign(hidden('Not used, at your request.', 'Just now'), { stId: 'hd-mine-st', canUndo: true, undo: undoMine, undoAria: 'Undo, and confirm or correct it instead' }) : {});
+
+    const AI_TEXT = 'Review flagged styles with Wholesale before the line review.';
+    const undoAi = () => { this.setState({ ai: '' }); focusLater('#hd-ai-confirm'); };
+    const aiRow = row({ badge: 'DECISION', text: AI_TEXT },
+      !ai ? { isQuiet: true, quietText: 'No match in the transcript. Not used until someone confirms it.', canLink: true,
+        confirmAria: 'Confirm: ' + AI_TEXT, dropAria: "Don't use: " + AI_TEXT,
+        confirm: () => { this.setState({ ai: 'ok' }); focusLater('#hd-ai-st'); },
+        drop: () => { this.setState({ ai: 'drop' }); focusLater('#hd-ai-st'); } } : {},
+      ai === 'ok' ? Object.assign(ok('Confirmed', 'by you, just now'), { stId: 'hd-ai-st', canUndo: true, undo: undoAi, undoAria: 'Undo your confirmation' }) : {},
+      ai === 'drop' ? Object.assign(hidden('Not used, at your request.', 'Just now'), { stId: 'hd-ai-st', canUndo: true, undo: undoAi, undoAria: 'Undo, and leave it unconfirmed' }) : {});
+
+    const person = (ini, name, role, rows) => ({ isPerson: true, isAi: false, ini, bg: fill(ini), name, role, aria: 'Said by ' + name,
+      count: rows.length + (rows.length === 1 ? ' statement' : ' statements'), rows });
+    const groups = [
+      person('MC', 'Maya Chen', 'You, Merchandising', [
+        mineRow,
+        row({ badge: 'RULE', text: 'Flag the bottom 20% of FW27 styles by margin per door, each season.' }, cue('08:12'), ok('Confirmed', 'by you, Oct 26')),
+        row({ badge: 'SCOPE', text: 'US doors only for FW27; Canada follows after the April line review.' }, cue('19:05'), ok('Confirmed', 'by you, Oct 26'))
+      ]),
+      person('DO', 'Dana Ortiz', 'Finance', [
+        row({ badge: 'RULE', text: 'Marked-down units count at the marked-down price.' }, cue('26:40'), { isWait: true, waitText: 'Waiting on Dana Ortiz, 1d' })
+      ]),
+      person('JL', 'Jordan Lee', 'Wholesale', [
+        row({ badge: 'SCOPE', text: 'Wholesale accounts and Factory House doors are out of scope for the first version.', hasHeard: true, heard: 'Wholesale accounts are out of scope.' },
+          cue('21:40'), ok('Corrected', 'by Jordan Lee, Oct 26'))
+      ]),
+      person('SK', 'Sam Kim', 'Merchandising Systems', [
+        row({ badge: 'METRIC', text: 'Margin per door is net sales minus landed cost, before markdowns.', hasConflict: true,
+          conflict: 'Conflicts with the certified definition of margin, which counts margin after markdowns.' }, cue('23:15'),
+          { isWait: true, waitText: 'Sent to Luis Romero as steward, 1d' }),
+        row(hidden("Not used, at Sam Kim's request.", 'Oct 26')),
+        row({ badge: 'SCOPE', text: 'Standalone for now, not inside the line planning tool.' }, cue('38:02'), ok('Confirmed', 'by Sam Kim, Oct 26'))
+      ]),
+      { isPerson: false, isAi: true, ini: '', bg: '', name: 'From AI Notes', role: 'Copilot recap, no transcript match', aria: 'From AI notes', count: '1 item', rows: [aiRow] }
+    ].map((g) => Object.assign({}, g, { rows: g.rows.map((r, i) => Object.assign({}, r, { rule: i ? RULE : NO_RULE })) }));
+    const inUse = 4 + (mineIn ? 1 : 0);
+    const waiting = 2 + (waitsOnMe ? 1 : 0);
+    const notUsed = 1 + (mine === 'drop' ? 1 : 0);
+    const tally = '8 statements: ' + inUse + ' in use, ' + waiting + ' waiting on a person, ' + notUsed + ' not used';
+
+    // Sources: the whole list, with the meeting first.
+    const SRC_STATE = { 'Linked Oct 20': [INK, '', 400], 'Indexed': [INK, '', 400], 'Snapshot': [INK, '', 400], 'Checked': [INK, '', 400], 'Needs Access': [INK, G.alert, 700] };
+    const srcRows = [
+      ['microsoftteams', 'Line review prep', false, 'Teams meeting, Oct 26, transcript and Copilot recap, Maya Chen', 'Linked Oct 20', 'Open', openMeeting, 'hd-src-open', 'Open Line review prep'],
+      ['confluence', 'Range review playbook', false, 'Confluence, version 12, Sam Kim', 'Indexed', ''],
+      ['jira', 'MERCH-1182', true, 'Jira story, 7 comments, Priya Nair', 'Indexed', ''],
+      ['onedrive', 'FW27 line plan', false, 'OneDrive folder, 14 files, Sam Kim', 'Snapshot', ''],
+      ['snowflake', 'Daily Product Margin', false, 'Snowflake golden report, layout and counts only, Luis Romero', 'Checked', ''],
+      ['sharepoint', 'Door productivity definitions.docx', false, 'SharePoint, Data Platform site, Luis Romero', 'Needs Access', 'Ask Luis', noop, '', 'Ask Luis Romero for access']
+    ].map((s, i) => ({ logo: LOGO[s[0]], title: s[1], font: s[2] ? "'Chivo Mono', ui-monospace, monospace" : 'inherit', kind: s[3], state: s[4],
+      stColor: SRC_STATE[s[4]][0], stD: SRC_STATE[s[4]][1], hasGlyph: !!SRC_STATE[s[4]][1], w: SRC_STATE[s[4]][2], hasAction: !!s[5], action: s[5],
+      act: s[6] || noop, actId: s[7] || '', actAria: s[8] || '', rule: i ? RULE : NO_RULE }));
+
+    // The brief uses only confirmed statements; the rest wait for a person.
+    const cite = (logo, label, tip) => ({ logo: LOGO[logo], label, tip });
+    const at = (t, who) => cite('microsoftteams', t, 'Line review prep, Oct 26, at ' + t + ', ' + who);
+    const brief = [
+      { h: 'Problem', text: 'Before each line review, merchandisers export several reports into Excel to find the styles that fall below the productivity line, and each person does it a little differently.', cites: [cite('jira', 'MERCH-1182', 'MERCH-1182, description')] },
+      { h: 'Who It Is For', text: 'Merchandisers and planners in Merchandising, about 20 people, with Maya Chen as business owner.', cites: [cite('jira', 'MERCH-1182', 'MERCH-1182, description')] },
+      { h: 'What Good Looks Like', text: 'One list of the bottom 20% of FW27 styles by margin per door, each season, each with a plain reason, ready before the April line review.' + (mineIn ? ' ' + mineWords : ''),
+        cites: [at('08:12', 'confirmed by Maya Chen')].concat(mineIn ? [at('31:48', 'confirmed by Maya Chen just now')] : []) },
+      { h: 'In and Out of Scope', text: 'FW27 styles in US doors; Canada follows after the April line review. Wholesale accounts and Factory House doors are out of scope for the first version, and it stands alone, not inside the line planning tool.',
+        cites: [at('19:05', 'confirmed by Maya Chen'), at('21:40', 'corrected by Jordan Lee'), at('38:02', 'confirmed by Sam Kim')] },
+      { h: 'Data It Will Use', text: 'Margin per door and sell-through, as the Daily Product Margin golden report defines them. The prototype runs on dev data in the sandbox.', cites: [cite('snowflake', 'Certified', 'MERCH.GOLDEN.DAILY_PRODUCT_MARGIN, owner Luis Romero')] },
+      { h: 'Target', text: 'T1 Team App: about 20 people, read-only, no personal data. Proposed here, confirmed with the plan, built in Construction.', cites: [] }
+    ];
+    const openQs = [
+      waitsOnMe ? { text: MINE_TEXT, who: 'Waiting on you.' } : null,
+      { text: 'Marked-down units count at the marked-down price.', who: 'Waiting on Dana Ortiz.' },
+      { text: 'Margin per door is net sales minus landed cost, before markdowns.', who: 'With Luis Romero as steward.' },
+      !ai ? { text: AI_TEXT, who: 'From AI notes, not confirmed.' } : null
+    ].filter(Boolean);
+
+    // The mockup and the data map, as on the project board in Discover.
+    const mockFilters = [['Season FW27', true], ['Franchise', false], ['Gender', false], ['Flagged Only', true]]
+      .map((f) => ({ t: f[0], bg: f[1] ? INK : '#FFFFFF', fg: f[1] ? '#FFFFFF' : INK, ring: f[1] ? 'none' : REST }));
+    const mockRows = [
+      { name: 'Shell run jacket', st: '38%', m: '$96', why: '36% under the line', flag: true, sel: true },
+      { name: 'Run 5-inch short', st: '41%', m: '$118', why: '21% under the line', flag: true },
+      { name: 'Compression LS', st: '47%', m: '$142', why: 'Just under the line', flag: true },
+      { name: 'Rib knit tank', st: '52%', m: '$214', why: 'Watch: slipping 3 weeks', flag: false },
+      { name: 'Training LS top', st: '71%', m: '$412', why: '', flag: false }
+    ].map((r) => Object.assign(r, { bg: r.sel ? '#F0F0F0' : 'transparent', edge: r.sel ? 'inset 2px 0 0 #1D1D1D' : 'none' }));
+    const cell = (f, bg) => ({ f, bg });
+    const looks = [
+      { title: 'Workbench Table', note: 'Chosen by Priya', on: true, rows: [{ h: '7px', cells: [cell(1, INK), cell(3, 'transparent')] }, { h: '6px', cells: [cell(1, '#D0D0D0'), cell(1, '#D0D0D0'), cell(1, '#D0D0D0')] }, { h: '6px', cells: [cell(2, '#D0D0D0'), cell(1, '#D0D0D0')] }, { h: '6px', cells: [cell(2, '#D0D0D0'), cell(1, '#D0D0D0')] }, { h: '6px', cells: [cell(2, '#D0D0D0'), cell(1, '#D0D0D0')] }] },
+      { title: 'Scorecard', note: '', on: false, rows: [{ h: '7px', cells: [cell(1, INK), cell(3, 'transparent')] }, { h: '12px', cells: [cell(1, '#D0D0D0'), cell(1, '#D0D0D0'), cell(1, '#D0D0D0')] }, { h: '22px', cells: [cell(2, '#D0D0D0'), cell(1, '#D0D0D0')] }] },
+      { title: 'List and Detail', note: '', on: false, rows: [{ h: '7px', cells: [cell(1, INK), cell(3, 'transparent')] }, { h: '38px', cells: [cell(1, '#D0D0D0'), cell(2, '#FFFFFF')] }] }
+    ].map((l) => Object.assign(l, { ring: l.on ? SELECTED : REST }));
+    const pins = [
+      { n: '1', text: 'Each flag says why, in plain words, with the numbers behind it.', logo: LOGO.confluence, cite: 'Playbook §3' },
+      { n: '2', text: 'The bottom 20% of FW27 styles by margin per door, each season.', logo: LOGO.microsoftteams, cite: '08:12' },
+      { n: '3', text: 'Export the current view to Excel for the line review.', logo: LOGO.jira, cite: 'MERCH-1182' }
+    ];
+    const dm =(metric, cls, view, status, ok2, ini, owner, grain, i) => ({ metric, cls, view, status, stColor: ok2 ? GREEN : INK, stD: ok2 ? G.check : G.alert, initials: ini, bg: fill(ini), owner, grain, rule: i ? RULE : NO_RULE });
+    const dataMap = [
+      dm('Margin per door', 'Internal', 'MERCH.GOLDEN.DAILY_PRODUCT_MARGIN', 'Certified', true, 'LR', 'Luis Romero', 'style, door, week', 0),
+      dm('Sell-through', 'Internal', 'MERCH.GOLDEN.SELL_THROUGH_DAILY', 'Certified', true, 'LR', 'Luis Romero', 'style, door, day', 1),
+      dm('Doors in scope', 'Internal', 'MERCH.STORE_ATTRIBUTES_V', 'Canonical', true, 'RA', 'Retail Analytics', 'door', 2),
+      dm('Markdown treatment', 'Confidential', 'FIN.POLICY.MARKDOWN_RULES', 'Not Yet Agreed', false, 'DO', 'Dana Ortiz', 'style, week', 3)
+    ];
+    const queries = [
+      { id: '01b9f2c4', purpose: 'Counts by franchise', cost: '0.02 credits, 3s' },
+      { id: '01b9f2d1', purpose: 'Blank values in 3 views', cost: '0.01 credits, 2s' },
+      { id: '01b9f3a7', purpose: 'Certified definition of margin per door', cost: '0.01 credits, 1s' }
+    ];
+
+    // The conversation: notes, Maya's messages and HyperDelivery's turns.
+    const MSG = { isNote: false, isBubble: false, isTurn: false };
+    const note = (glyph, text, color, strong) => Object.assign({}, MSG, { isNote: true, glyph: G[glyph], glyphColor: color || MUTED, text, hasStrong: !!strong, strong: strong || '' });
+    const bubble = (text, meta, chips) => Object.assign({}, MSG, { isBubble: true, text, meta, chips: chips || [], hasChips: !!(chips && chips.length) });
+    const TECH = {
+      microsoftteams: 'Microsoft Graph, with consent for this one meeting',
+      microsoftcopilot: 'Meeting AI Insights, with your Copilot license',
+      snowflake: 'Cortex Code, under the Merchandising read role'
+    };
+    const tool = (src, label, result, lines) => ({ isImg: !G[src], isGlyph: !!G[src], logo: LOGO[src] || '', glyph: G[src] || '', label, result, running: false,
+      lines: lines.concat(tech && TECH[src] ? [TECH[src]] : []) });
+    const card = (label, meta) => ({ label, meta, icon: ART_ICON.sources, pressed: art === 'sources' && st.srcView === 'meeting' ? 'true' : 'false',
+      ring: art === 'sources' && st.srcView === 'meeting' ? SELECTED : REST, aria: 'Open ' + label + ' in Sources', open: openMeeting });
+    const turn = (when, o) => {
+      const tools = (o.tools || []).map((t, i) => Object.assign(t, { rule: i ? RULE : NO_RULE }));
+      const cards = o.cards || [];
+      const src = o.src || [];
+      return Object.assign({}, MSG, { isTurn: true, when, tools, hasTools: tools.length > 0, paras: o.paras || [], cards, hasCards: cards.length > 0,
+        cardCols: cards.length > 1 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)', src, hasSrc: src.length > 0 });
+    };
+    const meetingChip = { logo: TEAMS, label: 'Line review prep', meta: 'Oct 26', open: openMeeting, aria: 'Open Line review prep in Sources', tip: 'Teams meeting, Oct 26, 14:15 to 15:02' };
+
+    const earlierMsgs = [
+      bubble('Merchandising needs to see which styles fall below the productivity line on margin per door before the line review, each with a plain reason.', 'Priya Nair, Oct 13',
+        [{ logo: LOGO.jira, label: 'MERCH-1182' }]),
+      note('file', 'HyperDelivery drafted the brief and the Workbench Table mockup, Oct 16.')
+    ];
+    const msgs = (st.earlier ? earlierMsgs : []).concat([
+      bubble("Link Monday's line review prep to this project. Dana, Luis, Jordan and Sam will be there.", 'You, Oct 20',
+        [{ logo: TEAMS, label: 'Line review prep, Oct 26' }]),
+      turn('Oct 20', {
+        tools: [
+          tool('microsoftteams', 'Linked Line review prep, Oct 26', '5 attendees, all at UA', ['Added a notice to the invite; Teams shows it again when the meeting starts', 'After it ends: the transcript and the Copilot recap, never the recording'])
+        ],
+        paras: ['Linked. When it ends, each statement goes to the person who said it to confirm. Meeting Notes in Loop are read only if you point at them.']
+      }),
+      turn('Oct 26, 16:14', {
+        src: [meetingChip],
+        tools: [
+          tool('microsoftteams', 'Read the transcript, attributed', '47 min', ['Read at 15:04, 2 minutes after the meeting ended', "Text only; the recording's audio and video are not read"]),
+          tool('microsoftcopilot', 'Read the Copilot recap', '9 notes, 3 action items', ['8 of 9 notes matched to a moment in the transcript', '1 has no match, so it is not used until someone confirms it']),
+          tool('snowflake', 'Checked 2 metrics against certified definitions', '1 conflict', ['Margin per door differs from the Daily Product Margin golden report', 'Definitions only; no values left Snowflake']),
+          tool('microsoftteams', 'Sent 8 statements to confirm', '5 Teams cards', ['7 to the 4 people who said them; 1 to Luis Romero as steward', 'Each card opens with "HyperDelivery, an AI assistant, asking for Maya Chen"', 'One reminder after 2 business days; nothing is used until it is confirmed'])
+        ],
+        paras: [
+          'Line review prep ended at 15:02, and I read its transcript and Copilot recap. 7 statements went to the 4 people who said them to confirm. 1 conflicts with the certified definition of margin in the Daily Product Margin golden report, so it went to Luis Romero as steward.',
+          'Nothing from the meeting is used until it is confirmed. 3 of the 7 are yours.'
+        ],
+        cards: [card('Line review prep', '8 statements, ' + inUse + ' in use')]
+      }),
+      note('check', 'You confirmed 2 statements in Teams, Oct 26.', INK),
+      note('check', 'Jordan Lee corrected 1 statement. Sam Kim confirmed 1 and asked that 1 not be used. Oct 26.', INK),
+      note('clock', 'Waiting on Dana Ortiz, and on Luis Romero as steward, 1d. One reminder goes out Oct 28.')
+    ]).concat(mine === 'ok' ? [note('check', 'You confirmed your last statement from Line review prep, just now. The brief now uses it.', INK)] : [])
+      .concat(mine === 'fixed' ? [note('check', 'You corrected your last statement from Line review prep, just now. The brief uses your words.', INK)] : [])
+      .concat(mine === 'drop' ? [note('check', 'You asked that your last statement from Line review prep not be used, just now.', INK)] : [])
+      .concat(notes === 'done' ? [note('file', 'Read the Meeting Notes for Line review prep, just now. Nothing in them beyond the transcript.')] : []);
+    const suggest = [
+      { label: 'Who Still Needs to Confirm?', text: 'Who still needs to confirm?' },
+      { label: 'Why Did Margin Go to Luis?', text: 'Why did the margin statement go to Luis?' }
+    ];
+
+    const META = {
+      brief: mineIn ? 'Draft 3, uses 5 confirmed statements from Line review prep' : 'Draft 3, uses 4 confirmed statements from Line review prep',
+      mockup: 'Version 2, Workbench Table look',
+      data: '4 metrics, checked Oct 26',
+      sources: '6 sources, read with your access'
+    };
+    const VERS = {
+      brief: ['Draft 3, Oct 26', 'Draft 2, Oct 16', 'Draft 1, Oct 14'],
+      mockup: ['Version 2, Workbench Table, Oct 16', 'Version 1, three starting looks, Oct 13']
+    };
+    const versions = (VERS[art] || []).map((label, i) => ({ label, on: i === 0 ? 'true' : 'false', isOn: i === 0, fw: i === 0 ? '700' : '400' }));
+    const full = st.full;
+
+    // The composer, the same on every workspace board: Enter sends and Shift+Enter starts a new line, the + menu
+    // points at a source (it joins the next message as a chip), and a suggestion fills the draft or acts.
+    const CMP_SOURCES = [
+      { key: 'microsoftteams', label: 'Teams Meeting', hint: 'Transcript and recap', kind: 'Teams', title: 'Assortment sync, Oct 29' },
+      { key: 'onedrive', label: 'OneDrive or SharePoint', hint: 'Files and folders', kind: 'OneDrive', title: 'FW27 SKU cuts.xlsx' },
+      { key: 'confluence', label: 'Confluence Page', hint: 'With its comments', kind: 'Confluence', title: 'Line review method' },
+      { key: 'jira', label: 'Jira Ticket', hint: 'With linked pages', kind: 'Jira', title: 'MERCH-1182' },
+      { key: 'snowflake', label: 'Snowflake Report', hint: 'Certified views', kind: 'Snowflake', title: 'Sell-through, golden report' },
+      { key: 'file', label: 'Upload a File', hint: 'Still works', kind: 'File', title: 'notes.docx' }
+    ];
+    const cmpState = this.state, cmpAtt = cmpState.att || [], cmpDraft = cmpState.reply || '';
+    const cmpFocus = () => setTimeout(() => { const r = document.getElementById('hd-reply'); if (r) r.focus(); }, 60);
+    const cmpSend = () => {
+      const s = this.state, text = (s.reply || '').trim(), keys = s.att || [];
+      if (!text && !keys.length) return;
+      const files = keys.map((k) => CMP_SOURCES.find((c) => c.key === k)).map((c) => ({ logo: LOGO[c.key], label: c.kind + ' ' + c.title }));
+      this.setState({ chat: (s.chat || []).concat([{ text, hasText: !!text, files, hasFiles: files.length > 0, who: 'You, just now' }]), reply: '', att: [] });
+      setTimeout(() => { const l = document.querySelector('[role="log"]'); if (l) l.scrollTop = l.scrollHeight; }, 80);
+      cmpFocus();
+    };
+    const cmpReady = !!cmpDraft.trim() || cmpAtt.length > 0;
+    const cmp = {
+      suggest: (suggest).map((x) => {
+        const label = typeof x === 'string' ? x : x.label;
+        const text = typeof x === 'string' ? x.split(' ').map((w, i) => (i === 0 || w === 'I' ? w : w.toLowerCase())).join(' ') : x.text;
+        return { label, pick: x.act || (() => { this.setState({ reply: text }); cmpFocus(); }) };
+      }),
+      reply: cmpDraft, onReply: (e) => this.setState({ reply: e.target.value }),
+      replyKey: (e) => { if (e.key === 'Enter' && !e.shiftKey && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.preventDefault(); cmpSend(); } },
+      replyEmpty: !cmpReady, sendBg: cmpReady ? '#1D1D1D' : '#D0D0D0', sendReply: cmpSend, chat: cmpState.chat || [],
+      cmpSources: CMP_SOURCES.map((c) => ({ logo: LOGO[c.key], label: c.label, hint: c.hint,
+        add: (e) => { closeMenu(e); if (cmpAtt.indexOf(c.key) < 0) this.setState({ att: cmpAtt.concat([c.key]) }); cmpFocus(); } })),
+      cmpFiles: cmpAtt.map((k) => CMP_SOURCES.find((c) => c.key === k)).map((c) => ({ logo: LOGO[c.key], kind: c.kind, title: c.title,
+        removeLabel: 'Remove ' + c.kind + ' ' + c.title, remove: () => { this.setState({ att: cmpAtt.filter((k) => k !== c.key) }); cmpFocus(); } })),
+      cmpHasFiles: cmpAtt.length > 0
+    };
+    return {
+      suggest: cmp.suggest, reply: cmp.reply, onReply: cmp.onReply, replyKey: cmp.replyKey, replyEmpty: cmp.replyEmpty, sendBg: cmp.sendBg, sendReply: cmp.sendReply,
+      chat: cmp.chat, cmpSources: cmp.cmpSources, cmpFiles: cmp.cmpFiles, cmpHasFiles: cmp.cmpHasFiles,
+      railAttr: rail ? 'on' : 'off', sideW: rail ? '64px' : '248px', sideOpen: rail ? 'false' : 'true',
+      railLabel: rail ? 'Show the sidebar' : 'Hide the sidebar',
+      openSearch: () => this.hdSearch(),
+      toggleRail: () => this.setState({ rail: !rail }),
+      nav, admin, recent, me, workspaces, closeMenu, logos: LOGO,
+      techOn: tech ? 'true' : 'false', techWord: tech ? 'On' : 'Off', toggleTech: () => this.setState({ tech: !tech }),
+      title, crew,
+      lineNames, lineTrack, lineLabels, lineAria, lineNoteA: 'Discover outputs a', lineNoteB: 'brief and a mockup',
+      splitCols: full ? 'minmax(0, 1fr)' : '440px minmax(0, 1fr)', convDisplay: full ? 'none' : 'flex',
+      hasEarlier: true, earlierOpen: st.earlier ? 'true' : 'false', earlierLabel: st.earlier ? 'Hide Earlier Messages' : 'Show Earlier Messages',
+      earlierD: st.earlier ? G.chevUp : G.chevDown, toggleEarlier: () => this.setState({ earlier: !st.earlier }),
+      msgs,
+      hasProgress: notes === 'reading', progressRunning: true, progressPaused: false,
+      progressText: 'Reading the Meeting Notes in Loop',
+      pauseLabel: 'Stop', pauseAria: 'Stop reading the Meeting Notes', togglePause: stopNotes,
+      arts, artKey, artLabelledBy: 'art-tab-' + art,
+      artTitle: LABEL[art], artMeta: META[art], hasVersions: versions.length > 0, versions,
+      toggleFull: () => this.setState({ full: !full }), fullPressed: full ? 'true' : 'false', fullLabel: full ? 'Show the conversation' : 'Open full screen', fullD: full ? G.collapse : G.expand,
+      isBrief: art === 'brief', isMockup: art === 'mockup', isData: art === 'data', isSources: art === 'sources',
+      srcAll: st.srcView === 'all', srcMeeting: st.srcView !== 'all', showAll, srcRows,
+      attendees, reads, groups, tally,
+      brief, openQs, hasOpenQs: openQs.length > 0,
+      mockFilters, mockRows, looks, pins,
+      dataMap, queries, markdownNote: 'Markdown treatment waits on Dana Ortiz.',
+      moreViews: [{ label: 'Timeline', tip: 'Shown on the Tariff scenario planner example' }, { label: 'Architecture', tip: 'Shown on the Tariff scenario planner example' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

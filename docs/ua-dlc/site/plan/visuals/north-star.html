@@ -1,0 +1,161 @@
+<figure class="pv-ns" aria-labelledby="pv-ns-title">
+<style>
+.pv-ns { --bg: #ffffff; --surface: #f9f9f9; --ink: #1d1d1d; --muted: #5f5f5f; --line: #e6e6e6; --control: #8a8a8a;
+  --human: #f59e0b; --ai: #60a5fa; --lw: 140px; --gap: 14px;
+  --body: 'Archivo', 'Helvetica Neue', Arial, sans-serif; --mono: 'Geist Mono', ui-monospace, Menlo, monospace;
+  color-scheme: light; position: relative; margin: 20px 0 32px; container: pv-ns / inline-size;
+  font-family: var(--body); font-size: 13px; line-height: 1.35; color: var(--ink); }
+.pv-ns * { box-sizing: border-box; }
+.pv-ns .pv-head { border-top: 2px solid var(--ink); padding-top: 12px; margin-bottom: 16px; }
+.pv-ns .pv-title { font-weight: 700; font-size: 15px; margin: 0 0 3px; }
+.pv-ns .pv-sub { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 0; max-width: none; }
+.pv-ns .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0; }
+/* the chart */
+.pv-ns .ns-row { display: grid; grid-template-columns: var(--lw) repeat(4, minmax(0, 1fr)); column-gap: var(--gap); }
+.pv-ns .ns-hd { align-items: start; padding-bottom: 4px; }
+.pv-ns .ns-ch { border-top: 1.5px solid var(--ink); padding-top: 7px; display: flex; flex-direction: column; gap: 1px; }
+.pv-ns .ns-ch b { font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+.pv-ns .ns-ch span { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+.pv-ns .ns-st { align-items: start; padding: 10px 0; }
+.pv-ns .ns-lab b { display: block; font-size: 13px; font-weight: 700; line-height: 1.25; }
+.pv-ns .ns-lab small { display: block; font-size: 11px; color: var(--muted); line-height: 1.3; margin-top: 2px;
+  text-wrap: balance; }
+.pv-ns .ns-bar { display: flex; gap: 2px; height: 16px; }
+.pv-ns .ns-bar i { display: block; min-width: 0; border-radius: 3px; overflow: hidden; }
+.pv-ns .ns-bar .h { background: var(--human); }
+.pv-ns .ns-bar .a { background: var(--ai); }
+.pv-ns .ns-bar em { display: block; font-style: normal; font-size: 10.5px; font-weight: 600; line-height: 16px;
+  padding-left: 6px; color: var(--ink); white-space: nowrap; }
+.pv-ns .ns-lv { display: block; margin-top: 6px; font-size: 12px; font-weight: 500; line-height: 1.25; color: #3a3a3a; }
+.pv-ns .ns-lv.d { font-weight: 700; color: var(--ink); }
+.pv-ns .ns-q { display: block; font-size: 11px; color: var(--muted); line-height: 1.3; margin-top: 1px; }
+.pv-ns .ns-gate { align-items: center; min-height: 24px; }
+.pv-ns .ns-gate .ns-lab { font-size: 11.5px; font-weight: 600; color: var(--muted); line-height: 1.25; }
+.pv-ns .ns-gl { grid-column: 2 / -1; position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--gap); align-items: center; align-self: stretch; min-height: 24px; }
+.pv-ns .ns-gl::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #b4b4b4; }
+.pv-ns .ns-d { position: relative; width: 9px; height: 9px; margin-left: 2px; background: var(--ink); transform: rotate(45deg); }
+.pv-ns .ns-said { position: absolute; top: 50%; left: calc(((100% - 3 * var(--gap)) / 4 + var(--gap)) / 2 + 6px);
+  transform: translate(-50%, -50%); padding: 0 6px; background: var(--bg); font-size: 11px; font-weight: 600;
+  font-stretch: 92%; line-height: 1.2; color: var(--ink); white-space: nowrap; text-align: center; }
+.pv-ns .ns-sep { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cfcfcf; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.pv-ns .ns-sep + .ns-st { padding-top: 6px; }
+/* key */
+.pv-ns .ns-key { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 6px 0 0; padding-top: 10px;
+  border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.pv-ns .ns-key span { display: inline-flex; align-items: center; gap: 7px; }
+.pv-ns .ns-key b { color: var(--ink); font-weight: 700; }
+.pv-ns .ns-sw { width: 18px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
+.pv-ns .ns-sw.h { background: var(--human); }
+.pv-ns .ns-sw.a { background: var(--ai); }
+.pv-ns .ns-key .ns-d { width: 8px; height: 8px; margin: 0 3px; flex: 0 0 auto; }
+/* what compounds */
+.pv-ns .ns-cmp { margin-top: 24px; }
+.pv-ns .ns-cmp-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 10px; }
+.pv-ns .ns-k { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); margin: 0; }
+.pv-ns .ns-cmp-head span { font-size: 12.5px; color: var(--muted); }
+.pv-ns .ns-blocks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px; }
+.pv-ns .ns-blocks li { margin: 0; max-width: none; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px;
+  border-radius: 8px; background: var(--surface); }
+.pv-ns .ns-blocks li.is-key { background: var(--bg); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.pv-ns .ns-blocks b { font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+.pv-ns .ns-blocks span { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.pv-ns .ns-blocks strong { margin-top: auto; padding-top: 7px; font-size: 12px; font-weight: 700; line-height: 1.3; }
+.pv-ns .ns-blocks strong::before { content: ""; display: block; height: 1px; margin-bottom: 6px; background: var(--line); }
+.pv-ns .ns-blocks li.is-key strong::before { background: var(--ink); opacity: 0.25; }
+/* caption */
+.pv-ns .ns-foot { margin: 12px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted); max-width: none; }
+.pv-ns .ns-foot b { color: var(--ink); font-weight: 600; }
+.pv-ns .ns-foot a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--control); white-space: nowrap; }
+.pv-ns .ns-foot a:hover { text-decoration-color: var(--ink); }
+.pv-ns .ns-foot a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+@container pv-ns (max-width: 739px) {
+  .pv-ns .ns-gl.has-said { min-height: 34px; }
+  .pv-ns .ns-said { white-space: normal; text-wrap: balance;
+    max-width: calc((100% - 2 * var(--gap)) / 3 + var(--gap) - 28px); }
+}
+@container pv-ns (max-width: 599px) {
+  .pv-ns .ns-row { --gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pv-ns .ns-row > .ns-lab { grid-column: 1 / -1; margin-bottom: 6px; }
+  .pv-ns .ns-hd > .ns-lab { display: none; }
+  .pv-ns .ns-gate { padding-top: 2px; }
+  .pv-ns .ns-gate > .ns-lab { margin-bottom: 0; }
+  .pv-ns .ns-gl { grid-column: 1 / -1; grid-template-rows: 24px auto; }
+  .pv-ns .ns-gl.has-said { min-height: 24px; }
+  .pv-ns .ns-gl::before { top: 12px; }
+  .pv-ns .ns-said { position: static; grid-column: 1 / -1; grid-row: 2; justify-self: start; transform: none;
+    max-width: none; padding: 0 0 2px; background: none; text-align: left; }
+  .pv-ns .ns-blocks { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+<div class="pv-head">
+  <p class="pv-title" id="pv-ns-title">From human-led to AI-driven, by stage</p>
+  <p class="pv-sub">Who does the work between decisions, from the pilot to the north star. AI-assisted: AI drafts, people edit. AI-driven: AI does the work, including asking people, and people decide what it surfaces.</p>
+</div>
+<div class="sr"><table>
+  <caption>Who does the work in each stage, drawn to show direction, not measured. Columns after the Final MVP are the earliest each could happen, if decided. People decide at every approval and at the Construction decision, at every level.</caption>
+  <thead><tr><th scope="col">Stage</th><th scope="col">Final MVP</th><th scope="col">Enterprise hardening</th><th scope="col">Enterprise rollout</th><th scope="col">North star</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">Discover</th><td>AI-assisted: AI drafts; people edit and sign</td><td>AI-assisted: AI drafts; people edit and sign</td><td>AI-assisted: AI drafts; people edit and sign. Promoted cells AI-driven</td><td>AI-driven: AI does the work and asks people; people decide and sign. Where earned; High risk AI-assisted</td></tr>
+    <tr><th scope="row">Approval: what we&#x27;re building</th><td>People decide</td><td>People decide</td><td>People decide</td><td>People decide</td></tr>
+    <tr><th scope="row">Plan</th><td>AI-assisted: AI drafts; people edit and sign</td><td>AI-assisted: AI drafts; people edit and sign</td><td>AI-assisted: AI drafts; people edit and sign. Promoted cells AI-driven</td><td>AI-driven: AI does the work and asks people; people decide and sign. Where earned; High risk AI-assisted</td></tr>
+    <tr><th scope="row">Approval: the plan</th><td>People decide</td><td>People decide</td><td>People decide</td><td>People decide</td></tr>
+    <tr><th scope="row">Prototype</th><td>AI-driven: AI does the work and asks people; people decide and sign. By design, inside the signed plan and the sandbox</td><td>AI-driven: AI does the work and asks people; people decide and sign</td><td>AI-driven: AI does the work and asks people; people decide and sign</td><td>AI-driven: AI does the work and asks people; people decide and sign</td></tr>
+    <tr><th scope="row">Approval: the working prototype</th><td>People decide</td><td>People decide</td><td>People decide</td><td>People decide</td></tr>
+    <tr><th scope="row">Handoff</th><td>AI-driven: AI does the work and asks people; people decide and sign</td><td>AI-driven: AI does the work and asks people; people decide and sign</td><td>AI-driven: AI does the work and asks people; people decide and sign</td><td>AI-driven: AI does the work and asks people; people decide and sign</td></tr>
+    <tr><th scope="row">Construction decision</th><td>People decide</td><td>People decide</td><td>People decide</td><td>People decide</td></tr>
+    <tr><th scope="row">Context, across every stage: meetings, questions to experts, related past work</th><td>AI-assisted: AI drafts; people edit and sign. Only what people point at</td><td>AI-assisted: AI drafts; people edit and sign. Suggested; people confirm</td><td>AI-driven: AI does the work and asks people; people decide and sign. Linked meetings with US attendees, opted-in experts, after the gate</td><td>AI-driven: AI does the work and asks people; people decide and sign. Where cleared</td></tr>
+  </tbody>
+</table></div>
+<div class="ns-chart" aria-hidden="true">
+  <div class="ns-row ns-hd"><div class="ns-lab"></div><div class="ns-ch"><b>Final MVP</b><span>Pilot, weeks 15 to 22</span></div><div class="ns-ch"><b>Enterprise hardening</b><span>Weeks 23 to 36, if decided</span></div><div class="ns-ch"><b>Enterprise rollout</b><span>Week 37 on, if decided</span></div><div class="ns-ch"><b>North star</b><span>Earned step by step</span></div></div>
+  <div class="ns-row ns-st"><div class="ns-lab"><b>Discover</b><small>Intake, research, data, brief, mockup</small></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:60 1 0"><em>Human</em></i><i class="a" style="flex:40 1 0"><em>AI</em></i></span><span class="ns-lv">AI-assisted</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:45 1 0"></i><i class="a" style="flex:55 1 0"></i></span><span class="ns-lv">AI-assisted</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:35 1 0"></i><i class="a" style="flex:65 1 0"></i></span><span class="ns-lv">AI-assisted</span><span class="ns-q">Promoted cells AI-driven</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:15 1 0"></i><i class="a" style="flex:85 1 0"></i></span><span class="ns-lv d">AI-driven</span><span class="ns-q">Where earned; High risk AI-assisted</span></div>
+  </div>
+  <div class="ns-row ns-gate"><div class="ns-lab">What we&#x27;re building</div><div class="ns-gl has-said"><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span><span class="ns-said">People decide here at every level</span></div></div>
+  <div class="ns-row ns-st"><div class="ns-lab"><b>Plan</b><small>Requirements, stories, design, tests, tickets</small></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:50 1 0"></i><i class="a" style="flex:50 1 0"></i></span><span class="ns-lv">AI-assisted</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:40 1 0"></i><i class="a" style="flex:60 1 0"></i></span><span class="ns-lv">AI-assisted</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:30 1 0"></i><i class="a" style="flex:70 1 0"></i></span><span class="ns-lv">AI-assisted</span><span class="ns-q">Promoted cells AI-driven</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:15 1 0"></i><i class="a" style="flex:85 1 0"></i></span><span class="ns-lv d">AI-driven</span><span class="ns-q">Where earned; High risk AI-assisted</span></div>
+  </div>
+  <div class="ns-row ns-gate"><div class="ns-lab">The plan</div><div class="ns-gl"><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span></div></div>
+  <div class="ns-row ns-st"><div class="ns-lab"><b>Prototype</b><small>Build, checks, evidence, try it</small></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:25 1 0"></i><i class="a" style="flex:75 1 0"></i></span><span class="ns-lv d">AI-driven</span><span class="ns-q">By design, inside the signed plan and the sandbox</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:20 1 0"></i><i class="a" style="flex:80 1 0"></i></span><span class="ns-lv d">AI-driven</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:15 1 0"></i><i class="a" style="flex:85 1 0"></i></span><span class="ns-lv d">AI-driven</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:10 1 0"></i><i class="a" style="flex:90 1 0"></i></span><span class="ns-lv d">AI-driven</span></div>
+  </div>
+  <div class="ns-row ns-gate"><div class="ns-lab">The working prototype</div><div class="ns-gl"><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span></div></div>
+  <div class="ns-row ns-st"><div class="ns-lab"><b>Handoff</b><small>The package engineering builds from</small></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:30 1 0"></i><i class="a" style="flex:70 1 0"></i></span><span class="ns-lv d">AI-driven</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:25 1 0"></i><i class="a" style="flex:75 1 0"></i></span><span class="ns-lv d">AI-driven</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:20 1 0"></i><i class="a" style="flex:80 1 0"></i></span><span class="ns-lv d">AI-driven</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:10 1 0"></i><i class="a" style="flex:90 1 0"></i></span><span class="ns-lv d">AI-driven</span></div>
+  </div>
+  <div class="ns-row ns-gate"><div class="ns-lab">Construction decision</div><div class="ns-gl"><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span><span class="ns-d"></span></div></div>
+  <div class="ns-sep">Across every stage</div>
+  <div class="ns-row ns-st"><div class="ns-lab"><b>Context</b><small>Meetings, questions to experts, related past work</small></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:85 1 0"></i><i class="a" style="flex:15 1 0"></i></span><span class="ns-lv">AI-assisted</span><span class="ns-q">Only what people point at</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:60 1 0"></i><i class="a" style="flex:40 1 0"></i></span><span class="ns-lv">AI-assisted</span><span class="ns-q">Suggested; people confirm</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:30 1 0"></i><i class="a" style="flex:70 1 0"></i></span><span class="ns-lv d">AI-driven</span><span class="ns-q">Linked meetings with US attendees, opted-in experts, after the gate</span></div>
+    <div class="ns-cell"><span class="ns-bar"><i class="h" style="flex:15 1 0"></i><i class="a" style="flex:85 1 0"></i></span><span class="ns-lv d">AI-driven</span><span class="ns-q">Where cleared</span></div>
+  </div>
+</div>
+<div class="ns-key" aria-hidden="true"><span><i class="ns-sw h"></i><b>Human</b> people do the work</span><span><i class="ns-sw a"></i><b>AI</b> HyperDelivery does the work</span><span><i class="ns-d"></i><b>Decision</b> an approval, or the Construction decision</span></div>
+<div class="ns-cmp" role="group" aria-labelledby="pv-ns-cmp">
+  <div class="ns-cmp-head"><p class="ns-k" id="pv-ns-cmp">What compounds</p><span>The record running UA-DLC makes is also the evidence that moves a step up a level.</span></div>
+  <ul class="ns-blocks">
+    <li><b>UA's existing record</b><span>Approved specs, golden reports, Jira and Confluence history</span><strong>A head start any tool can read, and a yardstick</strong></li>
+    <li class="is-key"><b>What running UA-DLC records</b><span>Decisions and rejected options, approval edits, answers on record, definition questions, handoff outcomes</span><strong>The lasting advantage, and UA&#x27;s</strong></li>
+    <li><b>Where the work happens</b><span>Approvals, the handoff engineering reads</span><strong>What produces the record</strong></li>
+  </ul>
+</div>
+<figcaption class="ns-foot"><b>Shares are drawn to show direction, not measured.</b> Columns after the Final MVP are the earliest each could happen, if decided. A level belongs to one step, in one workspace, at one risk tier, and rises only on evidence, never by date. AI-driven never means auto-approval. Sources: <a href="https://github.com/underarmour/ua-hyperdelivery/blob/dev/docs/ua-dlc/research/autonomy-levels.md#3-each-step-at-each-level-and-where-the-final-mvp-sits" target="_blank" rel="noopener">research/autonomy-levels.md<span class="sr"> (opens in a new tab)</span></a> and <a href="https://github.com/underarmour/ua-hyperdelivery/blob/dev/docs/ua-dlc/research/context-moats.md#2-three-kinds-of-advantage" target="_blank" rel="noopener">research/context-moats.md<span class="sr"> (opens in a new tab)</span></a>.</figcaption>
+</figure>

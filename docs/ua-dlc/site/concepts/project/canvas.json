@@ -206,7 +206,7 @@
       "x": 4560,
       "y": 3760,
       "w": 1440,
-      "h": 1329,
+      "h": 1362,
       "title": "In Teams \u00b7 Final MVP",
       "page": "b"
     },
@@ -361,6 +361,46 @@
       "page": "c",
       "expand": "fill",
       "is_interactive": true
+    },
+    "NS_Meeting.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1200,
+      "title": "After a linked meeting \u00b7 SKU productivity workbench \u00b7 Enterprise (north star, if decided)",
+      "page": "ns",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "NS_Ask.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1280,
+      "h": 1740,
+      "title": "A question in Teams \u00b7 SKU productivity workbench \u00b7 Enterprise (north star, if decided)",
+      "page": "ns",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "NS_Precedent.dc.html": {
+      "x": 2880,
+      "y": 0,
+      "w": 1440,
+      "h": 1200,
+      "title": "Approved precedent in the plan \u00b7 SKU productivity workbench \u00b7 Enterprise (north star, if decided)",
+      "page": "ns",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "NS_Autonomy.dc.html": {
+      "x": 4400,
+      "y": 0,
+      "w": 1440,
+      "h": 1731,
+      "title": "Admin: autonomy by step \u00b7 Merchandising \u00b7 Enterprise (north star, if decided)",
+      "page": "ns",
+      "expand": "fill",
+      "is_interactive": true
     }
   },
   "createdOnFiles": {
@@ -476,6 +516,22 @@
       "kind": "title1",
       "maxW": 10560,
       "page": "c"
+    },
+    "ns-row0": {
+      "x": 0,
+      "y": -620,
+      "text": "Every name, project and number on this canvas is invented to show the design; none is a measured result.",
+      "kind": "title1",
+      "maxW": 13600,
+      "page": "ns"
+    },
+    "ns-row1": {
+      "x": 0,
+      "y": -300,
+      "text": "North Star: from the Enterprise phase on, each a candidate decided on evidence",
+      "kind": "title1",
+      "maxW": 5840,
+      "page": "ns"
     }
   },
   "order": [
@@ -515,7 +571,11 @@
     "C_Start.dc.html",
     "C_Project.dc.html",
     "C_Gate.dc.html",
-    "C_Graduation.dc.html"
+    "C_Graduation.dc.html",
+    "NS_Meeting.dc.html",
+    "NS_Ask.dc.html",
+    "NS_Precedent.dc.html",
+    "NS_Autonomy.dc.html"
   ],
   "pages": [
     {
@@ -533,6 +593,10 @@
     {
       "id": "c",
       "name": "C \u00b7 Guided Path"
+    },
+    {
+      "id": "ns",
+      "name": "North Star"
     }
   ],
   "title": "HyperDelivery Concepts"

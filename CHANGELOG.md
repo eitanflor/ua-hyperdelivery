@@ -83,6 +83,33 @@ Definition of Done in [AGENTS.md](AGENTS.md).
   board; a link to part of another board, such as an Inbox item, opens that board on that part. See
   docs/decisions.md.
 
+- `docs/ua-dlc/`, round 10: the north star (`north-star.md`). It separates the two names
+  (HyperDelivery is the platform people open; UA-DLC is the framework it runs), gives the summary to
+  use today and the north-star version, and retitles the plan "HyperDelivery, powered by UA-DLC" with
+  section 4 renamed "The proposal: HyperDelivery, running UA-DLC" (links updated). It sets the path
+  from human-led to AI-assisted to AI-driven per step, workspace and risk tier, earned on evidence and
+  never by date, with the approvals, signers, the Construction decision and confirmations fixed at
+  every level; capturing a linked Teams meeting once its transcript is ready (and the Copilot recap
+  where licensed, never audio or video, Loop notes only when pointed at); asking experts in Teams from
+  the HyperDelivery bot, within one weekly attention budget per person; and the advantages that hold at
+  feature parity, with UA's approved FSDs as the cold start and the record of how UA decides as the
+  lasting advantage, in schemas UA-DLC owns so it stays UA's. Each capability is a candidate from the
+  Enterprise phase on, outside the Enterprise ready criteria. The Final MVP adds only the records and
+  notices it cannot backfill later, a retention class, the FSD groundwork (20 approved FSDs labeled) and
+  two pilot practices. A six-seat review (sponsor, engineering and security, privacy and HR, a business
+  user, consistency, a moat skeptic) reshaped it: linking a meeting is the organizer's authorization
+  with notice to attendees, routing never ranks people, works council, HR and India reviews are on the
+  pilot's long-lead track, and the advantage claim is tested three ways at the scale decision. The plan
+  gains a "The north star: Enterprise and beyond" section with a visual, merged advantage rows, long-lead
+  rows, cut-order and scale-decision entries, measures and risks; the operating model gains the three levels, an autonomy dial, workspace admin and line owner
+  roles, a weekly attention budget and a changed escalation for questions (one reminder, then back to
+  the requester); the architecture gains the north-star design and corrected meeting-insights status.
+  Five fact-checked research reports (`research/autonomy-levels.md`,
+  `research/meeting-capture-automation.md`, `research/proactive-sme-outreach.md`,
+  `research/fsd-corpus-index.md`, `research/context-moats.md`) and a North Star page of concept screens
+  (`NS_*.dc.html`) back it, and the Teams question card now names the AI and the requester. See
+  docs/decisions.md.
+
 - A turn's usage now carries its dollar cost (`cost_usd`) and the `model_id` that ran it beside
   the token counts, and the console shows the cost next to the token total (`142K tok · $0.31`,
   exact figure and model in the tooltip).

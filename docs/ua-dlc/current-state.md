@@ -74,7 +74,7 @@ All six are "assumed from the product plan and the code, not from research" (doc
 | **Data & memory** | | | |
 | Two DynamoDB tables: projects (single-table design: state, artifact versions, decisions, turns) and WebSocket connections | done | src/infrastructure/repositories/keys.py:8-58; infra/stacks/storage_stack.py:48-56; infra/stacks/orchestration_stack.py:118-132 | No PITR on the projects table. Lost updates (project_repository.py:149, 294, 318). The connections table holds watchers and one-time stream tickets, with a TTL |
 | Standing context | partial | docs/decisions.md:616-659 | One global note |
-| Historical FSD index | done | docs/decisions.md:1885-1912 | Rebuilt by hand |
+| Historical FSD index | done | docs/decisions.md, the entry adding `s3_find_similar_reference_documents` | Rebuilt by hand |
 | Project corpus fed back to agents | absent | src/providers/storage/s3.py:94-120 | Written, never read |
 | Browser uploads | partial | src/api/routers/projects.py:451-453; src/providers/storage/s3.py:126-140; infra/stacks/storage_stack.py:108-125 | Fails on `dev` with `STORAGE_NOT_CONFIGURED`: the console Lambda has no `S3_BUCKET` and no S3 grant. Uploads go to `projects/<id>/uploads/`, and the bucket policy lets agents read only `documents/` and `fsds/`, so Distill could not open one even with storage set |
 | AgentCore Memory, Bedrock KB | planned | README.md:166 | |

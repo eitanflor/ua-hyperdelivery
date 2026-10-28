@@ -260,6 +260,7 @@ on other teams, and none of them is a precondition for the pilot.
 | Resources and collaboration | Uploads only; Jira and Confluence through the community `mcp-atlassian` server and one API token; no index; one global context note | Paste-a-link: OneDrive and SharePoint as the person who pointed; Jira and Confluence through an allowlisted service token; files labeled above Internal not indexed; transcripts only after the interim Privacy and Legal scope, and meeting links once admin consent and the transcript tenant control are in place; per-project index; one Confluence page per project, published on the requester's explicit action and polled; Teams cards and Inbox; Confluence comments and revisions feed Confirm what we heard | Rovo MCP service account; project SharePoint site; Forge events; workspace index; per-reader access re-check; Purview labels; retention and legal hold |
 | Policy | The prompt is the only guard: Blueprint creates repositories and Jira issues before approval 2, and Review opens pull requests before approval 3; anyone signed in can approve their own request | The floor: in-process write hook, prototype organization, builds and previews outside the HyperDelivery account; harness hooks on writes to protected files | Dogwood rules replayed against real traces in CI, then AgentCore Policy on every tool call; Verified Permissions for sharing |
 | Telemetry, cost, evals | An OpenTelemetry provider with no exporter; plain-text logs; cost recorded only on successful turns, with no rollups or budgets | Traces to CloudWatch; cost per project including Snowflake credits and each build session's model and Runtime cost, shown but not enforced, apart from a dollar cap per build session; deterministic approval preconditions; receipt fields per unit and approval; in the pilot, user feedback and approvals rejected despite passing evidence become golden cases, harness causes join the failure taxonomy, and human corrections and cost per accepted outcome, questions per build, replaced microVMs and merge rate by piece size are reported, with build caps reset from the p90 of real builds | SIEM, Object Lock audit, budgets enforced per workspace and chargeback; golden intakes, evaluations and ablation gate CI |
+| The record (north star) | The approval record holds station, approved, signer, comment and time; no authorship per section, reason codes, decision options or question records | The records in [north-star.md section 8](north-star.md#8-what-the-final-mvp-records-now): every draft kept, authorship derived at signing, reason codes, decision records with options and who wrote them, an ask record per question, provenance and meeting anchors on sources, corrections and rulings as events, outcomes, run events stamped with step and level, a retention class, a notice to everyone recorded; 20 labeled approved FSDs and an evaluation seed | Candidates, not in Enterprise ready: ownership routing and definition questions to stewards; the Library across projects; approved FSDs in a workspace knowledge base, if the pilot's with-and-without test shows a difference; the Autonomy page; at rollout, linked-meeting capture for meetings with US attendees, questions sent within a signed policy, and a read-only context server for a named consumer |
 | Running HyperDelivery | A five-minute invoker Lambda against ten-minute agent turns, with no retry or restart; full artifacts in the state payload; no point-in-time recovery; images pushed by hand; dev only | Async agent calls with task tokens; restart from a failed step; point-in-time recovery; a crash-and-resume test; a weekly release train and weekly doc gardening from the pilot | HyperDelivery production environment, SLO, on-call, tested restore; threat model and reviews signed |
 
 ## 2. The orchestrator and its specialists
@@ -1141,6 +1142,51 @@ The moat is UA's own context, indexed per project and reused with citations:
 - **Enterprise governance:** the AWS copy sits outside Purview retention, eDiscovery and legal hold, so
   project retention maps to the source label and Legal signs off on transcript copies.
 
+### The north star: linked meetings, questions to experts and approved precedent
+
+Enterprise rollout and later; the reasons and the decisions they need are in
+[north-star.md](north-star.md). Nothing here is built in the Final MVP, which only writes its
+records in the shape these pieces read.
+
+- **Linked meetings.** Linking a meeting installs the HyperDelivery Teams app in it with
+  resource-specific consent (`OnlineMeeting.ReadBasic.Chat`, `OnlineMeetingTranscript.Read.Chat`,
+  `OnlineMeetingNotification.Send.Chat`), and HyperDelivery creates a per-meeting transcript
+  subscription before the meeting starts. Graph notifications land on an HTTPS endpoint in AWS (API
+  Gateway and a Lambda that answers the validation token, checks `clientState`, queues and returns
+  202 within three seconds), then SQS and EventBridge start a Step Functions `MeetingIngest`: check
+  the link is still in scope (no external attendees, every attendee in a cleared location, nobody
+  who opted out), fetch the transcript (falling back to the unattributed format), hold it in a
+  restricted extraction store, extract typed statements grounded to transcript cues with a tool-less
+  model call that flags instruction-like text, and park on a task token while each speaker
+  confirms; only confirmed statements are indexed into the project's knowledge base, and a "Don't
+  Use" or "Not Me" answer removes that person's cues from every store within a day. The Copilot
+  recap has no per-meeting permission, so it is read automatically only once InfoSec accepts a
+  policy-limited application permission or a stored organizer sign-in, and only for licensed
+  organizers; until then the organizer points at it. EventBridge Scheduler renews subscriptions about every 60 hours
+  and runs a nightly reconciliation that also carries source deletions into the index. Never
+  recording, call-record, OneDrive-wide or media-bot permissions
+  ([design](research/meeting-capture-automation.md#4-reference-design-on-aws)).
+- **Questions to experts.** The bot stores each person's Teams conversation reference when the app
+  is installed for them (an app setup policy for the pilot group), sends Adaptive Cards answered in
+  place with `Action.Execute`, and writes every send, answer and re-route to the ask record. Caps live
+  in configuration. Routing reads ownership of record (data stewards and owners, golden-report owners,
+  approvers of approved precedent, page owners) and the referrals people give, never a score of how
+  well or how fast anyone answers, and stores its evidence with each send; a senior-leader group
+  maintained by HR is checked at send time. The bot is registered in Entra Agent ID, and answers in
+  Teams are data passed to tool-less extraction, never instructions
+  ([design](research/proactive-sme-outreach.md#3-who-to-ask-sme-routing)).
+- **Approved precedent.** Approved FSDs become canonical typed records, versioned JSON in S3 with a
+  verbatim quote per field, so the corpus survives the exit ramp. One workspace-level Bedrock Managed
+  Knowledge Base indexes one document per FSD section, with metadata filters (approval tier, not
+  superseded, label, domain, template, year, and the reader's permitted labels) set in `tools/` code,
+  never by the model; the corpus owner decides which FSDs a workspace's whole membership may read. PDFs and
+  scans go through Bedrock Data Automation; Word files are read by their structure
+  ([design](research/fsd-corpus-index.md#53-recommended-combination)).
+- **A read-only context server**, over MCP, serves confirmed facts, decisions, the term crosswalk and
+  data caveats under the caller's identity, with authorization filtering before retrieval. It is
+  built only when a named consumer needs it, starting with engineering's Jira-to-PR pipeline if it
+  asks.
+
 ## 12. Operating HyperDelivery itself
 
 **Final MVP resilience** (delegation depends on it):
@@ -1244,7 +1290,7 @@ and roll back.
 
 ## 15. Dependency status
 
-As of 2026-10-26. Each has a fallback so the plan does not hinge on it.
+As of 2026-10-26; the Microsoft meeting rows were rechecked on 2026-10-27. Each has a fallback so the plan does not hinge on it.
 
 | Component | Status | Fallback |
 |---|---|---|
@@ -1261,10 +1307,11 @@ As of 2026-10-26. Each has a fallback so the plan does not hinge on it.
 | Streamlit in Snowflake container runtime; restricted caller's rights | GA | Warehouse runtime |
 | Strands Box | Developer preview v0.1.0, macOS only | AgentCore Runtime microVM and Policy |
 | Atlassian Rovo MCP server | GA since February 2026; version 2 catalog (versions, diffs, comment resolution) documented September 2026 | Today's community server |
-| Rovo A2A; Work IQ A2A | Available (Rovo: user OAuth only); Work IQ GA announced for June 2026, to confirm | Rovo MCP reads; Graph reads as the user |
+| Rovo A2A; Work IQ A2A | Available (Rovo: user OAuth only); Work IQ generally available, with no transcript or recap tool in its MCP server (checked 2026-10-27) | Rovo MCP reads; Graph reads as the user |
 | ECS Express Mode; Teams SDK for Python | GA | Standard ECS; Bot Framework |
 | OpenTelemetry GenAI conventions; AgentPrism | Development status; alpha, MIT | Pin a version; our own span tree |
-| Teams meeting AI insights API | Beta; needs Microsoft 365 Copilot | Our own extraction from transcripts |
+| Teams meeting AI insights API (the Copilot recap) | On Graph v1.0 (the resource page still shows a beta banner),  delegated or application (application needs an application access policy); needs a Microsoft 365 Copilot license, and Microsoft's pages say every user of an app that calls it needs one [confirm with Microsoft]; not for channel meetings; its change notifications are still preview (corrected 2026-10-27, [research](research/meeting-capture-automation.md#21-intelligent-recap-and-the-meeting-ai-insights-api)) | Our own extraction from transcripts |
+| Graph transcript subscription scoped to "every meeting where the app is installed" | Beta; the per-meeting subscription on resource-specific consent is v1.0 | Per-meeting subscriptions created when a meeting is linked |
 | Microsoft Copilot Managed Runtime, Copilot Studio and Cowork apps, Agent 365 registry sync | Preview or early access | Not used; compared in the plan's use-case matrix |
 | Snowflake synthetic data generation | To confirm | Synthetic data from schema |
 | Engineering's AI-DLC context-file format and validator | Young, vendored pinned to a commit; HyperDelivery not yet accepted as a `generated_by` source | Hand over the Jira epic and the package as documents until the format is agreed |

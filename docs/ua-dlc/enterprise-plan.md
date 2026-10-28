@@ -1,17 +1,18 @@
 <!-- cspell:words Kiro Snowsight -->
 
-# UA-DLC and HyperDelivery
+# HyperDelivery, powered by UA-DLC
 
-**A governed way for Under Armour teammates to take cross-functional ideas from a mockup to a
-working prototype, grounded in UA's own data and decisions, and hand them to engineering ready to
-build**
+**HyperDelivery is Under Armour's AI delivery platform. It runs UA-DLC, our framework for building
+with AI, from an idea to a working prototype grounded in UA's own data and decisions, and hands the
+work to engineering ready to build. AI does the work between the approvals; people make every
+decision.**
 
 | | |
 |---|---|
 | Status | Draft v3 for leadership review. Nothing here is decided until [the decisions](#8-the-ask-in-three-tranches) are made |
-| Date | 2026-10-25, revised 2026-10-26 (HyperDelivery stops at Inception; the experience; who else is building toward this) |
+| Date | 2026-10-25, revised 2026-10-26 (HyperDelivery stops at Inception; the experience; who else is building toward this) and 2026-10-27 (what HyperDelivery is versus UA-DLC; the north star) |
 | Owner | Eitan Flor, Enterprise Data Management |
-| Detail | [operating-model.md](operating-model.md) (how UA-DLC works), [platform-architecture.md](platform-architecture.md) (how HyperDelivery is built), [ux-direction.md](ux-direction.md) (the experience) |
+| Detail | [operating-model.md](operating-model.md) (how UA-DLC works), [platform-architecture.md](platform-architecture.md) (how HyperDelivery is built), [ux-direction.md](ux-direction.md) (the experience), [north-star.md](north-star.md) (where it goes after Enterprise, and what the Final MVP records now) |
 | Concept screens | [HyperDelivery concepts canvas](https://claude.ai/artifact/BUcEKzAz1CXa27EY398sAF) (private until shared), with a standalone copy in this folder under `site/concepts/`. Every name, project and number on it is invented to show the design; none is a measured result. |
 | Evidence | [current-state.md](current-state.md) (the repo today), [research/](research/README.md) (sourced research and critique) |
 
@@ -70,6 +71,14 @@ you. Values in [brackets] are filled in before the meeting (see
    production, and Construction and Operations stay with UA's existing paths, decided after
    Inception. HyperDelivery is the governed path from idea to prototype on top of UA's Snowflake
    golden reports and Microsoft 365; section 5 shows which requests belong in other tools.
+8. **Where it goes next: the north star.** UA-DLC moves from human-led to AI-assisted to
+   AI-driven one step at a time, on evidence, never by date, and the approvals stay with people at
+   every level. Teams meetings that their organizer links to a project are read once they end, and
+   HyperDelivery asks the person who owns an answer, in Teams. The lasting advantage is the record of
+   how UA decides, which stays UA's in open formats; the approved FSD corpus is the cold start. Each
+   capability is a candidate from the Enterprise phase on, decided on evidence and outside the
+   Enterprise ready criteria; the Final MVP only records what cannot be backfilled
+   ([the north star](#the-north-star-enterprise-and-beyond), [north-star.md](north-star.md)).
 
 ---
 
@@ -192,7 +201,12 @@ UA works in Microsoft 365 (Teams, Outlook, SharePoint), engineering works in Jir
 data lives in Snowflake, and the cloud is AWS. Asking people to leave those tools to take part
 would lose them.
 
-## 4. The proposal: UA-DLC on HyperDelivery
+## 4. The proposal: HyperDelivery, running UA-DLC
+
+Two names, two kinds of thing: **UA-DLC** is the framework (the phases, steps, approvals and what each
+phase hands over), and **HyperDelivery** is the platform people open, which runs it. UA-DLC is the
+playbook; HyperDelivery is the platform that runs it, from idea to handoff
+([which name to use](north-star.md#which-name-to-use)).
 
 **UA-DLC**, the Under Armour AI Delivery Lifecycle, is a four-phase line with three standing
 human approvals, and each phase is judged by what it hands over: **Ideation** a visual mockup that
@@ -492,12 +506,18 @@ for the gap, not that it already fills it.
 |---|---|---|---|
 | **Cross-functional discovery**: many teammates contribute, every statement attributed and cited | Partly: one requester plus an expert answer page | Scale decision (at least 3 functions contributing) | Functions contributing per project |
 | **Pointed, indexed project context**: what people point at (recordings, folders, tickets, pages, their comments and revisions) is read as them, indexed per project on AWS, and cited | No | Pilot readout | Share of plan statements citing a pointed source |
-| **Organizational memory**: confirmed context compounds across projects | No | Scale decision | Reuse of confirmed context across projects |
 | **UA golden paths**: approved stacks, the UA look, Snowflake and Entra patterns | No: prompt text only; the UA EDMA request template (unmerged) covers intake, not stacks | Scale decision | Share of prototypes built from a golden path |
 | **Governed data, enforced at build time**: Cortex Code works inside Snowflake and returns only what the project needs; every app uses the certified definitions | No: the Snowflake tool returns raw rows, read-only by prompt | Do-no-harm floor (containment), then the pilot readout | Share of plan metrics bound to a certified definition |
 | **A signed chain from idea to evidence** | Partly: signer recorded; version binding comes first | Pilot readout | Approvals bound to an exact version |
 | **Neutral about runtimes and agents**: Streamlit in Snowflake and AWS, coding agents and models behind replaceable contracts | No: local preview only, one coding agent wired directly | Pilot readout (sandbox previews), then Enterprise (a second coding engine behind the same contract, Streamlit prototypes in a Snowflake sandbox) | Prototypes built in more than one sandbox runtime (the sandbox AWS account, a Snowflake sandbox schema) |
 | **A handoff Construction can start from**: a Jira epic and issues, engineering's AI-DLC context files, the repository, the decisions and the evidence | No | Pilot readout | Handoffs taken into Construction without a rewrite |
+| **The record of how UA decides**, which is UA's, not HyperDelivery's: decisions with the options rejected, what people changed before signing, who answered which question, how definition questions were settled, what engineering did with each handoff, reused across projects | No: the approval record holds only station, approved, signer, comment and time | Recorded from the Final MVP's friendly users; tested at the scale decision | Plans with and without the record, rated blind on held-out intakes; the share of a project's decisions captured as records |
+| **Approved precedent**: UA's approved FSDs, labeled by an owner's approval rule, typed in the plan's shape and linked to what was built | Partly: two FSD template families detected, one vector per reference file, no approval status | 20 labeled and tested at the pilot readout; ingestion in Enterprise only if the test shows a difference | Plans for the evaluation intakes with and without labeled precedent, rated blind |
+
+Other tools UA already uses can read the same SharePoint, Confluence, Jira and Snowflake, so anything
+already sitting there, the approved FSDs included, is a head start. The last two rows are what UA
+adds: the labels, links and decision records exist only where the work runs, grow with every project,
+and stay UA's under the exit ramp below ([north-star.md](north-star.md#7-what-ua-keeps-and-why-hyperdelivery-is-where-it-is-made)).
 
 **Honest threats, and what we concede.** Microsoft's Copilot Managed Runtime (in preview) will be
 the better home for simple tools on Microsoft 365 data, and Snowflake's Cortex Sense plugins move
@@ -506,10 +526,14 @@ with Cortex Code and Streamlit in Snowflake directly. Lovable, Bolt and v0 will 
 out-prototype us on looks. We concede all three. The matrices send simple Microsoft 365 tools and
 single-source Snowflake apps to their homes; we do not route UA data to unsanctioned builders.
 
-**Exit ramp.** If a sanctioned vendor tool supports multi-party discovery, signed approvals and
-grounding in UA's golden reports, we move the process onto it and keep only what is UA's: the
-golden paths, the confirmed context and the decision record. We re-check both matrices, and the
-comparison below, at the pilot readout.
+**Exit ramp.** If a sanctioned vendor tool supports multi-party discovery, signed approvals,
+grounding in UA's golden reports and writing UA-DLC's records in their published schemas, we move
+the process onto it and keep only what is UA's: the
+golden paths, the confirmed context and the decision record, plus the approval edits, the answer
+ledger, the handoff outcomes and the evaluation cases. All of them are kept in published, open
+formats from the first project so they leave with UA, and the scale decision tests this by loading
+them into a second tool ([north-star.md](north-star.md#73-ua-owns-the-schema-hyperdelivery-writes-first-any-sanctioned-tool-reads)).
+We re-check both matrices, and the comparison below, at the pilot readout.
 
 ### Who else is building toward this
 
@@ -576,7 +600,9 @@ above says which are true today
   vendor's runtime.
 - **Context that compounds across UA projects.** What people point at is read as them, indexed per
   project, and confirmed decisions become reusable context. Devin's memory is personal; Microsoft's
-  and Lovable's are per app. Not built yet; proven only at the scale decision.
+  and Lovable's are per app. Not built yet; proven only at the scale decision, by rerunning past
+  intakes with one kind of context removed at a time and by a blind comparison with a generic tool
+  given the same documents.
 
 **Where others beat us.** Lovable, v0, Bolt and Claude Design make a better-looking first version in
 minutes. Factory, Devin, Copilot, Claude Code and Kiro are generally available and cover
@@ -627,8 +653,9 @@ built, and Cognition and 8090 have scale and funding we do not; ours is one team
   and does not read Snowflake's certified definitions
   ([research](research/dlc-landscape.md#microsoft-cowork-app-skill-copilot-studio-apps-copilot-code-and-copilot-managed-runtime)).
 - **"What if a vendor ships all of this next quarter?"** We move onto it under the exit ramp above
-  and keep only what is UA's: the golden paths, the confirmed context and the decision record. A
-  watch list names the triggers ([research](research/dlc-landscape.md#8-watch-list)).
+  and keep only what is UA's: the golden paths, the confirmed context, the decision record, the
+  approval edits, the answers on record, the handoff outcomes and the evaluation cases, in their
+  published formats. A watch list names the triggers ([research](research/dlc-landscape.md#8-watch-list)).
 
 ## 6. The experience
 
@@ -862,6 +889,10 @@ gantt
   InfoSec heads-up, threat model draft :done, t50, 2027-01-04, 84d
   Snowflake reference design :done, t51, 2027-01-25, 63d
   Privacy and Legal, meeting capture :done, t52, 2027-02-22, 91d
+  FSD owner, access and labels (north star) :done, t53, 2027-01-04, 84d
+  Pilot consents and Teams setup (north star) :done, t54, 2027-01-04, 70d
+  Notice, HR, DPDP, retention (north star) :done, t55, 2027-01-11, 98d
+  Handoff outcome agreement :done, t56, 2027-01-11, 98d
 ```
 
 | Phase | Weeks | Goal | Ends with | Depends on |
@@ -1237,9 +1268,11 @@ in the sandbox do not yet run one project end to end on AWS, apply the cut list 
 friendly users to week 10, MVP ready to week 16 and the pilot readout to week 24.
 
 **If the build runs long, cut in this order:** trace polish and the decision timeline by person (to
-the pilot), Microsoft 365 pointing (Jira and Confluence first), resilience items that delegation does
-not need, data tables beyond the first prototype, a five-person concept test instead of ten, then the
-color layers. Never cut: the floor, the broker, Cortex Code containment, the coding agent in the
+the pilot), the north star's FSD groundwork and pilot practices
+([north-star.md section 8](north-star.md#8-what-the-final-mvp-records-now), rows 11 to 13), Microsoft 365 pointing (Jira and Confluence first), resilience items that delegation does
+not need, data tables beyond the first prototype, a five-person concept test instead of ten, the north
+star's remaining records (rows 1 to 8; the retention class and the notice stay while any attributed
+record is kept), then the color layers. Never cut: the floor, the broker, Cortex Code containment, the coding agent in the
 sandbox account (with no credential inside it), sandbox previews and the handoff package.
 
 #### Friendly users (weeks 8 to 14)
@@ -1517,10 +1550,72 @@ at the final approval on the first pass; at least one prototype tied to a named 
 or a funded build; hours avoided at or above the break-even run-rate; at least 5 accepted prototypes
 taken into Construction (either mode) and at least one released to production through Construction;
 security and AI governance reviews signed; requester satisfaction at least 4 out of 5; share of
-requests pointed to another tool reported.
+requests pointed to another tool reported; the three-arm context test reported with its agreed
+reading ([north-star.md 7.4](north-star.md#74-how-we-will-know-it-is-real)): if HyperDelivery is no
+better than a generic tool given the same documents, the context server and later context work are
+not funded on the context claim.
 
 **Scale decision stop rule:** if cycle time is not 50% below the baseline, or no prototype is tied to a
 decision, do not scale: re-scope to EDM or take the exit ramp.
+
+### The north star: Enterprise and beyond
+
+Every tool UA builds through HyperDelivery starts from what UA already knows, is shaped by the people
+who know the business without the requester having to chase them, and reaches a working version in
+days rather than months. AI does the work between the approvals; people make every decision. The
+detail, the research and the decisions it needs are in [north-star.md](north-star.md); this is the
+shape. No north-star capability is in the Enterprise ready criteria or the Enterprise staffing above:
+each is a candidate that enters a phase only by a decision at the pilot readout or at Enterprise
+ready, on evidence.
+
+- **From human-led to AI-driven, one step at a time.** A level belongs to one step, in one
+  workspace, at one risk tier, and rises only on evidence (enough runs from enough people,
+  first-pass acceptance without material edits, few corrections from the people quoted, an
+  evaluation floor, no severe escapes, and signers who still open the evidence), through a decision
+  record the workspace admin and the line owner sign. Demotion is automatic. The three approvals,
+  the signer matrix, the Construction decision and every confirmation stay with named people at
+  every level. High risk stays AI-assisted at least until the scale decision.
+- **Meetings, captured once they end.** A meeting its organizer links to a project before it starts
+  is read when its transcript is ready; attendees are told in the invite and at the start, and
+  anyone can keep their words out. Each speaker confirms their own statements, and nothing
+  unconfirmed is used. Never audio or video; the Copilot recap only when its license and reading
+  questions are settled; Loop and Facilitator notes only when someone points at them, because
+  Microsoft offers no automatic path yet. Meetings with every attendee in the US first; others after
+  Privacy (and, for EMEA, the works council) clears their location.
+- **Questions to the people who know.** HyperDelivery asks the person who owns an answer, in Teams,
+  saying it is an AI acting for the requester, chosen by ownership and the referrals people give,
+  never by ranking how well they answer, within one weekly attention budget per person. In the
+  Final MVP the requester sends each drafted question with one click; AI-driven sending comes only
+  after a measured gate, inside an outreach policy the requester signs, to people who opted in.
+- **An advantage that stays UA's.** The approved FSD corpus, labeled and linked, is the cold start
+  and the yardstick. The lasting advantage is the record of how UA decides, in schemas UA-DLC owns
+  and open formats, so it stays UA's whichever tool UA uses; HyperDelivery is where it is made.
+
+<!-- plan-visual: north-star -->
+
+Who does the work in each stage, drawn to show direction, not measured. The approvals and the
+Construction decision between the stages are people's decisions in every column, and every column
+after the Final MVP is earliest, if decided.
+
+| Stage | Final MVP (pilot) | Enterprise hardening | Enterprise rollout | North star |
+|---|---|---|---|---|
+| Discover | AI-assisted | AI-assisted | AI-assisted; promoted cells AI-driven | AI-driven where earned, step by step; High risk AI-assisted |
+| Plan | AI-assisted | AI-assisted | AI-assisted; promoted cells AI-driven | AI-driven where earned, step by step; High risk AI-assisted |
+| Prototype | AI-driven by design inside the signed plan and the sandbox | AI-driven | AI-driven | AI-driven |
+| Handoff | AI-driven assembly | AI-driven | AI-driven | AI-driven |
+| Context (meetings, questions to experts, related past work) | AI-assisted, started by a person | AI-assisted, suggested by HyperDelivery | AI-driven for linked meetings with US attendees and for opted-in experts, after the gate | AI-driven where cleared |
+
+<!-- /plan-visual -->
+
+**What the Final MVP does for it.** Only what cannot be backfilled, plus groundwork that is cheaper
+now: fields, rules and notices on records it already writes (every draft kept, reason codes on
+send-backs, decision records with the options rejected and who wrote them, an ask record per
+question, provenance on every source, corrections and rulings as events, outcomes at approval 1 and
+the handoff, run events stamped with their step and level, a retention class on every record, and a
+notice to everyone it records), 20 approved FSDs labeled by EDM analysts with an evaluation seed, and
+two pilot practices. Meeting webhooks, automatic sending, the cross-project Library and a context
+server are not built before the Enterprise phase
+([north-star.md section 8](north-star.md#8-what-the-final-mvp-records-now)).
 
 ### The long-lead track
 
@@ -1543,7 +1638,21 @@ critical path (decision 3); the rest have fallbacks.
 | InfoSec heads-up and threat model draft | Security architect | Weeks 1 to 2 (floor and plan in week 1) | Week 32 (sign-off in the Enterprise phase) | Enterprise ready moves |
 | Snowflake reference design and roles | Data platform | Week 4 | Week 23 | The Final MVP's read-only role continues for pilot users |
 | Rovo MCP client, service account and Forge app | Atlassian admins | During the pilot | Week 23 (per-user Atlassian sign-in in the Enterprise phase) | Today's client keeps polling; the Final MVP's Confluence comments use it |
-| Privacy and Legal review of meeting capture | Privacy and Legal | Week 8 | Week 20 | Live transcription stays off; pointed transcripts follow the interim scope |
+| Privacy and Legal review of meeting capture, extended to the north star's automatic capture, questions to experts and review telemetry, with a privacy assessment | Privacy and Legal | Week 8 | Week 20 | Live transcription stays off; pointed transcripts follow the interim scope; nothing automatic starts |
+| A named owner who signs what counts as an approved FSD | EDM leadership or PMO | Week 1 | Week 2 (the rule is signed by week 4) | The FSD groundwork moves to the Enterprise phase; the Final MVP is unaffected |
+| Read access to where approved FSDs live, with their version history and reviewer comments | EDM leads; SharePoint and Atlassian admins | Week 1 | Week 3 | The sample comes from the existing reference bucket only |
+| About 40 hours of EDM analyst time and 10 hours of the rule owner's review to label 20 approved FSDs, plus the inventory and evaluation pairs (sized in week 1) | EDM manager | Week 1 | Weeks 3 to 12 | The FSD groundwork moves to the Enterprise phase; the Final MVP is unaffected |
+| A steward roster per pilot domain, and the list of golden reports with owners | Data governance; EDMA BI | Week 1 | Week 8 | Definition questions go to the domain's data owner |
+| UA's values for the transcript tenant settings (Graph transcript access, attributed transcripts), decided with Privacy | Microsoft 365 and Teams admins | Week 1 | Week 3 (pointed transcripts) | Notes and uploaded transcript files only |
+| Teams' participant-agreement policy (`ExplicitRecordingConsent`) for organizers of pilot working sessions | Teams admins; Privacy and Legal | Week 2 | Week 8 | Pilot working sessions run without transcription; notes only |
+| An app setup policy that installs the HyperDelivery Teams app for the pilot group | Microsoft 365 admins | Week 1 | Week 10 (drafted questions in Teams) | Email deep links to the console |
+| A "do not contact directly" group for senior leaders | HR and Entra admins | Week 1 | Week 10 (drafted questions in Teams) | Questions go only to people the requester names |
+| Works council consultation in the Netherlands (and Germany if one applies) on HyperDelivery's records and drafted questions | EMEA HR and employee relations; Legal | Week 1 (inform at planning) | Week 10 | No EMEA employee is a pilot signer, reviewer or question recipient, and no meeting with an EMEA attendee is read |
+| Privacy's view on India's DPDP Act for the pilot's records, meetings and questions | Privacy and Legal | Week 2 | Week 15 | Bengaluru staff's records are kept without person identifiers |
+| A written HR commitment that how people work in HyperDelivery is not used in performance ratings, pay, promotion or other talent decisions | HR | Week 2 | Week 15 (the pilot) | Edit attribution and review telemetry stay off; approvals and decisions are recorded as today |
+| A retention schedule, Purview label mapping and legal-hold path for every record HyperDelivery keeps | Records Management; Legal; Privacy | Week 2 | Week 15 | Records are kept for the project's life only |
+| Sign-off on the notice to everyone HyperDelivery records, and the AI disclosure line on questions | HR, Privacy, Internal Communications | Week 2 | Week 15 (the pilot) | Edit attribution and review telemetry stay off; approvals and decisions are recorded as today |
+| Agreement to report what happens to each handoff (taken without a rewrite or sent back, and why) | Receiving engineering leads | Week 2 | Week 15 | The owner asks each receiving lead at the Construction decision and records the answer |
 
 Bars in the roadmap show how long each request is expected to take, not the week it is needed; where
 a bar ends after its "needed by" week, the fallback in the last column applies until it lands. The
@@ -1582,6 +1691,9 @@ are reviewed monthly in the sponsor digest and at each milestone.
 | Handoffs taken into Construction without a rewrite, by mode; high or critical findings per generated repository | n/a | Reported | Reported | Engineering |
 | Approvals sent back or rejected although every criterion had passing evidence | n/a | Reported | Trending down | Plan owner |
 | Share of approvals and reviews made by the top two people in each signing role | n/a | Reported | Reported; sizes the scale decision | Plan owner |
+| Edit distance at each approval, by step across at least five signers (what people changed in the AI draft before signing) | n/a | Reported (the north star's baseline) | Trending down | Plan owner |
+| Questions answered within 2 business days; re-routes; pauses and opt-outs as a share of distinct recipients | n/a | Reported | 70%; under 20%; under 2% (the gate for AI-driven questions) | Plan owner |
+| Waiting on an answer or a meeting's content, as a share of cycle time | n/a | Reported | Decides whether automatic capture and questions go forward | Plan owner |
 
 The last two rows come from published factory data. About half of the pull requests that passed
 SWE-bench's grader would not have been merged by maintainers, so "passed every check" is not
@@ -1678,6 +1790,8 @@ owns Construction and Operations for that project.
 | Finance prototypes become end-user computing under SOX | Finance controls | A finance prototype used for real work | Finance prototypes stay on dev data with the banner and an expiry, and are never used for real work; SOX controls apply in Construction | Pilot onward |
 | Snowflake cost runaway from agent queries | Plan owner; audited by data platform | Credits per delegation in the trace | A credit cap and statement timeout on every Cortex Code task from the Final MVP; per-workspace warehouses, resource monitors and enforced budgets in the Enterprise phase | Final MVP onward |
 | Meeting-capture legal exposure | Privacy and Legal | Review findings | Notes-only by default; transcripts only within the interim scope, and live capture only after review | Pilot onward |
+| Recording who answered, edited and decided is, or reads as, monitoring staff, or is used to evaluate them | Plan owner; HR | Works council or employee questions; opt-outs | A notice to everyone recorded; measures only for groups of at least five people; the HR commitment before the pilot; works council consent before any EMEA employee is recorded or asked ([north-star.md](north-star.md#12-risks)) | Pilot onward |
+| As steps move toward AI-driven, signers stop reading what they sign | Plan owner | Evidence-opened rate falling; audits finding misses | Approvals lead with changes and evidence; flagged items block signing; sampled audits; "evidence opened" is a promotion bar | Enterprise onward |
 | Key-person dependency | Plan owner | One engineer on call | A second engineer pairs from week 1 and can deploy and roll back by week 4 | Final MVP |
 | Brand misuse, including third-party logos in chips | Plan owner | Brand review | Public UA identity only; Brand review of the wordmark, red, typeface and partner marks before visual changes ship widely | Final MVP |
 
@@ -1750,6 +1864,8 @@ The owner completes these before presenting:
 - Which Jira projects and Confluence spaces may HyperDelivery read when a project starts from a
   ticket, and may comments be ingested?
 - Is the UA EDMA request template the canonical spec format, and who owns golden-path templates?
+- Where do UA's approved FSDs live, how many are there by year and template version, and who can
+  say which were approved in each era ([north-star.md](north-star.md#14-open-questions-to-verify-internally))?
 - Which catalog is UA's system of record for terms and metrics (Snowflake Horizon, a third-party
   catalog, or semantic views)?
 - Is there an internal UA design system the console should align with (`armourhouse-ui` was

@@ -402,7 +402,7 @@ def render_page(body: str, toc: list[str], links: PageLinks, *, status: str, mer
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <meta name="claude:viewport-fit-sides" content="cover">
-<title>UA-DLC Plan</title>
+<title>HyperDelivery Plan</title>
 <link rel="icon" href="{_FAVICON}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Geist+Mono:wght@400;500&amp;display=swap">

@@ -134,6 +134,19 @@ signing in. Each report keeps its full source list.
 | `00_UA_Baselayer_Library_Web` (Figma, internal; [file](https://www.figma.com/design/QbamqYWF53D37xGmuxvvXJ/00_UA_Baselayer_Library_Web)) | Read again for an app shell: the account side nav, preview sections, the three-dot loader, snackbar, messages, toggle, tooltips, dialogs, Action Cards and the icon system. Read-only; nothing in Figma was modified | [figma-libraries.md](figma-libraries.md) section 2.1 |
 | `00_Baselayer Ignite - Design System App` (Figma, internal; library key only), the four organization libraries and eight community kits listed by `get_libraries` | Searched for shell components; the Ignite file itself needs its link from the owner | [figma-libraries.md](figma-libraries.md) sections 1, 2.2 and 2.3 |
 
+## Round 9: the north star
+
+The owner shared an internal team note and four asks: move UA-DLC from human-led to AI-assisted to
+AI-driven; notice when a project's Teams meeting is over and pull its recording, Copilot notes or Loop
+notes; message experts in Teams to collect business logic and definitions; and build advantages that
+hold at feature parity, starting with UA's historical approved FSDs. The external sources the
+researchers found for those asks were read on 2026-10-27 and are listed in each report.
+
+| Source | What it is | Read in |
+|---|---|---|
+| "AIDLC alignment v2" (internal team note, October 2026; a local HTML file, not in the repository) | A working draft from recent internal talks: the vision line "AI does the work and humans make the decisions it surfaces", a Human-led, AI-assisted, AI-driven maturity arrow, phases with an Inception MVP focus, and a glossary. Read as context, not as a source of truth | [north-star.md](../north-star.md) sections 1 and 3; [autonomy-levels.md](autonomy-levels.md) |
+| The owner's asks above | Meeting capture, questions to experts, the FSD corpus and other advantages, and the maturity path | [meeting-capture-automation.md](meeting-capture-automation.md), [proactive-sme-outreach.md](proactive-sme-outreach.md), [fsd-corpus-index.md](fsd-corpus-index.md), [context-moats.md](context-moats.md), [autonomy-levels.md](autonomy-levels.md) |
+
 Concept screens and the plan page are published separately: the
 [concept canvas](https://claude.ai/artifact/BUcEKzAz1CXa27EY398sAF) and the
 [plan page](https://claude.ai/artifact/FTURRJS2HcSGEDT7QQYowh), both private until shared.

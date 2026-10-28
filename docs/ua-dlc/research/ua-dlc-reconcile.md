@@ -116,7 +116,7 @@ research set (`aws-aidlc.md`, `anthropic-playbook.md`, `software-factories.md`,
 ## 2. The unified UA-DLC at a glance
 
 > **2026-10-26:** the current line, with approval 1 at the end of Ideation and Construction and Operations outside
-> HyperDelivery, is the diagram in [enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-ua-dlc-on-hyperdelivery).
+> HyperDelivery, is the diagram in [enterprise-plan.md section 4](../enterprise-plan.md#4-the-proposal-hyperdelivery-running-ua-dlc).
 
 ```mermaid
 flowchart LR
