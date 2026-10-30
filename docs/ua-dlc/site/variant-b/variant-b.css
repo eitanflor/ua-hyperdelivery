@@ -1,0 +1,440 @@
+/* HyperDelivery, Variant B (side nav and chat), polished. The source of the Figma file
+   "HyperDelivery · Variant B". Tokens follow docs/ua-dlc/design-system.md (UA Baselayer):
+   ink first, red only for "waiting on you", Archivo 400 and 700. */
+/* cspell:words keycap topbar pcard phead pbody pstat */
+
+:root {
+  color-scheme: light;
+  /* Baselayer neutrals: the only grays in the system */
+  --ink: #1d1d1d;
+  --ink-2: #444444;
+  --muted: #5f5f5f;
+  --quiet: #949494;
+  --line: #d0d0d0;
+  --hair: #f0f0f0;
+  --wash: #f9f9f9;
+  --white: #ffffff;
+  /* Roles */
+  --background: var(--wash);
+  --surface: var(--white);
+  --surface-container: var(--wash);
+  --surface-container-high: var(--hair);
+  --on-surface: var(--ink);
+  --on-surface-variant: var(--muted);
+  --outline: var(--ink);
+  --outline-variant: var(--line);
+  --stroke: var(--hair);
+  --critical: #dc0019;
+  --success: #00834b;
+  --accent: #fe9000;
+  --focus: #0096fa;
+  /* Type */
+  --font: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Chivo Mono", ui-monospace, Menlo, monospace;
+  /* Space */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s12: 48px; --s16: 64px;
+  /* Radius (6.1): 4 for controls, 8 for surfaces, 16 for the composer, pills for buttons, avatars and counts */
+  --r-sm: 4px; --r-md: 8px; --r-xl: 16px; --pill: 999px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--background);
+  color: var(--on-surface);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+p, h1, h2, h3, h4 { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+svg { display: block; flex: none; }
+
+/* ---------- App window ---------- */
+/* The shell fills the window, so no strip of the body's wash shows under a short page; a list page is
+   at least one 1024 px window. The shell paints the nav's wash and right rule, so both run on below the
+   window-tall nav column when a list page grows past it */
+.app { width: 1440px; min-height: max(1024px, 100vh); display: flex;
+  background: linear-gradient(to right, var(--background) 247px, var(--stroke) 247px 248px, var(--surface) 248px); }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--surface); }
+
+/* ---------- Side nav ---------- */
+/* 7.1: one window-tall column, sticky to the top of the window, so the account row sits at y = 964 on
+   every screen however tall the page grows */
+.nav { position: sticky; top: 0; align-self: flex-start; width: 248px; height: 1024px; flex: none; background: var(--background);
+  box-shadow: inset -1px 0 0 var(--stroke); padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.lockup { height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 2px 0 8px; margin-bottom: 10px; }
+.lockup .ua { width: 28px; height: 17px; }
+.lockup b { font-size: 16px; line-height: 20px; font-weight: 700; }
+.lockup .spacer { flex: 1; }
+.icon-btn { width: 32px; height: 32px; border-radius: var(--pill); display: inline-flex; align-items: center; justify-content: center; color: var(--on-surface); }
+.new-project { height: 40px; border-radius: var(--pill); background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline);
+  display: flex; align-items: center; gap: 8px; padding: 0 14px; font-size: 14px; line-height: 18px; font-weight: 700; margin-bottom: 6px; }
+.nav-row { height: 36px; border-radius: var(--r-md); display: flex; align-items: center; gap: 10px; padding: 0 10px;
+  font-size: 14px; line-height: 18px; color: var(--on-surface-variant); }
+.nav-row svg { color: var(--on-surface-variant); }
+.nav-row.current { color: var(--on-surface); font-weight: 700; }
+.nav-row.current svg { color: var(--on-surface); }
+.nav-row .end { margin-left: auto; }
+.keycap { font-family: var(--mono); font-size: 12px; line-height: 16px; color: var(--on-surface-variant); background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--outline-variant); border-radius: var(--r-sm); padding: 1px 6px; }
+/* design-system 9.7: at least 18 x 18, 5 px side padding, a white 12/18 Bold numeral */
+.count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--pill); background: var(--critical); color: #fff;
+  font-size: 12px; line-height: 18px; font-weight: 700; text-align: center; }
+.nav-tag { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-heading { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); padding: 18px 10px 6px; }
+/* design-system 9.25: a 14 px mark slot, then 10 px to the name (x = 46) */
+.recent-row { height: 32px; border-radius: var(--r-md); display: flex; align-items: center; gap: 10px; padding: 0 10px;
+  font-size: 13px; line-height: 18px; color: var(--on-surface); }
+.recent-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "All Projects", the last row: on-surface-variant with an empty slot, so its name starts at x = 46 with the
+   names above it (10 px padding, the 14 px slot, the 10 px gap) */
+.recent-row.all { padding-left: 34px; color: var(--on-surface-variant); }
+.mark { width: 14px; height: 14px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.mark .dots { gap: 1.5px; }
+.mark .dots i { width: 3px; height: 3px; }
+.notch { width: 8px; height: 8px; flex: none; }
+.notch.you { background: var(--critical); }
+.notch.other { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.notch.done { background: var(--ink); }
+.notch.draft { box-shadow: inset 0 0 0 1.5px var(--quiet); }
+.nav-fill { flex: 1; }
+.account { height: 48px; border-radius: var(--r-md); display: flex; align-items: center; gap: 10px; padding: 0 8px; margin-top: 10px; }
+.account .who { display: flex; flex-direction: column; min-width: 0; }
+.account .who b { font-size: 14px; line-height: 18px; }
+.account .who span { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.account svg:last-child { margin-left: auto; color: var(--on-surface-variant); }
+
+/* ---------- Avatars ---------- */
+.avatar { border-radius: var(--pill); color: #fff; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; line-height: 16px; font-weight: 700; flex: none; }
+.avatar.s28 { width: 28px; height: 28px; }
+.avatar.s24 { width: 24px; height: 24px; }
+/* design-system 9.8: at most three avatars and a +N disc, 2px apart so each 2px surface ring
+   meets the next avatar's edge. A 6px overlap clipped the initials ("MC" read as "MO"). */
+.stack { display: flex; gap: 2px; }
+.stack .avatar { box-shadow: 0 0 0 2px var(--surface); }
+.stack-more { background: var(--surface-container-high); color: var(--on-surface); }
+
+/* ---------- Top bar ---------- */
+.topbar { height: 56px; flex: none; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: var(--surface); }
+.topbar.ruled { box-shadow: inset 0 -1px 0 var(--stroke); }
+.topbar .page { font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.crumbs { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.crumbs b { color: var(--on-surface); }
+.topbar .spacer { flex: 1; }
+/* 9.1: at least 96 px, and a width rounded up to a whole pixel so the avatar stack before it
+   lands on whole pixels whatever the label ("Try the Prototype" hugs to 145.7 px) */
+.topbar .btn { min-width: 96px; width: calc-size(max-content, round(up, size, 1px)); justify-content: center; }
+
+/* ---------- Buttons ---------- */
+.btn { height: 36px; border-radius: var(--pill); padding: 0 16px; display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; }
+.btn.sm { height: 32px; padding: 0 14px; font-size: 13px; line-height: 16px; }
+/* 9.1 Large: 20 px side padding, as 9.28 gives the decision bar's buttons */
+.btn.lg { height: 44px; padding: 0 20px; }
+.btn.primary { background: var(--ink); color: #fff; }
+/* Large and primary buttons hug their label rounded up to a whole pixel, as the top bar's do, so a
+   right-aligned group starts on the pixel grid in the browser and in the Figma import */
+.btn.lg, .btn.primary { width: calc-size(max-content, round(up, size, 1px)); justify-content: center; }
+.btn.secondary { background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline); }
+.btn.ghost { color: var(--on-surface); }
+.btn.quiet { background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline-variant); font-weight: 400; }
+.btn.disabled { background: var(--line); color: #fff; }
+.link { font-size: 14px; line-height: 20px; color: var(--on-surface); text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: var(--line); }
+
+/* ---------- Chips, tags, status ---------- */
+.chip { height: 28px; border-radius: var(--r-sm); padding: 0 10px 0 6px; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface-container); box-shadow: inset 0 0 0 1px var(--outline-variant); font-size: 12px; line-height: 16px; white-space: nowrap; }
+.chip img, .chip .logo { width: 16px; height: 16px; }
+.tag { height: 20px; border-radius: var(--r-sm); padding: 0 6px; display: inline-flex; align-items: center; background: var(--surface-container-high);
+  font-size: 12px; line-height: 16px; white-space: nowrap; }
+/* design-system 4.2 Badge role and 9.5: Chivo Mono 600 12/16, ALL CAPS, no tracking */
+.badge { font-family: var(--mono); font-size: 12px; line-height: 16px; font-weight: 600; text-transform: uppercase; padding: 0 6px;
+  border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--ink); display: inline-flex; align-items: center; height: 20px; white-space: nowrap; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap; }
+.status.ok { color: var(--success); font-weight: 700; }
+.status.you { color: var(--critical); font-weight: 700; }
+.waiting { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: var(--pill);
+  background: var(--critical); color: #fff; font-size: 12px; line-height: 16px; font-weight: 700; }
+.dots { display: inline-flex; align-items: center; gap: 4px; }
+.dots i { width: 5px; height: 5px; border-radius: 999px; background: var(--ink-2); }
+.dots i:nth-child(1) { opacity: .9; } .dots i:nth-child(2) { opacity: .55; } .dots i:nth-child(3) { opacity: .25; }
+.mono { font-family: var(--mono); font-size: 12px; line-height: 16px; }
+.muted { color: var(--on-surface-variant); }
+
+/* ---------- Panels and cards (6.3, 9.12) ---------- */
+/* Flat: surface, a 1px outline-variant edge, radius 8, no shadow. The edge is a border, not an inset ring,
+   because a child with a background or a full-bleed divider paints over a ring. So every inset is measured
+   from the outer edge, 1 px less inside the border: a panel's 24 px padding is 23 here, and a card's rows,
+   which pad themselves, give back the pixel at the card's edges. */
+.card, .panel { background: var(--surface); border: 1px solid var(--outline-variant); border-radius: var(--r-md); }
+.panel { padding: 23px; }
+.divider { height: 1px; background: var(--stroke); }
+
+/* ---------- Hatched remainder (the brand's square motif, softened) ---------- */
+.hatch { background-image: repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 6px); }
+
+/* ---------- The mini line (9.21): Discover, Plan, Prototype, Handoff ---------- */
+/* 8 px notches and a 2 px track, 4 px for the stretch in progress; upcoming notches take a 2px #949494
+   outline and someone else's wait a 2px ink outline */
+.line { display: grid; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr); align-items: center; }
+.line .seg { height: 2px; background: var(--ink); }
+.line .seg.current { height: 4px; }
+.line .seg.future { height: 0; background: none; border-top: 2px dashed var(--quiet); }
+.line .gate { width: 8px; height: 8px; }
+.line .gate.signed { background: var(--ink); }
+.line .gate.you { background: var(--critical); }
+.line .gate.other { box-shadow: inset 0 0 0 2px var(--ink); background: var(--surface); }
+.line .gate.upcoming { box-shadow: inset 0 0 0 2px var(--quiet); background: var(--surface); }
+.line-labels { display: grid; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr) 8px minmax(0, 1fr); margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.line-labels .on { color: var(--on-surface); font-weight: 700; }
+
+/* ---------- Section headers ---------- */
+.section-head { display: flex; align-items: baseline; gap: 12px; }
+.section-head h2 { font-size: 20px; line-height: 24px; font-weight: 700; }
+.section-head .meta { font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.section-head .end { margin-left: auto; }
+
+/* ======================================================================================
+   Project card (design-system 9.12): Home's Pick Up Where You Left Off and the Projects
+   gallery draw this one card, so it lives here and nowhere else. Flat, radius 8, a 1px
+   outline-variant edge that turns outline on hover. The edge is a border, not an inset ring,
+   because the thumbnail band would paint over a ring; every inset below is therefore 1 px less
+   than the value 9.12 gives, which it measures from the card's outer edge. Pages add only their
+   own extras (Projects' footer row).
+   ====================================================================================== */
+.pcard { min-width: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--outline-variant); color: var(--on-surface); }
+.pcard:hover { border-color: var(--outline); }
+.pcard:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* The 128 px band on surface-container, its 1px stroke-tertiary rule the 128th pixel from the card's top:
+   14 px top and 16 px side padding. The provenance tag sits in that corner and the frame starts 8 px
+   under it (14 + 20 + 8 = 42), its foot on the rule, so a sketch has the 73 px between 54 and the rule */
+.pcard .thumb { position: relative; flex: none; height: 127px; padding: 41px 15px 0; display: flex;
+  background: var(--surface-container); box-shadow: inset 0 -1px 0 var(--stroke); }
+.pcard .stage { position: absolute; top: 13px; left: 15px; height: 20px; padding: 0 8px; border-radius: var(--r-sm); background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--stroke); display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; white-space: nowrap; }
+.pcard .stage em { font-style: normal; color: var(--on-surface-variant); }
+/* A flag rides the band's rule on the frame's right edge, 12 px over the frame's foot and 8 px into the
+   body's top padding. A flagged card's sketch stays within 54 px (it ends at 108), so the flag and its
+   2 px surface ring cover neither the sketch nor the name */
+.pcard .flag { position: absolute; right: 15px; bottom: -8px; z-index: 1; height: 20px; padding: 0 6px; border-radius: var(--r-sm);
+  background: var(--ink); color: #fff; box-shadow: 0 0 0 2px var(--surface); display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap; }
+/* The frame's ring is inset, like the tag's: both edges sit on the 16 px line, and its foot is the rule */
+.pcard .mock { flex: 1; min-width: 0; padding: 12px 12px 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+  border-radius: var(--r-md) var(--r-md) 0 0; background: var(--surface); box-shadow: inset 0 0 0 1px var(--stroke); }
+.pcard .mock > * { flex: none; }
+
+/* Sketches. Gaps of 4 split a frame 224 px wide (Home) or 218 (Projects) into whole pixels */
+.pcard .mock .bar { height: 6px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .bar.key { background: var(--line); }
+/* A table, its selected row on the wash */
+.pcard .mock .row { display: grid; grid-template-columns: minmax(0, 1fr) 34px 34px; gap: 8px; align-items: center; }
+.pcard .mock .row i { height: 6px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .row.hi { margin: 0 -6px; padding: 4px 6px; border-radius: var(--r-sm); background: var(--wash); }
+.pcard .mock .row.hi i:first-child { background: var(--line); }
+/* Columns: measure, ink and hatched remainder; 40 px, so under the title bar the chart ends at 108 */
+.pcard .mock .cols { height: 40px; display: flex; align-items: flex-end; gap: 4px; }
+.pcard .mock .cols i { flex: 1; border-radius: 2px 2px 0 0; background: var(--line); }
+.pcard .mock .cols i.ink { background: var(--ink); }
+.pcard .mock .cols i.h { background-color: transparent; background-image: repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 5px);
+  box-shadow: inset 0 0 0 1px var(--line); }
+/* A scorecard: three figures in Label XS 12/16 */
+.pcard .mock .score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.pcard .mock .score div { padding: 6px; display: flex; flex-direction: column; gap: 4px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--stroke); }
+.pcard .mock .score b { font-size: 12px; line-height: 16px; font-weight: 400; }
+.pcard .mock .score i { height: 4px; border-radius: 2px; background: var(--hair); }
+/* Meters: a measure and its hatched remainder, the figure in Label XS 12/16 */
+.pcard .mock .meters { display: flex; flex-direction: column; gap: 4px; }
+.pcard .mock .meter { display: grid; grid-template-columns: 32px minmax(0, 1fr) 28px; gap: 8px; align-items: center; }
+.pcard .mock .meter > i { height: 6px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .meter .track { height: 10px; overflow: hidden; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--stroke);
+  background-image: repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 5px); }
+.pcard .mock .meter .track b { display: block; height: 100%; background: var(--line); }
+.pcard .mock .meter.ink .track b { background: var(--ink); }
+.pcard .mock .meter em { font-style: normal; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); text-align: right; }
+.pcard .mock .meter.ink em { color: var(--on-surface); }
+/* A list beside the pair of records it flags */
+.pcard .mock .split { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; }
+.pcard .mock .split .list { display: flex; flex-direction: column; gap: 4px; }
+.pcard .mock .split .item { height: 14px; padding: 0 6px; display: flex; align-items: center; gap: 6px; border-radius: var(--r-sm); }
+.pcard .mock .split .item i { flex: 1; height: 6px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .split .item s { flex: none; width: 14px; height: 6px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .split .item.sel { background: var(--wash); }
+.pcard .mock .split .item.sel i { background: var(--line); }
+.pcard .mock .split .item.sel s { background: var(--quiet); }
+.pcard .mock .split .side { display: flex; flex-direction: column; gap: 8px; }
+.pcard .mock .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.pcard .mock .rec { padding: 6px; display: flex; flex-direction: column; gap: 6px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--stroke); }
+.pcard .mock .rec i { height: 5px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .rec i.key { background: var(--ink); }
+/* A promo calendar: lanes across weeks, each waiting on the one before */
+.pcard .mock .gantt { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 8px; align-items: center; }
+.pcard .mock .gantt .weeks { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.pcard .mock .gantt .weeks i { height: 6px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .gantt .keys, .pcard .mock .gantt .lanes { display: flex; flex-direction: column; gap: 6px; }
+.pcard .mock .gantt .keys i { height: 10px; display: flex; align-items: center; }
+.pcard .mock .gantt .keys i::before { content: ""; display: block; width: 100%; height: 6px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .gantt .lanes { position: relative; }
+.pcard .mock .gantt .lane { position: relative; height: 10px; }
+.pcard .mock .gantt .lane b { position: absolute; top: 0; height: 10px; border-radius: 2px; background: var(--line); }
+.pcard .mock .gantt .lane b.ink { background: var(--ink); }
+.pcard .mock .gantt .lane b.h { background-color: var(--surface); background-image: repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 5px);
+  box-shadow: inset 0 0 0 1px var(--line); }
+.pcard .mock .gantt .lanes svg { position: absolute; left: 0; top: 0; overflow: visible; }
+/* A heat grid */
+.pcard .mock .heat { display: grid; grid-template-columns: 24px repeat(7, minmax(0, 1fr)); gap: 4px; }
+.pcard .mock .heat > i { height: 12px; border-radius: 2px; background: var(--hair); }
+.pcard .mock .heat > i.k { height: 6px; align-self: center; }
+.pcard .mock .heat > i.l1 { background: var(--line); }
+.pcard .mock .heat > i.l2 { background: var(--quiet); }
+.pcard .mock .heat > i.l3 { background: var(--ink); }
+.pcard .mock .heat > span { height: 6px; }
+
+/* The body: 14 px top, 16 px sides and bottom, 10 px between its parts. The name in Body SM Bold with an
+   ellipsis over the meta in Body XS, then the mini line across the card, then one status line */
+.pcard .pbody { flex: 1; min-width: 0; padding: 14px 15px 15px; display: flex; flex-direction: column; gap: 10px; }
+.pcard .phead { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pcard .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 700; }
+.pcard .meta { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+/* Label Dense 13/18 that never wraps. Only work in progress carries a glyph, the three-dot loader; the
+   status turns Bold critical only where it names the viewer, once per region (HD-R1), and repeats are ink */
+.pcard .pstat { min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; white-space: nowrap; }
+.pcard .pstat > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pcard .pstat.you { color: var(--critical); font-weight: 700; }
+
+/* ======================================================================================
+   Workspace: every project screen (design-system 7.2, 7.4, 9.21, 9.24, 9.27, 9.28).
+   One app window, 1440 x 1024: the top bar, the line strip, then the conversation (440 px)
+   beside the artifact panel. Each pane clips its own content; the composer and the
+   decision bar stay pinned. Every class here starts with ws- so pages that keep their
+   own workspace rules are untouched.
+   ====================================================================================== */
+.app.ws-window { height: 1024px; min-height: 0; overflow: hidden; }
+.ws-window .main { min-height: 0; overflow: hidden; }
+.ws-window .recent-row.current { font-weight: 700; }
+
+/* Top bar (7.1): Projects / <Project>, an optional tag 12 px after it, the stack, Share, Help */
+.crumbs.ws-crumbs { min-width: 0; }
+.ws-crumbs b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-crumbs a, .ws-crumbs span { flex: none; }
+.tag.ws-tag { margin-left: -4px; flex: none; }
+
+/* Line strip (7.2, 9.21): the full line, at most 760 px, and one note naming the stretch's output */
+.ws-strip { flex: none; display: flex; align-items: flex-start; gap: 24px; padding: 12px 24px; background: var(--surface);
+  box-shadow: inset 0 -1px 0 var(--stroke); }
+.ws-line { flex: 0 1 760px; min-width: 0; display: grid; row-gap: 6px; align-items: center;
+  grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(0, 1fr); }
+.ws-stage { justify-self: center; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); white-space: nowrap; }
+.ws-stage.on { color: var(--on-surface); font-weight: 700; }
+.ws-seg { height: 2px; background: var(--ink); }
+.ws-seg.current { height: 4px; }
+.ws-seg.future { height: 0; background: none; border-top: 2px dashed var(--quiet); }
+.ws-notch { width: 12px; height: 12px; }
+.ws-notch.signed { background: var(--ink); }
+.ws-notch.you { background: var(--critical); }
+.ws-notch.other { background: var(--surface); box-shadow: inset 0 0 0 2px var(--ink); }
+.ws-notch.upcoming { background: var(--surface); box-shadow: inset 0 0 0 2px var(--quiet); }
+.ws-gate { justify-self: center; align-self: start; display: flex; flex-direction: column; align-items: center;
+  font-size: 12px; line-height: 16px; white-space: nowrap; }
+.ws-gate b { font-weight: 700; color: var(--on-surface); }
+.ws-gate.you b { color: var(--critical); }
+.ws-gate.upcoming b { color: var(--on-surface-variant); }
+.ws-gate span { display: inline-flex; align-items: center; gap: 4px; color: var(--on-surface-variant); }
+.ws-gate.you span { color: var(--on-surface); }
+/* 19 px puts the note's 18 px line on the track's center (16 + 6 + 12 / 2) */
+.ws-strip-note { margin: 19px 0 0 auto; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); white-space: nowrap; }
+.ws-strip-note b { color: var(--on-surface); }
+
+/* The split (7.4) */
+.ws-split { flex: 1; min-height: 0; display: grid; grid-template-columns: 440px minmax(0, 1fr); }
+
+/* Conversation (7.4): the log, oldest first and anchored to the composer */
+.ws-conv { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface);
+  box-shadow: inset -1px 0 0 var(--stroke); }
+.ws-log { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 20px;
+  padding: 24px 24px 16px; }
+.ws-log > * { flex: none; }
+
+/* Composer (9.24, workspace form): suggestion chips 8 px above one 52 px row */
+.ws-dock { flex: none; padding: 12px 24px 20px; }
+.ws-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.ws-chip { height: 32px; padding: 0 12px; border-radius: var(--pill); display: inline-flex; align-items: center; background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--outline-variant); font-size: 13px; line-height: 18px; white-space: nowrap; }
+.ws-chip:hover { background: var(--surface-container); }
+.ws-composer { display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 16px; border-radius: var(--r-xl); background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--quiet); }
+.ws-field { flex: 1; min-width: 0; padding: 8px 0; font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.ws-plus, .ws-send { width: 36px; height: 36px; flex: none; border-radius: var(--pill); display: inline-flex; align-items: center; justify-content: center; }
+.ws-plus:hover { background: var(--surface-container-high); }
+.ws-send { background: var(--ink); color: #fff; }
+.ws-send:disabled, .ws-send.disabled { background: var(--line); cursor: default; }
+
+/* Artifact backdrop (7.4): tabs 12 px from its top, the panel 24 px in from three sides */
+.ws-art { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--background); padding: 12px 24px 24px; }
+
+/* Folder tabs (9.27). Each tab is 37 px with 1 px of bottom padding: the extra pixel lies over the
+   panel's top edge, so the selected tab's white joins the panel and its 1 px edge runs on into the
+   panel's. Never black pills (9.10). The tablist holds only tabs; More, a menu button, follows it. */
+.ws-tabs { flex: none; position: relative; z-index: 1; height: 37px; margin-bottom: -1px; display: flex; gap: 4px; }
+.ws-tablist { min-width: 0; display: flex; gap: 4px; }
+/* Each tab's width is rounded up to a whole pixel, so the tabs after it start on the pixel grid */
+.ws-tab { height: 37px; padding: 0 12px 1px; border-radius: var(--r-md) var(--r-md) 0 0; display: inline-flex; align-items: center; gap: 6px;
+  width: calc-size(max-content, round(up, size, 1px)); justify-content: center;
+  font-size: 13px; line-height: 18px; font-weight: 400; color: var(--on-surface); white-space: nowrap; }
+.ws-tab:hover { background: var(--surface-container-high); }
+.ws-tab.on { background: var(--surface); font-weight: 700; box-shadow: inset 1px 1px 0 var(--stroke), inset -1px 0 0 var(--stroke); }
+.ws-tab.locked { color: var(--quiet); cursor: not-allowed; }
+.ws-tab.on:hover { background: var(--surface); }
+.ws-tab.locked:hover { background: none; }
+.ws-tab-meta { font-weight: 400; color: var(--on-surface-variant); }
+.ws-tab-more { margin-left: auto; }
+
+/* Artifact panel (7.4, 9.27): flat, a 1 px edge, square where it meets the first tab */
+.ws-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface);
+  border-radius: 0 var(--r-md) var(--r-md) var(--r-md); box-shadow: inset 0 0 0 1px var(--stroke); }
+.ws-panel-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 16px 24px; box-shadow: inset 0 -1px 0 var(--stroke); }
+.ws-panel-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ws-panel-title h1 { font-size: 20px; line-height: 24px; font-weight: 700; }
+.ws-panel-title p { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+/* Ghost controls show no edge at rest, so the group hangs 8 px into the padding and the
+   full-screen glyph lines up with the panel's 24 px margin. */
+.ws-head-actions { flex: none; display: flex; align-items: center; gap: 8px; margin-right: -8px; }
+.ws-ghost { height: 32px; padding: 0 12px; border-radius: var(--pill); display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; line-height: 18px; color: var(--on-surface); white-space: nowrap; }
+.ws-ghost:hover, .ws-head-actions .icon-btn:hover { background: var(--surface-container-high); }
+.ws-panel-body { flex: 1; min-height: 0; overflow: hidden; padding: 24px; }
+
+/* Decision bar (9.28): the panel's foot and the screen's one black button */
+.ws-decide { flex: none; display: flex; align-items: center; gap: 16px; padding: 16px 24px; box-shadow: inset 0 1px 0 var(--stroke); }
+.ws-decide .btn { min-width: 96px; width: calc-size(max-content, round(up, size, 1px)); justify-content: center; }
+.ws-decide .btn:disabled { cursor: not-allowed; }
+.ws-decide-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ws-decide-text b { font-size: 14px; line-height: 20px; font-weight: 700; }
+.ws-decide-text span { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.ws-decide-actions { flex: none; display: flex; align-items: center; gap: 8px; }
+/* Sign state: the decision label row, then the attestation and the actions in one 44 px row */
+.ws-decide.sign { flex-direction: column; align-items: stretch; gap: 8px; }
+.ws-decide-title { min-height: 20px; display: flex; align-items: center; gap: 8px; }
+.ws-square { width: 12px; height: 12px; flex: none; background: var(--critical); }
+.ws-decide-title b { font-size: 14px; line-height: 18px; font-weight: 700; color: var(--critical); white-space: nowrap; }
+.ws-decide-title span { min-width: 0; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+/* The link keeps a 44 px hit area without growing the 20 px row */
+.ws-decide-title .link { margin: -12px 0 -12px auto; padding: 12px 0; flex: none; white-space: nowrap; }
+.ws-decide-row { min-height: 44px; display: flex; align-items: center; gap: 16px; }
+.ws-attest { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 16px; }
+.ws-attest-text { min-width: 0; display: flex; flex-direction: column; }
+.ws-attest-text b { font-size: 14px; line-height: 20px; font-weight: 400; }
+.ws-attest-text span { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+/* 9.17: a 16 px mark, 1 px outline stroke, 1 px radius, checked in primary; 2 px down to sit on the first line */
+.ws-check { width: 16px; height: 16px; flex: none; margin-top: 2px; border-radius: 1px; box-shadow: inset 0 0 0 1px var(--outline);
+  display: inline-flex; align-items: center; justify-content: center; }
+.ws-check.on { background: var(--ink); box-shadow: none; }

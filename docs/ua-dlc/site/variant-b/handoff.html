@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Handoff · Activation scorecard · HyperDelivery</title>
+<!-- cspell:words Romero -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="variant-b.css">
+<style>
+/* The workspace chrome is variant-b.css's Workspace section; this page adds the Construction stub on
+   the line, its conversation items and the Construction decision. The viewer is Kim Patel, the
+   Construction owner in Retail Systems (design-system 12, Handoff). */
+p, .bubble { text-wrap: pretty; }
+
+/* The line keeps the shared 760 px grid (9.21), and a 72 px dashed Construction stub, outside HyperDelivery,
+   hangs off its end on the same three rows, so every notch sits where it does on the other workspaces */
+.ws-line.to-construction { position: relative; }
+.ws-stub { position: absolute; top: 0; left: 100%; width: 72px; display: grid; grid-template: 16px 12px 16px / 72px;
+  row-gap: 6px; align-items: center; }
+.ws-stub .ws-seg { justify-self: stretch; }
+
+/* Conversation items (9.26) */
+.turn { display: flex; flex-direction: column; gap: 10px; }
+.speaker { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 700; }
+.speaker em { font-style: normal; font-weight: 400; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.speaker .avatar { margin: -2px 0; }
+.said { font-size: 14px; line-height: 22px; }
+.tools { border-radius: 8px; box-shadow: inset 0 0 0 1px var(--stroke); overflow: hidden; }
+.tool { min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 13px; line-height: 18px; }
+.tool + .tool { box-shadow: inset 0 1px 0 var(--stroke); }
+.tool img, .tool .glyph { width: 16px; height: 16px; flex: none; }
+.tool .what { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tool .got { color: var(--on-surface-variant); white-space: nowrap; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.card-btn { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--outline-variant); text-align: left; }
+.card-btn:hover { background: var(--surface-container); }
+.card-btn .tile { width: 32px; height: 32px; flex: none; border-radius: 4px; background: var(--surface-container-high); display: inline-flex; align-items: center; justify-content: center; }
+.card-btn .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.card-btn .txt b { font-size: 13px; line-height: 18px; }
+.card-btn .txt span { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); white-space: nowrap; }
+.msg { align-self: flex-end; max-width: 344px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.bubble { padding: 12px 16px; border-radius: 16px 16px 4px 16px; background: var(--surface-container-high); font-size: 14px; line-height: 20px; }
+.byline { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+/* The decision card: the approval card (9.26) around the viewer's Construction decision, with its anatomy:
+   the decision label over its wait, 2 px apart and the wait in line with the label's words */
+.ask { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--outline); }
+.ap-head { display: flex; flex-direction: column; gap: 2px; }
+.ap-label { display: flex; align-items: center; gap: 8px; }
+.ap-label .sq { width: 12px; height: 12px; flex: none; background: var(--critical); }
+.ap-label b { min-width: 0; font-size: 14px; line-height: 18px; font-weight: 700; color: var(--critical); white-space: nowrap; }
+.ap-head .age { padding-left: 20px; display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); white-space: nowrap; }
+
+/* System note (9.26): a 14 px check, 8 px, Body XS */
+.sys { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.sys svg { margin-top: 2px; }
+.ask p { font-size: 14px; line-height: 20px; }
+.ask .btn { align-self: flex-start; }
+
+/* The Construction decision (9.13): the recommendation, the two modes or Not Now, and a note for Theo */
+.decision { display: flex; flex-direction: column; gap: 24px; }
+.rec { display: flex; gap: 12px; padding: 12px 16px; border-radius: 8px; background: var(--surface-container-high); }
+.rec .txt { display: flex; flex-direction: column; font-size: 14px; line-height: 20px; }
+.nw { white-space: nowrap; }
+.build { display: flex; flex-direction: column; gap: 16px; }
+.build-head { display: flex; flex-direction: column; gap: 4px; }
+.build-head h2 { font-size: 16px; line-height: 20px; font-weight: 700; }
+.build-head p { font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+/* 9.17 radio option rows: an inset 1px outline-variant ring at rest, the outline ring when selected */
+.opt { display: flex; flex-direction: column; border-radius: 8px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline-variant); }
+.opt.on { box-shadow: inset 0 0 0 1px var(--outline); }
+.opt-main { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+.opt-title { display: flex; align-items: center; gap: 12px; }
+.opt-title b { font-size: 16px; line-height: 20px; }
+.opt-title .badge { margin-left: auto; gap: 4px; }
+.opt-desc { padding-left: 28px; font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+/* 9.17: a 16 px mark with a 1px outline stroke, checked in primary */
+.radio { width: 16px; height: 16px; flex: none; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--outline); display: inline-flex; align-items: center; justify-content: center; }
+.opt.on .radio { background: var(--ink); box-shadow: none; }
+.opt.on .radio::after { content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--surface); }
+/* Rebuild From the Plan applies only to AI-Assisted, so it stays disabled until that mode is chosen */
+.opt-sub { margin-top: auto; min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 12px 16px 12px 44px; box-shadow: inset 0 1px 0 var(--stroke);
+  font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.box { width: 16px; height: 16px; flex: none; border-radius: 1px; background: var(--surface-container-high); box-shadow: inset 0 0 0 1px var(--outline-variant); }
+.or { display: flex; align-items: center; gap: 12px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--stroke); }
+.note { display: flex; flex-direction: column; gap: 8px; }
+.note .lbl { font-size: 14px; line-height: 18px; font-weight: 700; }
+.note .lbl span { font-weight: 400; color: var(--on-surface-variant); }
+.note .field { height: 68px; padding: 10px 16px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--quiet); font-size: 16px; line-height: 24px; color: var(--on-surface-variant); }
+.note .hint { font-size: 12px; line-height: 20px; color: var(--on-surface-variant); }
+
+/* The decision bar's text link keeps a 44 px hit area without growing the bar (9.1 Tertiary) */
+.ws-decide > .link { margin: -12px 0; padding: 12px 0; flex: none; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="app ws-window" data-screen="Handoff">
+
+  <aside class="nav" aria-label="HyperDelivery">
+    <div class="lockup">
+      <svg class="ua" viewBox="0 0 232.5 137" aria-label="Under Armour"><path fill="#1D1D1D" d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z"/></svg>
+      <b>HyperDelivery</b>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Hide the sidebar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></span>
+    </div>
+    <div class="new-project"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New Project</div>
+    <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>Search<span class="end keycap">⌘K</span></div>
+    <div class="nav-group" style="margin-top:6px">
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z"/></svg>Home</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z"/></svg>Inbox<span class="end count">1</span></div>
+      <div class="nav-row current"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Projects</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z"/></svg>Library<span class="end nav-tag">Enterprise</span></div>
+    </div>
+    <div class="nav-heading">Recent</div>
+    <div class="nav-group">
+      <div class="recent-row current"><span class="mark"><i class="notch you"></i></span><span>Activation scorecard</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch done"></i></span><span>Store labor forecast</span></div>
+      <div class="recent-row all">All Projects</div>
+    </div>
+    <div class="nav-fill"></div>
+    <div class="account">
+      <span class="avatar s28" style="background:#3F4A55">KP</span>
+      <span class="who"><b>Kim Patel</b><span>Retail Systems</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar ruled">
+      <nav class="crumbs ws-crumbs" aria-label="Breadcrumb"><a href="projects.html">Projects</a><span aria-hidden="true">/</span><b aria-current="page">Activation scorecard</b></nav>
+      <span class="tag ws-tag" title="Sealed Oct 23, 10 items">Handoff Package Ready</span>
+      <span class="spacer"></span>
+      <span class="stack" role="img" aria-label="Theo Grant, business owner, and Luis Romero, data owner">
+        <span class="avatar s28" style="background:#444444" title="Theo Grant">TG</span>
+        <span class="avatar s28" style="background:#2E6A8E" title="Luis Romero">LR</span>
+      </span>
+      <button type="button" class="btn secondary">Try the Prototype</button>
+      <button type="button" class="icon-btn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg></button>
+    </header>
+
+    <div class="ws-strip">
+      <div class="ws-line to-construction" role="img" aria-label="Discover, Plan and Prototype done. What we're building, the plan and the working prototype signed, 2 signers each. Handoff in progress: the Construction decision is waiting on you, 1 day. Construction is outside HyperDelivery.">
+        <span class="ws-stage">Discover</span><i></i><span class="ws-stage">Plan</span><i></i><span class="ws-stage">Prototype</span><i></i><span class="ws-stage on">Handoff</span>
+        <i class="ws-seg"></i><i class="ws-notch signed"></i><i class="ws-seg"></i><i class="ws-notch signed"></i><i class="ws-seg"></i><i class="ws-notch signed"></i><i class="ws-seg current"></i>
+        <i></i><span class="ws-gate"><b>What We're Building</b><span>3d 4h, 2 signers</span></span><i></i><span class="ws-gate"><b>The Plan</b><span>2d 1h, 2 signers</span></span><i></i><span class="ws-gate"><b>The Working Prototype</b><span>1d 6h, 2 signers</span></span>
+        <span class="ws-stub"><span class="ws-stage">Construction</span><i class="ws-seg future"></i><span class="ws-stage">Outside HyperDelivery</span></span>
+      </div>
+      <p class="ws-strip-note">Handoff outputs a <b>package and a demo</b></p>
+    </div>
+
+    <div class="ws-split">
+
+      <section class="ws-conv" aria-label="Conversation">
+        <div class="ws-log" role="log" aria-live="polite">
+
+          <div class="sys">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span>Theo and Luis signed what we're building, Oct 20. 3d 4h.</span>
+          </div>
+
+          <div class="sys">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span>Theo and Luis signed the plan, Oct 22. 2d 1h.</span>
+          </div>
+
+          <div class="sys">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span>Theo and Luis signed the working prototype, Oct 23. 1d 6h.</span>
+          </div>
+
+          <div class="turn">
+            <div class="speaker"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#1D1D1D"/><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"/><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/></svg>HyperDelivery<em>Oct 23, 17:10</em></div>
+            <div class="tools">
+              <div class="tool"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg><img src="../concepts/project/logos/jira.svg" alt="Jira"><span class="what">Filed Jira epic <span class="mono">MKTG-418</span></span><span class="got">9 issues</span></div>
+              <div class="tool"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="#444444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5"/></svg><span class="what">Wrote the AI-DLC context files</span><span class="got">9 of 9 valid</span></div>
+              <div class="tool"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg><img src="../concepts/project/logos/github.svg" alt="GitHub"><span class="what">Prepared the repository transfer</span><span class="got">to retail-systems</span></div>
+              <div class="tool"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg><img src="../concepts/project/logos/snowflake.svg" alt="Snowflake"><span class="what">Mapped dev data to production</span><span class="got">4 sources</span></div>
+            </div>
+            <p class="said">I sealed the handoff package for Retail Systems.</p>
+            <div class="cards">
+              <button type="button" class="card-btn" aria-label="Open the package in the panel">
+                <span class="tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span>
+                <span class="txt"><b>Package</b><span>10 items, Oct 23</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+              </button>
+              <button type="button" class="card-btn" aria-label="Open the prototype in the panel">
+                <span class="tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z"/></svg></span>
+                <span class="txt"><b>Prototype</b><span>Version 5</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="turn">
+            <div class="speaker"><span class="avatar s24" style="background:#444444" title="Theo Grant">TG</span>Theo Grant<em>Business owner, Oct 23, 17:32</em></div>
+            <p class="said">Kim, AI-driven works for us if Retail Systems is comfortable.</p>
+          </div>
+
+          <div class="msg">
+            <div class="bubble">Does the prototype write to anything?</div>
+            <span class="byline">You, Oct 24, 09:12</span>
+          </div>
+
+          <div class="turn">
+            <div class="speaker"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#1D1D1D"/><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"/><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/></svg>HyperDelivery<em>Oct 24, 09:12</em></div>
+            <p class="said">No. It only reads three dev views and one SharePoint list.</p>
+          </div>
+
+          <div class="ask">
+            <div class="ap-head">
+              <div class="ap-label"><i class="sq" aria-hidden="true"></i><b>Your Decision: Construction</b></div>
+              <span class="age"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>Waiting 1d</span>
+            </div>
+            <p>Recommended: AI-driven. You decide, with Theo Grant.</p>
+            <button type="button" class="btn secondary">Review and Decide</button>
+          </div>
+
+        </div>
+
+        <div class="ws-dock">
+          <div class="ws-suggest" role="group" aria-label="Suggestions">
+            <button type="button" class="ws-chip">What Does Construction Add?</button>
+            <button type="button" class="ws-chip">Show the Data Map</button>
+          </div>
+          <div class="ws-composer">
+            <span class="ws-field">Reply, or point at another file</span>
+            <button type="button" class="ws-plus" aria-label="Point at a file or page"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button type="button" class="ws-send" aria-label="Send" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="ws-art" aria-label="Artifacts">
+        <div class="ws-tabs">
+          <div class="ws-tablist" role="tablist" aria-label="Artifacts">
+            <button type="button" class="ws-tab on" role="tab" id="tab-construction" aria-selected="true" aria-controls="art-panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h5l4-6h7M13 18h7M9 12l4 6"/></svg>Construction</button>
+            <button type="button" class="ws-tab" role="tab" id="tab-package" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg>Package<span class="ws-tab-meta">10</span></button>
+            <button type="button" class="ws-tab" role="tab" id="tab-prototype" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z"/></svg>Prototype<span class="ws-tab-meta">v5</span></button>
+            <button type="button" class="ws-tab" role="tab" id="tab-decisions" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>Decisions</button>
+          </div>
+        </div>
+
+        <div class="ws-panel" id="art-panel" role="tabpanel" aria-labelledby="tab-construction">
+          <header class="ws-panel-head">
+            <div class="ws-panel-title">
+              <h1>Construction Decision</h1>
+              <p>Handoff package ready Oct 23 · decide by Fri Nov 6, 10 business days</p>
+            </div>
+            <div class="ws-head-actions">
+              <button type="button" class="icon-btn" aria-label="Open full screen" title="Open full screen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+            </div>
+          </header>
+
+          <div class="ws-panel-body">
+            <div class="decision">
+              <div class="rec">
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#1D1D1D"/><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"/><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/></svg>
+                <div class="txt"><b>Recommended: AI-Driven Construction</b><span>From risk and target tier: low risk, read-only, aggregates only, no personal data and <span class="nw">no new sign-in.</span> <span class="nw">Target: T1 Team App.</span></span></div>
+              </div>
+
+              <section class="build" role="radiogroup" aria-labelledby="build-q">
+                <div class="build-head">
+                  <h2 id="build-q">Build It in Construction</h2>
+                  <p>Retail Systems' gates on push, merge and release apply in both. A pipeline, never a model, deploys.</p>
+                </div>
+                <div class="opts">
+                  <div class="opt on">
+                    <div class="opt-main" role="radio" aria-checked="true" tabindex="0" aria-labelledby="opt-driven-name" aria-describedby="opt-driven">
+                      <span class="opt-title"><span class="radio" aria-hidden="true"></span><b id="opt-driven-name">AI-Driven</b><span class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Recommended</span></span>
+                      <span class="opt-desc" id="opt-driven">Retail Systems' pipeline trusts the approved design and builds from the context files, with no second plan review.</span>
+                    </div>
+                  </div>
+                  <div class="opt">
+                    <div class="opt-main" role="radio" aria-checked="false" tabindex="-1" aria-labelledby="opt-assisted-name" aria-describedby="opt-assisted">
+                      <span class="opt-title"><span class="radio" aria-hidden="true"></span><b id="opt-assisted-name">AI-Assisted With Engineers</b></span>
+                      <span class="opt-desc" id="opt-assisted">Your engineers lead the build with AI help, starting with a review of the plan.</span>
+                    </div>
+                    <span class="opt-sub" role="checkbox" aria-checked="false" aria-disabled="true" title="Applies to AI-Assisted With Engineers"><i class="box" aria-hidden="true"></i>Rebuild From the Plan</span>
+                  </div>
+                </div>
+                <div class="or" aria-hidden="true">or</div>
+                <div class="opt">
+                  <div class="opt-main" role="radio" aria-checked="false" tabindex="-1" aria-labelledby="opt-notnow-name" aria-describedby="opt-notnow">
+                    <span class="opt-title"><span class="radio" aria-hidden="true"></span><b id="opt-notnow-name">Not Now</b></span>
+                    <span class="opt-desc" id="opt-notnow">No Construction yet. The prototype stays open to its testers for 30 days, then expires.</span>
+                  </div>
+                </div>
+              </section>
+
+              <div class="note">
+                <span class="lbl" id="note-label">Note for Theo <span>(Optional)</span></span>
+                <span class="field" role="textbox" tabindex="0" aria-multiline="true" aria-labelledby="note-label" aria-describedby="note-hint">What Theo and the platform team should know</span>
+                <span class="hint" id="note-hint">Shared with Theo and the platform team with your decision.</span>
+              </div>
+            </div>
+          </div>
+
+          <footer class="ws-decide">
+            <div class="ws-decide-text">
+              <div class="ws-decide-title"><i class="ws-square" aria-hidden="true"></i><b>Your Decision: Construction</b></div>
+              <span id="decide-why">AI-Driven Construction selected, with Theo Grant, by Fri Nov 6</span>
+            </div>
+            <a class="link">Ask Theo</a>
+            <div class="ws-decide-actions"><button type="button" class="btn lg primary" aria-describedby="decide-why">Sign Decision</button></div>
+          </footer>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+<script src="figma-prep.js"></script>
+</body>
+</html>

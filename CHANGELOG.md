@@ -12,6 +12,26 @@ Definition of Done in [AGENTS.md](AGENTS.md).
 
 ### Added
 
+- `docs/ua-dlc/site/variant-b/`: a polished build of Variant B, seven static screens on UA
+  Baselayer that are the source of the Figma file "HyperDelivery · Variant B" in the owner's
+  personal Figma team. The file holds native variables, text styles, effects and components; the
+  screens are imported from this folder. `figma-prep.js` and
+  `scripts/export_variant_b_for_figma.py` prepare each screen for Figma's HTML import (rings become
+  borders, SVG shapes become absolute paths, the stylesheet and images are inlined), tested in
+  `tests/unit/test_export_variant_b_for_figma.py`. The screen import waits on the Figma MCP call
+  limit, reached on 2026-10-27. The four workspace screens share one workspace section in
+  `variant-b.css` (folder tabs, panel header, decision bar, composer), and Home and Projects share one
+  project card. Polishing them clarified `design-system.md`: section headings inside the artifact
+  panel are Heading SM, Large buttons pad 20 px, the Inbox's 440 px filter-chip form, the time in
+  HyperDelivery's turn header, the approval card's header, tabs that overflow into More, and a side
+  nav one window tall.
+
+- `make site` now runs `scripts/serve_ua_dlc_site.py`, which serves the UA-DLC site like
+  `python3 -m http.server` but answers the canvas boards' unresolved `{{...}}` image placeholders
+  (requested while the browser parses each board's template, before the runtime renders it) with
+  an empty image and keeps them, and `/favicon.ico`, out of the log. A real missing file still
+  404s and is logged. Tested in `tests/unit/test_serve_ua_dlc_site.py`.
+
 - `docs/ua-dlc/`: the proposal for HyperDelivery's next phase under the UA-DLC process, as a
   draft for leadership review. It holds the leadership plan with an ask in three tranches, milestones
   and stop rules (`enterprise-plan.md`), the operating model (`operating-model.md`), the platform

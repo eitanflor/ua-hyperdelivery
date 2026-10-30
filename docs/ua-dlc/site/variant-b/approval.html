@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Accept the Working Prototype · HyperDelivery</title>
+<!-- cspell:words Northgate Ridgeline -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="variant-b.css">
+<style>
+/* The workspace chrome is variant-b.css's Workspace section; this page adds its conversation
+   items and the prototype review. */
+p, .bubble { text-wrap: pretty; }
+/* This Recent name is 5 px wider than the row's 10 px right padding allows once it is Bold */
+.recent-row.current { padding-right: 4px; }
+
+/* Conversation items (design-system 9.26) */
+.msg { align-self: flex-end; max-width: 344px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.bubble { padding: 12px 16px; border-radius: 16px 16px 4px 16px; background: var(--surface-container-high); font-size: 14px; line-height: 20px; }
+.byline { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+
+.turn { display: flex; flex-direction: column; gap: 10px; }
+.speaker { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 700; }
+.speaker em { font-style: normal; font-weight: 400; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.tools { border-radius: 8px; box-shadow: inset 0 0 0 1px var(--stroke); overflow: hidden; }
+.tool { min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 13px; line-height: 18px; }
+.tool + .tool { box-shadow: inset 0 1px 0 var(--stroke); }
+.tool img { width: 16px; height: 16px; flex: none; }
+.tool .what { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tool .got { color: var(--on-surface-variant); white-space: nowrap; }
+.said { font-size: 14px; line-height: 22px; }
+/* Artifact card: the 2px outline ring while its artifact is open in the panel */
+.artifact { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--surface);
+  box-shadow: inset 0 0 0 2px var(--outline); text-align: left; }
+.artifact .ic { width: 32px; height: 32px; flex: none; border-radius: 4px; background: var(--surface-container-high); display: inline-flex; align-items: center; justify-content: center; }
+.artifact .nm { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.artifact .nm b { font-size: 13px; line-height: 18px; }
+.artifact .nm span { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+
+/* Approval card (9.26), as on the project workspace: the decision label over its wait, the position line,
+   who signs, then Review and Sign. The wait sits 2 px under the label, in line with its words, as the line's
+   gate label pairs them, so the 253 px label never shares its row with "Waiting 3h 10m" */
+.approve { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--outline); }
+.ap-head { display: flex; flex-direction: column; gap: 2px; }
+.ap-label { display: flex; align-items: center; gap: 8px; }
+.ap-label .sq { width: 12px; height: 12px; flex: none; background: var(--critical); }
+.ap-label b { min-width: 0; font-size: 14px; line-height: 18px; font-weight: 700; color: var(--critical); white-space: nowrap; }
+.ap-head .age { padding-left: 20px; display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); white-space: nowrap; }
+.approve p { font-size: 14px; line-height: 20px; }
+.signers { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.signer { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; }
+.signer .st { margin-left: auto; white-space: nowrap; }
+.signer .st.now { font-weight: 700; }
+.approve .btn { align-self: flex-start; }
+
+/* System note (9.26): a 14 px check, 8 px, Body XS */
+.sys { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.sys svg { margin-top: 2px; }
+
+/* Panel header: a count is a 16 px ink badge 8 px after its label (design-system 9.7) */
+.count-badge { min-width: 16px; height: 16px; margin-left: 2px; padding: 0 4px; border-radius: var(--pill); background: var(--ink); color: #fff;
+  font-size: 12px; line-height: 16px; font-weight: 700; text-align: center; }
+
+/* The prototype review, sections 32 px apart as in the project workspace's plan; the fold above the
+   decision bar then falls in the gap after the evidence, not through the next heading */
+.review { display: flex; flex-direction: column; gap: 32px; }
+
+/* The preview and its figures. The frame is flat (6.3): a 1px outline-variant border, not a ring, because the
+   strip's fill would paint over a ring. The border sits 1 px outside the grid cell, so the frame keeps its size */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) 192px; column-gap: 32px; }
+.pv { margin: -1px; border-radius: 8px; background: var(--surface); border: 1px solid var(--outline-variant); overflow: hidden; display: flex; flex-direction: column; }
+/* 9.20: the provenance strip carries a 2px status-accent top rule and the 16 px alert glyph in ink */
+.pv-strip { height: 32px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 12px; background: var(--wash);
+  box-shadow: inset 0 2px 0 var(--accent), inset 0 -1px 0 var(--stroke); font-size: 12px; line-height: 16px; white-space: nowrap; }
+.pv-strip .muted { color: var(--on-surface-variant); }
+.pv-strip .spacer { flex: 1; }
+.pv-strip .open { height: 24px; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 999px; font-weight: 700; }
+.pv-app { flex: 1; padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 8px; }
+.pv-bar { display: flex; align-items: center; gap: 8px; }
+.pv-bar b { font-size: 13px; line-height: 18px; }
+.pv-bar .spacer { flex: 1; }
+.pv-sel { height: 24px; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--outline-variant); font-size: 12px; line-height: 16px; white-space: nowrap; }
+.pv-sel em { font-style: normal; color: var(--on-surface-variant); }
+.pv-exp { height: 24px; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--ink); font-size: 12px; line-height: 16px; font-weight: 700; }
+.pv-filters { display: flex; gap: 8px; }
+.pv-table { display: flex; flex-direction: column; }
+.pv-row { height: 28px; display: grid; grid-template-columns: minmax(0, 1fr) 112px 64px 52px 16px; column-gap: 12px; align-items: center; font-size: 12px; line-height: 16px; }
+.pv-row + .pv-row { box-shadow: inset 0 1px 0 var(--stroke); }
+.pv-head { height: 24px; color: var(--on-surface-variant); }
+.pv-row .r { text-align: right; }
+.pv-row.flag .acct { font-weight: 700; }
+.stb { display: flex; align-items: center; gap: 8px; }
+.stb b { width: 28px; font-weight: 400; text-align: right; }
+.stb .bar { position: relative; flex: 1; height: 6px; background-image: repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 4px); }
+.stb .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); }
+.stb .bar s { position: absolute; left: 40%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+.spark { width: 64px; height: 16px; }
+
+/* 8 px in from the preview's top, so the first label shares the strip text's line; the two figures are
+   24 px apart (5.1 SM, between groups), anchored to the top rather than spread down the preview */
+.figs { display: flex; flex-direction: column; justify-content: flex-start; gap: 24px; padding: 8px 0; }
+.fig { display: flex; flex-direction: column; gap: 4px; }
+.fig .k { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+/* 4.2 Figure: 24/30 Bold tabular, the unit in 16/20 Regular */
+.fig .v { display: flex; align-items: baseline; gap: 6px; font-size: 24px; line-height: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fig .v small { font-size: 16px; line-height: 20px; font-weight: 400; color: var(--on-surface-variant); }
+.fig .s { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.segs { margin-top: 4px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.segs i { height: 6px; background: var(--ink); }
+.segs i.h { background: none; background-image: repeating-linear-gradient(135deg, var(--line) 0 1px, transparent 1px 4px); }
+
+/* Sections inside the panel: Heading SM 16/20, as on the project, handoff and Inbox screens, so the panel's
+   title stays the one 20 px line */
+.sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.sec-head h2 { font-size: 16px; line-height: 20px; font-weight: 700; }
+.sec-head .end { margin-left: auto; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+
+/* Evidence */
+.ev { display: flex; flex-direction: column; }
+.ev-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) 152px 88px; column-gap: 16px; align-items: start; padding: 12px 0; }
+.ev-row + .ev-row { box-shadow: inset 0 1px 0 var(--stroke); }
+.ev-row .id { font-family: var(--mono); font-size: 12px; line-height: 20px; color: var(--on-surface-variant); }
+.ev-row .c { font-size: 14px; line-height: 20px; }
+.ev-row .c p { margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.ev-row .proof { display: flex; align-items: center; gap: 8px; height: 20px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); white-space: nowrap; }
+.ev-row .proof img { width: 16px; height: 16px; }
+.res { justify-self: end; height: 20px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap; }
+.res.ok { color: var(--success); }
+.ev-row.checks { grid-template-columns: minmax(0, 1fr) auto; }
+
+/* Below the fold: testers, checks, skips, signers */
+.notes { display: flex; flex-direction: column; }
+.note { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 12px; padding: 16px 0; }
+.note + .note { box-shadow: inset 0 1px 0 var(--stroke); }
+.note .who { display: flex; align-items: baseline; gap: 8px; font-size: 13px; line-height: 18px; }
+.note .who em { font-style: normal; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.note p { margin-top: 4px; font-size: 14px; line-height: 20px; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; }
+.duo .sec-head { margin-bottom: 12px; }
+.skips { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 20px; }
+.skips li { display: flex; gap: 10px; text-wrap: pretty; }
+.nw { white-space: nowrap; }
+.skips li::before { content: ""; width: 4px; height: 4px; margin-top: 8px; border-radius: 999px; background: var(--muted); flex: none; }
+.duo .signers { gap: 12px; }
+.duo .signer .nm { display: flex; flex-direction: column; }
+.duo .signer .role { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+</style>
+</head>
+<body>
+<div class="app ws-window" data-screen="Approval">
+
+  <aside class="nav" aria-label="HyperDelivery">
+    <div class="lockup">
+      <svg class="ua" viewBox="0 0 232.5 137" aria-label="Under Armour"><path fill="#1D1D1D" d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z"/></svg>
+      <b>HyperDelivery</b>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Hide the sidebar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></span>
+    </div>
+    <div class="new-project"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New Project</div>
+    <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>Search<span class="end keycap">⌘K</span></div>
+    <div class="nav-group" style="margin-top:6px">
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z"/></svg>Home</div>
+      <div class="nav-row current"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linejoin="round"><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z"/></svg>Inbox<span class="end count">4</span></div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Projects</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z"/></svg>Library<span class="end nav-tag">Enterprise</span></div>
+    </div>
+    <div class="nav-heading">Recent</div>
+    <div class="nav-group">
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>SKU productivity workbench</span></div>
+      <div class="recent-row current"><span class="mark"><i class="notch you"></i></span><span>Wholesale sell-through tracker</span></div>
+      <div class="recent-row"><span class="mark"><span class="dots"><i></i><i></i><i></i></span></span><span>Tariff scenario planner</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>Product master quality monitor</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch done"></i></span><span>Activation scorecard</span></div>
+      <div class="recent-row all">All Projects</div>
+    </div>
+    <div class="nav-fill"></div>
+    <div class="account">
+      <span class="avatar s28" style="background:#3D4B8C">MC</span>
+      <span class="who"><b>Maya Chen</b><span>Merchandising</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar ruled">
+      <nav class="crumbs ws-crumbs" aria-label="Breadcrumb"><a href="inbox.html">Inbox</a><span aria-hidden="true">/</span><b aria-current="page">Wholesale sell-through tracker</b></nav>
+      <span class="tag ws-tag" title="Confirmed with the plan; built in Construction">Target: T1 Team App</span>
+      <span class="spacer"></span>
+      <span class="stack" role="img" aria-label="Jordan Lee, Luis Romero and Maya Chen">
+        <span class="avatar s28" style="background:#2F6B5E" title="Jordan Lee">JL</span>
+        <span class="avatar s28" style="background:#2E6A8E" title="Luis Romero">LR</span>
+        <span class="avatar s28" style="background:#3D4B8C" title="Maya Chen">MC</span>
+      </span>
+      <button type="button" class="btn secondary">Share</button>
+      <button type="button" class="icon-btn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg></button>
+    </header>
+
+    <div class="ws-strip">
+      <div class="ws-line" role="img" aria-label="Discover and Plan done. What we're building signed by 3 people after 3 days, and the plan after 2 days 6 hours. The working prototype is waiting on you, the last of three, 3 hours 10 minutes. Handoff upcoming.">
+        <span class="ws-stage">Discover</span><i></i><span class="ws-stage">Plan</span><i></i><span class="ws-stage on">Prototype</span><i></i><span class="ws-stage">Handoff</span>
+        <i class="ws-seg"></i><i class="ws-notch signed"></i><i class="ws-seg"></i><i class="ws-notch signed"></i><i class="ws-seg current"></i><i class="ws-notch you"></i><i class="ws-seg future"></i>
+        <i></i><span class="ws-gate"><b>What We're Building</b><span>3d, 3 signers</span></span><i></i><span class="ws-gate"><b>The Plan</b><span>2d 6h, 3 signers</span></span><i></i><span class="ws-gate you"><b>Your Approval: The Working Prototype</b><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>Waiting 3h 10m</span></span><i></i>
+      </div>
+      <p class="ws-strip-note">Prototype outputs a <b>working prototype in the sandbox</b></p>
+    </div>
+
+    <div class="ws-split">
+
+      <section class="ws-conv" aria-label="Conversation">
+        <div class="ws-log" role="log" aria-live="polite">
+
+          <div class="sys">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span>Jordan, Luis and you signed the plan, Oct 21. 2d 6h.</span>
+          </div>
+
+          <div class="msg">
+            <div class="bubble">Tried version 3 with two planners. The export loses our filters, and we need to filter by channel partner.</div>
+            <span class="byline">Jordan Lee, Oct 23, 16:40</span>
+          </div>
+
+          <div class="turn">
+            <div class="speaker">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#1D1D1D"/><path d="M3 12h18" stroke="#FFFFFF" stroke-width="1.5"/><rect x="4.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="10.25" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/><rect x="15.75" y="10.25" width="3.5" height="3.5" fill="#FFFFFF"/></svg>
+              HyperDelivery<em>Oct 24, 14:40</em>
+            </div>
+            <div class="tools">
+              <div class="tool">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+                <img src="../concepts/project/logos/github.svg" alt="GitHub">
+                <span class="what">Built version 4 in the sandbox</span><span class="got">3 changes</span>
+              </div>
+              <div class="tool">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+                <img src="../concepts/project/logos/web-browser.svg" alt="Browser">
+                <span class="what">Ran the evidence checks</span><span class="got">5 met, 1 partly</span>
+              </div>
+              <div class="tool">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+                <img src="../concepts/project/logos/snowflake.svg" alt="Snowflake">
+                <span class="what">Checked definitions in Snowflake</span><span class="got">3 of 3 match</span>
+              </div>
+              <div class="tool">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+                <img src="../concepts/project/logos/microsoftexcel.svg" alt="Microsoft Excel">
+                <span class="what">Opened the export in Excel</span><span class="got">Sort dropped</span>
+              </div>
+            </div>
+            <p class="said">Version 4 makes Jordan's three changes, and every check ran again: 5 of 6 criteria are met.</p>
+            <button type="button" class="artifact" aria-pressed="true" aria-label="Open the prototype in the panel">
+              <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z"/></svg></span>
+              <span class="nm"><b>Prototype</b><span>Version 4, sandbox, dev data. 5 of 6 met</span></span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+
+          <div class="approve">
+            <div class="ap-head">
+              <div class="ap-label"><i class="sq" aria-hidden="true"></i><b>Your Approval: The Working Prototype</b></div>
+              <span class="age"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>Waiting 3h 10m</span>
+            </div>
+            <p>Last of three. When you sign, the handoff starts.</p>
+            <ul class="signers" aria-label="Who signs">
+              <li class="signer"><span class="avatar s24" style="background:#2F6B5E" title="Jordan Lee" aria-hidden="true">JL</span>Jordan Lee<span class="st" title="Signed Oct 24, 15:30">Signed Oct 24</span></li>
+              <li class="signer"><span class="avatar s24" style="background:#2E6A8E" title="Luis Romero" aria-hidden="true">LR</span>Luis Romero<span class="st" title="Signed Oct 24, 18:20">Signed Oct 24</span></li>
+              <li class="signer"><span class="avatar s24" style="background:#3D4B8C" title="Maya Chen" aria-hidden="true">MC</span>Maya Chen<span class="st now">You, now</span></li>
+            </ul>
+            <button type="button" class="btn secondary">Review and Sign</button>
+          </div>
+
+        </div>
+
+        <div class="ws-dock">
+          <div class="ws-suggest" role="group" aria-label="Suggestions">
+            <button type="button" class="ws-chip">Show Only the Changes</button>
+            <button type="button" class="ws-chip">What Happens After I Sign?</button>
+          </div>
+          <div class="ws-composer">
+            <span class="ws-field">Reply, or point at another file</span>
+            <button type="button" class="ws-plus" aria-label="Point at a file or page"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button type="button" class="ws-send" aria-label="Send" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="ws-art" aria-label="Artifacts">
+        <!-- Decisions after Sources would make the row 738 px, past its 704, so Decisions waits in More,
+             as it does on the project workspace -->
+        <div class="ws-tabs">
+          <div class="ws-tablist" role="tablist" aria-label="Artifacts">
+            <button type="button" class="ws-tab" role="tab" id="tab-brief" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5M8.5 13h7M8.5 16.5h5"/></svg>Brief</button>
+            <button type="button" class="ws-tab" role="tab" id="tab-mockup" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5h16v15H4zM4 9h16M9 9v10.5"/></svg>Mockup</button>
+            <button type="button" class="ws-tab" role="tab" id="tab-plan" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14M5 12h14M5 19h9"/></svg>Plan</button>
+            <button type="button" class="ws-tab on" role="tab" id="tab-prototype" aria-selected="true" aria-controls="art-panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 4.5h15v15h-15zM10 9.5l4.5 2.5L10 14.5z"/></svg>Prototype<span class="ws-tab-meta">v4</span></button>
+            <button type="button" class="ws-tab" role="tab" id="tab-data" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6c0-1.4 3.6-2.5 8-2.5s8 1.1 8 2.5-3.6 2.5-8 2.5S4 7.4 4 6zM4 6v12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5V6M4 12c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5"/></svg>Data</button>
+            <button type="button" class="ws-tab" role="tab" id="tab-sources" aria-selected="false" aria-controls="art-panel" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 6 .5l3-3a4 4 0 0 0-5.7-5.7l-1.1 1.1M14 10a4 4 0 0 0-6-.5l-3 3a4 4 0 0 0 5.7 5.7l1.1-1.1"/></svg>Sources</button>
+          </div>
+          <button type="button" class="ws-tab ws-tab-more" aria-haspopup="menu" aria-expanded="false" title="Decisions, Timeline and Architecture">More<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></button>
+        </div>
+
+        <div class="ws-panel" id="art-panel" role="tabpanel" aria-labelledby="tab-prototype">
+          <header class="ws-panel-head">
+            <div class="ws-panel-title">
+              <h1>Prototype</h1>
+              <p>Version 4, built Oct 24, 14:05</p>
+            </div>
+            <div class="ws-head-actions">
+              <button type="button" class="ws-ghost">Changes Since Approval<span class="count-badge">3</span></button>
+              <button type="button" class="ws-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Versions</button>
+              <button type="button" class="icon-btn" aria-label="Open full screen" title="Open full screen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+            </div>
+          </header>
+
+          <div class="ws-panel-body">
+            <div class="review">
+              <div class="hero">
+                <figure class="pv" role="img" aria-label="Version 4 of the sell-through view: three filters, an export button and a table of accounts with sell-through, the weekly trend and footprint, with Northgate and Coastal flagged below 40% after week 6.">
+                  <div class="pv-strip">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L2.8 19.5h18.4z"/><path d="M12 10v4"/><circle cx="12" cy="16.75" r="0.9" fill="#1D1D1D" stroke="none"/></svg>
+                    <b>Sandbox, dev data</b><span class="muted">Expires Jan 23</span>
+                    <span class="spacer"></span>
+                    <span class="open">Open in New Tab<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8.5 8.5M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></span>
+                  </div>
+                  <div class="pv-app">
+                    <div class="pv-bar">
+                      <b>Wholesale Sell-Through, FW26</b>
+                      <span class="spacer"></span>
+                      <span class="pv-exp"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/></svg>Export</span>
+                    </div>
+                    <div class="pv-filters">
+                      <span class="pv-sel"><em>Region</em>East</span>
+                      <span class="pv-sel"><em>Channel Partner</em>All</span>
+                      <span class="pv-sel"><em>Franchise</em>All</span>
+                    </div>
+                    <div class="pv-table">
+                      <div class="pv-row pv-head"><span>Account</span><span>Sell-Through</span><span>Weeks 1–8</span><span class="r">Footprint</span><span></span></div>
+                      <div class="pv-row flag"><span class="acct">Northgate</span><span class="stb"><b>38%</b><span class="bar"><i style="width:38%"></i><s></s></span></span><svg class="spark" viewBox="0 0 64 16" fill="none" stroke="#1D1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4l9 2 9-1 9 4 9 1 9 3 9 0 8 1"/></svg><span class="r">1.2k</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L2.8 19.5h18.4z"/><path d="M12 10v4"/></svg></div>
+                      <div class="pv-row"><span class="acct">Ridgeline</span><span class="stb"><b>61%</b><span class="bar"><i style="width:61%"></i><s></s></span></span><svg class="spark" viewBox="0 0 64 16" fill="none" stroke="#1D1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12l9-2 9 1 9-4 9-1 9-2 9 1 8-3"/></svg><span class="r">640</span><span></span></div>
+                      <div class="pv-row flag"><span class="acct">Coastal</span><span class="stb"><b>36%</b><span class="bar"><i style="width:36%"></i><s></s></span></span><svg class="spark" viewBox="0 0 64 16" fill="none" stroke="#1D1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6l9 1 9 3 9-1 9 3 9 1 9 1 8 1"/></svg><span class="r">880</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L2.8 19.5h18.4z"/><path d="M12 10v4"/></svg></div>
+                    </div>
+                  </div>
+                </figure>
+
+                <div class="figs">
+                  <div class="fig">
+                    <span class="k">Criteria Met</span>
+                    <span class="v">5<small>of 6</small></span>
+                    <span class="segs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="h"></i></span>
+                  </div>
+                  <div class="fig">
+                    <span class="k">Definitions Match</span>
+                    <span class="v">3<small>of 3</small></span>
+                    <span class="s">Numbers not checked on dev data</span>
+                  </div>
+                </div>
+              </div>
+
+              <section>
+                <div class="sec-head"><h2>Evidence, Criterion by Criterion</h2><span class="end">Captured on version 4, Oct 24, 14:40</span></div>
+                <div class="ev">
+                  <div class="ev-row"><span class="id">1</span><span class="c">Account planners see FW26 sell-through by account</span><span class="proof"><img src="../concepts/project/logos/web-browser.svg" alt="">Recording, 0:24</span><span class="res ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Met</span></div>
+                  <div class="ev-row"><span class="id">2</span><span class="c">Filter by region, channel partner and franchise</span><span class="proof"><img src="../concepts/project/logos/web-browser.svg" alt="">Recording, 0:18</span><span class="res ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Met</span></div>
+                  <div class="ev-row"><span class="id">3</span><span class="c">Flag accounts below 40% sell-through after week 6</span><span class="proof"><img src="../concepts/project/logos/snowflake.svg" alt="">Recording, 0:15</span><span class="res ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Met</span></div>
+                  <div class="ev-row"><span class="id">4</span><span class="c">Show shop-in-shop footprint next to sell-through</span><span class="proof"><img src="../concepts/project/logos/snowflake.svg" alt="">Recording, 0:21</span><span class="res ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Met</span></div>
+                  <div class="ev-row"><span class="id">5</span><span class="c">Export the current view to Excel<p>Keeps the filters but drops the sort. Construction fixes it.</p></span><span class="proof"><img src="../concepts/project/logos/microsoftexcel.svg" alt="">Recording, 0:09</span><span class="res"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>Partly Met</span></div>
+                  <div class="ev-row"><span class="id">6</span><span class="c">Only project members and named testers can open it</span><span class="proof"><img src="../concepts/project/logos/microsoft.svg" alt="">Recording, 0:12</span><span class="res ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Met</span></div>
+                </div>
+              </section>
+
+              <section>
+                <div class="sec-head"><h2>Tester Notes</h2><span class="end">3 of 6 named testers tried version 4</span></div>
+                <div class="notes">
+                  <div class="note"><span class="avatar s28" style="background:#2F6B5E" title="Jordan Lee">JL</span><div><div class="who"><b>Jordan Lee</b><em>Requester, Wholesale · Oct 24, 15:10</em></div><p>The channel partner filter is what we needed, and the export kept East and our 14 accounts.</p></div></div>
+                  <div class="note"><span class="avatar s28" style="background:#3F5FA0" title="Priya Nair">PN</span><div><div class="who"><b>Priya Nair</b><em>Merchandising Planning · Oct 24, 16:20</em></div><p>Northgate and Coastal flag at week 6, and the footprint beside them replaces our separate sheet.</p></div></div>
+                  <div class="note"><span class="avatar s28" style="background:#2F6F78" title="Sam Kim">SK</span><div><div class="who"><b>Sam Kim</b><em>Merchandising Systems · Oct 24, 17:05</em></div><p>The export comes back in source order. Fine for now; I sorted it in Excel.</p></div></div>
+                </div>
+              </section>
+
+              <section>
+                <div class="sec-head"><h2>Checks</h2><span class="end">Run on version 4</span></div>
+                <div class="ev">
+                  <div class="ev-row checks"><span class="c">Definitions match the golden report<p>Daily Product Margin, certified golden report, owner Luis Romero. Numbers are checked in Construction.</p></span><span class="res ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Passed</span></div>
+                  <div class="ev-row checks"><span class="c">Looks like the mockup signed Oct 15</span><span class="res ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Passed</span></div>
+                  <div class="ev-row checks"><span class="c">Large accounts take about 6 seconds to load</span><span class="res">Listed for Construction</span></div>
+                </div>
+              </section>
+
+              <div class="duo">
+                <section>
+                  <div class="sec-head"><h2>What It Skips</h2></div>
+                  <ul class="skips">
+                    <li><span>A live partner feed: it uses yesterday's <span class="nw">sell-through</span> snapshot</span></li>
+                    <li>Production data: it runs on dev data in the sandbox</li>
+                    <li>A native Excel workbook: the export writes CSV</li>
+                    <li>Factory House doors</li>
+                    <li>Anyone beyond project members and 6 named testers</li>
+                  </ul>
+                </section>
+                <section>
+                  <div class="sec-head"><h2>Who Signs, in Order</h2></div>
+                  <ul class="signers">
+                    <li class="signer"><span class="avatar s28" style="background:#2F6B5E" title="Jordan Lee">JL</span><span class="nm">Jordan Lee<span class="role">Requester, Wholesale</span></span><span class="st" title="Signed Oct 24, 15:30">Signed Oct 24</span></li>
+                    <li class="signer"><span class="avatar s28" style="background:#2E6A8E" title="Luis Romero">LR</span><span class="nm">Luis Romero<span class="role">Data owner, Data Platform</span></span><span class="st" title="Signed Oct 24, 18:20">Signed Oct 24</span></li>
+                    <li class="signer"><span class="avatar s28" style="background:#3D4B8C" title="Maya Chen">MC</span><span class="nm">Maya Chen<span class="role">Business owner</span></span><span class="st now">You, now</span></li>
+                  </ul>
+                </section>
+              </div>
+            </div>
+          </div>
+
+          <footer class="ws-decide sign">
+            <div class="ws-decide-title">
+              <i class="ws-square" aria-hidden="true"></i><b>Your Approval: The Working Prototype</b><span>Last of three. Jordan and Luis signed.</span>
+              <a class="link">Ask Someone</a>
+            </div>
+            <div class="ws-decide-row">
+              <span class="ws-attest">
+                <span class="ws-check on" role="checkbox" aria-checked="true" aria-labelledby="attest-label" aria-describedby="sign-why"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="ws-attest-text"><b id="attest-label">I tried version 4 and reviewed the evidence.</b><span id="sign-why">Signing records your name, version 4 and the time.</span></span>
+              </span>
+              <div class="ws-decide-actions">
+                <button type="button" class="btn lg secondary">Send Back</button>
+                <button type="button" class="btn lg primary" aria-describedby="sign-why">Sign and Accept</button>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+<script src="figma-prep.js"></script>
+</body>
+</html>

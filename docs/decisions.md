@@ -19,6 +19,37 @@ Template for new entries:
 
 ---
 
+## 2026-10-27 - Polish Variant B in Figma: native foundations and components, screens imported from HTML
+- **Status**: Accepted
+- **Context**: The owner prefers Variant B of the three UI variants (the team vote stays open) and
+  asked for a polished version built in Figma through the Figma MCP server, in their personal
+  workspace rather than the Under Armour organization. The server can build native nodes
+  (`use_figma`) or convert a self-contained HTML page into plain layers (`html_to_figma`). The
+  personal team is on the Starter plan with a View seat: three pages per file, one mode per variable
+  collection, and a capped number of MCP calls (Figma lists 20 a month for a View seat).
+- **Decision**: Build the foundations (variables, text styles, effects) and the components natively,
+  bound to the variables. Design the seven screens as static HTML in `docs/ua-dlc/site/variant-b/`,
+  checked with full-size headless renders, and import them with `html_to_figma`. Before export,
+  `figma-prep.js` rewrites the two things the importer drops (inset `box-shadow` rings and inherited
+  SVG paint with relative or arc path commands) without changing how a screen renders, and
+  `scripts/export_variant_b_for_figma.py` inlines the stylesheet and images. The file sits in the
+  owner's Starter team.
+- **Alternatives considered**: *Build the screens natively from the components with `use_figma`* -
+  they would be instances linked to the design system, but every adjustment costs a call and another
+  call to see it, and the View seat caps both; not chosen while the seat is View. *Rewrite
+  `variant-b.css` to use real borders instead of inset rings* - not chosen: rings do not change a
+  box's size, which keeps the screens' CSS the same as the console's design system, so the rewrite
+  happens only in the export. *Raster screenshots of the screens* - not editable. *The organization
+  workspace* - the owner asked for the personal one. *A New Project tile in Projects' eighth slot,
+  to avoid an orphan in the 4 + 3 grid (9.12)* - removed: it is a second start control, which 7.1
+  forbids; the spec should say which rule gives way at seven projects.
+- **Consequences**: Imported screens are plain layers, not component instances, so a designer
+  re-links them or a later pass swaps instances in. The HTML stays the source: edit it, then export
+  and import again. The MCP limit was reached on 2026-10-27 with Foundations and Components done and
+  one test import of Home on the Screens page; the remaining imports wait for the limit to reset or
+  for a Full or Dev seat (200 calls a day on paid plans), which would also make the native build
+  worth revisiting.
+
 ## 2026-10-27 - The Final MVP records the north star's data from its first project and builds none of its machinery
 - **Status**: Proposed (the owner confirms with the build team in week 1)
 - **Context**: The north star (`docs/ua-dlc/north-star.md`) depends on records that cannot be

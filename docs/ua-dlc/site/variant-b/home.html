@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home · HyperDelivery</title>
+<!-- cspell:words wrow pcard pbody phead pstat -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="variant-b.css">
+<style>
+/* design-system 7.3: the question column 72 px under the top bar, the sections 64 px under the starters
+   and 48 px apart, and 56 px of white under the last card */
+.home { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 72px 64px 56px; }
+.col { width: 760px; }
+/* Three 280 px cards and two 16 px gaps (9.12, 9.21's mini line at most 280), inside 7.3's 880 maximum */
+.wide { width: 872px; }
+.wide + .wide { margin-top: 48px; }
+.hello { font-size: 14px; line-height: 20px; color: var(--on-surface-variant); text-align: center; }
+.question { margin-top: 8px; font-size: 32px; line-height: 40px; font-weight: 700; text-align: center; }
+
+/* Composer, Home form (9.24): radius 16, the 1px #949494 stroke, and 6.3's Soft elevation under it */
+.composer { margin-top: 24px; border-radius: 16px; background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--quiet), 0 4px 16px rgba(29, 29, 29, 0.06); }
+.composer .field { padding: 20px 20px 8px; min-height: 96px; font-size: 16px; line-height: 24px; color: var(--on-surface-variant); }
+.composer .foot { display: flex; align-items: center; gap: 8px; padding: 12px; }
+.composer .foot .spacer { flex: 1; }
+.point { width: 36px; height: 36px; flex: none; border-radius: var(--pill); display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline-variant); }
+/* A ghost pill (9.1 Compact, 12 px sides): the folder 8 px before the label, the chevron 4 px after it */
+.ws { height: 36px; flex: none; border-radius: var(--pill); display: inline-flex; align-items: center; gap: 8px; padding: 0 12px;
+  font-size: 14px; line-height: 18px; color: var(--on-surface); white-space: nowrap; }
+.ws svg:last-child { margin-left: -4px; }
+.hint { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); white-space: nowrap; }
+.send { width: 40px; height: 40px; flex: none; border-radius: var(--pill); background: var(--line); display: inline-flex; align-items: center; justify-content: center; }
+.starters { margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+/* Widths round up to whole pixels, so the centered row and every label start on a pixel */
+.starter { width: calc-size(max-content, round(up, size, 1px)); height: 36px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px 0 12px;
+  font-size: 14px; line-height: 18px; color: var(--on-surface); background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline-variant); }
+.starter img { width: 16px; height: 16px; }
+
+/* 7.3's section header: Heading MD, the Body SM summary 12 px after it, the link at the right, 12 px above the content */
+.col + .wide { margin-top: 64px; }
+/* Held to the title's 24 px line: baseline alignment would hang the 20 px summary a pixel below it */
+.home .section-head { height: 24px; }
+.home .section-head .meta { font-size: 14px; line-height: 20px; }
+.section-head + * { margin-top: 12px; }
+
+/* Waiting on You rows (9.15): 8 px marker, content, wait, a 152 px action column; 16 x 20 padding makes 72 px rows */
+.wrow { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto 152px; align-items: center; column-gap: 16px; padding: 16px 19px; }
+.wrow + .wrow { box-shadow: inset 0 1px 0 var(--stroke); }
+/* The card's edge is a 1px border, so the first and last rows give back its pixel: every row still spans
+   72 px from an edge or a divider, and its content keeps the 16 x 20 inset from the card's outer edge */
+.wrow:first-child { padding-top: 15px; }
+.wrow:last-child { padding-bottom: 15px; }
+.wrow .notch { width: 8px; height: 8px; background: var(--critical); }
+.wrow .what { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wrow .what b, .wrow .what span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wrow .what b { font-size: 14px; line-height: 20px; }
+.wrow .what span { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.wrow .what em { font-style: normal; color: var(--on-surface); }
+.wrow .age { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); white-space: nowrap; }
+.wrow .age b { font-weight: 400; color: var(--on-surface); }
+.wrow .btn { justify-self: end; min-width: 96px; width: calc-size(max-content, round(up, size, 1px)); justify-content: center; }
+
+/* Three 280 px project cards (9.12, drawn by variant-b.css) */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+</style>
+</head>
+<body>
+<div class="app" data-screen="Home">
+
+  <aside class="nav" aria-label="HyperDelivery">
+    <div class="lockup">
+      <svg class="ua" viewBox="0 0 232.5 137" aria-label="Under Armour"><path fill="#1D1D1D" d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z"/></svg>
+      <b>HyperDelivery</b>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Hide the sidebar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></span>
+    </div>
+    <div class="new-project"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New Project</div>
+    <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>Search<span class="end keycap">⌘K</span></div>
+    <div class="nav-group" style="margin-top:6px">
+      <div class="nav-row current"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z"/></svg>Home</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z"/></svg>Inbox<span class="end count">4</span></div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Projects</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z"/></svg>Library<span class="end nav-tag">Enterprise</span></div>
+    </div>
+    <div class="nav-heading">Recent</div>
+    <div class="nav-group">
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>SKU productivity workbench</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>Wholesale sell-through tracker</span></div>
+      <div class="recent-row"><span class="mark"><span class="dots"><i></i><i></i><i></i></span></span><span>Tariff scenario planner</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>Product master quality monitor</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch done"></i></span><span>Activation scorecard</span></div>
+      <div class="recent-row all">All Projects</div>
+    </div>
+    <div class="nav-fill"></div>
+    <div class="account">
+      <span class="avatar s28" style="background:#3D4B8C">MC</span>
+      <span class="who"><b>Maya Chen</b><span>Merchandising</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <span class="page">Home</span>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg></span>
+    </header>
+
+    <div class="home">
+      <div class="col">
+        <p class="hello">Good morning, Maya</p>
+        <h1 class="question">What Do You Want to Make?</h1>
+
+        <div class="composer">
+          <div class="field">Describe the problem, who has it, and what would help.</div>
+          <div class="foot">
+            <span class="point" aria-label="Point at what you have"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+            <span class="ws" aria-label="Workspace: Merchandising"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Merchandising<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg></span>
+            <span class="spacer"></span>
+            <span class="hint">Paste links to Teams, OneDrive, Confluence or Jira</span>
+            <span class="send" aria-label="Start the project"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></span>
+          </div>
+        </div>
+
+        <div class="starters">
+          <span class="starter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Track a Weekly Measure</span>
+          <span class="starter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9.5h17M3.5 15h17M9.5 4v16"/></svg>Spreadsheet to App</span>
+          <span class="starter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="7.5" height="14" rx="1.5"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.5"/></svg>Compare Scenarios</span>
+          <span class="starter"><img src="../concepts/project/logos/jira.svg" alt="">From a Jira Ticket</span>
+        </div>
+      </div>
+
+      <section class="wide">
+        <div class="section-head">
+          <h2>Waiting on You</h2>
+          <span class="meta">2 approvals, 1 question and 1 confirmation, oldest first</span>
+          <a class="end link">Open Inbox (4)</a>
+        </div>
+        <div class="card waiting-list">
+          <div class="wrow">
+            <i class="notch"></i>
+            <div class="what"><b>Your Approval: The Plan</b><span><em>SKU productivity workbench</em> unblocks the prototype</span></div>
+            <div class="age">Waiting <b>1d 4h</b></div>
+            <span class="btn secondary">Review and Sign</span>
+          </div>
+          <div class="wrow">
+            <i class="notch"></i>
+            <div class="what"><b>Your Approval: The Working Prototype</b><span><em>Wholesale sell-through tracker</em> unblocks the handoff</span></div>
+            <div class="age">Waiting <b>3h 10m</b></div>
+            <span class="btn secondary">Review and Sign</span>
+          </div>
+          <div class="wrow">
+            <i class="notch"></i>
+            <div class="what"><b>Which level counts as one style for duplicate checks?</b><span><em>Product master quality monitor</em> unblocks the brief</span></div>
+            <div class="age">Waiting <b>42m</b></div>
+            <span class="btn secondary">Answer</span>
+          </div>
+          <div class="wrow">
+            <i class="notch"></i>
+            <div class="what"><b>Confirm What We Heard in Wednesday's Working Session</b><span><em>SKU productivity workbench</em> feeds the prototype checks</span></div>
+            <div class="age">Waiting <b>20m</b></div>
+            <span class="btn secondary">Review Facts</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="wide">
+        <div class="section-head">
+          <h2>Pick Up Where You Left Off</h2>
+          <a class="end link">All 7 Projects</a>
+        </div>
+        <div class="cards">
+          <article class="pcard" aria-label="Tariff scenario planner, building the prototype, piece 3 of 8">
+            <div class="thumb"><span class="stage">Prototype, 3 of 8<em>Sandbox, dev data</em></span><div class="mock">
+              <div class="bar key" style="width:46%"></div>
+              <div class="cols"><i style="height:25px"></i><i class="ink" style="height:36px"></i><i class="h" style="height:40px"></i><i style="height:19px"></i><i class="ink" style="height:30px"></i><i class="h" style="height:36px"></i></div>
+            </div></div>
+            <div class="pbody">
+              <div class="phead"><span class="name">Tariff scenario planner</span><span class="meta">Sourcing, edited 3h ago</span></div>
+              <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg current"></i><i class="gate upcoming"></i><i class="seg future"></i></div>
+              <div class="pstat"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Building the prototype, piece 3 of 8</span></div>
+            </div>
+          </article>
+          <article class="pcard" aria-label="SKU productivity workbench, your approval: The Plan">
+            <div class="thumb"><span class="stage">Mockup<em>Signed with the brief</em></span><div class="mock">
+              <div class="bar key" style="width:38%"></div>
+              <div class="row"><i></i><i></i><i></i></div>
+              <div class="row hi"><i></i><i></i><i></i></div>
+              <div class="row"><i></i><i></i><i></i></div>
+              <div class="row"><i></i><i></i><i></i></div>
+            </div></div>
+            <div class="pbody">
+              <div class="phead"><span class="name">SKU productivity workbench</span><span class="meta">Merchandising, edited 20m ago</span></div>
+              <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg current"></i><i class="gate you"></i><i class="seg future"></i><i class="gate upcoming"></i><i class="seg future"></i></div>
+              <div class="pstat you"><span>Your approval: The Plan</span></div>
+            </div>
+          </article>
+          <article class="pcard" aria-label="Activation scorecard, Construction decision pending">
+            <div class="thumb"><span class="stage">Prototype v5<em>Sandbox, dev data</em></span><div class="mock">
+              <div class="bar key" style="width:52%"></div>
+              <div class="score"><div><b>82</b><i></i></div><div><b>64</b><i></i></div><div><b>71</b><i></i></div></div>
+              <div class="bar" style="width:84%"></div>
+            </div></div>
+            <div class="pbody">
+              <div class="phead"><span class="name">Activation scorecard</span><span class="meta">Marketing, handed off Oct 23</span></div>
+              <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg current"></i></div>
+              <div class="pstat"><span>Construction decision pending</span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="figma-prep.js"></script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inbox · HyperDelivery</title>
+<!-- cspell:words Ortiz -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="variant-b.css">
+<style>
+/* ---------- Split: the list beside the selected item ---------- */
+.split { flex: 1; display: grid; grid-template-columns: 440px minmax(0, 1fr); }
+.list { background: var(--surface); box-shadow: inset -1px 0 0 var(--stroke); display: flex; flex-direction: column; }
+.list-head { padding: 24px 24px 16px; display: flex; flex-direction: column; gap: 16px; }
+.list-title { display: flex; align-items: baseline; gap: 12px; }
+.list-title h1 { font-size: 20px; line-height: 24px; font-weight: 700; }
+/* Body XS, the list's meta (section 12, Inbox) */
+.list-title span { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+/* 9.2's filter chip in its list-column form: 10 px side padding, 6 px apart, and the selection carried by the
+   fill alone, as answer chips carry it (9.26), so All, Approvals, Questions and Confirmations fit one row of the
+   list's 392 px (387). Each width is rounded up to a whole pixel, so every chip starts on the pixel grid */
+.filters { display: flex; flex-wrap: nowrap; gap: 6px; }
+.filter { flex: none; height: 32px; border-radius: var(--r-sm); padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  width: calc-size(max-content, round(up, size, 1px));
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline-variant); font-size: 14px; line-height: 18px; white-space: nowrap; }
+.filter em { font-style: normal; color: var(--on-surface-variant); }
+.filter.on { background: var(--ink); color: #fff; font-weight: 700; box-shadow: none; }
+.filter.on em { color: var(--line); font-weight: 400; }
+
+.items { list-style: none; margin: 0; padding: 0 12px; display: flex; flex-direction: column; gap: 2px; }
+.item { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 12px; align-items: start; padding: 12px; border-radius: var(--r-md); }
+.item.selected { background: var(--surface-container-high); }
+.item .marker { grid-area: 1 / 1; height: 20px; display: flex; align-items: center; justify-content: center; }
+.item .marker i { width: 8px; height: 8px; background: var(--critical); }
+/* One grid for both columns, so each line on the right sits on a baseline on the left whatever the title's
+   length: the kind on the title's first line, the age on the project's. Both are Body XS Regular (9.15). */
+.item .title { grid-area: 1 / 2; align-self: baseline; font-size: 14px; line-height: 20px; text-wrap: balance; }
+.item .project { grid-area: 2 / 2; align-self: baseline; margin-top: 4px; font-size: 12px; line-height: 18px; color: var(--on-surface); }
+.item .unblocks { grid-area: 3 / 2; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.item .kind { grid-area: 1 / 3; align-self: baseline; justify-self: end; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); white-space: nowrap; }
+.item .age { grid-area: 2 / 3; align-self: baseline; justify-self: end; margin-top: 4px; font-size: 12px; line-height: 18px; font-weight: 400; white-space: nowrap; }
+
+.history { margin: 12px 24px 0; box-shadow: inset 0 1px 0 var(--stroke); }
+/* Label SM 14/18 Bold, its count Regular */
+.history-row { height: 52px; display: flex; align-items: center; gap: 12px; font-size: 14px; line-height: 18px; font-weight: 700; }
+.history-row em { font-style: normal; font-weight: 400; color: var(--on-surface-variant); }
+.done-list { list-style: none; margin: 0; padding: 0 0 24px; display: flex; flex-direction: column; gap: 4px; }
+.done-list li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 12px; align-items: start; padding: 8px 0; }
+/* 3 px down centers the 14 px check on the title's 20 px line */
+.done-list li svg { margin-top: 3px; }
+.done-list .what { align-self: baseline; display: flex; flex-direction: column; min-width: 0; }
+/* Body SM over the project in Body XS */
+.done-list .what b { font-size: 14px; line-height: 20px; font-weight: 400; }
+.done-list .what span { font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.done-list .when { align-self: baseline; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); white-space: nowrap; }
+
+/* ---------- Detail ---------- */
+.detail { background: var(--background); padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 16px; }
+/* Body XS: the project link and its workspace after the kind tag */
+.eyebrow { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.eyebrow .tag { height: 24px; padding: 0 8px; margin-right: 4px; color: var(--on-surface); }
+.eyebrow .link { font-size: 12px; line-height: 18px; }
+.head-grid { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; align-items: center; }
+.d-title { font-size: 20px; line-height: 24px; font-weight: 700; }
+.d-meta { margin-top: 4px; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+/* The rule runs to the panel's edge: the panel pads 24 from its outer edge, 23 inside its border (variant-b.css) */
+.where { margin: 24px -23px 0; padding: 24px 23px 0; box-shadow: inset 0 1px 0 var(--stroke); }
+
+/* The full line: stretch names, the track, the approvals under their notches */
+/* The full line of 9.21, as the workspace's line strip draws it: rows 6 px apart, the label's two lines touching */
+.full-line { display: grid; grid-template-columns: 1fr 12px 1fr 12px 1fr 12px 1fr; align-items: center; row-gap: 6px; }
+.full-line .stretch { justify-self: center; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.full-line .stretch.on { color: var(--on-surface); font-weight: 700; }
+.full-line .seg { height: 2px; background: var(--ink); }
+.full-line .seg.current { height: 4px; }
+.full-line .seg.future { height: 0; border-top: 2px dashed var(--quiet); background: none; }
+.full-line .gate { width: 12px; height: 12px; }
+.full-line .gate.signed { background: var(--ink); }
+.full-line .gate.you { background: var(--critical); }
+.full-line .gate.upcoming { box-shadow: inset 0 0 0 2px var(--quiet); background: var(--surface); }
+.full-line .label { justify-self: center; align-self: start; display: flex; flex-direction: column; align-items: center; white-space: nowrap; }
+.full-line .label b { font-size: 12px; line-height: 16px; }
+.full-line .label span { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.full-line .label.you b { color: var(--critical); }
+.full-line .label.you span { color: var(--on-surface); }
+.full-line .label.upcoming b { color: var(--on-surface-variant); }
+
+/* Card heads */
+.card-head { display: flex; align-items: baseline; gap: 12px; }
+.card-head h3 { font-size: 16px; line-height: 20px; font-weight: 700; }
+/* Body SM on-surface-variant, as Home's section meta (7.3) */
+.card-head .meta { font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.card-head .end { margin-left: auto; }
+
+/* What you're signing */
+.summary { margin-top: 12px; max-width: 600px; font-size: 16px; line-height: 24px; text-wrap: pretty; }
+.figures { margin-top: 24px; display: grid; grid-template-columns: repeat(4, 1fr); }
+.fig { padding: 0 20px; display: flex; flex-direction: column; gap: 4px; box-shadow: inset 1px 0 0 var(--stroke); }
+.fig:first-child { padding-left: 0; box-shadow: none; }
+.fig span { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+/* 4.2 Figure: 24/30 Bold tabular, the unit in 16/20 Regular (9.16), as the plan's glance and the prototype's figures */
+.fig b { display: flex; align-items: baseline; gap: 6px; font-size: 24px; line-height: 30px; font-weight: 700; }
+.fig b small { font-size: 16px; line-height: 20px; font-weight: 400; color: var(--on-surface-variant); }
+.docs { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 8px; }
+.docs .chip { padding: 0 10px 0 8px; background: var(--surface); color: var(--on-surface); }
+.docs .chip svg { color: var(--on-surface-variant); }
+.changes { margin-top: 24px; padding-top: 20px; box-shadow: inset 0 1px 0 var(--stroke); display: flex; flex-direction: column; gap: 12px; }
+.changes > b { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+.change { display: flex; align-items: center; gap: 12px; font-size: 14px; line-height: 20px; }
+.change .when { margin-left: auto; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); white-space: nowrap; }
+
+/* Key evidence */
+.evidence { margin-top: 8px; }
+.ev { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; column-gap: 16px; align-items: center; padding: 16px 0; }
+.ev + .ev { box-shadow: inset 0 1px 0 var(--stroke); }
+.ev:last-child { padding-bottom: 0; }
+.tile { width: 32px; height: 32px; border-radius: var(--r-md); background: var(--surface); box-shadow: inset 0 0 0 1px var(--stroke); display: inline-flex; align-items: center; justify-content: center; color: var(--ink-2); }
+.tile img { width: 18px; height: 18px; }
+.ev .fact { display: flex; flex-direction: column; min-width: 0; }
+.ev .fact b { font-size: 14px; line-height: 20px; font-weight: 400; }
+.ev .fact > span { margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); display: flex; align-items: center; gap: 6px; }
+.ev .fact .mono { color: var(--on-surface-variant); }
+.ev .state { justify-self: end; }
+.ev .state.plain { color: var(--on-surface); font-weight: 700; }
+
+/* Who signs */
+.card-head .teams { display: inline-flex; align-items: baseline; gap: 8px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.card-head .teams img { width: 16px; height: 16px; align-self: center; }
+.signers { list-style: none; margin: 20px 0 0; padding: 0; display: flex; align-items: center; gap: 20px; }
+.signer { display: flex; align-items: center; gap: 10px; }
+.signer .who { display: flex; flex-direction: column; }
+.signer .who b { font-size: 14px; line-height: 18px; }
+.signer .who span { font-size: 12px; line-height: 16px; color: var(--on-surface); }
+.signer .who span.after { color: var(--on-surface-variant); }
+.signer.me .who span { font-weight: 700; }
+.signers .then { color: var(--quiet); }
+</style>
+</head>
+<body>
+<div class="app" data-screen="Inbox">
+
+  <aside class="nav" aria-label="HyperDelivery">
+    <div class="lockup">
+      <svg class="ua" viewBox="0 0 232.5 137" aria-label="Under Armour"><path fill="#1D1D1D" d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z"/></svg>
+      <b>HyperDelivery</b>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Hide the sidebar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></span>
+    </div>
+    <div class="new-project"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New Project</div>
+    <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>Search<span class="end keycap">⌘K</span></div>
+    <div class="nav-group" style="margin-top:6px">
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z"/></svg>Home</div>
+      <div class="nav-row current"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linejoin="round"><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z"/></svg>Inbox<span class="end count">4</span></div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Projects</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z"/></svg>Library<span class="end nav-tag">Enterprise</span></div>
+    </div>
+    <div class="nav-heading">Recent</div>
+    <div class="nav-group">
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>SKU productivity workbench</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>Wholesale sell-through tracker</span></div>
+      <div class="recent-row"><span class="mark"><span class="dots"><i></i><i></i><i></i></span></span><span>Tariff scenario planner</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>Product master quality monitor</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch done"></i></span><span>Activation scorecard</span></div>
+      <div class="recent-row all">All Projects</div>
+    </div>
+    <div class="nav-fill"></div>
+    <div class="account">
+      <span class="avatar s28" style="background:#3D4B8C">MC</span>
+      <span class="who"><b>Maya Chen</b><span>Merchandising</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar ruled">
+      <span class="page">Inbox</span>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg></span>
+    </header>
+
+    <div class="split">
+
+      <section class="list" aria-label="Waiting on you">
+        <div class="list-head">
+          <div class="list-title"><h1>Waiting on You</h1><span>4, oldest first</span></div>
+          <div class="filters" role="group" aria-label="Show">
+            <span class="filter on" aria-pressed="true">All<em>4</em></span>
+            <span class="filter">Approvals<em>2</em></span>
+            <span class="filter">Questions<em>1</em></span>
+            <span class="filter">Confirmations<em>1</em></span>
+          </div>
+        </div>
+
+        <ul class="items" aria-label="Waiting on you, oldest first">
+          <li class="item selected" aria-current="true">
+            <span class="marker"><i></i></span>
+            <b class="title">Your Approval: The Plan</b><span class="project">SKU productivity workbench</span><span class="unblocks">Unblocks the prototype</span>
+            <span class="kind">Approval</span><b class="age">1d 4h</b>
+          </li>
+          <li class="item">
+            <span class="marker"><i></i></span>
+            <b class="title">Your Approval: The Working Prototype</b><span class="project">Wholesale sell-through tracker</span><span class="unblocks">Unblocks the handoff</span>
+            <span class="kind">Approval</span><b class="age">3h 10m</b>
+          </li>
+          <li class="item">
+            <span class="marker"><i></i></span>
+            <b class="title">Which level counts as one style for duplicate checks?</b><span class="project">Product master quality monitor</span><span class="unblocks">Unblocks the brief</span>
+            <span class="kind">Question</span><b class="age">42m</b>
+          </li>
+          <li class="item">
+            <span class="marker"><i></i></span>
+            <b class="title">Confirm What We Heard in Wednesday's Working Session</b><span class="project">SKU productivity workbench</span><span class="unblocks">Feeds the prototype checks</span>
+            <span class="kind">Confirmation</span><b class="age">20m</b>
+          </li>
+        </ul>
+
+        <div class="history">
+          <div class="history-row" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg>Done in the Last 7 Days<em>5</em></div>
+          <ul class="done-list" aria-label="Done in the last 7 days">
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="what"><b>You passed a question to Dana Ortiz</b><span>Product master quality monitor</span></span><span class="when">Oct 22</span></li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="what"><b>You confirmed 3 facts</b><span>SKU productivity workbench</span></span><span class="when">Oct 22</span></li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="what"><b>You signed What We're Building</b><span>SKU productivity workbench</span></span><span class="when">Oct 21</span></li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="what"><b>You signed The Plan</b><span>Wholesale sell-through tracker</span></span><span class="when">Oct 21</span></li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="what"><b>You answered which margin to use</b><span>Tariff scenario planner</span></span><span class="when">Oct 20</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="detail" aria-label="Your Approval: The Plan">
+
+        <article class="panel head-panel">
+          <div class="eyebrow">
+            <span class="tag">Approval</span>
+            <a class="link">SKU productivity workbench</a>
+            <span>·</span>
+            <span>Merchandising</span>
+          </div>
+          <div class="head-grid">
+            <div>
+              <h2 class="d-title">Your Approval: The Plan</h2>
+              <div class="d-meta"><span>Second of three signers</span><span>·</span><span>Unblocks the prototype</span></div>
+            </div>
+            <span class="btn lg primary">Review and Sign<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </div>
+          <div class="where">
+          <div class="full-line" role="img" aria-label="Discover done. What we're building signed by 3 people after 5d 2h. The plan is waiting on you, 1 day 4 hours. Prototype and Handoff upcoming.">
+            <span class="stretch">Discover</span><span></span><span class="stretch on">Plan</span><span></span><span class="stretch">Prototype</span><span></span><span class="stretch">Handoff</span>
+            <i class="seg"></i><i class="gate signed"></i><i class="seg current"></i><i class="gate you"></i><i class="seg future"></i><i class="gate upcoming"></i><i class="seg future"></i>
+            <span></span>
+            <span class="label"><b>What We're Building</b><span>5d 2h, 3 signers</span></span>
+            <span></span>
+            <span class="label you"><b>Your Approval: The Plan</b><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>Waiting 1d 4h</span></span>
+            <span></span>
+            <span class="label upcoming"><b>The Working Prototype</b></span>
+            <span></span>
+          </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="card-head"><h3>What You're Signing</h3><span class="meta">The plan, version 3, Oct 23</span></div>
+          <p class="summary">Eight pieces to build in the sandbox on dev data, from the brief and mockup you signed. When all three sign, the build starts, with a working prototype in about 3 days; nothing is shared outside the project.</p>
+          <div class="figures">
+            <div class="fig"><span>Pieces to Build</span><b>8</b></div>
+            <div class="fig"><span>Stories</span><b>3</b></div>
+            <div class="fig"><span>Criteria</span><b>6</b></div>
+            <div class="fig"><span>Time to a Prototype</span><b>3<small>days</small></b></div>
+          </div>
+          <div class="docs">
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8zM14 3v5h5"/></svg>Requirements</span>
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>Stories</span>
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5l2.5 2.5L16 9.5M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0z"/></svg>Criteria</span>
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h16v15H4zM4 9h16M9 9v10.5"/></svg>Tech Design</span>
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="1.5"/><path d="M9.5 3.5h5v3h-5zM9.5 13.5l2 2 3.5-3.5"/></svg>Test Plan</span>
+            <span class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5h16v3a1.5 1.5 0 0 0 0 3v3H4v-3a1.5 1.5 0 0 0 0-3z"/></svg>Tickets</span>
+          </div>
+          <div class="changes">
+            <b>1 Change Since What We're Building</b>
+            <div class="change"><span class="tag">Piece 5</span><span>Any flag explains itself, with the numbers behind it</span><span class="when">Added Oct 22 at your request</span></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="card-head"><h3>Key Evidence</h3></div>
+          <div class="evidence">
+            <div class="ev">
+              <span class="tile"><img src="../concepts/project/logos/snowflake.svg" alt="Snowflake"></span>
+              <span class="fact"><b>Margin per door uses the Daily Product Margin golden report</b><span><span class="mono">MERCH.GOLDEN.DAILY_PRODUCT_MARGIN</span><span>·</span>Luis Romero, data owner</span></span>
+              <span class="state status ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Certified</span>
+            </div>
+            <div class="ev">
+              <span class="tile"><img src="../concepts/project/logos/snowflake.svg" alt="Snowflake"></span>
+              <span class="fact"><b>Sell-through uses the daily sell-through golden report</b><span><span class="mono">MERCH.GOLDEN.SELL_THROUGH_DAILY</span><span>·</span>Luis Romero, data owner</span></span>
+              <span class="state status ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Certified</span>
+            </div>
+            <div class="ev">
+              <span class="tile"><img src="../concepts/project/logos/microsoftteams.svg" alt="Teams"></span>
+              <span class="fact"><b>Marked-down units count at the marked-down price</b><span>Dana Ortiz, Finance, in Teams, Oct 23</span></span>
+              <span class="state status ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Agreed</span>
+            </div>
+            <div class="ev">
+              <span class="tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 10.5h11a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19v-7a1.5 1.5 0 0 1 1.5-1.5zM8 10.5v-3a4 4 0 0 1 8 0v3"/></svg></span>
+              <span class="fact"><b>Reads dev data through the data broker and writes nothing</b><span>No personal data. Only project members and 6 named testers can open it.</span></span>
+              <span class="state status plain">Read-Only</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="card-head"><h3>Who Signs, in Order</h3><span class="meta">1 of 3 signed</span><span class="end teams"><img src="../concepts/project/logos/microsoftteams.svg" alt="">Also sent to you in Teams</span></div>
+          <ol class="signers">
+            <li class="signer"><span class="avatar s28" style="background:#2E6A8E">LR</span><span class="who"><b>Luis Romero</b><span>Signed Oct 23</span></span></li>
+            <li class="then"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg></li>
+            <li class="signer me"><span class="avatar s28" style="background:#3D4B8C">MC</span><span class="who"><b>Maya Chen</b><span>You, now</span></span></li>
+            <li class="then"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg></li>
+            <li class="signer"><span class="avatar s28" style="background:#6A4C8C">DO</span><span class="who"><b>Dana Ortiz</b><span class="after">After you</span></span></li>
+          </ol>
+        </article>
+
+      </section>
+    </div>
+  </main>
+</div>
+<script src="figma-prep.js"></script>
+</body>
+</html>

@@ -51,9 +51,7 @@ build-fsd-index: check-aws
 # boards over HTTP, so open it from this server rather than from the file. Bound to this machine
 # only: the site is a draft, not for the rest of the network.
 site:
-	@echo "Plan:            http://localhost:8766/plan/"
-	@echo "Concept canvas:  http://localhost:8766/concepts/"
-	python3 -m http.server --bind 127.0.0.1 --directory docs/ua-dlc/site 8766
+	uv run python scripts/serve_ua_dlc_site.py
 
 # Rebuilds docs/ua-dlc/site/plan/index.html from enterprise-plan.md and plan/visuals/.
 site-plan:

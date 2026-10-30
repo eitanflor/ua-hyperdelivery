@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ua-dlc-site",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "python", "scripts/serve_ua_dlc_site.py"],
+      "port": 8766
+    }
+  ]
+}

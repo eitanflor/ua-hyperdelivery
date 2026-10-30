@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Projects · HyperDelivery</title>
+<!-- cspell:words pcard pbody phead pstat pwait fchip -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&amp;family=Chivo+Mono:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="variant-b.css">
+<style>
+/* The main area's 12-column grid: 24 px margins, 16 px gutters, so four cards of span 3 (274 px).
+   A list screen's content starts 24 px under the top bar (7.3), as the Inbox's does */
+.content { flex: 1; padding: 24px 24px 56px; }
+
+.head h1 { font-size: 32px; line-height: 40px; font-weight: 700; }
+/* Labeled pairs 24 px apart, not a run of middle dots (4.5, 7.2) */
+.head .meta { margin-top: 8px; display: flex; gap: 24px; font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.head .meta b { color: var(--on-surface); font-weight: 400; }
+
+/* One toolbar row: search over the first column, the filter chips from the second, the view toggle at the right */
+.toolbar { margin-top: 32px; display: flex; align-items: center; gap: 8px; }
+.toolbar .spacer { flex: 1; }
+.search { width: 274px; height: 36px; margin-right: 8px; border-radius: var(--r-sm); background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline-variant);
+  display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; font-size: 14px; line-height: 20px; color: var(--on-surface-variant); }
+.search .spacer { flex: 1; }
+.fchip { height: 32px; border-radius: var(--r-sm); padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--outline-variant); font-size: 14px; line-height: 18px; white-space: nowrap; }
+.fchip .n { color: var(--on-surface-variant); }
+.fchip.on { background: var(--ink); box-shadow: none; color: #fff; font-weight: 700; padding-left: 10px; }
+.fchip.on .n { color: var(--line); font-weight: 400; }
+.segmented { display: inline-flex; padding: 1px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--outline-variant); }
+.segmented span { height: 32px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; border-radius: 3px; font-size: 12px; line-height: 20px; color: var(--on-surface); }
+.segmented span.on { background: var(--ink); color: #fff; }
+
+/* The project cards of 9.12 (drawn by variant-b.css), four across on span 3, plus who each one waits on. Seven
+   projects leave the eighth slot empty: New Project in the side nav is the only start control (7.1, 7.2) */
+.cards { margin-top: 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: start; }
+/* The footer row: a stroke-tertiary rule 12 px under the status line (the body's 10 px gap and 2), then
+   12 px to the 24 px avatar */
+.pcard .pwait { margin-top: 2px; padding-top: 12px; box-shadow: inset 0 1px 0 var(--stroke); min-height: 36px; display: flex; align-items: center; gap: 8px;
+  font-size: 12px; line-height: 18px; color: var(--on-surface-variant); white-space: nowrap; }
+.pcard .pwait b { color: var(--on-surface); font-weight: 400; }
+.pcard .pwait b.long { font-weight: 700; display: inline-flex; align-items: center; gap: 4px; vertical-align: top; }
+
+.foot { margin-top: 24px; font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+</style>
+</head>
+<body>
+<div class="app" data-screen="Projects">
+
+  <aside class="nav" aria-label="HyperDelivery">
+    <div class="lockup">
+      <svg class="ua" viewBox="0 0 232.5 137" aria-label="Under Armour"><path fill="#1D1D1D" d="M154.6 68.5C153.7 69.2 152.7 69.9 151.5 70.8C143.5 76.5 131.9 80.3 116.8 80.3H116.3H115.8C100.7 80.3 89.1 76.4 81.1 70.8C79.8 69.9 78.8 69.2 78 68.5C78.9 67.9 79.9 67.1 81.1 66.2C89.1 60.5 100.7 56.7 115.8 56.7H116.3H116.8C131.9 56.7 143.5 60.6 151.5 66.2C152.7 67.1 153.7 67.8 154.6 68.5ZM232.5 21.8C232.5 21.8 225.6 16.6 203.9 8.6C184.8 1.6 170.4 0 170.4 0L170.5 41.1C170.5 46.8 168.8 52.1 164.5 58.1C148.4 52 133 48 116.3 48C99.5 48 84.2 52 68 58.1C63.7 52.1 62 46.9 62 41.1V0C62 0 47.6 1.6 28.5 8.6C6.9 16.6 0 21.8 0 21.8C0.9 40.5 17.2 57 43 68.5C17.2 79.9 0.9 96.5 0 115.2C0 115.2 6.9 120.4 28.6 128.4C47.7 135.4 62.1 137 62.1 137L62 95.8C62 90.1 63.7 84.8 68 78.8C84.2 84.9 99.5 88.8 116.2 88.8C132.9 88.8 148.3 84.8 164.5 78.8C168.8 84.8 170.5 90 170.5 95.8L170.4 136.9C170.4 136.9 184.8 135.3 203.9 128.3C225.6 120.3 232.5 115.1 232.5 115.1C231.6 96.4 215.3 79.8 189.5 68.4C215.3 57 231.6 40.5 232.5 21.8Z"/></svg>
+      <b>HyperDelivery</b>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Hide the sidebar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></span>
+    </div>
+    <div class="new-project"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New Project</div>
+    <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>Search<span class="end keycap">⌘K</span></div>
+    <div class="nav-group" style="margin-top:6px">
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20h-5.5v-6h-5v6H4z"/></svg>Home</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5M5.6 5h12.8L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z"/></svg>Inbox<span class="end count">4</span></div>
+      <div class="nav-row current"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Projects</div>
+      <div class="nav-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linejoin="round"><path d="M5 4.5h5.5a2 2 0 0 1 2 2V20a1.5 1.5 0 0 0-1.5-1.5H5zM19 4.5h-5.5a2 2 0 0 0-2 2V20a1.5 1.5 0 0 1 1.5-1.5H19z"/></svg>Library<span class="end nav-tag">Enterprise</span></div>
+    </div>
+    <div class="nav-heading">Recent</div>
+    <div class="nav-group">
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>SKU productivity workbench</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>Wholesale sell-through tracker</span></div>
+      <div class="recent-row"><span class="mark"><span class="dots"><i></i><i></i><i></i></span></span><span>Tariff scenario planner</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch you"></i></span><span>Product master quality monitor</span></div>
+      <div class="recent-row"><span class="mark"><i class="notch done"></i></span><span>Activation scorecard</span></div>
+      <div class="recent-row all">All Projects</div>
+    </div>
+    <div class="nav-fill"></div>
+    <div class="account">
+      <span class="avatar s28" style="background:#3D4B8C">MC</span>
+      <span class="who"><b>Maya Chen</b><span>Merchandising</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar ruled">
+      <span class="page">Projects</span>
+      <span class="spacer"></span>
+      <span class="icon-btn" aria-label="Help"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg></span>
+    </header>
+
+
+    <div class="content">
+      <div class="head">
+        <h1>Projects</h1>
+        <p class="meta"><span>Across <b>7</b> workspaces</span><span>Last activity <b>20m ago</b></span><span>Oldest wait on you <b>1d 4h</b></span></p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F5F5F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+          Search projects
+          <span class="spacer"></span>
+          <span class="keycap">/</span>
+        </div>
+        <span class="fchip on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>All<span class="n">7</span></span>
+        <span class="fchip">Waiting on Me<span class="n">3</span></span>
+        <span class="fchip">Building<span class="n">1</span></span>
+        <span class="fchip">Handed Off<span class="n">3</span></span>
+        <span class="fchip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L2.8 19.5h18.4zM12 10v4M12 16.75v.01"/></svg>Needs Attention<span class="n">2</span></span>
+        <span class="spacer"></span>
+        <span class="segmented" role="radiogroup" aria-label="View">
+          <span class="on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"><path d="M4 4.5h7v7H4zM13 4.5h7v7h-7zM4 13.5h7v6H4zM13 13.5h7v6h-7z"/></svg>Gallery</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 10h16M4 14.5h16M9.5 10v9"/></svg>Table</span>
+        </span>
+      </div>
+
+      <div class="cards">
+        <!-- Sorted by last activity, newest first. The first card's status is the region's one red label (HD-R1) -->
+        <article class="pcard" aria-label="SKU productivity workbench, your approval: The Plan">
+          <div class="thumb"><span class="stage">Mockup<em>Signed with the brief</em></span><div class="mock">
+            <div class="bar key" style="width:38%"></div>
+            <div class="row"><i></i><i></i><i></i></div>
+            <div class="row hi"><i></i><i></i><i></i></div>
+            <div class="row"><i></i><i></i><i></i></div>
+            <div class="row"><i></i><i></i><i></i></div>
+          </div></div>
+          <div class="pbody">
+            <div class="phead"><span class="name">SKU productivity workbench</span><span class="meta">Merchandising, edited 20m ago</span></div>
+            <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg current"></i><i class="gate you"></i><i class="seg future"></i><i class="gate upcoming"></i><i class="seg future"></i></div>
+            <div class="pstat you"><span>Your approval: The Plan</span></div>
+            <div class="pwait"><span class="avatar s24" style="background:#3D4B8C" title="Maya Chen">MC</span><span>Waiting on <b>You, 1d 4h</b></span></div>
+          </div>
+        </article>
+
+        <article class="pcard" aria-label="Product master quality monitor, your answer: one question">
+          <div class="thumb"><span class="stage">Mockup<em>Draft</em></span><div class="mock">
+            <div class="split">
+              <div class="list">
+                <div class="item"><i></i><s></s></div>
+                <div class="item sel"><i></i><s></s></div>
+                <div class="item"><i></i><s></s></div>
+              </div>
+              <div class="side">
+                <div class="bar key" style="width:56%"></div>
+                <div class="pair">
+                  <div class="rec"><i style="width:70%"></i><i class="key" style="width:84%"></i><i style="width:52%"></i></div>
+                  <div class="rec"><i style="width:62%"></i><i class="key" style="width:84%"></i><i style="width:58%"></i></div>
+                </div>
+              </div>
+            </div>
+          </div><span class="flag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>Waiting 2 Days</span></div>
+          <div class="pbody">
+            <div class="phead"><span class="name">Product master quality monitor</span><span class="meta">EDM, edited 42m ago</span></div>
+            <div class="line"><i class="seg current"></i><i class="gate upcoming"></i><i class="seg future"></i><i class="gate upcoming"></i><i class="seg future"></i><i class="gate upcoming"></i><i class="seg future"></i></div>
+            <div class="pstat"><span>Your answer: one question</span></div>
+            <div class="pwait"><span class="avatar s24" style="background:#3D4B8C" title="Maya Chen">MC</span><span>Waiting on <b>You, 42m;</b> <b class="long"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D1D1D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>Dana, 2d</b></span></div>
+          </div>
+        </article>
+
+        <article class="pcard" aria-label="Tariff scenario planner, building the prototype, piece 3 of 8">
+          <div class="thumb"><span class="stage">Prototype, 3 of 8<em>Sandbox, dev data</em></span><div class="mock">
+            <div class="bar key" style="width:46%"></div>
+            <div class="cols"><i style="height:25px"></i><i class="ink" style="height:36px"></i><i class="h" style="height:40px"></i><i style="height:19px"></i><i class="ink" style="height:30px"></i><i class="h" style="height:36px"></i></div>
+          </div><span class="flag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L2.8 19.5h18.4zM12 10v4M12 16.75v.01"/></svg>Piece 4 Needs a Look</span></div>
+          <div class="pbody">
+            <div class="phead"><span class="name">Tariff scenario planner</span><span class="meta">Sourcing, edited 3h ago</span></div>
+            <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg current"></i><i class="gate upcoming"></i><i class="seg future"></i></div>
+            <div class="pstat"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Building the prototype, piece 3 of 8</span></div>
+            <div class="pwait"><span class="avatar s24" style="background:#4A5560" title="Omar Haddad">OH</span><span>Waiting on <b>Omar Haddad, 3h</b></span></div>
+          </div>
+        </article>
+
+        <article class="pcard" aria-label="Wholesale sell-through tracker, your approval: The Working Prototype">
+          <div class="thumb"><span class="stage">Prototype v4<em>Sandbox, dev data</em></span><div class="mock">
+            <div class="bar key" style="width:42%"></div>
+            <div class="meters">
+              <div class="meter"><i></i><span class="track"><b style="width:78%"></b></span><em>78%</em></div>
+              <div class="meter ink"><i></i><span class="track"><b style="width:41%"></b></span><em>41%</em></div>
+              <div class="meter"><i></i><span class="track"><b style="width:66%"></b></span><em>66%</em></div>
+            </div>
+          </div></div>
+          <div class="pbody">
+            <div class="phead"><span class="name">Wholesale sell-through tracker</span><span class="meta">Wholesale, edited 3h ago</span></div>
+            <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg current"></i><i class="gate you"></i><i class="seg future"></i></div>
+            <div class="pstat"><span>Your approval: The Working Prototype</span></div>
+            <div class="pwait"><span class="avatar s24" style="background:#3D4B8C" title="Maya Chen">MC</span><span>Waiting on <b>You, 3h 10m</b></span></div>
+          </div>
+        </article>
+
+        <article class="pcard" aria-label="Activation scorecard, Construction decision pending">
+          <div class="thumb"><span class="stage">Prototype v5<em>Sandbox, dev data</em></span><div class="mock">
+            <div class="bar key" style="width:52%"></div>
+            <div class="score"><div><b>82</b><i></i></div><div><b>64</b><i></i></div><div><b>71</b><i></i></div></div>
+            <div class="bar" style="width:84%"></div>
+          </div></div>
+          <div class="pbody">
+            <div class="phead"><span class="name">Activation scorecard</span><span class="meta">Marketing, handed off Oct 23</span></div>
+            <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg current"></i></div>
+            <div class="pstat"><span>Construction decision pending</span></div>
+            <div class="pwait"><span class="avatar s24" style="background:#3F4A55" title="Kim Patel">KP</span><span>Waiting on <b>Kim Patel, 1d</b></span></div>
+          </div>
+        </article>
+
+        <article class="pcard" aria-label="Store labor forecast, Construction: AI-assisted">
+          <div class="thumb"><span class="stage">Prototype v6<em>Sandbox, dev data</em></span><div class="mock">
+            <div class="heat">
+              <span></span><i class="k"></i><i class="k"></i><i class="k"></i><i class="k"></i><i class="k"></i><i class="k"></i><i class="k"></i>
+              <i class="k"></i><i></i><i></i><i class="l1"></i><i></i><i class="l1"></i><i class="l2"></i><i class="l1"></i>
+              <i class="k"></i><i class="l1"></i><i></i><i class="l1"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l2"></i>
+              <i class="k"></i><i class="l1"></i><i class="l1"></i><i class="l2"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l2"></i>
+              <i class="k"></i><i></i><i></i><i class="l1"></i><i></i><i class="l1"></i><i class="l2"></i><i class="l1"></i>
+            </div>
+          </div></div>
+          <div class="pbody">
+            <div class="phead"><span class="name">Store labor forecast</span><span class="meta">Retail ops, handed off Oct 20</span></div>
+            <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg"></i></div>
+            <div class="pstat"><span>Construction: AI-assisted</span></div>
+            <div class="pwait">Nothing waiting, in Construction</div>
+          </div>
+        </article>
+
+        <article class="pcard" aria-label="Promo dependency monitor, Construction: AI-driven">
+          <div class="thumb"><span class="stage">Prototype v3<em>Sandbox, dev data</em></span><div class="mock">
+            <div class="gantt">
+              <span></span>
+              <div class="weeks"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="keys"><i></i><i></i><i></i><i></i></div>
+              <div class="lanes">
+                <div class="lane"><b style="left:0;width:56px"></b></div>
+                <div class="lane"><b class="ink" style="left:66px;width:56px"></b></div>
+                <div class="lane"><b class="h" style="left:132px;width:42px"></b></div>
+                <div class="lane"><b style="left:14px;width:72px"></b></div>
+                <svg width="174" height="58" viewBox="0 0 174 58" fill="none" stroke="#1D1D1D" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M56 5h4v16h6"/><path d="M122 21h4v16h6"/></svg>
+              </div>
+            </div>
+          </div></div>
+          <div class="pbody">
+            <div class="phead"><span class="name">Promo dependency monitor</span><span class="meta">Pricing, handed off Oct 14</span></div>
+            <div class="line"><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg"></i><i class="gate signed"></i><i class="seg"></i></div>
+            <div class="pstat"><span>Construction: AI-driven</span></div>
+            <div class="pwait">Nothing waiting, in Construction</div>
+          </div>
+        </article>
+      </div>
+
+      <p class="foot">7 projects, 3 waiting on you</p>
+    </div>
+  </main>
+</div>
+<script src="figma-prep.js"></script>
+</body>
+</html>

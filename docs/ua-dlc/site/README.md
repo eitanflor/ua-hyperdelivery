@@ -11,6 +11,7 @@ docs/ua-dlc/site/
   plan/visuals/*.html     the plan's interactive visuals (sources)
   concepts/index.html     the canvas viewer (viewer.css, viewer.js)
   concepts/project/       the boards (*.dc.html), canvas.json, support.js, logos/
+  variant-b/              the polished Variant B screens, source of the Figma file (its README)
 ```
 
 Every name, project and number in the concepts is invented to show the design; none is a
@@ -22,10 +23,11 @@ measured result.
 make site
 ```
 
-That serves this folder at <http://localhost:8766/>: the plan at `/plan/` and the canvas at
-`/concepts/`. It listens on this machine only (`127.0.0.1`), because the site is a draft. Any
-server works, for example
-`python3 -m http.server --bind 127.0.0.1 --directory docs/ua-dlc/site 8766`.
+That runs `scripts/serve_ua_dlc_site.py`, which serves this folder at <http://localhost:8766/>
+(`--port` changes it): the plan at `/plan/` and the canvas at `/concepts/`. It listens on this
+machine only (`127.0.0.1`), because the site is a draft. Any static server works, for example
+`python3 -m http.server --bind 127.0.0.1 --directory docs/ua-dlc/site 8766`, but its log fills
+with 404s for `{{...}}` paths (see "Known console messages").
 
 Opening the files directly (`file://`) works for the landing page and the plan, and their links
 land on pages (they point at `index.html`, not at folders). The canvas itself needs the server:
@@ -80,12 +82,17 @@ carry it needs its own copy. Add or move a board there and reload.
 
 ### Known console messages
 
-Each board logs errors and warnings in the browser console while it loads: 404s for image paths
-such as `{{...}}`, "is not defined" errors from inline `onError` handlers, SVG attribute errors
-for `d`, `points`, `cx` and `cy`, and `[dc-runtime]` warnings about values that "never resolved".
-They come from the canvas runtime parsing each board's template as live HTML before it renders
-the board, and they are harmless: the rendered boards are correct. They are not caused by the
-viewer, and it cannot silence them, because they come from inside each board's frame.
+The canvas runtime renders each board from its template only after the browser has parsed that
+template as live HTML, so every bound image (`<img src="{{logos.teams}}">`) is requested once
+with its raw `{{...}}` placeholder. `make site` answers those placeholder requests with an empty
+image and leaves them out of its log; a real missing file still gets a 404 and is logged. A plain
+static server answers each placeholder with a 404 instead, and the board's inline `onError`
+handler then logs an "is not defined" error.
+
+Either way the browser console still shows SVG attribute errors for `d`, `points`, `cx` and `cy`,
+and `[dc-runtime]` warnings about values that "never resolved", from the same early parse. They
+are harmless: the rendered boards are correct. They come from inside each board's frame and the
+vendored runtime, so neither the viewer nor the server can silence them.
 
 ## Rebuild the plan
 
